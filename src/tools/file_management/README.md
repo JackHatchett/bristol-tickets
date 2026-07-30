@@ -56,9 +56,9 @@ All paths also come from config.local.json.
 
 This folder interacts with:
 
-- agent_system_runtime as the source of files to scan  
-- agent_system_config as the provider of configuration and system index  
-- agent_system_data as the destination for output logs  
+- the project `src/` tree as the source of files to scan  
+- `config/config.local.json` as the provider of configuration  
+- `data/<instance>/system/logs/` as the destination for output logs  
 
 It is part of the toolchain used by maintenance playbooks and structural audits.  
 It does not depend on agent memory or user-specific logic.

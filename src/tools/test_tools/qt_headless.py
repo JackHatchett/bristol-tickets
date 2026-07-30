@@ -18,8 +18,22 @@ import os
 import sys
 from pathlib import Path
 
-# .../agent_system/src/tools/test_tools/qt_headless.py → parents[3] = agent_system
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
+PROJECT_ROOT = _project_root()
 TOOLS = PROJECT_ROOT / "src" / "tools"
 
 

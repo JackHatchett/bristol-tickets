@@ -573,7 +573,7 @@ def render(f, slug, previous_slug=None, source_note=None):
         "---",
         "",
         f"*Generated automatically by [[bristol_tickets_app|Bristol]]'s Clear Done, "
-        f"from the [[agent_system|agent_system]] roadmap board. "
+        f"from the [[bristol_tickets|Bristol Tickets]] board. "
         f"Source: `{source_note or 'src/tools/bristol/reports/'}`. "
         f"Workspace map: [[ai_workspace_hub|AI Workspace Hub]].*",
         "",

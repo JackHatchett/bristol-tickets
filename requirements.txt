@@ -1,4 +1,4 @@
-# agent_system — Python dependencies
+# Bristol Tickets — Python dependencies
 #
 # Third-party packages only; the standard library covers everything else
 # (sqlite3, argparse, pathlib, json, csv, hashlib, subprocess, etc. — see

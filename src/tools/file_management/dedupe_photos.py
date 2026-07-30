@@ -29,9 +29,9 @@ KEEPER RULE (which copy of a dup group survives):
 PREREQUISITES: none beyond Python 3 (standard library only).
 
 RUN ORDER:
-  1) python3 agent_system/src/tools/file_management/dedupe_photos.py            # dry run
-  2) open  agent_system/data/*/system/photo_tools/_dedupe_photos_manifest.csv # review
-  3) python3 agent_system/src/tools/file_management/dedupe_photos.py --execute  # delete dups
+  1) python3 src/tools/file_management/dedupe_photos.py            # dry run
+  2) open  data/*/system/photo_tools/_dedupe_photos_manifest.csv # review
+  3) python3 src/tools/file_management/dedupe_photos.py --execute  # delete dups
 
 SOURCE: resolved from config.local.json's `drives.external1` root + "Photos"
   (all year subfolders; runs on your Mac) — never hardcoded.

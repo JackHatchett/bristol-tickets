@@ -41,6 +41,21 @@ import os
 import sys
 from pathlib import Path
 
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 _ENV_OVERRIDE = "CONFIG_LOCAL_JSON"
 _MISSING = object()
 
@@ -48,15 +63,13 @@ _MISSING = object()
 def _config_path() -> Path:
     """Locate config/config.local.json.
 
-    Honours the CONFIG_LOCAL_JSON env override; otherwise walks up from this
-    file to the repo root (…/agent_system) and looks in config/.
+    Honours the CONFIG_LOCAL_JSON env override; otherwise finds the project
+    root by marker and looks in config/.
     """
     override = os.environ.get(_ENV_OVERRIDE)
     if override:
         return Path(os.path.expanduser(override))
-    # this file: <root>/src/tools/config_tools/read_config.py  → parents[3] == <root>
-    root = Path(__file__).resolve().parents[3]
-    return root / "config" / "config.local.json"
+    return _project_root() / "config" / "config.local.json"
 
 
 def load() -> dict:

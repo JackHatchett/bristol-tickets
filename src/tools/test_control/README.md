@@ -37,7 +37,7 @@
 
 ## 3. Database
 
-- **Location:** `agent_system/data/<instance>/test_control/test_control.db` —
+- **Location:** `data/<instance>/test_control/test_control.db` —
   resolved the same way `roadmap_tools` resolves `roadmap.db`: `app.py` looks for
   the active instance dir via `data/*/roadmap/roadmap.db`'s parent, falls back to
   the first existing `data/<instance>/` dir, and only falls back further to
@@ -82,7 +82,7 @@
 ## 6. Running It
 
 ```
-cd agent_system/src/tools/test_control
+cd src/tools/test_control
 python3 app.py
 ```
 

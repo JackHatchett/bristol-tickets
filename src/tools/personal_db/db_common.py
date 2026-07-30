@@ -37,8 +37,17 @@ SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
 
 
 def _project_root() -> Path:
-    # src/tools/personal_db/db_common.py -> parents[2] == src/ .. no: want agent_system/
-    return Path(__file__).resolve().parents[3]  # agent_system/
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
 
 
 def resolve_root() -> Path:

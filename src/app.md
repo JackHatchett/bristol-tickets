@@ -1,15 +1,13 @@
-# app.md — Robot Head Initialization
+# app.md — Session Initialization
 
-You are an AI desktop app with a chat user interface simulating 1 of 3 runtime/interface heads of a multi-headed software application with unified data and config, "agent_system". This file initializes the runtime environment of the similated 'Robot Head', mirroring the programmatic startup of the main full-application Python 'Snake' head. Follow these exact steps sequentially.
-
-**Terminology (user-facing vs code):** The user calls the roadmap board the **"Bristol board"** and individual tasks **"Bristol tickets"** — after `Bristol` (`src/tools/bristol/`), the Qt app that views it. In code and paths the same thing stays **"roadmap"** (`roadmap.db`, `data/*/roadmap/`, `roadmap_tools/`, `ROADMAP_DB`): Bristol is the viewer, the roadmap is the data. Treat "Bristol board" = the roadmap board, "Bristol ticket" = a task; no rename needed.
+You are a chat session operating "Bristol Tickets", a local application whose state lives in one SQLite database and whose paths resolve from one git-ignored config. The other surface onto the same data is Bristol, a desktop Kanban app the user drives by hand. This file initializes your runtime environment. Follow these exact steps sequentially.
 
 ## Phase 1: Context & Configuration Routing
 1. **Load the system index (structured source of truth).** The machine-readable config is the git-ignored `/config/config.local.json`. Do **not** read it whole — query only the field(s) you need with the shared helper: `python3 src/tools/config_tools/read_config.py <dotted.key>` (e.g. `important_paths.roadmap_db`, `drives.external1.path`, `agents.<agent>.identity`, `agents.<agent>.env`). The routing model itself is explained for humans in `docs/SETUP.md` (§Configuration), not needed for machine routing.
 2. **Resolve Pointers:** `/src` files reference user-specific data by generic, relative paths (e.g. `data/*/roadmap/roadmap.db`) — the concrete instance folder is the `*`. Out-of-repo resources (external drives, iCloud / Markdown-notebook containers) and per-agent env vars are resolved from the JSON (`drives.*`, `markdown_notebook.*`, `important_paths.*`, `projects.*`, `agents.*.env`).
 
 ## Phase 2: Identity Instantiation
-1. **Determine Active Agent (runtime-override aware):** The default role is `active_agent` from `config/config.local.json` (`python3 src/tools/config_tools/read_config.py active_agent`) — the source of truth for the Python head and any offline work. But an invoking interface head may supply a session-scoped override: if the instructions that launched this session declare `agent_override: <slug>` with a value other than `none`, that slug becomes the active agent for this session and takes precedence over config's `active_agent`. Treat `none`, absent, or an unrecognized slug (not a key under `agents.*`) as "no override" and fall back to `active_agent`; if an override slug is malformed or unknown, say so rather than silently guessing. The override is read-only and session-scoped — it never writes to config, so Python/offline runs are unaffected. Once the active agent is resolved, its identity-doc path and metadata are at `agents.<active_agent>` in the same file (query via `read_config.py agents.<active_agent>.identity`).
+1. **Determine Active Agent (runtime-override aware):** The default role is `active_agent` from `config/config.local.json` (`python3 src/tools/config_tools/read_config.py active_agent`) — the source of truth for any offline work. But the interface launching this session may supply a session-scoped override: if the instructions that launched this session declare `agent_override: <slug>` with a value other than `none`, that slug becomes the active agent for this session and takes precedence over config's `active_agent`. Treat `none`, absent, or an unrecognized slug (not a key under `agents.*`) as "no override" and fall back to `active_agent`; if an override slug is malformed or unknown, say so rather than silently guessing. The override is read-only and session-scoped — it never writes to config, so offline runs are unaffected. Once the active agent is resolved, its identity-doc path and metadata are at `agents.<active_agent>` in the same file (query via `read_config.py agents.<active_agent>.identity`).
 2. **Set Write Identifier:** Concatenate the constant prefix `cowork_` with the active agent's slug to establish your unique write signature for database entries (e.g., `cowork_career_coach`). Use this signature string for any `--agent`, `--from-agent`, or `--reporter` arguments when calling `roadmap_write.py`.
 3. **Load Identity Charter:** Load the single source of truth for your identity.
 
@@ -140,6 +138,20 @@ A file an outside party must be shown because it genuinely cannot read
 holds the state, deleting it loses nothing. Full statement of this rule and its
 rationale: `src/tools/roadmap_tools/README.md` (§The board is the only channel).
 
+## Design constraints
+
+- **The tools stay small and separately runnable.** `src/tools/` is a set of
+  independent programs, each readable and modifiable in a single pass. They are
+  not consolidated into one program, and a launcher that presents several of
+  them composes them; it does not fuse their codebases.
+- **Bristol is self-contained.** `src/tools/bristol/` imports nothing from the
+  rest of `src/tools/`. It opens, runs and changes in isolation, without
+  requiring an understanding of the rest of the system.
+- **Legibility beats cleverness.** The repo is written to be read by people
+  learning to build alongside AI. The data and config contract is explicit and
+  inspectable, separation of concerns is stated plainly rather than through
+  metaphor, and a clever construction that costs a reader is the wrong choice.
+
 ## Phase 4: Session Closure (all agents)
 Before wrapping up any working session (skip only for pure Q&A that changed no state), reflect the true state into the shared board — it, not chat, is the record, and it is how the next session (a new day, possibly a different model or agent) knows where things stand. Follow the board conventions in `src/tools/roadmap_tools/README.md` (§Board conventions). In short:
 - Move each task you touched to the column that reflects reality via `roadmap_write.py update-task-status`: `done` when finished, `doing` for anything else you touched (per Phase 3 step 7, that move should already have happened when you first touched it — this is the check, not the moment) — and when you leave such work half-done, also give it a high `priority`, put it on the active board (`roadmap_write.py set-stage --stage active`, or `update-task-status --stage active`), and set the proper owner, so it lands at the top of the viewer's in-progress column for whoever resumes. **A finished task stays on the active board in the `done` column — do NOT move it to `archive` when you complete it. Archiving is the user's call (a manual board-tidy action), not part of marking work done.**
@@ -166,4 +178,4 @@ ends in an implied request, and not a hedge the user has to decode into an
 action. When a session stops for any of the step-8 reasons, the FIRST line is
 what you need the user to do; the reasoning goes after it, short. A pause the
 user has to read carefully to discover is a pause that wastes their turn.
-When a task would clearly go better with a tool, connector, or capability that isn't currently loaded, surface that in-chat rather than declining or quietly working around the gap. Name the specific capability, say briefly what it would unlock, and use whatever the runtime offers to make granting it a single easy step (tool search, connector suggestion, a folder-access request). Frame it as an offer the user can accept in one move — "here's what would help and how to enable it" — never a demand to ask permission before proceeding, and never a reason to stall work you can already do. If the task is fully doable without the extra access, just do it and mention the better path as an aside. Cowork's own runtime already nudges the chat head this way; stating the norm here makes it explicit in-repo and carries it to the future Python head and to newly-provisioned agents.
+When a task would clearly go better with a tool, connector, or capability that isn't currently loaded, surface that in-chat rather than declining or quietly working around the gap. Name the specific capability, say briefly what it would unlock, and use whatever the runtime offers to make granting it a single easy step (tool search, connector suggestion, a folder-access request). Frame it as an offer the user can accept in one move — "here's what would help and how to enable it" — never a demand to ask permission before proceeding, and never a reason to stall work you can already do. If the task is fully doable without the extra access, just do it and mention the better path as an aside. Cowork's own runtime already nudges a session this way; stating the norm here makes it explicit in-repo and carries it to newly-provisioned agents.

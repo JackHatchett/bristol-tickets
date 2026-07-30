@@ -18,7 +18,7 @@ Hub/index notes (any file starting with '_', e.g. _recipe_box.md) are skipped â€
 they are not recipes and must never be renamed or given recipe frontmatter.
 
 Run from terminal:
-    python3 agent_system/src/tools/document_tools/normalize_recipes.py
+    python3 src/tools/document_tools/normalize_recipes.py
 
 Safety: dry-run by default. Pass --write to commit changes.
 """

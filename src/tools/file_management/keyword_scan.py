@@ -5,8 +5,37 @@ import csv
 import json
 from pathlib import Path
 
-RUNTIME_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_DIR = RUNTIME_ROOT.parent / "config"
+
+
+def _instance_dir() -> Path:
+    """The single data/<instance>/ folder. The instance name is the user's, so
+    it is discovered rather than named here."""
+    data_root = _project_root() / "data"
+    candidates = sorted(p for p in data_root.glob("*") if p.is_dir())
+    if not candidates:
+        raise SystemExit(
+            f"no instance folder under {data_root} — run create_roadmap.py first"
+        )
+    return candidates[0]
+
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
+PROJECT_ROOT = _project_root()
+RUNTIME_ROOT = PROJECT_ROOT / "src"
+CONFIG_DIR = PROJECT_ROOT / "config"
 
 INDEX_PATH = CONFIG_DIR / "config.local.json"
 
@@ -17,8 +46,8 @@ INDEX = json.loads(INDEX_PATH.read_text())
 # keyword-scan tuning is a sub-key of the single config file.
 CONFIG = INDEX.get("keyword_scan", {})
 
-SCAN_ROOT = Path(INDEX["agent_system_runtime"]["root"])
-OUTPUT_DIR = Path(INDEX["agent_system_data"]["folders"]["keyword_scan_results"])
+SCAN_ROOT = RUNTIME_ROOT
+OUTPUT_DIR = _instance_dir() / "system" / "logs" / "keyword_scan_results"
 
 KEYWORDS = CONFIG.get("keywords", [])
 EXCLUDE_SUFFIXES = CONFIG.get("exclude_suffixes", [])

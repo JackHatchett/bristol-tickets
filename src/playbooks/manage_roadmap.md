@@ -98,7 +98,7 @@ Acceptance Criteria:
 
 Add a numbered line per acceptance criterion. A worked one, from the loading
 protocol: "Given the active agent is chief_of_staff and Cowork is loading
-agent_system, when Cowork loads roadmap.db, then it treats its next priorities
+Bristol Tickets, when a session loads roadmap.db, then it treats its next priorities
 as its own active-board tasks (stage='active') in precedence order."
 
 **Fix Description format:**
