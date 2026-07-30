@@ -1,9 +1,9 @@
 """app.py — launch the Bristol GUI.
 
-DB path resolution (highest to lowest priority):
-  1. TICKETS_DB env var — explicit full path to the .db file (for testing/overrides).
-  2. Dynamic relative discovery — steps up to the project root and searches /data 
-     for the instance tickets.db without hardcoding user identifiers.
+The DB path follows the canonical resolution order documented in
+``src/tools/config_tools/instance_pointer.py``: TICKETS_DB env var, then the
+per-machine instance pointer, then the legacy ``tickets_db.local`` file, then
+relative discovery from the source tree.
 
 This tool is mechanism-only: it launches the PySide6 GUI for a tickets DB.
 It contains no agent-specific logic, no personal paths, and no complex provisioning.
@@ -12,6 +12,9 @@ It contains no agent-specific logic, no personal paths, and no complex provision
 import os
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import instance  # noqa: E402  (bristol-local; see module docstring)
 
 
 
@@ -30,15 +33,11 @@ def _project_root() -> Path:
 
 
 def _resolve_db_path() -> Path:
-    """Resolve the tickets DB path dynamically.
+    """Resolve the tickets DB path.
 
-    Priority order (highest first). The `.local` file is what makes a relocated
-    py2app bundle work: relative discovery (step 3) only succeeds when app.py is
-    still sitting above the repo's data/ folder, which is NOT the case inside a
-    built .app. So the bundle is told the absolute path via a git-ignored
-    `tickets_db.local` file that is bundled at build time — keeping the personal
-    path out of version control while still letting the double-clickable app
-    find the database.
+    Order per ``config_tools/instance_pointer.py``. Steps 2 and 3 exist because
+    step 4 only succeeds while app.py still sits above the repo's data/ folder,
+    which is not the case inside a built .app.
     """
 
     # 1. Explicit DB path via TICKETS_DB env var (testing/overrides).
@@ -46,24 +45,34 @@ def _resolve_db_path() -> Path:
     if env_db:
         return Path(os.path.expanduser(env_db))
 
-    # 2. A git-ignored one-line file next to app.py holding an absolute path.
-    #    Create it once (see BUILD_APP.md) before building the .app.
+    # 2. The per-machine instance pointer.
+    data_root = instance.get_path("data_root")
+    slug = instance.read().get("instance_slug")
+    if data_root and slug:
+        candidate = data_root / slug / "tickets" / "tickets.db"
+        if candidate.exists():
+            return candidate
+    if data_root:
+        matches = sorted(data_root.glob("*/tickets/tickets.db"))
+        if matches:
+            return matches[0]
+
+    # 3. Legacy: a git-ignored one-line file next to app.py holding an
+    #    absolute path, bundled into older .app builds.
     local_pointer = Path(__file__).resolve().parent / "tickets_db.local"
     if local_pointer.exists():
         text = local_pointer.read_text().strip()
         if text:
             return Path(os.path.expanduser(text))
 
-    # 3. Relative discovery — works when run in-place from the repo.
+    # 4. Relative discovery — works when run in-place from the repo.
     data_dir = _project_root() / "data"
-
-    # Search for the tickets.db dynamically to avoid hardcoding an instance slug
     if data_dir.exists():
-        matches = list(data_dir.glob("*/tickets/tickets.db"))
+        matches = sorted(data_dir.glob("*/tickets/tickets.db"))
         if matches:
             return matches[0]
 
-    # 4. Fallback for fresh provisioning if the db does not exist yet.
+    # Nothing resolved: name where a fresh instance would go.
     user_slug = os.environ.get("AGENT_INSTANCE_SLUG", "default_user")
     return data_dir / user_slug / "tickets" / "tickets.db"
 

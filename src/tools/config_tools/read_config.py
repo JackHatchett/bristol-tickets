@@ -41,6 +41,9 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import instance_pointer  # noqa: E402  (runs as a script as well as a module)
+
 
 def _project_root() -> Path:
     """The project root: the nearest ancestor holding src/app.md.
@@ -63,12 +66,16 @@ _MISSING = object()
 def _config_path() -> Path:
     """Locate config/config.local.json.
 
-    Honours the CONFIG_LOCAL_JSON env override; otherwise finds the project
-    root by marker and looks in config/.
+    Canonical resolution order (see instance_pointer.py): the
+    CONFIG_LOCAL_JSON env override, then the per-machine instance pointer,
+    then the project root found by marker.
     """
     override = os.environ.get(_ENV_OVERRIDE)
     if override:
         return Path(os.path.expanduser(override))
+    pointed = instance_pointer.get_path("config_path")
+    if pointed and pointed.exists():
+        return pointed
     return _project_root() / "config" / "config.local.json"
 
 

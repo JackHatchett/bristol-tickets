@@ -1,20 +1,17 @@
 """paths.py — resolve the notebook folder the reports are written into.
 
 This is the one place in the reports package that is allowed to know about
-out-of-repo locations, and it never hardcodes one. Resolution order mirrors the
-pattern app.py already uses for the database, for the same reason: Bristol may
-be running in-place from the repo, or as a relocated .app that cannot see the
-repo at all.
+out-of-repo locations, and it never hardcodes one. It follows the canonical
+resolution order documented in ``src/tools/config_tools/instance_pointer.py``:
 
-    1. BRISTOL_REPORTS_DIR env var           — explicit override, testing
-    2. bristol/bristol_reports.local         — one line, absolute path.
-                                               Git-ignored; bundled into the
-                                               .app at build time so the
-                                               relocated app still knows where
-                                               the notebook is.
-    3. config/config.local.json              — markdown_notebook.reports_dir,
-                                               the real source of truth when
-                                               running from the repo.
+    1. BRISTOL_REPORTS_DIR env var    — explicit override, testing.
+    2. The per-machine instance pointer, whose ``config_path`` names the
+       config file even when Bristol is running as a relocated .app that
+       cannot see the repo.
+    3. bristol/bristol_reports.local  — legacy one-line absolute path,
+                                        bundled into older .app builds.
+    4. config/config.local.json found by walking up the source tree —
+       ``markdown_notebook.reports_dir``.
 
 Returns None when nothing resolves, which the caller treats as "skip the
 report" rather than an error — a missing notebook must never cost the user
@@ -27,7 +24,11 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import instance  # noqa: E402  (bristol-local; see module docstring)
 
 
 def _project_root() -> Path:
@@ -65,18 +66,14 @@ def _from_local_pointer() -> Path | None:
     return Path(os.path.expanduser(text)) if text else None
 
 
-def _from_config() -> Path | None:
-    """Read markdown_notebook.reports_dir from the git-ignored config.
+def _reports_dir_in(config_path: Path | None) -> Path | None:
+    """Read markdown_notebook.reports_dir from one config file.
 
-    Walks up from this file to the repo root rather than assuming a working
-    directory. Any failure — no repo, no config, no key — returns None; this
-    resolver is one of three and must not raise for the others to be tried.
+    Any failure — no file, no key, bad JSON — returns None; this resolver is
+    one of several and must not raise for the others to be tried.
     """
-    root = _project_root()
-    config_path = Path(
-        os.environ.get("CONFIG_LOCAL_JSON")
-        or (root / "config" / "config.local.json")
-    ).expanduser()
+    if config_path is None:
+        return None
     if not config_path.exists():
         return None
     try:
@@ -90,6 +87,23 @@ def _from_config() -> Path | None:
     return Path(os.path.expanduser(data)) if isinstance(data, str) and data else None
 
 
+def _from_pointer() -> Path | None:
+    """The config file named by the per-machine instance pointer."""
+    return _reports_dir_in(instance.get_path("config_path"))
+
+
+def _from_tree() -> Path | None:
+    """The config file found by walking up from this file to the repo root."""
+    override = os.environ.get("CONFIG_LOCAL_JSON")
+    if override:
+        return _reports_dir_in(Path(override).expanduser())
+    try:
+        root = _project_root()
+    except SystemExit:
+        return None
+    return _reports_dir_in(root / "config" / "config.local.json")
+
+
 def resolve_reports_dir(explicit: str | os.PathLike | None = None) -> Path | None:
     """The folder reports are written to, or None if it cannot be determined.
 
@@ -100,7 +114,7 @@ def resolve_reports_dir(explicit: str | os.PathLike | None = None) -> Path | Non
     """
     candidate = (
         Path(os.path.expanduser(str(explicit))) if explicit
-        else _from_env() or _from_local_pointer() or _from_config()
+        else _from_env() or _from_pointer() or _from_local_pointer() or _from_tree()
     )
     if candidate is None:
         return None

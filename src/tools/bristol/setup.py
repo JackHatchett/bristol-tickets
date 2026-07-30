@@ -5,10 +5,11 @@ Usage (see BUILD_APP.md for the full walkthrough):
     pip install py2app PySide6
     python3 setup.py py2app          # → dist/Bristol.app
 
-This file is GitHub-safe: it hardcodes no personal path. The built app locates
-the database via `tickets_db.local` (git-ignored) or the TICKETS_DB env var —
-see app.py `_resolve_db_path`. Put an `icon.icns` next to this file to give the
-app a custom icon (optional; the OPTIONS block picks it up only if present).
+This file is GitHub-safe: it hardcodes no personal path, and it bundles none.
+The built app locates the database through the per-machine instance pointer —
+see `src/tools/config_tools/instance_pointer.py` for the resolution order. Put
+an `icon.icns` next to this file to give the app a custom icon (optional; the
+OPTIONS block picks it up only if present).
 """
 
 from pathlib import Path
@@ -20,13 +21,9 @@ HERE = Path(__file__).resolve().parent
 APP = ["app.py"]
 
 # Files copied into the bundle's Resources. schema.sql must ship so a fresh DB
-# can be provisioned; tickets_db.local ships (if present) so the relocated app
-# can find the database, and bristol_reports.local likewise tells it where the
-# notebook is (the bundle cannot see the repo's config/). Added only if present.
-DATA_FILES = [
-    f for f in ("schema.sql", "tickets_db.local", "bristol_reports.local")
-    if (HERE / f).exists()
-]
+# can be provisioned. Nothing else: the relocated app finds the database and
+# the notebook through the instance pointer, which lives outside the bundle.
+DATA_FILES = [f for f in ("schema.sql",) if (HERE / f).exists()]
 
 OPTIONS = {
     "argv_emulation": False,
