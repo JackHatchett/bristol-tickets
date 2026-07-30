@@ -1,0 +1,197 @@
+{
+  "_notes": "Template for config/config.local.json — the single structured source of truth for one installation. Copy this file to config.local.json and replace every placeholder. config.local.json is git-ignored and never published; this example is tracked and holds no real paths. Query fields with src/tools/config_tools/read_config.py <dotted.key>. Blocks marked OPTIONAL in their own notes may be deleted outright; the tools that read them fall back or exit with a clear message.",
+
+  "active_agent": "chief_of_staff",
+
+  "drives": {
+    "_notes": "OPTIONAL. Named roots outside the project. Only drives.external1.path is read by code (the photo tools); the rest are reference entries for agents. Delete any you do not have.",
+    "local_home": {
+      "path": "/path/to/your/home",
+      "tags": ["local", "home"],
+      "notes": "Local home directory."
+    },
+    "external1": {
+      "path": "/path/to/external/drive",
+      "tags": ["external", "backup"],
+      "notes": "External volume. Read by src/tools/file_management/{dedupe,rename}_photos.py; those tools exit with a clear message when this entry is absent."
+    }
+  },
+
+  "markdown_notebook": {
+    "notes": "OPTIONAL. A Markdown notebook (e.g. an Obsidian vault) outside the repo. Agents read and write here per their charters. reports_dir is read by Bristol's report writer, which falls back to an env var, a local pointer file, then nothing.",
+    "notes_dir": "/path/to/notebook",
+    "courses_dir": "/path/to/notebook/courses",
+    "recipes_dir": "/path/to/notebook/recipes",
+    "agent_output_dir": "/path/to/notebook/agent_output",
+    "reports_dir": "/path/to/notebook/bristol_reports"
+  },
+
+  "important_paths": {
+    "_notes": "Repo-relative paths to the databases. tickets_db is required — every agent session reads it. Create it with src/tools/ticket_tools/create_tickets.py --instance <your-instance>.",
+    "tickets_db": "data/<your-instance>/tickets/tickets.db",
+    "personal_db": "data/<your-instance>/personal/db/personal.db"
+  },
+
+  "personal_db": {
+    "notes": "OPTIONAL. Unified personal-tracking SQLite DB with one table per domain, rendering xlsx snapshots as a mistake-finding aid. See src/tools/personal_db/DESIGN.md. Absent env falls back to discovery of data/*/personal/.",
+    "env": {
+      "PERSONAL_DB_DIR": "/path/to/project/data/<your-instance>/personal",
+      "PERSONAL_DB_FILENAME": "personal.db",
+      "PERSONAL_SNAPSHOT_BASE": "/path/to/project/data/<your-instance>/system/logs"
+    }
+  },
+
+  "zotero": {
+    "notes": "OPTIONAL. Zotero is the source of truth for book data when the librarian agent is in use. Absent, src/tools/zotero/ falls back to ~/Zotero.",
+    "env": {
+      "ZOTERO_DATA_DIR": "/path/to/Zotero"
+    }
+  },
+
+  "governance": {
+    "real_world_roles": "Who holds the pen. State plainly which AI is the architect/developer of this system and which are consultants whose output is advice, not instruction.",
+    "virtual_agent_roles": "Which agent may edit the system's own runtime documents. By default chief_of_staff owns behavior for the whole fleet; every other agent adds content only.",
+    "code_projects_layer": "Who stewards data/*/code_projects/ and on what terms.",
+    "project_local_nicknames_caveat": "Note here any word a project's own historical files use in a different sense than this config does."
+  },
+
+  "agents": {
+    "_notes": "One entry per agent. identity is required and repo-relative — app.md reads agents.<active_agent>.identity at session start. key_context_files and key_data_paths are declarative (what this agent reads and owns); env holds the variables its tools expect; notebook_access states whether it may read and write the Markdown notebook.",
+    "chief_of_staff": {
+      "identity": "src/agent_identities/chief_of_staff.md",
+      "key_context_files": ["src/app.md"],
+      "key_data_paths": ["data/<your-instance>/system"],
+      "notebook_access": { "read": true, "write": false },
+      "notes": "Lead developer, architect and operator. The only agent that edits the system's own charters, playbooks, protocols and tools."
+    },
+    "librarian": {
+      "identity": "src/agent_identities/librarian.md",
+      "key_context_files": [],
+      "key_data_paths": ["data/<your-instance>/personal"],
+      "env": {
+        "ZOTERO_DATA_DIR": "/path/to/Zotero"
+      },
+      "notebook_access": { "read": true, "write": true },
+      "notes": "Reference and collection agent. Book data lives in Zotero; reading-list notes are written into the notebook."
+    },
+    "career_coach": {
+      "identity": "src/agent_identities/career_coach.md",
+      "key_context_files": ["data/<your-instance>/career/foundation/context/00_INDEX.md"],
+      "key_data_paths": ["data/<your-instance>/career"],
+      "env": {
+        "CAREER_COACH_DIR": "/path/to/project/data/<your-instance>/career",
+        "PERSONAL_DB_DIR": "/path/to/project/data/<your-instance>/personal",
+        "PERSONAL_DB_FILENAME": "personal.db",
+        "PERSONAL_SNAPSHOT_BASE": "/path/to/project/data/<your-instance>/system/logs",
+        "CAREER_SNAPSHOT_DIR": "/path/to/project/data/<your-instance>/system/logs/applications_snapshots"
+      },
+      "notebook_access": { "read": true, "write": false },
+      "notes": "Job-search agent. Owns the applications domain of the personal DB and the career context files."
+    },
+    "client_services": {
+      "identity": "src/agent_identities/client_services.md",
+      "key_context_files": [],
+      "key_data_paths": ["data/<your-instance>/clients"],
+      "notebook_access": { "read": true, "write": false },
+      "notes": "Client and project intake agent."
+    },
+    "game_designer": {
+      "identity": "src/agent_identities/game_designer.md",
+      "key_context_files": [],
+      "key_data_paths": ["data/<your-instance>/code_projects"],
+      "notebook_access": { "read": true, "write": false },
+      "notes": "Game-development coaching agent and steward of data/*/code_projects/."
+    },
+    "teaching_assistant": {
+      "identity": "src/agent_identities/teaching_assistant.md",
+      "key_context_files": [],
+      "key_data_paths": ["data/<your-instance>/teaching"],
+      "env": {
+        "TEACHING_ASSISTANT_DIR": "/path/to/project/data/<your-instance>/teaching",
+        "TEACHING_ASSISTANT_COURSES_DIR": "/path/to/notebook/courses"
+      },
+      "lesson_pipeline": {
+        "stages": {
+          "plan": "teaching_assistant",
+          "materials": "teaching_assistant",
+          "lint": "teaching_assistant"
+        },
+        "_notes": "Per-stage engine routing. plan is pinned to teaching_assistant. materials and lint are either 'teaching_assistant' (self) or a role key from stack.external_agent_roles."
+      },
+      "notebook_access": { "read": true, "write": true },
+      "notes": "Sole author of coursework. Courses live in the notebook under courses_dir."
+    },
+    "writers_room": {
+      "identity": "src/agent_identities/writers_room.md",
+      "key_context_files": [],
+      "key_data_paths": ["data/<your-instance>/writing"],
+      "notebook_access": { "read": true, "write": false },
+      "notes": "Fiction-writing agent. Story wiki lives in the notebook; author-voice material lives in data/*/writing/."
+    }
+  },
+
+  "tools": {
+    "root": "/path/to/project/src/tools",
+    "files": []
+  },
+
+  "playbooks": {
+    "root": "/path/to/project/src/playbooks",
+    "files": []
+  },
+
+  "protocols": {
+    "root": "/path/to/project/src/protocols",
+    "files": []
+  },
+
+  "code_projects": {
+    "notes": "OPTIONAL. Application code held as instance data, distinct from the notebook and from src/. Blockers and history live on the board, never in a project-local state file.",
+    "root": "/path/to/project/data/<your-instance>/code_projects",
+    "projects": {
+      "example_project": {
+        "path": "data/<your-instance>/code_projects/example_project",
+        "status": "active",
+        "owner": "game_designer",
+        "notes": "One entry per project. Replace or delete."
+      }
+    }
+  },
+
+  "projects": {
+    "notes": "OPTIONAL. local_projects = repo-resident project folders. notebook_projects = notebook-resident projects an agent treats as a project rather than as loose notes.",
+    "local_projects": [],
+    "notebook_projects": []
+  },
+
+  "keyword_scan": {
+    "_notes": "Read by src/tools/file_management/keyword_scan.py, which sweeps the tree for personal data before anything is published. Put your own name and usernames in keywords.",
+    "keywords": ["yourname", "YourName", "your-username"],
+    "exclude_suffixes": [".DS_Store", ".pyc", ".pyo", ".swp", ".swo", ".log", ".err"],
+    "exclude_prefixes": ["__pycache__", "logs"]
+  },
+
+  "stack": {
+    "_notes": "OPTIONAL. Reference block. Stable ROLE -> current-tool bindings, so a charter names a role and this file names the tool. Change the tool here, not in seven charters.",
+    "external_agent_roles": {
+      "_doc": "Each key is a role an agent may route work to. collaborator names the current tool; owner names the agent that owns the routing decision.",
+      "inline_coding": {
+        "collaborator": "your_coding_assistant",
+        "surface": "your_editor",
+        "owner": "game_designer",
+        "trigger": "next action is hand-writing or editing project code",
+        "notes": "Replace or delete."
+      }
+    },
+    "ai_collaborators": {
+      "primary": {
+        "tier": "your plan",
+        "used_for": "Primary AI across the system.",
+        "notes": "Replace or delete."
+      }
+    },
+    "creative_art_production": {},
+    "development": {},
+    "notes_knowledge_storage": {}
+  }
+}
