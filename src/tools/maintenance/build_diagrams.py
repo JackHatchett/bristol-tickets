@@ -1,0 +1,191 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Load config.local.json. Default: resolved relative to this script's own
+# location (RUNTIME_ROOT.parent / "config" / "config.local.json") — no
+# hardcoded user path. An explicit path may still be passed as argv[1] to
+# override (e.g. for a non-standard checkout).
+# ---------------------------------------------------------------------------
+
+RUNTIME_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_INDEX_PATH = RUNTIME_ROOT.parent / "config" / "config.local.json"
+
+explicit_arg = next((a for a in sys.argv[1:] if not a.startswith("--")), None)
+INDEX_PATH = Path(explicit_arg) if explicit_arg else DEFAULT_INDEX_PATH
+
+if not INDEX_PATH.exists():
+    sys.stderr.write("ERROR: config.local.json not found at: " + str(INDEX_PATH) + "\n")
+    sys.stderr.write("Usage: build_diagrams.py [/path/to/config.local.json] [--check]\n")
+    sys.exit(1)
+
+with open(INDEX_PATH) as f:
+    INDEX = json.load(f)
+
+# ---------------------------------------------------------------------------
+# Resolve diagrams directory (config-only; no personal data in runtime)
+# ---------------------------------------------------------------------------
+
+DIAGRAMS_DIR = INDEX["agent_system_data"]["diagram_output"]
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+HEADER = (
+    "%% GENERATED — DO NOT EDIT.\n"
+    "%% Source: config.local.json\n"
+)
+
+def safe_id(name):
+    return "".join(ch for ch in name if ch.isalnum())
+
+def ensure_dir(path):
+    os.makedirs(path, exist_ok=True)
+
+# ---------------------------------------------------------------------------
+# Agents & Knowledge System Diagram
+# ---------------------------------------------------------------------------
+
+def build_agents_diagram(index):
+    agents = index.get("agents", {})
+    tools = index.get("tools", {})
+    playbooks = index.get("playbooks", {})
+    protocols = index.get("protocols", {})
+    projects = index.get("projects", {})
+
+    lines = [HEADER, "flowchart LR", ""]
+
+    lines.append("subgraph Agents")
+    for agent_name in agents.keys():
+        aid = safe_id(agent_name)
+        lines.append(f'    {aid}(["{agent_name}"])')
+    lines.append("end\n")
+
+    lines.append("subgraph Tools")
+    for tool_path in tools.get("files", []):
+        tid = safe_id(tool_path)
+        lines.append(f'    {tid}(["{tool_path}"])')
+    lines.append("end\n")
+
+    lines.append("subgraph Playbooks")
+    for pb_path in playbooks.get("files", []):
+        pid = safe_id(pb_path)
+        lines.append(f'    {pid}(["{pb_path}"])')
+    lines.append("end\n")
+
+    lines.append("subgraph Protocols")
+    for pr_path in protocols.get("files", []):
+        prid = safe_id(pr_path)
+        lines.append(f'    {prid}(["{pr_path}"])')
+    lines.append("end\n")
+
+    lines.append("subgraph Projects")
+    for p in projects.get("notebook_projects", []):
+        pid = safe_id(p)
+        lines.append(f'    {pid}(["{p}"])')
+    lines.append("end\n")
+
+    for agent_name, agent_info in agents.items():
+        identity = agent_info.get("identity")
+        if identity:
+            aid = safe_id(agent_name)
+            iid = safe_id(identity)
+            lines.append(f'{aid} -->|"identity"| {iid}')
+
+    return "\n".join(lines) + "\n"
+
+# ---------------------------------------------------------------------------
+# Infrastructure Diagram
+# ---------------------------------------------------------------------------
+
+def _stack_item_names(items):
+    """Yield display names from a stack category, tolerant of schema shape.
+
+    Current schema: a category maps to {item_name: {details...}} (dict).
+    Back-compat: a list of {"name": ...} dicts, or a list of bare strings.
+    """
+    if isinstance(items, dict):
+        return list(items.keys())
+    if isinstance(items, list):
+        return [i.get("name") if isinstance(i, dict) else i for i in items]
+    return [str(items)]
+
+
+def build_infrastructure_diagram(index):
+    drives = index.get("drives", {})
+    stack = index.get("stack", {})
+
+    lines = [HEADER, "flowchart LR", ""]
+
+    lines.append("subgraph Drives")
+    for drive_name in drives.keys():
+        did = safe_id(drive_name)
+        lines.append(f'    {did}(["{drive_name}"])')
+    lines.append("end\n")
+
+    lines.append("subgraph Stack")
+    if isinstance(stack, dict):
+        # Nested: one sub-group per category, item nodes inside.
+        for category, items in stack.items():
+            cid = safe_id(category)
+            lines.append(f'    subgraph {cid}["{category}"]')
+            for name in _stack_item_names(items):
+                nid = safe_id(f"{category}_{name}")
+                lines.append(f'        {nid}(["{name}"])')
+            lines.append("    end")
+    else:
+        # Flat back-compat shape: a list of items directly under Stack.
+        for name in _stack_item_names(stack):
+            sid = safe_id(name)
+            lines.append(f'    {sid}(["{name}"])')
+    lines.append("end\n")
+
+    return "\n".join(lines) + "\n"
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main():
+    check = "--check" in sys.argv
+
+    ensure_dir(DIAGRAMS_DIR)
+
+    outputs = {
+        "agents.mmd": build_agents_diagram(INDEX),
+        "infrastructure.mmd": build_infrastructure_diagram(INDEX),
+    }
+
+    stale = []
+
+    for filename, content in outputs.items():
+        path = os.path.join(DIAGRAMS_DIR, filename)
+        existing = None
+
+        if os.path.exists(path):
+            with open(path) as f:
+                existing = f.read()
+
+        if check:
+            if existing != content:
+                stale.append(filename)
+        else:
+            with open(path, "w") as f:
+                f.write(content)
+            print("wrote " + path)
+
+    if check:
+        if stale:
+            sys.stderr.write("DIAGRAM DRIFT: " + ", ".join(stale) + "\n")
+            sys.exit(1)
+        print("diagrams up to date.")
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

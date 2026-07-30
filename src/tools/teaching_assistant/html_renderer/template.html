@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{COURSE_DISPLAY_NAME}} — Lesson {{LESSON_NUMBER}}: {{LESSON_TITLE}}</title>
+<style>
+  :root{
+    --bg:#fbfaf7; --fg:#1f1c18; --muted:#6b6359; --rule:#e4ddd2;
+    --link:#7a4b2b; --code-bg:#f1ece3; --code-fg:#3a342c;
+    --checkpoint:#b8860b; --checkpoint-bg:#fbf4df;
+    --note:#3a6ea5; --note-bg:#eef4fb;
+    --drill:#2e7d57; --drill-bg:#eaf5ef;
+    --answer-bg:#f4f1ea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1c1a17; --fg:#e9e3d8; --muted:#a59a89; --rule:#3a352d;
+      --link:#d6a373; --code-bg:#272320; --code-fg:#e3d9c8;
+      --checkpoint:#d6a93a; --checkpoint-bg:#2a2415;
+      --note:#7aa8d6; --note-bg:#161e27;
+      --drill:#6cc097; --drill-bg:#15241c;
+      --answer-bg:#242019;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--bg); color:var(--fg);
+    font-family:Georgia,'Times New Roman',serif;
+    font-size:18px; line-height:1.65;
+    margin:0; padding:0;
+  }
+  .wrap{max-width:740px; margin:0 auto; padding:48px 24px 96px}
+  header.lesson{border-bottom:2px solid var(--rule); padding-bottom:18px; margin-bottom:32px}
+  .eyebrow{font-size:13px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); font-family:-apple-system,Segoe UI,Roboto,sans-serif; margin:0 0 6px}
+  h1{font-size:30px; line-height:1.25; margin:0 0 4px}
+  h2{font-size:23px; margin:38px 0 12px; padding-top:6px}
+  h3{font-size:19px; margin:28px 0 10px}
+  h4{font-size:17px; margin:22px 0 8px}
+  p{margin:0 0 16px}
+  a{color:var(--link)}
+  hr{border:none; border-top:1px solid var(--rule); margin:32px 0}
+  code{font-family:'SF Mono',Menlo,Consolas,monospace; font-size:.85em;
+    background:var(--code-bg); color:var(--code-fg); padding:.12em .4em; border-radius:4px}
+  pre{background:var(--code-bg); color:var(--code-fg); padding:16px 18px;
+    border-radius:8px; overflow-x:auto; line-height:1.45; font-size:14px;
+    font-family:'SF Mono',Menlo,Consolas,monospace}
+  pre code{background:none; padding:0; font-size:inherit}
+  blockquote{margin:0 0 16px; padding:2px 18px; border-left:3px solid var(--rule); color:var(--muted)}
+  ul,ol{margin:0 0 16px; padding-left:26px}
+  li{margin:4px 0}
+  table{border-collapse:collapse; width:100%; margin:0 0 20px; font-size:16px}
+  th,td{border:1px solid var(--rule); padding:8px 12px; text-align:left}
+  th{background:var(--code-bg)}
+
+  .checkpoint{background:var(--checkpoint-bg); border-left:4px solid var(--checkpoint);
+    border-radius:6px; padding:16px 18px; margin:24px 0}
+  .checkpoint-label{font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:13px; font-weight:700; letter-spacing:.04em; color:var(--checkpoint); margin-bottom:6px}
+  .checkpoint-prompt{margin:0}
+  details{margin:10px 0}
+  details summary{cursor:pointer; font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:15px; font-weight:600; color:var(--link); padding:4px 0}
+  details[open] summary{margin-bottom:8px}
+  .checkpoint details summary{color:var(--checkpoint)}
+
+  .drill{background:var(--drill-bg); border-left:4px solid var(--drill);
+    border-radius:6px; padding:16px 18px; margin:24px 0}
+  .drill-label{font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:13px; font-weight:700; letter-spacing:.04em; color:var(--drill); margin-bottom:8px}
+  .drill pre{background:rgba(0,0,0,.06)}
+  .drill .verify{font-size:15px; color:var(--muted); margin-top:8px}
+
+  .answer{background:var(--answer-bg); border-radius:6px; padding:2px 16px; margin:8px 0 18px}
+  .answer .answer-content{padding-bottom:6px}
+
+  .section-divider{font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+    border-top:2px solid var(--rule); padding-top:24px; margin-top:48px}
+
+  .studied{font-family:-apple-system,Segoe UI,Roboto,sans-serif; font-size:15px;
+    color:var(--muted); margin-top:48px; padding-top:20px; border-top:1px solid var(--rule)}
+  .studied input{transform:scale(1.2); margin-right:8px; vertical-align:middle}
+  footer.lesson{margin-top:40px; padding-top:18px; border-top:1px solid var(--rule);
+    font-family:-apple-system,Segoe UI,Roboto,sans-serif; font-size:13px; color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="lesson">
+  <p class="eyebrow">{{COURSE_DISPLAY_NAME}} · Lesson {{LESSON_NUMBER}}</p>
+  <h1>{{LESSON_TITLE}}</h1>
+</header>
+
+<main>
+{{CONTENT_WITH_CHECKPOINTS}}
+
+<div class="section-divider">Exercises</div>
+{{EXERCISES}}
+
+<div class="section-divider">Quiz</div>
+{{QUIZ}}
+</main>
+
+<label class="studied"><input type="checkbox" id="studied-box"> Mark this lesson as studied</label>
+
+<footer class="lesson">Rendered {{RENDER_DATE}} · {{COURSE_NAME}} lesson {{LESSON_NUMBER}} · self-contained, no external dependencies</footer>
+</div>
+<script>
+  // Progress flag persists locally when opened from disk; degrades silently if blocked.
+  (function(){
+    var key="studied:{{COURSE_NAME}}:{{LESSON_NUMBER}}";
+    var box=document.getElementById("studied-box");
+    try{ if(localStorage.getItem(key)==="1") box.checked=true; }catch(e){}
+    box.addEventListener("change",function(){
+      try{ localStorage.setItem(key, box.checked?"1":"0"); }catch(e){}
+    });
+  })();
+</script>
+</body>
+</html>

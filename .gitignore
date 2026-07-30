@@ -1,0 +1,46 @@
+# ==========================================
+# Local Environment & State Exclusions
+# ==========================================
+
+# Obsidian local vault state and plugins
+.obsidian/
+
+# The private local configuration directory. Its contents are ignored, but the
+# shipped template is not. A blanket `config/` rule excludes the directory
+# itself, and git does not descend into an excluded directory, so no later
+# `!config/...` negation can reach a file inside it. Excluding the contents
+# instead is what makes the negation work.
+config/*
+!config/config.example.json
+
+# The live data state layer (SQLite, logs, per-instance folders). Same
+# contents-then-negation shape, so the empty directory survives a clone.
+data/*
+!data/.gitkeep
+
+# Backup and local runtime overrides
+.env
+.env.local
+*.local.json
+
+# One-line absolute-path pointer files (roadmap_db.local,
+# bristol_reports.local). They exist so a relocated .app bundle — which cannot
+# see config/ — still finds the database and the notebook, which means they
+# hold real user paths and must never be committed.
+*.local
+
+# ==========================================
+# Standard Python & OS Junk Exclusions
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv
+venv/
+ENV/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride

@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""read_config.py — the one place anything reads config.local.json.
+
+`config.local.json` is the single structured source of truth for this system's
+routing (drives, runtime/data folders, the agent registry, important paths,
+governance). This helper lets every "head" of the application read *exactly the
+field it needs* without loading the whole document — which is the entire reason
+the config lives in JSON rather than being mirrored into Markdown prose.
+
+GitHub-safe: contains no personal data or absolute user paths. It resolves the
+git-ignored config file at runtime.
+
+CLI
+---
+    python3 read_config.py drives.external1.path
+        -> /Volumes/<ExternalDrive>
+    python3 read_config.py important_paths.roadmap_db
+        -> data/<instance>/roadmap/roadmap.db
+    python3 read_config.py agents.career_coach.notebook_access.write
+        -> false
+    python3 read_config.py agents.teaching_assistant.key_data_paths.0
+        -> data/<instance>/teaching
+    python3 read_config.py agents                 # whole subtree, pretty JSON
+    python3 read_config.py --keys agents          # list child keys of a subtree
+    python3 read_config.py --expanduser drives.icloud.path   # ~ expanded
+
+Exit status is non-zero if the key path is missing, so it composes in shells:
+    DB=$(python3 read_config.py important_paths.roadmap_db) || exit 1
+
+Import
+------
+    from read_config import get, load
+    db = get("important_paths.roadmap_db")
+    everything = load()
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+_ENV_OVERRIDE = "CONFIG_LOCAL_JSON"
+_MISSING = object()
+
+
+def _config_path() -> Path:
+    """Locate config/config.local.json.
+
+    Honours the CONFIG_LOCAL_JSON env override; otherwise walks up from this
+    file to the repo root (…/agent_system) and looks in config/.
+    """
+    override = os.environ.get(_ENV_OVERRIDE)
+    if override:
+        return Path(os.path.expanduser(override))
+    # this file: <root>/src/tools/config_tools/read_config.py  → parents[3] == <root>
+    root = Path(__file__).resolve().parents[3]
+    return root / "config" / "config.local.json"
+
+
+def load() -> dict:
+    """Return the entire parsed config as a dict."""
+    path = _config_path()
+    if not path.exists():
+        raise SystemExit(f"read_config: config not found at {path}")
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def get(dotted: str, default=_MISSING, *, data: dict | None = None):
+    """Return the value at a dotted key path, e.g. 'drives.external1.path'.
+
+    Integer segments index into lists (e.g. 'agents.x.key_data_paths.0').
+    Raises KeyError if the path is missing and no default is given.
+    """
+    node = load() if data is None else data
+    for seg in dotted.split("."):
+        if isinstance(node, list):
+            try:
+                node = node[int(seg)]
+            except (ValueError, IndexError):
+                if default is not _MISSING:
+                    return default
+                raise KeyError(dotted)
+        elif isinstance(node, dict) and seg in node:
+            node = node[seg]
+        else:
+            if default is not _MISSING:
+                return default
+            raise KeyError(dotted)
+    return node
+
+
+def _render(value, expanduser: bool) -> str:
+    if isinstance(value, str):
+        return os.path.expanduser(value) if expanduser else value
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "null"
+    if isinstance(value, (int, float)):
+        return str(value)
+    return json.dumps(value, indent=2, ensure_ascii=False)
+
+
+def main(argv: list[str]) -> int:
+    args = [a for a in argv if not a.startswith("-")]
+    expanduser = "--expanduser" in argv
+    keys_only = "--keys" in argv
+
+    if not args:
+        # No key → dump everything (or top-level keys with --keys).
+        data = load()
+        print("\n".join(data) if keys_only else json.dumps(data, indent=2, ensure_ascii=False))
+        return 0
+
+    dotted = args[0]
+    try:
+        value = get(dotted)
+    except KeyError:
+        sys.stderr.write(f"read_config: no such key path: {dotted}\n")
+        return 1
+
+    if keys_only:
+        if isinstance(value, dict):
+            print("\n".join(value.keys()))
+        elif isinstance(value, list):
+            print("\n".join(str(i) for i in range(len(value))))
+        else:
+            sys.stderr.write(f"read_config: --keys needs a dict/list, got {type(value).__name__}\n")
+            return 1
+        return 0
+
+    print(_render(value, expanduser))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

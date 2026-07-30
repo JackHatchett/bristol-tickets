@@ -1,0 +1,37 @@
+# agent_system — Python dependencies
+#
+# Third-party packages only; the standard library covers everything else
+# (sqlite3, argparse, pathlib, json, csv, hashlib, subprocess, etc. — see
+# src/tools/roadmap_tools/README.md 3a for why sqlite3 specifically is
+# always used as a library, never a CLI subprocess call).
+#
+# Install:
+#   pip install -r requirements.txt
+#   (macOS with a Homebrew-managed Python may need --break-system-packages)
+#
+# Some tools also need a non-pip, post-install step or a system package —
+# see docs/SETUP.md for the full walkthrough. Quick pointers:
+#   - playwright needs a one-time browser download: `playwright install chromium`
+#   - ocrmypdf needs Tesseract + Ghostscript installed via Homebrew
+#   - src/tools/document_tools/pdf_to_markdown.py also shells out to
+#     `pdftotext` (Homebrew package: poppler) — not a pip package at all
+
+# --- src/tools/bristol/, src/tools/test_control/ (PySide6 GUIs) ---
+PySide6
+
+# --- src/tools/file_management/ (photo dedupe/rename pipeline) ---
+Pillow
+pillow-heif
+reverse_geocoder
+
+# --- src/tools/jd_scraper/ (job-description acquisition pipeline) ---
+requests
+playwright
+keyring
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+
+# --- src/tools/document_tools/pdf_to_markdown.py (OCR step) ---
+ocrmypdf
