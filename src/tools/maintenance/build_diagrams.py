@@ -119,6 +119,8 @@ def build_agents_diagram(index):
     lines.append("end\n")
 
     for agent_name, agent_info in agents.items():
+        if agent_name.startswith("_") or not isinstance(agent_info, dict):
+            continue
         identity = agent_info.get("identity")
         if identity:
             aid = safe_id(agent_name)
@@ -138,7 +140,7 @@ def _stack_item_names(items):
     Back-compat: a list of {"name": ...} dicts, or a list of bare strings.
     """
     if isinstance(items, dict):
-        return list(items.keys())
+        return [k for k in items if not k.startswith("_")]
     if isinstance(items, list):
         return [i.get("name") if isinstance(i, dict) else i for i in items]
     return [str(items)]
@@ -151,7 +153,7 @@ def build_infrastructure_diagram(index):
     lines = [HEADER, "flowchart LR", ""]
 
     lines.append("subgraph Drives")
-    for drive_name in drives.keys():
+    for drive_name in (k for k in drives if not k.startswith("_")):
         did = safe_id(drive_name)
         lines.append(f'    {did}(["{drive_name}"])')
     lines.append("end\n")
@@ -160,6 +162,8 @@ def build_infrastructure_diagram(index):
     if isinstance(stack, dict):
         # Nested: one sub-group per category, item nodes inside.
         for category, items in stack.items():
+            if category.startswith("_"):
+                continue
             cid = safe_id(category)
             lines.append(f'    subgraph {cid}["{category}"]')
             for name in _stack_item_names(items):

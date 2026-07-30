@@ -50,17 +50,29 @@ whole app.
 
 ## 5. Configuration
 
-The entire `config/` folder is git-ignored (see `.gitignore`) — nothing
-under it ships in the public repo. It holds **one file**:
+The contents of `config/` are git-ignored (see `.gitignore`) except for the
+shipped template. Two files:
 
+- `config/config.example.json` — the tracked template. Every key the system
+  expects, filled with obvious placeholders (`/path/to/...`,
+  `<your-instance>`). Blocks a given install may not need — `drives`,
+  `markdown_notebook`, `personal_db`, `zotero`, `code_projects`, `projects`,
+  `stack` — say OPTIONAL in their notes and can be deleted; the tools that
+  read them fall back or exit with a clear message.
 - `config/config.local.json` — the single structured source of truth for the
-  whole system. It resolves the generic paths the tracked `src/` code uses
-  (e.g. `data/*/tickets/tickets.db`, "the active project") to your actual
-  drives, directories, and agent registry. It also carries `active_agent` (which agent is active on launch), a
+  whole system, and the file you actually run on. It resolves the generic
+  paths the tracked `src/` code uses (e.g. `data/*/tickets/tickets.db`, "the
+  active project") to your actual drives, directories, and agent registry. It
+  also carries `active_agent` (which agent is active on launch), a
   `keyword_scan` block (settings for
   `src/tools/file_management/keyword_scan.py`), and a `stack` block (your
-  personal software and tooling, which agents may need to recall). No template ships in the repo, so replicate the shape
-  from `src/app.md`'s Phase 1 or from an existing instance's file.
+  personal software and tooling, which agents may need to recall).
+
+Create it by copying the template and replacing every placeholder:
+
+```bash
+cp config/config.example.json config/config.local.json
+```
 
 Read individual fields without opening the whole file:
 
