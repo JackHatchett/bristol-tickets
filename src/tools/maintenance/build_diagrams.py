@@ -5,6 +5,34 @@ import sys
 import json
 from pathlib import Path
 
+
+
+def _instance_dir() -> Path:
+    """The single data/<instance>/ folder. The instance name is the user's, so
+    it is discovered rather than named here."""
+    data_root = _project_root() / "data"
+    candidates = sorted(p for p in data_root.glob("*") if p.is_dir())
+    if not candidates:
+        raise SystemExit(
+            f"no instance folder under {data_root} — run create_roadmap.py first"
+        )
+    return candidates[0]
+
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Load config.local.json. Default: resolved relative to this script's own
 # location (RUNTIME_ROOT.parent / "config" / "config.local.json") — no
@@ -12,8 +40,8 @@ from pathlib import Path
 # override (e.g. for a non-standard checkout).
 # ---------------------------------------------------------------------------
 
-RUNTIME_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_INDEX_PATH = RUNTIME_ROOT.parent / "config" / "config.local.json"
+RUNTIME_ROOT = _project_root() / "src"
+DEFAULT_INDEX_PATH = _project_root() / "config" / "config.local.json"
 
 explicit_arg = next((a for a in sys.argv[1:] if not a.startswith("--")), None)
 INDEX_PATH = Path(explicit_arg) if explicit_arg else DEFAULT_INDEX_PATH
@@ -27,10 +55,10 @@ with open(INDEX_PATH) as f:
     INDEX = json.load(f)
 
 # ---------------------------------------------------------------------------
-# Resolve diagrams directory (config-only; no personal data in runtime)
+# Resolve diagrams directory under the discovered instance folder.
 # ---------------------------------------------------------------------------
 
-DIAGRAMS_DIR = INDEX["agent_system_data"]["diagram_output"]
+DIAGRAMS_DIR = str(_instance_dir() / "system" / "diagrams")
 
 # ---------------------------------------------------------------------------
 # Helpers

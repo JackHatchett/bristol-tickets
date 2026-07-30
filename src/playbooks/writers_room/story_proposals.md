@@ -14,7 +14,7 @@ distinct rules:
   into those wiki dirs**; what's there is trusted content, not something to
   re-vet. When a story/world idea is worth keeping, write a tight summary (the
   fact + where it belongs) into the **shared agent-output dir**
-  (`markdown_notebook.agent_output_dir` = `notes_dir/41_ai_workspace/agent_system`)
+  (`markdown_notebook.agent_output_dir`)
   for the user to review and fold into the wiki; hand them the same summary in
   chat when useful. You never write it into the wiki yourself.
 - **Voice** (the author-voice profile, technique cards, lexicon): captured via

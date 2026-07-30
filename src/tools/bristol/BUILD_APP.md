@@ -35,7 +35,7 @@ The `MacOS/Bristol` script is just:
 
 ```bash
 #!/bin/bash
-exec "/ABSOLUTE/PATH/TO/python3" "/ABSOLUTE/PATH/TO/agent_system/src/tools/bristol/app.py"
+exec "/ABSOLUTE/PATH/TO/python3" "/ABSOLUTE/PATH/TO/src/tools/bristol/app.py"
 ```
 
 Two things that make or break it:
@@ -73,7 +73,7 @@ the repo folders the way `python3 app.py` does. Tell it the absolute path by
 creating a one-line, git-ignored file:
 
 ```bash
-echo "/Users/YOU/agent_system/data/<your-instance>/roadmap/roadmap.db" > roadmap_db.local
+echo "/Users/YOU/data/<your-instance>/roadmap/roadmap.db" > roadmap_db.local
 ```
 
 `roadmap_db.local` is in `.gitignore`, so your personal path never gets

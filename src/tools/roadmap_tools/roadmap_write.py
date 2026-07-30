@@ -80,7 +80,7 @@ Usage:
         link that clears it from both tickets at once.
 
 DB discovery: same project-relative rule as cos_status.py / agent_status.py
-(walk up to agent_system/, then data/*/roadmap/roadmap.db). Resolved design: there is ONE shared roadmap.db for the whole fleet, not one per
+(find the project root, then data/*/roadmap/roadmap.db). Resolved design: there is ONE shared roadmap.db for the whole fleet, not one per
 agent. Every agent reads and writes the same database; `epic.owner` tags
 which agent an epic belongs to (a task's owner is its `assignee`, else implicit
 via its epic). Cross-agent suggestions are ordinary `backlog` cards
@@ -99,14 +99,27 @@ import sys
 from pathlib import Path
 
 
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 def resolve_db_path() -> Path:
-    script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parents[2]  # agent_system/
-    data_root = project_root / "data"
+    data_root = _project_root() / "data"
 
     matches = list(data_root.glob("*/roadmap/roadmap.db"))
     if not matches:
-        sys.exit("roadmap_write: ERROR — no roadmap.db found under agent_system/data/*/roadmap/")
+        sys.exit("roadmap_write: ERROR — no roadmap.db found under data/*/roadmap/")
     return matches[0]
 
 

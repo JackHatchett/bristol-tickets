@@ -134,7 +134,7 @@ situation. Leave alone anything not yet fully translated.
 
 **A real, undeleted sub-project sitting in the staging folder is never a
 valid end state.** Either it's truly disposable (archive it properly,
-outside `agent_system` entirely) or it's real ongoing content (give it a
+outside the project entirely) or it's real ongoing content (give it a
 real home under `data/`) — but the staging folder itself must end up empty.
 If something is found that's genuinely unrelated to the agent being
 migrated (misfiled during some earlier reorg), don't silently relocate it —

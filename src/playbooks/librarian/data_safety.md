@@ -82,7 +82,7 @@ has ever reported. Item type is not the test either — the magazines are
 ## Sync targets
 There are none, and there is no sync command. The Zotero data directory and the
 rolling xlsx snapshots both sit on the Mac's internal disk, which Time Machine
-backs up to the external drive. No agent_system tool copies them anywhere; an
+backs up to the external drive. No tool in this project copies them anywhere; an
 earlier `backup_sync.py` that mirrored them onto that same drive was duplication
 of Time Machine's work and has been deleted. Zotero's own sync to zotero.org is
 the user's setting, not a tool's business. Resolve every path from `/config`;

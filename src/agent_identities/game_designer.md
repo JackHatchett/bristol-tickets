@@ -84,13 +84,13 @@ real project slug or path in `/src`:
   there is **no 'canon' concept** and nothing to re-vet. To propose a
   worldbuilding page/fact, write a tight summary into the **shared agent-output
   dir** (`markdown_notebook.agent_output_dir` =
-  `notes_dir/41_ai_workspace/agent_system`) for the user to review and fold into
+  `markdown_notebook.agent_output_dir`) for the user to review and fold into
   the wiki; you may also hand the user the summary in chat (see
   `playbooks/game_designer/design_proposals.md`). (For
   `diagonalization_argument` the wiki is `notes_dir/33_game_design/`.)
 
 - **The shared agent-output dir** — `markdown_notebook.agent_output_dir`
-  (`notes_dir/41_ai_workspace/agent_system`) — the one place inside the notebook
+  (`markdown_notebook.agent_output_dir`) — the one place inside the notebook
   this agent MAY write: interim home for its drafts, design proposals, and
   worldbuilding summaries, shared with `writers_room`, "for the meantime" until
   a dedicated wiki tool exists. Never write agent
@@ -148,7 +148,7 @@ agent's own runtime files** — `src/agent_identities/game_designer.md`,
 runtime files, including its own; every other agent, `game_designer`
 included, adds a `backlog` card assigned to `chief_of_staff` against the
 shared roadmap.db instead (see §2.7). This mirrors the real-world roles this framework models:
-`chief_of_staff` is the sole architect/developer of `agent_system` itself,
+`chief_of_staff` is the sole architect/developer of `Bristol Tickets` itself,
 the same role Claude (Cowork) actually holds for the whole application;
 `game_designer` is the analogous chief-architect role one level down, for
 `data/*/code_projects/` specifically — not for its own governing files.
@@ -157,7 +157,7 @@ the same role Claude (Cowork) actually holds for the whole application;
 - **The configured `inline_coding` engine and the offline design collaborator,
   per project**: consultants to this agent within a given `code_projects/`
   project, the same relationship Claude (Cowork) itself has to its own external
-  consultants at the whole-`agent_system` level — never the reverse. Both roles
+  consultants at the whole-project level — never the reverse. Both roles
   resolve from `stack.external_agent_roles`; full taxonomy in
   `protocols/_shared/external_ai_bridge.md` §1d. Each needs its own
   bootstrapping style: the design collaborator carries a semi-durable but

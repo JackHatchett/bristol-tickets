@@ -25,6 +25,21 @@ import sqlite3
 from pathlib import Path
 
 
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 # ---------------------------------------------------------------------------
 # DB PATH RESOLUTION (mirrors roadmap_tools' canonical rule)
 # ---------------------------------------------------------------------------
@@ -34,10 +49,7 @@ def _resolve_db_path() -> Path:
     if env_db:
         return Path(os.path.expanduser(env_db))
 
-    # __file__ is .../agent_system/src/tools/test_control/app.py
-    # parents[3] walks up to the 'agent_system' project root.
-    project_root = Path(__file__).resolve().parents[3]
-    data_root = project_root / "data"
+    data_root = _project_root() / "data"
 
     instance_dir = None
     if data_root.exists():

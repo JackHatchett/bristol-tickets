@@ -6,11 +6,11 @@ This folder contains the non‑UI roadmap utilities used by agents and system pr
    Tools never contain literal usernames, home directories, or cloud‑provider paths. Any directory that represents a user is referred to generically as <instance>.
 
 2. Stable project‑relative paths  
-   All tools assume the project root is agent_system. Paths are resolved only by walking relative to the tool’s own location. No environment variables, no config files, and no external path sources are used.
+   All tools find the project root by marker (the nearest ancestor holding `src/app.md`). Paths are resolved only by walking relative to the tool’s own location. No environment variables, no config files, and no external path sources are used.
 
 3. Canonical database discovery  
    The roadmap database is always discovered using the following rule:  
-   agent_system/data/<instance>/roadmap/roadmap.db  
+   data/<instance>/roadmap/roadmap.db  
    Tools search for the first matching roadmap.db under data/*/roadmap/.  
    Tools never assume the name of <instance>
 
@@ -406,9 +406,9 @@ cards cover the whole job. Nothing reads or writes either any more.
 
 ## Directory Structure
 
-The expected structure under agent_system is:
+The expected structure under the project root is:
 
-agent_system  
+<project-root>  
     src/tools/roadmap_tools  
         cos_status.py  
         agent_status.py  

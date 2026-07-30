@@ -1,4 +1,4 @@
-# Agentic System Architecture
+# Bristol Tickets
 
 A local, multi-agent simulation and orchestration layer designed to manage tasks, digital architecture, and file systems. 
 
@@ -6,29 +6,25 @@ This repository serves as the generic, forkable shell of the application. It pro
 
 ## System Architecture
 
-The ecosystem operates on a tri-interface architecture. All three interfaces share unified data and configuration layers, ensuring that whether a human, a local script, or an LLM is acting, the system state remains perfectly synchronized.
+There are two ways to use the system, and both act on the same database and the same configuration.
 
-1. **The Python Application Head (`src/app.py`) — planned, not yet created** 
-   The intended programmatic core: a structured, API-driven entry point that would eventually operate the entire system. No such file exists yet — this is a direction the other two heads are built against, not a runtime you can run.
+1. **Bristol (`src/tools/bristol/`)** 
+   A PySide6 desktop app: a Kanban board over `roadmap.db`. You read the board, create and edit tickets, move them between columns, and attach links and images by hand, without an agent involved.
 
-2. **The Human / Tooling Head (`src/tools/...`)** 
-   A collection of modular, standalone Python utilities (such as Bristol, the PySide6 roadmap-board GUI). These localized scripts allow a user to jack directly into specific databases and system states to verify schemas, edit Kanban boards, or execute protocols without agent mediation.
+2. **The Claude session (`src/app.md`)** 
+   A markdown-defined initialization pipeline. Claude reads `src/app.md`, resolves the local config, takes on one agent identity from the registry, restores state from `roadmap.db`, and works the board. It is the surface that edits files and executes work.
 
-3. **The Cowork Head (`src/app.md`)** 
-   A hierarchical, markdown-based runtime environment designed for Claude. It simulates the future programmatic API by reading documents in sequence and operating as a configured agent (e.g., Chief of Staff). It is the primary file-system editor, executing workflow state changes directly on the local machine.
-
-For the engineering-depth treatment — how the surfaces share one data/config substrate, what is built versus planned (including a planned packaged Mac GUI), and the design principles behind keeping the tools fragmented — see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Whichever surface acts, the other sees the change on its next read. `src/tools/` also holds the rest of the standalone utilities — schema tools, scrapers, renderers — each independently runnable.
 
 ## Repository Structure
 
 ├── requirements.in             # Dependency inputs, compiled to requirements.txt
 ├── requirements.txt            # Python dependencies (see docs/SETUP.md)
 ├── docs/                       # Setup and other documentation beyond this README
-│   ├── ARCHITECTURE.md         # Engineering-depth design doc (multi-surface architecture)
 │   └── SETUP.md
 ├── src/
-│   ├── app.md                  # Head 3: Claude Cowork initialization pipeline
-│   ├── tools/                  # Head 2: Modular local scripts and UIs
+│   ├── app.md                  # Claude session initialization pipeline
+│   ├── tools/                  # Standalone local scripts and UIs, incl. Bristol
 │   ├── agent_identities/       # Operating mandates for the agent fleet
 │   ├── protocols/              # Standard operating procedures
 │   ├── playbooks/              # Execution steps for specific agent tasks
@@ -38,8 +34,6 @@ For the engineering-depth treatment — how the surfaces share one data/config s
 │                               # and the personal software `stack` block
 └── data/                       # (Git-ignored) Cross-session database state
     └── <instance>/roadmap/roadmap.db   # The SQLite single source of truth (one per instance)
-
-Head 1 (`src/app.py`) is planned and has no file in the tree.
 
 ## Configuration & State Management
 

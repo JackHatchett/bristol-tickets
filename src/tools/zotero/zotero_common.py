@@ -35,8 +35,17 @@ USER_LIBRARY_ID = 1
 
 
 def _project_root() -> Path:
-    """agent_system/ — src/tools/zotero/zotero_common.py -> parents[3]."""
-    return Path(__file__).resolve().parents[3]
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
 
 
 def _config() -> dict:

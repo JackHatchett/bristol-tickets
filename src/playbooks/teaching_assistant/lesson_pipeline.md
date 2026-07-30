@@ -1,9 +1,9 @@
 # Lesson Pipeline — teaching_assistant (master spec)
 
 Modular, config-routed lesson production. Four stages, each a discrete step
-with a fixed interface between them, so the chat head (this agent) today and
-the future Python `Snake` head later run the **same** pipeline off the **same**
-config. The review and QA stages are mandatory and engine-agnostic: an external
+with a fixed interface between them, so every stage is reproducible from the
+persisted artifact and the config rather than from whoever ran the last stage.
+The review and QA stages are mandatory and engine-agnostic: an external
 engine can be arithmetically correct and still ship markup defects that are
 invisible on eyeball and caught only by the render/grep pass.
 
@@ -118,9 +118,9 @@ Stage 4 has no key — it is always the deterministic renderer/validator.
 it) or a **role key from `stack.external_agent_roles`** — for the external
 engine, use `course_materials`, which config resolves to the current tool
 (swappable). Reference the role, never a hardcoded
-product name: the user swaps the external tool often. The same config is consumed
-identically by the chat head today and the Python head later (which calls each
-stage's engine via its configured API — likely one API, up to three).
+product name: the user swaps the external tool often. The config is the whole
+interface: any caller that can read `lesson_pipeline.stages` and reach the
+configured engines runs the identical pipeline.
 
 **Session override (mirrors app.md's `agent_override`-over-`active_agent`):**
 the invoking head may supply a session-scoped `lesson_pipeline_override` naming
@@ -138,8 +138,9 @@ deterministically from the plan.
   outside. The planner is now inside teaching_assistant, so the guarantee is
   reworded to "never generate materials without an **approved plan**" —
   preserving the no-improvising intent while letting either engine write.
-- **Shared config, two heads.** Nothing here is chat-specific. The Python head
-  reads the same `lesson_pipeline.stages` and dispatches each stage to its API.
+- **Nothing here is chat-specific.** Every stage is defined by
+  `lesson_pipeline.stages` in config, so any caller dispatches the same stages
+  to the same engines.
 - **Mandatory back half.** Stages 3 and 4 always run, engine-agnostic, because
   the failure they catch (silent markup defects) is invisible to the writer.
 

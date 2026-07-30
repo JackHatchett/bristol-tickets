@@ -14,6 +14,21 @@ import sys
 from pathlib import Path
 
 
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 def _resolve_db_path() -> Path:
     """Resolve the roadmap DB path dynamically.
 
@@ -40,10 +55,7 @@ def _resolve_db_path() -> Path:
             return Path(os.path.expanduser(text))
 
     # 3. Relative discovery — works when run in-place from the repo.
-    #    __file__ is .../agent_system/src/tools/bristol/app.py
-    #    .parents[3] walks up to the 'agent_system' project root.
-    project_root = Path(__file__).resolve().parents[3]
-    data_dir = project_root / "data"
+    data_dir = _project_root() / "data"
 
     # Search for the roadmap.db dynamically to avoid hardcoding an instance slug
     if data_dir.exists():

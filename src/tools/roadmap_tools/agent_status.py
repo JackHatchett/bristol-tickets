@@ -9,12 +9,12 @@ Machine-readable snapshot SCOPED TO ONE AGENT:
     - COMMENTS on this agent's active-board tasks (issue_log); user-authored
       ones flagged ⚠ — on-ticket decisions/direction a bare status line hides
 
-Uses ONLY relative project structure under /agent_system. No personal data,
+Uses ONLY relative project structure under the project root. No personal data,
 no usernames, no environment variables.
 
 DB discovery rule:
-    agent_system/src/tools/roadmap_tools/agent_status.py → parents[2] →
-    agent_system/ → search data/*/roadmap/roadmap.db. There is ONE shared
+    Walk up from this file to the nearest ancestor holding src/app.md — the
+    project root — then search data/*/roadmap/roadmap.db. There is ONE shared
     roadmap.db for the whole fleet; this script slices it to one agent.
 
 NEXT-ACTION SEMANTICS (aligned with cos_status.py):
@@ -44,6 +44,21 @@ import sys
 import sqlite3
 from pathlib import Path
 
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 STATUS_RANK = {"doing": 0, "todo": 1}
 
 
@@ -52,13 +67,11 @@ STATUS_RANK = {"doing": 0, "todo": 1}
 # ---------------------------------------------------------------------------
 
 def resolve_db_path() -> Path:
-    script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parents[2]          # agent_system/
-    data_root = project_root / "data"
+    data_root = _project_root() / "data"
 
     matches = list(data_root.glob("*/roadmap/roadmap.db"))
     if not matches:
-        sys.exit("agent_status: ERROR — no roadmap.db found under agent_system/data/*/roadmap/")
+        sys.exit("agent_status: ERROR — no roadmap.db found under data/*/roadmap/")
     return matches[0]
 
 

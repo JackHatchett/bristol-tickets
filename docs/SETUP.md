@@ -1,4 +1,4 @@
-# Setup — getting a clone of `agent_system` running locally
+# Setup — getting a clone of `Bristol Tickets` running locally
 
 This fills in the `README.md` "Getting Started" stub. It's written for a
 fresh clone on macOS (the only platform this has actually been run on so
@@ -72,10 +72,9 @@ jq -r '.drives.external1.path' config/config.local.json   # jq works too
 
 ### How the repo is laid out (config routing model)
 
-Three runtimes share one data+config layer: the **Cowork head** (`src/app.md`),
-the future **Python head** (`src/app.py`, planned — no such file exists yet),
-and external **AI consultants** (Copilot/Gemini). What keeps `src/` publishable
-is the folder split:
+The Claude session (`src/app.md`), the standalone tools under `src/tools/`, and
+external **AI consultants** (Copilot/Gemini) share one data+config layer. What
+keeps `src/` publishable is the folder split:
 
 - **`src/` — GitHub-safe.** Operational logic only: no personal data, no
   absolute user paths, no usernames, not even as string literals. It refers to
@@ -94,12 +93,12 @@ reserved for high-volume keyed *state* (`roadmap.db`).
 ### Overriding the active agent per Cowork session
 
 `active_agent` in `config.local.json` is the default role for *every* runtime —
-the Python head and any offline work read it and nothing overrides them. The
-Cowork head additionally honors a session-scoped override: if the launching
+offline work reads it and nothing overrides it. A Cowork session additionally
+honors a session-scoped override: if the launching
 project instructions carry a line `agent_override: <slug>` with a value other
 than `none`, that slug becomes the active agent for that Cowork session only
 (see `src/app.md` Phase 2, step 1). The override is read-only — it never writes
-back to config — so it can't leak into the Python head or offline runs. Use it
+back to config — so it can't leak into offline runs. Use it
 to point a given Cowork project at a specific agent (e.g.
 `agent_override: teaching_assistant`) without disturbing the system-wide
 default. `none`, absent, or an unrecognized slug all fall back to
@@ -121,10 +120,7 @@ ships with either.
 
 ## 7. Run something
 
-- **Cowork head**: point a Cowork session at this folder; it reads
+- **The Claude session**: point a Cowork session at this folder; it reads
   `src/app.md` and takes it from there.
-- **Tooling head**: e.g. `python3 src/tools/bristol/app.py` (a
-  PySide6 GUI over `roadmap.db`).
-- **Python application head** (`src/app.py`): planned, no file at that path —
-  `src/app.md` (the Cowork head) is currently the only one of the three
-  interfaces described in the root `README.md` that actually runs end-to-end.
+- **Bristol**: `python3 src/tools/bristol/app.py` — a PySide6 Kanban GUI over
+  `roadmap.db`.

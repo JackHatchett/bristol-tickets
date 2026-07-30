@@ -2,16 +2,13 @@
 """
 cos_status.py — machine-readable roadmap status snapshot for chief_of_staff.
 
-This version uses ONLY relative project structure under /agent_system.
+This version uses ONLY relative project structure under the project root.
 No personal data, no usernames, no environment variables.
 
 DB discovery rule:
-    Starting from this file:
-        agent_system/src/tools/roadmap_tools/cos_status.py
-    Walk up to project root (parents[2] from this file's directory):
-        agent_system/
-    Then search:
-        agent_system/data/*/roadmap/roadmap.db
+    Walk up from this file to the nearest ancestor holding src/app.md — the
+    project root, whatever the user named its folder — then search:
+        data/*/roadmap/roadmap.db
 
 Environment note: don't shell out to a `sqlite3` CLI binary — it is not
 guaranteed to be on PATH in every execution environment this script may run
@@ -52,6 +49,21 @@ import sys
 import sqlite3
 from pathlib import Path
 
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 ME = "chief_of_staff"
 STATUS_RANK = {"doing": 0, "todo": 1}
 
@@ -61,13 +73,11 @@ STATUS_RANK = {"doing": 0, "todo": 1}
 # ---------------------------------------------------------------------------
 
 def resolve_db_path() -> Path:
-    script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parents[2]          # agent_system/
-    data_root = project_root / "data"
+    data_root = _project_root() / "data"
 
     matches = list(data_root.glob("*/roadmap/roadmap.db"))
     if not matches:
-        sys.exit("cos_status: ERROR — no roadmap.db found under agent_system/data/*/roadmap/")
+        sys.exit("cos_status: ERROR — no roadmap.db found under data/*/roadmap/")
     return matches[0]
 
 

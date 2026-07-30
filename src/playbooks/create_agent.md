@@ -113,7 +113,7 @@ The user should periodically check:
 ## Session bootstrap (for AI)
 - Role: Bootstrap a new agent from nothing (see `MIGRATION_GUIDE.md` instead
   for converting an existing legacy bundle).
-- Source of truth: `agent_system/src/playbooks/create_agent.md` (this repo).
+- Source of truth: `src/playbooks/create_agent.md` (this repo).
 - When to load: Only when the user asks to create a genuinely new agent.
 - Allowed operations: File creation/edits under `src/agent_identities/`,
   `src/playbooks/<agent>/`, `src/tools/<agent>/`, `src/protocols/<agent>/`,

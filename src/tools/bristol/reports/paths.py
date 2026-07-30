@@ -29,6 +29,21 @@ import json
 import os
 from pathlib import Path
 
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 _ENV_VAR = "BRISTOL_REPORTS_DIR"
 _LOCAL_POINTER = "bristol_reports.local"
 _CONFIG_KEY = ("markdown_notebook", "reports_dir")
@@ -57,7 +72,7 @@ def _from_config() -> Path | None:
     directory. Any failure — no repo, no config, no key — returns None; this
     resolver is one of three and must not raise for the others to be tried.
     """
-    root = Path(__file__).resolve().parents[4]  # .../agent_system
+    root = _project_root()
     config_path = Path(
         os.environ.get("CONFIG_LOCAL_JSON")
         or (root / "config" / "config.local.json")

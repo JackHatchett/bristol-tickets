@@ -31,7 +31,7 @@ charter's §2.1).
    a standing context source: read a specific note when a request needs that fact,
    don't sweep it at session start, and never write into the wiki dirs. To propose
    a page/fact, write a summary to the shared agent-output dir
-   (`markdown_notebook.agent_output_dir` = `notes_dir/41_ai_workspace/agent_system`)
+   (`markdown_notebook.agent_output_dir`)
    for the user to review — see `design_proposals.md`.
 6. **Exception:** if this particular project has its own pre-existing,
    legitimately-scoped local state file (e.g. `author_ship`'s frozen

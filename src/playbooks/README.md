@@ -67,7 +67,7 @@ Agent-scoped subfolders (each holds the playbooks for that agent; see the agent'
 
 ## Session Bootstrap (for Claude / Copilot)
 - Role: Abstract procedural workflows.
-- Source of Truth: `agent_system/src/playbooks/` (this repo).
+- Source of Truth: `src/playbooks/` (this repo).
 - When to Load: Only when a task matches a playbook’s purpose.
 - Allowed Operations: Read/write within this folder; structural changes elsewhere follow each agent's own charter guardrails.
 - Do Not: Invent new rules or provider‑specific logic; those belong in the relevant agent's own data root or a connected MCP (e.g. Gmail).

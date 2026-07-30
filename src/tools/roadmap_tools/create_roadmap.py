@@ -3,11 +3,11 @@
 create_roadmap.py — provision a fully robust roadmap.db identical to the UI's schema.
 
 This script:
-    - Creates agent_system/data/<instance>/roadmap/roadmap.db
+    - Creates data/<instance>/roadmap/roadmap.db
     - Ensures the DB schema matches the UI's auto-migrated schema
     - Seeds the DB with a default epic + default tasks
     - Throws an error if the DB already exists
-    - Uses ONLY relative project structure under /agent_system
+    - Uses ONLY relative project structure under the project root
     - Contains NO personal data, NO usernames, NO environment variables
 
 Usage:
@@ -20,6 +20,21 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 
+
+def _project_root() -> Path:
+    """The project root: the nearest ancestor holding src/app.md.
+
+    Located by marker rather than by folder name, so the install works whatever
+    the user named the folder they cloned into.
+    """
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src" / "app.md").is_file():
+            return parent
+    raise SystemExit(
+        "no project root above this file (no ancestor holds src/app.md)"
+    )
+
+
 # ---------------------------------------------------------------------------
 # DB PATH RESOLUTION (canonical)
 # ---------------------------------------------------------------------------
@@ -27,11 +42,9 @@ from datetime import datetime, timezone
 def resolve_output_path(instance: str) -> Path:
     """
     Create:
-        agent_system/data/<instance>/roadmap/roadmap.db
+        data/<instance>/roadmap/roadmap.db
     """
-    script_dir = Path(__file__).resolve().parent  # src/tools/roadmap_tools/
-    project_root = script_dir.parents[2]          # agent_system/
-    data_root = project_root / "data"
+    data_root = _project_root() / "data"
 
     instance_dir = data_root / instance
     roadmap_dir = instance_dir / "roadmap"

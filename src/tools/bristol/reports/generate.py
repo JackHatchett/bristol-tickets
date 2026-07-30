@@ -1,7 +1,7 @@
 """generate.py — orchestration and CLI for the Bristol report.
 
 `generate_report` is the single entry point, used identically by Bristol's
-Clear Done button, an agent session, and (eventually) the Python head.
+Clear Done button, an agent session, and the CLI.
 
 PERIOD BOUNDARIES
 -----------------

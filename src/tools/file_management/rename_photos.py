@@ -29,9 +29,9 @@ PREREQUISITES (run once on your Mac):
   pip3 install pillow pillow-heif reverse_geocoder
 
 RUN ORDER:
-  1) python3 agent_system/src/tools/file_management/rename_photos.py            # dry run
-  2) open  agent_system/data/*/system/photo_tools/_rename_photos_manifest.csv # review
-  3) python3 agent_system/src/tools/file_management/rename_photos.py --execute  # rename
+  1) python3 src/tools/file_management/rename_photos.py            # dry run
+  2) open  data/*/system/photo_tools/_rename_photos_manifest.csv # review
+  3) python3 src/tools/file_management/rename_photos.py --execute  # rename
   (Interrupted? add --resume.)   Run dedupe_photos.py FIRST.
 
 SOURCE: resolved from config.local.json's `drives.external1` root + "Photos"

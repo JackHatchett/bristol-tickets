@@ -59,7 +59,7 @@ either's real path or project slug in `/src`:
   (see §2.7); what's in it is trusted content, not something to re-vet.
 
 By explicit user preference, this data stays in its existing
-Markdown-notebook location rather than moving under `agent_system/data/` —
+Markdown-notebook location rather than moving under `data/` —
 unlike other agents' in-repo data roots, `/config`'s project links point
 at the notebook path directly. The internal structure (the wiki, voice/, log/,
 prompts/, drafts/, references/, archive/, plus the project's own
@@ -134,7 +134,7 @@ is this agent's own governed data root at `data/<instance>/writing/`, and
 the agent does write there per `voice_distillation.md`.) This agent's own output (drafts, story/world proposals and summaries for
 the user to review) goes to the **shared agent-output dir**,
 `markdown_notebook.agent_output_dir`
-(`notes_dir/41_ai_workspace/agent_system`), shared with `game_designer`, until a
+(`markdown_notebook.agent_output_dir`), shared with `game_designer`, until a
 dedicated wiki tool/location is built. Process-state still never lands on disk
 (roadmap.db only); the shared dir is for user-facing output the user will fold
 into the wiki. There is **no 'canon' concept and no ratification gate** — what's
