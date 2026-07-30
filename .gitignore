@@ -24,9 +24,8 @@ data/*
 *.local.json
 
 # One-line absolute-path pointer files (tickets_db.local,
-# bristol_reports.local). They exist so a relocated .app bundle — which cannot
-# see config/ — still finds the database and the notebook, which means they
-# hold real user paths and must never be committed.
+# bristol_reports.local), honoured for installs that predate the per-machine
+# instance pointer. They hold real user paths and must never be committed.
 *.local
 
 # ==========================================

@@ -82,6 +82,26 @@ python3 src/tools/config_tools/read_config.py important_paths.tickets_db
 jq -r '.drives.external1.path' config/config.local.json   # jq works too
 ```
 
+### Where the code looks for your installation
+
+Every resolver — the tickets DB, the reports directory, the config file —
+follows one order, stated once in
+`src/tools/config_tools/instance_pointer.py`: an explicit env var, then the
+per-machine instance pointer, then a legacy `.local` file, then discovery by
+walking up the source tree to `src/app.md`.
+
+Running from the repo needs no pointer; the last step finds everything. Write
+one when you build the `.app`, which is relocatable and cannot see the repo:
+
+```bash
+python3 src/tools/config_tools/instance_pointer.py --write   # creates it
+python3 src/tools/config_tools/instance_pointer.py           # prints it
+```
+
+It lands in `~/Library/Application Support/BristolTickets/instance.json` on
+macOS and `$XDG_CONFIG_HOME/BristolTickets/instance.json` elsewhere — outside
+the repo, so it can never be committed.
+
 ### How the repo is laid out (config routing model)
 
 The Claude session (`src/app.md`), the standalone tools under `src/tools/`, and

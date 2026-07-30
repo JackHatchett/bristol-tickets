@@ -47,11 +47,19 @@ an external consultant to ingest in one pass. The split is behaviour-preserving.
 
 1. **`TICKETS_DB`** env var — explicit full path to the `.db` file (use for
    testing/overrides).
-2. **Auto-discovery** — walks up to the project root and searches
+2. **The instance pointer** — `~/Library/Application
+   Support/BristolTickets/instance.json`, which names the data root and the
+   instance slug. This is what a relocated `.app` uses; it lives outside the
+   repo so it is never committed and never bundled.
+3. **Legacy `tickets_db.local`** — a one-line absolute path next to `app.py`,
+   honoured for installs that predate the pointer.
+4. **Auto-discovery** — walks up to the project root and searches
    `data/*/tickets/tickets.db`, using the first match. The `*` avoids
    hardcoding any user-specific folder name.
-3. **Fresh provisioning** — if none exists, creates an empty DB at a default
+5. **Fresh provisioning** — if none exists, creates an empty DB at a default
    location and applies `schema.sql` so the app still opens.
+
+The order is stated once, in `src/tools/config_tools/instance_pointer.py`.
 
 No user-specific paths are hardcoded anywhere in this tool.
 
@@ -92,9 +100,9 @@ cadence comes from.
 
 The report is strictly advisory: the sweep commits first, and a missing or
 unreachable notebook folder skips the report rather than failing the action.
-Where reports land is resolved from `BRISTOL_REPORTS_DIR`, a git-ignored
-`bristol_reports.local` pointer, or `markdown_notebook.reports_dir` in the
-config — see `reports/README.md`.
+Where reports land is resolved from `BRISTOL_REPORTS_DIR`, then the instance
+pointer's config, then a legacy `bristol_reports.local`, then the config found
+by walking up the tree — see `reports/README.md`.
 
 `task_event` (`schema.sql`) is the mechanical change log: one row per changed
 task field, holding the field, its new value, the actor and a timestamp.
