@@ -2,21 +2,21 @@
 
 ## Purpose
 Bootstrap a brand-new agent from nothing: identity charter, playbooks/tools/
-protocols scaffolding, roadmap epic, etc.
+protocols scaffolding, board epic, etc.
 
 Every agent's machinery lives inside this repo, under
 `src/`; every agent's personal/instance data (if any) lives under
 `data/*/` (the `*` resolves to the instance's own data-root slug via
-`config/config.local.json`); all agents share one roadmap database, scoped by
+`config/config.local.json`); all agents share one tickets database, scoped by
 `epic.owner`.
 
 ## Preconditions
 - The user has confirmed the agent's canonical name (snake_case).
 - The user has confirmed, in general terms, what this agent is for and
   whether it needs its own personal/instance data root under `data/*/`.
-- The shared roadmap database already exists at
-  `data/*/roadmap/roadmap.db` (provisioned once, fleet-wide, via
-  `tools/roadmap_tools/create_roadmap.py --instance <instance_slug>` — not
+- The shared tickets database already exists at
+  `data/*/tickets/tickets.db` (provisioned once, fleet-wide, via
+  `tools/ticket_tools/create_tickets.py --instance <instance_slug>` — not
   re-run per agent).
 
 ## Procedure
@@ -39,7 +39,7 @@ Every agent's machinery lives inside this repo, under
    - `src/tools/<agent>/` — only for genuinely agent-specific callables. If
      a tool would be useful to more than one agent, it belongs in a shared
      folder nested under `tools/` instead (e.g. `tools/wiki_tools/`,
-     `tools/writing_tools/`, `tools/roadmap_tools/`), never a new top-level
+     `tools/writing_tools/`, `tools/ticket_tools/`), never a new top-level
      `src/` sibling.
    - `src/protocols/<agent>/` — only if this agent needs to coordinate with
      an external party (another AI service, another agent, the user, on a
@@ -48,11 +48,11 @@ Every agent's machinery lives inside this repo, under
      of these three and add them as real needs appear — an empty scaffold
      with no content is not required up front.
 
-4. **Give the agent a roadmap epic.**
-   `python3 tools/roadmap_tools/roadmap_write.py add-epic --name "<agent> —
+4. **Give the agent a board epic.**
+   `python3 tools/ticket_tools/ticket_write.py add-epic --name "<agent> —
    initial setup" --owner <agent>` (plus `--description`/`--next-action` as
    appropriate). This is the agent's own tagged slice of the one shared
-   roadmap.db — there is no separate per-agent database to create.
+   tickets.db — there is no separate per-agent database to create.
 
 5. **Set up a data root only if the agent actually needs one.**
    If this agent will hold personal/instance content (records, a corpus,
@@ -70,8 +70,8 @@ Every agent's machinery lives inside this repo, under
    `agent_registry.md` file.
 
 7. **Bootstrap the next session.**
-   The agent's next session is driven by its charter and its roadmap epic:
-   load the charter, check the roadmap database for what's active under
+   The agent's next session is driven by its charter and its board epic:
+   load the charter, check the tickets database for what's active under
    this agent's `owner` tag (including any backlog cards assigned to it), then act on user direction.
    No separate onboarding-task seeding step is needed beyond the epic
    created in step 4.
@@ -83,14 +83,14 @@ exists, or documented in the agent's own protocol/tool files — never in this
 playbook, and never routed through a shared config file.
 
 ## Tools used
-- `tools/roadmap_tools/roadmap_write.py` (add-epic, add-task, add-issue-log)
-- `tools/roadmap_tools/create_roadmap.py` (fleet-level, one-time only — not
+- `tools/ticket_tools/ticket_write.py` (add-epic, add-task, add-issue-log)
+- `tools/ticket_tools/create_tickets.py` (fleet-level, one-time only — not
   part of the normal per-agent flow)
 
 ## Logging requirements
-Log the creation via `roadmap_write.py add-task` (or note it in your own
+Log the creation via `ticket_write.py add-task` (or note it in your own
 one `add-issue-log` comment on the relevant card) against the
-shared roadmap.db — items
+shared tickets.db — items
 created, decisions made, any deviations. Never a markdown state file.
 
 ## Failure modes
@@ -108,7 +108,7 @@ created, decisions made, any deviations. Never a markdown state file.
 ## User audit notes
 The user should periodically check:
 - `config/config.local.json`'s Agent Registries section for staleness.
-- Each agent's roadmap epic for content freshness.
+- Each agent's board epic for content freshness.
 
 ## Session bootstrap (for AI)
 - Role: Bootstrap a new agent from nothing (see `MIGRATION_GUIDE.md` instead
@@ -117,5 +117,5 @@ The user should periodically check:
 - When to load: Only when the user asks to create a genuinely new agent.
 - Allowed operations: File creation/edits under `src/agent_identities/`,
   `src/playbooks/<agent>/`, `src/tools/<agent>/`, `src/protocols/<agent>/`,
-  `config/`, and `data/*/` as scoped above; roadmap-db writes via
-  `roadmap_write.py`.
+  `config/`, and `data/*/` as scoped above; tickets-db writes via
+  `ticket_write.py`.

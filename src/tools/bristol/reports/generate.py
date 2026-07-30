@@ -8,7 +8,7 @@ PERIOD BOUNDARIES
 A period runs from the end of the last report to now. That boundary is read
 back out of the previous report's own frontmatter rather than stored anywhere,
 which keeps the whole feature free of a second state store — the repo's
-standing rule is that roadmap.db is the only place state lives, and a report is
+standing rule is that tickets.db is the only place state lives, and a report is
 an artefact, not state. Delete the folder and the next report simply starts a
 fresh series.
 
@@ -131,7 +131,7 @@ def _period_start(prior_frontmatter, batch_facts_fallback=None):
 def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True):
     """Write one report for `task_ids` and return a ReportResult.
 
-    `conn`      an open sqlite3 connection to roadmap.db.
+    `conn`      an open sqlite3 connection to tickets.db.
     `task_ids`  the cards this period closed. Bristol passes exactly what Clear
                 Done just swept; the CLI can pass a preview of the Done column.
     `out_dir`   overrides path resolution; normally left to the config.
@@ -212,13 +212,13 @@ def generate_report_safe(conn, task_ids, **kwargs):
 def _resolve_db(explicit=None):
     if explicit:
         return Path(os.path.expanduser(explicit))
-    env = os.environ.get("ROADMAP_DB")
+    env = os.environ.get("TICKETS_DB")
     if env:
         return Path(os.path.expanduser(env))
     root = Path(__file__).resolve().parents[4]
-    matches = list((root / "data").glob("*/roadmap/roadmap.db"))
+    matches = list((root / "data").glob("*/tickets/tickets.db"))
     if not matches:
-        sys.exit("bristol-report: no roadmap.db found under data/*/roadmap/")
+        sys.exit("bristol-report: no tickets.db found under data/*/tickets/")
     return matches[0]
 
 
@@ -247,7 +247,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="bristol-report",
         description="Write the analytic report Bristol produces on Clear Done.")
-    parser.add_argument("--db", default=None, help="path to roadmap.db")
+    parser.add_argument("--db", default=None, help="path to tickets.db")
     parser.add_argument("--out-dir", default=None,
                         help="override the notebook folder reports are written to")
     parser.add_argument("--ids", default=None,

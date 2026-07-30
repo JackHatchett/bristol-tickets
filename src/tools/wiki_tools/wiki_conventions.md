@@ -55,11 +55,11 @@ lookup table: topic → file) and read it before pulling any wiki file. Read
 **one** target file per question. Needing three files to answer one question is
 a sign the request is under-specified — ask, don't guess by reading everything.
 
-## Domain state vs. the roadmap database
+## Domain state vs. the tickets database
 
 A domain may keep a current-state/log file (what's settled, what's still open in
 the subject matter). That tracks the *domain's content*; it is a different thing
-from this framework's roadmap database, which tracks the *agent's own*
+from this framework's tickets database, which tracks the *agent's own*
 operational tasks. Don't collapse one into the other. Under the current model
 the state/log lives in the user-authored wiki, so an agent proposes updates to
 it as summaries in the shared agent-output dir rather than writing it directly.

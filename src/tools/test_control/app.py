@@ -6,17 +6,17 @@ clone them into independent runnable session ledgers, mark steps pass/fail,
 and capture defect notes. Layout mirrors bristol (app.py + ui/) for
 regularity across the tools/ folder.
 
-DB path resolution (mirrors bristol/app.py and roadmap_tools' own
-canonical discovery rule — see src/tools/roadmap_tools/README.md):
+DB path resolution (mirrors bristol/app.py and ticket_tools' own
+canonical discovery rule — see src/tools/ticket_tools/README.md):
     1. TEST_CONTROL_DB env var — explicit full path override (testing).
-    2. Discover the active instance dir the same way roadmap_tools does
-       (the parent of data/*/roadmap/roadmap.db), then use
+    2. Discover the active instance dir the same way ticket_tools does
+       (the parent of data/*/tickets/tickets.db), then use
        data/<instance>/test_control/test_control.db.
-    3. Fallback if no roadmap.db exists yet: first existing data/<instance>/
+    3. Fallback if no tickets.db exists yet: first existing data/<instance>/
        dir, else data/<AGENT_INSTANCE_SLUG or "default_user">/.
 
 No personal paths or usernames are hardcoded — same invariant as
-roadmap_tools (see its README, item 1).
+ticket_tools (see its README, item 1).
 """
 
 import os
@@ -41,7 +41,7 @@ def _project_root() -> Path:
 
 
 # ---------------------------------------------------------------------------
-# DB PATH RESOLUTION (mirrors roadmap_tools' canonical rule)
+# DB PATH RESOLUTION (mirrors ticket_tools' canonical rule)
 # ---------------------------------------------------------------------------
 
 def _resolve_db_path() -> Path:
@@ -53,9 +53,9 @@ def _resolve_db_path() -> Path:
 
     instance_dir = None
     if data_root.exists():
-        roadmap_matches = list(data_root.glob("*/roadmap/roadmap.db"))
-        if roadmap_matches:
-            instance_dir = roadmap_matches[0].parent.parent  # data/<instance>
+        tickets_matches = list(data_root.glob("*/tickets/tickets.db"))
+        if tickets_matches:
+            instance_dir = tickets_matches[0].parent.parent  # data/<instance>
         else:
             existing = sorted(p for p in data_root.iterdir() if p.is_dir())
             if existing:

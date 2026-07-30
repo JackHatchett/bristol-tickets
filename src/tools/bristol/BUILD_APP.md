@@ -14,7 +14,7 @@ Two approaches, for two different needs:
   artifact.
 
 Both produce a real Dock icon. The launcher and any built bundle are
-user-specific artifacts (they hard-code your paths) — like `roadmap_db.local`,
+user-specific artifacts (they hard-code your paths) — like `tickets_db.local`,
 they live outside version control, never committed.
 
 ---
@@ -44,9 +44,9 @@ Two things that make or break it:
   Finder-launched app gets a minimal `PATH`, so a bare `python3` often resolves
   to a system Python without PySide6. Find the right one with
   `python3 -c "import PySide6, sys; print(sys.executable)"` and hard-code that.
-- **No `roadmap_db.local` needed.** Because the launcher runs the in-repo
+- **No `tickets_db.local` needed.** Because the launcher runs the in-repo
   `app.py`, its relative discovery walks up to the repo and finds
-  `data/*/roadmap/roadmap.db` on its own (see `app.py` `_resolve_db_path`).
+  `data/*/tickets/tickets.db` on its own (see `app.py` `_resolve_db_path`).
 
 Drop `Bristol.app` in `~/Applications` (no admin needed) or `/Applications`,
 then right-click its Dock tile → Options → Keep in Dock. Editing any
@@ -73,12 +73,12 @@ the repo folders the way `python3 app.py` does. Tell it the absolute path by
 creating a one-line, git-ignored file:
 
 ```bash
-echo "/Users/YOU/data/<your-instance>/roadmap/roadmap.db" > roadmap_db.local
+echo "/Users/YOU/data/<your-instance>/tickets/tickets.db" > tickets_db.local
 ```
 
-`roadmap_db.local` is in `.gitignore`, so your personal path never gets
+`tickets_db.local` is in `.gitignore`, so your personal path never gets
 committed. (Alternatively, skip this and always launch with
-`ROADMAP_DB=/path/... open "dist/Bristol.app"`, but the file is simpler.)
+`TICKETS_DB=/path/... open "dist/Bristol.app"`, but the file is simpler.)
 
 ### Step 2 — the icon (already included)
 
@@ -116,7 +116,7 @@ python3 setup.py py2app
   Open, once, to approve it (it's unsigned).
 - **App launches then quits** — run the binary directly to see the error:
   `"dist/Bristol.app/Contents/MacOS/Bristol"`. Most often it's a wrong
-  path in `roadmap_db.local`, or a missing Qt plugin (reinstall PySide6 and
+  path in `tickets_db.local`, or a missing Qt plugin (reinstall PySide6 and
   rebuild clean).
 - **Prefer no build at all?** Use **Approach A** (live-source launcher) above —
   a Dock icon that runs the repo source with no build step. The frozen bundle

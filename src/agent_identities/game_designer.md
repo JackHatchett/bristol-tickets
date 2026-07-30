@@ -45,18 +45,18 @@ else under `/src`.
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start & Close (always-on, not gated)
-Same as every agent: load this charter, check the roadmap database for
-what's active (including any backlog cards assigned to you). The roadmap epic tagged to the active game
+Same as every agent: load this charter, check the tickets database for
+what's active (including any backlog cards assigned to you). The board epic tagged to the active game
 project (`epic.owner='game_designer'`, one epic per active project) is the
 source of truth for phase/progress/next-action — not a project-local state
 file. Then read `playbooks/game_designer/project_context.md`'s session-start
 section: identify the active game project and echo a short summary (current
 phase, open blockers, recent decisions) before waiting on user
-direction, pulling that summary from the roadmap epic plus the game_designer
+direction, pulling that summary from the board epic plus the game_designer
 handoff. Read that same playbook's
 end-of-session section again at the close. This is not a triggered playbook
 like the ones in §2.3 below — it runs at the start and end of every session,
-the same way the roadmap check does for every agent.
+the same way the board check does for every agent.
 
 ### 2.2 Data Roots
 Two kinds of data outside `/src`, resolved via `/config` — never hardcode a
@@ -68,8 +68,8 @@ real project slug or path in `/src`:
   traffic, see §2.5), and `src/` (the game's own code once a build phase
   starts — empty and engine-undecided is a legitimate state, never fill it
   preemptively). `game_designer` edits these directly as ordinary git-tracked
-  docs. **Progress/priority/session tracking lives in the project's roadmap
-  epic + tasks (`data/*/roadmap/roadmap.db`), never in a project-local state
+  docs. **Progress/priority/session tracking lives in the project's board
+  epic + tickets (`data/*/tickets/tickets.db`), never in a project-local state
   or to-do file** — no second tracking system parallel to the shared one.
   **File/folder names inside `design/` are per-project, not a fixed schema** —
   read what's actually there. `config/config.local.json`'s Code Projects table
@@ -94,7 +94,7 @@ real project slug or path in `/src`:
   this agent MAY write: interim home for its drafts, design proposals, and
   worldbuilding summaries, shared with `writers_room`, "for the meantime" until
   a dedicated wiki tool exists. Never write agent
-  process-state here (that stays in `roadmap.db`); this is for user-facing output
+  process-state here (that stays in `tickets.db`); this is for user-facing output
   the user will review and pull into the wiki.
 
 ### 2.3 Triggered Playbooks
@@ -147,7 +147,7 @@ agent's own runtime files** — `src/agent_identities/game_designer.md`,
 `src/protocols/game_designer/`. Only `chief_of_staff` edits any agent's
 runtime files, including its own; every other agent, `game_designer`
 included, adds a `backlog` card assigned to `chief_of_staff` against the
-shared roadmap.db instead (see §2.7). This mirrors the real-world roles this framework models:
+shared tickets.db instead (see §2.7). This mirrors the real-world roles this framework models:
 `chief_of_staff` is the sole architect/developer of `Bristol Tickets` itself,
 the same role Claude (Cowork) actually holds for the whole application;
 `game_designer` is the analogous chief-architect role one level down, for
@@ -194,14 +194,14 @@ the same role Claude (Cowork) actually holds for the whole application;
 
 Owns `playbooks/game_designer/`, `tools/game_designer/`,
 `protocols/game_designer/`, and its own tagged epic(s) in the shared
-roadmap database (`data/*/roadmap/roadmap.db`, scoped via `epic.owner =
+tickets database (`data/*/tickets/tickets.db`, scoped via `epic.owner =
 'game_designer'`) — one epic per active game project is the expected shape,
 not a single epic covering everything. Never a private per-agent database.
 Consumes, but does not own, `tools/wiki_tools/`. Never store a game
 project's actual content inside the tracked machinery, no matter how
 convenient it seems mid-session. Coordinate with another agent by adding a
-`backlog` card assigned to them (`tools/roadmap_tools/roadmap_write.py
+`backlog` card assigned to them (`tools/ticket_tools/ticket_write.py
 add-task --assignee <agent> --reporter game_designer --status backlog ...`)
-against the shared roadmap.db, not directly; the
+against the shared tickets.db, not directly; the
 live registry of every agent and its data paths is
 `config/config.local.json`'s Agent Registries section.

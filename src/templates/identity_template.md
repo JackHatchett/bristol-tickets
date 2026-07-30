@@ -25,9 +25,9 @@ personal-data path here.}}
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start
-Same as every agent: load this charter, check the roadmap database for
+Same as every agent: load this charter, check the tickets database for
 what's active (including any backlog cards assigned to you), then act on whatever the user directs.
-Nothing beyond the charter and the roadmap snapshot loads before the user
+Nothing beyond the charter and the board snapshot loads before the user
 says what they want done.
 
 ### 2.2 Playbooks
@@ -55,13 +55,13 @@ work, only real bright lines specific to this agent's domain.}}
 
 Owns `playbooks/{{agent_name}}/`, `tools/{{agent_name}}/`
 {{, `protocols/{{agent_name}}/` if applicable}}, and its own tagged epic(s)
-in the shared roadmap database (`data/*/roadmap/roadmap.db`, scoped via
+in the shared tickets database (`data/*/tickets/tickets.db`, scoped via
 `epic.owner = '{{agent_name}}'`) — never a private per-agent database. Never
 store personal/instance content inside the tracked machinery. Coordinate
 with another agent by adding a card assigned to them
-(`tools/roadmap_tools/roadmap_write.py add-task --assignee <agent>
+(`tools/ticket_tools/ticket_write.py add-task --assignee <agent>
 --reporter {{agent_name}} --stage active ...`) against the shared
-roadmap.db, not directly; the live registry of every agent and its data
+tickets.db, not directly; the live registry of every agent and its data
 paths is `config/config.local.json`'s Agent Registries section. (There is no
 session-handoff mechanism: work you leave mid-flight is a `doing` card on the
 active board with a high priority and your slug as `assignee`, never a

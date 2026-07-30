@@ -1,16 +1,16 @@
-# Bristol — GUI viewer for the roadmap database
+# Bristol — GUI viewer for the tickets database
 
 *(Folder: `bristol/`. "Bristol" is the app's name — after Bristol board, the
 card stock US double-roll tickets are printed on; the metaphor for this
 personal + AI ticketing system, as "kanban" was for Ohno's.)*
 
-A standalone PySide6 desktop tool that opens the shared roadmap SQLite database
+A standalone PySide6 desktop tool that opens the shared tickets SQLite database
 and displays it as a warm, card-based Kanban board with create/edit/delete, an
 epic filter, global search, and a properties inspector. Tabs are driven by
 `task.stage` (Backlog | Board=active | Archive) with manual `task.sort_order`.
 
 It is **mechanism-only**: no agent logic, no personal paths, no coupling to the
-larger application it lives in. Its only job is to open a roadmap `.db` (located
+larger application it lives in. Its only job is to open a tickets `.db` (located
 at runtime) and show it.
 
 ## Folder layout
@@ -45,10 +45,10 @@ an external consultant to ingest in one pass. The split is behaviour-preserving.
 
 ## How it finds the database (`app.py`)
 
-1. **`ROADMAP_DB`** env var — explicit full path to the `.db` file (use for
+1. **`TICKETS_DB`** env var — explicit full path to the `.db` file (use for
    testing/overrides).
 2. **Auto-discovery** — walks up to the project root and searches
-   `data/*/roadmap/roadmap.db`, using the first match. The `*` avoids
+   `data/*/tickets/tickets.db`, using the first match. The `*` avoids
    hardcoding any user-specific folder name.
 3. **Fresh provisioning** — if none exists, creates an empty DB at a default
    location and applies `schema.sql` so the app still opens.
@@ -80,7 +80,7 @@ widget (shown as "on save") and are written once the INSERT yields an id.
 Links exist because a ticket Description is confined to its Build/Fix template,
 which left provenance with nowhere to go. The rule that puts it here rather than
 in the description body is agent behaviour and lives outside this tool —
-`src/playbooks/manage_roadmap.md` (§Description discipline).
+`src/playbooks/manage_tickets.md` (§Description discipline).
 
 ## Clear Done writes a report
 
@@ -109,7 +109,7 @@ flow efficiency and work-item age computable.
 
 ```bash
 pip install PySide6
-export ROADMAP_DB="/absolute/path/to/roadmap.db"   # optional; else auto-discovers
+export TICKETS_DB="/absolute/path/to/tickets.db"   # optional; else auto-discovers
 python3 app.py
 ```
 

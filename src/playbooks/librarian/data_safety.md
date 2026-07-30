@@ -96,7 +96,7 @@ never hardcode one here and never assume a path from an old session is current.
 
 ## Logging Requirements
 Structural changes (a schema decision, a re-migration, a sync-target change) get
-recorded as a task via `roadmap_write.py add-task` (done ones stand as the
+recorded as a task via `ticket_write.py add-task` (done ones stand as the
 record), or noted on the relevant card via `add-issue-log --task-id
 --note "..."` — never a markdown changelog in the data root.
 

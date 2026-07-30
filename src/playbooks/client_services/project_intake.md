@@ -64,7 +64,7 @@ briefing.
 None — this is a file-scaffolding procedure, not a script.
 
 ## Logging Requirements
-Log the new client/project via `tools/roadmap_tools/roadmap_write.py
+Log the new client/project via `tools/ticket_tools/ticket_write.py
 add-task` against this agent's own epic, not a separate tracking file.
 
 ## Failure Modes

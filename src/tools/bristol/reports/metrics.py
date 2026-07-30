@@ -1,4 +1,4 @@
-"""metrics.py — turn the roadmap DB into a dict of computed facts.
+"""metrics.py — turn the tickets DB into a dict of computed facts.
 
 No file I/O, no Markdown, no notebook knowledge: give it a connection and the
 ids of the cards that just left the board, get back a plain dict. That makes

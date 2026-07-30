@@ -1,12 +1,12 @@
 # Session Closure — career_coach playbook
 
-career_coach has its own tagged epic in the shared `roadmap.db`
+career_coach has its own tagged epic in the shared `tickets.db`
 (`epic.owner = 'career_coach'`; see
-`src/tools/roadmap_tools/roadmap_write.py` and `agent_status.py`). Session
+`src/tools/ticket_tools/ticket_write.py` and `agent_status.py`). Session
 start and close both read/write that epic and its tasks, not `STATE.md` /
 `CHANGELOG.md` in the personal data root — those two files are retired as
 live state trackers. They're kept on disk as historical record
-of the pre-roadmap-db tracking era; don't overwrite or append to them.
+of the pre-tickets-db tracking era; don't overwrite or append to them.
 
 ## Session start echo
 
@@ -28,8 +28,8 @@ evaluation/letter/resume workflow.
    step is unchanged, since it targets the foundation/context modules, not
    state tracking.
 2. For anything that changed this session — a task finished, a new
-   follow-up surfaced, priorities shifted — update the roadmap db directly
-   via `roadmap_write.py`: mark finished tasks done, `add-task --epic-id
+   follow-up surfaced, priorities shifted — update the tickets db directly
+   via `ticket_write.py`: mark finished tasks done, `add-task --epic-id
    <career_coach's epic id>` for new follow-ups, and adjust `next_action` on
    the epic if it changed. Don't invent a parallel tracking file for this.
 3. Leave nothing in prose. Anything still mid-flight ends the session as a

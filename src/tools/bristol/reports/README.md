@@ -98,7 +98,7 @@ mobile, in a git diff, and in whatever reads Markdown in ten years.
 
 **Period boundaries live in the artefacts.** A period runs from the previous
 report's `period_end`, read back out of its frontmatter. Nothing is stored
-anywhere else — the repo's standing rule is that `roadmap.db` is the only place
+anywhere else — the repo's standing rule is that `tickets.db` is the only place
 state lives, and a report is an artefact, not state. Delete the folder and the
 next report starts a fresh series.
 

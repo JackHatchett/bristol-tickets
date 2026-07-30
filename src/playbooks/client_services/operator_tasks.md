@@ -35,7 +35,7 @@ None — this applies to every client engagement, at every phase.
 None.
 
 ## Logging Requirements
-None beyond the standard session-end roadmap update — this playbook is a
+None beyond the standard session-end board update — this playbook is a
 boundary reference, not something that produces its own artifacts.
 
 ## Failure Modes

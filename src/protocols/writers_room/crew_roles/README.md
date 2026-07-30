@@ -23,6 +23,6 @@ content-rules file and are handed to the role in its brief (see
   which reconciles it and summarizes it to the shared agent-output dir for the
   user to fold into the wiki. No 'canon' concept, no ratification gate.
 - **This directory is protocol material, not a separate agent roster.**
-  These three roles have no roadmap epic and no identity in this
+  These three roles have no board epic and no identity in this
   framework — they are what an external AI is briefed to become for one
   session, per `../gemini_bootstrap.md`.

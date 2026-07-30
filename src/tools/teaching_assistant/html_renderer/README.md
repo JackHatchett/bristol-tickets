@@ -34,7 +34,7 @@ It is **not** a source of truth for work state. `progress.json` also carries
 some status-shaped fields, and this renderer paints a few of them as badges.
 That is display in a generated artifact, and it is the only sanctioned use.
 No agent may read those fields back to decide what is done or what comes next
-— that is a board fact, held in `roadmap.db`. See
+— that is a board fact, held in `tickets.db`. See
 `src/playbooks/teaching_assistant/navigator.md`.
 
 ### Courses root resolution

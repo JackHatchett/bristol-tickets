@@ -9,4 +9,4 @@ build/
 dist/
 
 # Personal absolute DB path for the built .app — never commit (holds a user path)
-roadmap_db.local
+tickets_db.local

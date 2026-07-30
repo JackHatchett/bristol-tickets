@@ -24,8 +24,8 @@ session that didn't actually change anything durable.
    block — `cd` into the project folder, `git init` only if not already a
    repo, `git add .`, `git commit -m "<milestone message>"`.
 4. Do not introduce GitHub, branching, or remotes unless the user asks or
-   the project's own roadmap phase calls for it (see the project's roadmap
-   epic, `owner='game_designer'` in `data/*/roadmap/roadmap.db` — going
+   the project's own phase calls for it (see the project's board
+   epic, `owner='game_designer'` in `data/*/tickets/tickets.db` — going
    public/remote is usually a later-phase decision, not a day-one one).
 5. After the commit, remind the user this is now a recoverable point they
    can return to, and move on — don't over-explain git internals beyond
@@ -38,7 +38,7 @@ None — this is a coaching script, not a callable.
 If the milestone also represents a new design decision, record it in its home
 (worldbuilding → the user documents it in the notebook; mechanics/art → the
 repo `design/`) and, if it's worth flagging to the
-next session, put it on a `doing` card via `roadmap_write.py add-issue-log`.
+next session, put it on a `doing` card via `ticket_write.py add-issue-log`.
 A purely mechanical commit
 (no new design content) needs neither — just the git steps themselves. (There
 is no separate per-epic log.)

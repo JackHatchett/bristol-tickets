@@ -34,7 +34,7 @@ There is **no 'canon' concept** and no ratification ceremony. Design content has
      (`markdown_notebook.agent_output_dir`) for the user to add to the wiki (you
      don't write into the wiki itself);
    - **mechanics / art** → update the repo `design/` file directly.
-5. If it resolves an open blocker, close the roadmap task (see
+5. If it resolves an open blocker, close the ticket (see
    `project_context.md`).
 6. If it came from the Gem, move the request/return pair into
    `handoffs/archive/<request_id>/` once handled.

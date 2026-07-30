@@ -9,7 +9,7 @@ it, or add references to it.
 ## What this tool is
 
 A single-purpose **desktop GUI** (PySide6 / Qt for Python) that opens one
-**SQLite** database — a project "roadmap" of epics and tasks — and lets a human
+**SQLite** database — a project "tickets" of epics and tasks — and lets a human
 view and edit it as a Kanban board. That is the whole job.
 
 It is **mechanism-only**: it has no notion of who the user is, no business
@@ -20,11 +20,11 @@ it as a specialized spreadsheet viewer for one database shape.
 
 1. **No personal data, no absolute user paths, no usernames** anywhere in the
    code. The database location is discovered at runtime (see "How it finds the
-   DB"). If you need a path for testing, use the `ROADMAP_DB` environment
+   DB"). If you need a path for testing, use the `TICKETS_DB` environment
    variable — never hardcode one.
 2. **Keep it mechanism-only.** No feature that assumes a specific user, project,
    company, or workflow. If a change would require knowing anything about the
-   world outside "a roadmap database," it does not belong here.
+   world outside "a tickets database," it does not belong here.
 3. **Behaviour-preserving unless asked.** The SQL and data flow are considered
    correct. When fixing UI, don't silently change what gets written to the DB.
 4. **Keep files small and single-purpose** (see the module map). If a file
@@ -54,9 +54,9 @@ owns your concern:
 
 In priority order:
 
-1. `ROADMAP_DB` environment variable — an explicit path to the `.db` file.
-   Use this for local testing: `export ROADMAP_DB=/tmp/test_roadmap.db`.
-2. Otherwise it searches upward from `app.py` for a `data/*/roadmap/roadmap.db`
+1. `TICKETS_DB` environment variable — an explicit path to the `.db` file.
+   Use this for local testing: `export TICKETS_DB=/tmp/test_tickets.db`.
+2. Otherwise it searches upward from `app.py` for a `data/*/tickets/tickets.db`
    and uses the first match. The `*` is intentional — it avoids hardcoding any
    user-specific folder name.
 3. If nothing exists yet, it creates an empty DB at a default location and
@@ -95,7 +95,7 @@ change.
 
 ```bash
 pip install PySide6            # once
-export ROADMAP_DB=/path/to/roadmap.db   # optional; else it auto-discovers
+export TICKETS_DB=/path/to/tickets.db   # optional; else it auto-discovers
 python3 app.py
 ```
 

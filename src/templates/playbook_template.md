@@ -21,15 +21,15 @@ Example structure:
 2. Stage items in a temporary working directory.
 3. Apply classification or transformation.
 4. Route results to the correct destination (the owning agent's own data root, per its charter — not a shared routing config).
-5. Log structural changes via `tools/roadmap_tools/roadmap_write.py` (add-task / add-issue-log) against the shared roadmap.db — never a markdown state file, and never a handoff note (there is no such mechanism).
+5. Log structural changes via `tools/ticket_tools/ticket_write.py` (add-task / add-issue-log) against the shared tickets.db — never a markdown state file, and never a handoff note (there is no such mechanism).
 
 ## The board is the only channel (applies to every playbook)
 
 Do not write a procedure that violates any of these. Full rule:
-`src/tools/roadmap_tools/README.md` (§The board is the only channel).
+`src/tools/ticket_tools/README.md` (§The board is the only channel).
 
 - Work state — done / next / in progress / awaited / who owes whom / order —
-  lives in `roadmap.db` and nowhere else.
+  lives in `tickets.db` and nowhere else.
 - **Never derive a next action from a file.** No scanning a folder, no reading
   a JSON status field, no "take the latest file by name." A step that does this
   is a second tracker.
@@ -38,7 +38,7 @@ Do not write a procedure that violates any of these. Full rule:
 - Never require the user to carry work between the board and an agent.
 - No phases and no deferral in prose — no "phase 1," "later," "next pass," or
   "TODO." Either it is in scope or it is another card.
-- A file an outside party must be shown because it cannot read `roadmap.db` is
+- A file an outside party must be shown because it cannot read `tickets.db` is
   a **payload**: a ticket names it, the ticket holds the state, deleting it
   loses nothing.
 
@@ -56,7 +56,7 @@ Example:
 - tools/maintenance/build_diagrams.py
 
 ## Logging Requirements
-Describe what must be logged via `roadmap_write.py` against the shared roadmap.db.  
+Describe what must be logged via `ticket_write.py` against the shared tickets.db.  
 Examples:
 - Items processed
 - Items routed

@@ -57,7 +57,7 @@ output carries one of these statuses:
 Nothing is settled until the user accepts it; then it is routed per
 `playbooks/game_designer/design_proposals.md` (worldbuilding → the user
 documents it in the notebook; mechanics/art → `game_designer` files it in the
-repo) and any resolved blocker is closed on the roadmap epic. `APPROVED_PENDING`
+repo) and any resolved blocker is closed on the board epic. `APPROVED_PENDING`
 means "the user likes it" — still not in the notebook/repo until documented/filed.
 
 ## The module library — what the Gem can run
@@ -144,7 +144,7 @@ pair of folders should only ever show live, unfiled work.
    proposals against the whole project, reviews with the user, then routes
    accepted items (worldbuilding → the user documents in the notebook;
    mechanics/art → `game_designer` files in the repo), closes any resolved
-   blocker on the roadmap epic, and archives the request/return pair.
+   blocker on the board epic, and archives the request/return pair.
 
 ## Anti-plagiarism is part of this contract
 

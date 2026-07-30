@@ -3,7 +3,7 @@
 **Source of truth for the unified personal-tracking database.** Built by
 `chief_of_staff`. Consolidates the user's personal-tracking
 data stores behind one SQLite DB that renders xlsx snapshots — the same
-"one source of truth, xlsx is a generated view" pattern as the roadmap.
+"one source of truth, xlsx is a generated view" pattern as the tickets database.
 
 ## 1. Goals & principles
 
@@ -25,10 +25,10 @@ data stores behind one SQLite DB that renders xlsx snapshots — the same
   the xlsx render. No ORM.
 - **No personal paths in `/src`.** All paths resolve from env vars set in
   `config/config.local.json` (`personal_db` block), exactly like
-  `ZOTERO_DATA_DIR` / roadmap discovery. Falls back to canonical
+  `ZOTERO_DATA_DIR` / tickets discovery. Falls back to canonical
   `data/*/personal/` discovery when the env is unset (forkable).
 - **Write safety over the mount.** Every writer opens with
-  `PRAGMA journal_mode=MEMORY` (see `tools/roadmap_tools/README.md` §3b). Never
+  `PRAGMA journal_mode=MEMORY` (see `tools/ticket_tools/README.md` §3b). Never
   do ad-hoc default-journal `sqlite3.connect` writes against the mounted DB.
   // A default-journal write over the sandbox→Mac bridge can wedge the DB with
   // a hot rollback journal; MEMORY mode writes no such file.

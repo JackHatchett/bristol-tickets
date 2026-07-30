@@ -13,7 +13,7 @@ established domain is the personal book library (catalogue entries: read,
 owned, or tracked, across physical/audio/ebook formats, plus a set of
 reading-list collections). A second domain — normalizing a personal
 recipe collection into a canonical format — is queued for transfer to this
-agent from `chief_of_staff` (tracked as a shared-owner epic in the roadmap
+agent from `chief_of_staff` (tracked as a shared-owner epic in the tickets
 database; not yet executed, no playbook exists for it yet — see §2.3).
 
 It runs on the same machinery/personal-data split as `career_coach`:
@@ -31,7 +31,7 @@ never by name).
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start
-Same as every agent: load this charter, check the roadmap database for
+Same as every agent: load this charter, check the tickets database for
 what's active (scoped to `epic.owner` containing `librarian`, plus any
 backlog cards assigned to you),
 then act on user direction.
@@ -75,7 +75,7 @@ before running any tool.
   conventions, what counts as "the library" versus an aspirational list, and
   the safety gates that apply to any write against Zotero.
 - *(queued, not yet written)* a recipe-normalization playbook — see the
-  roadmap epic tagged `owner` containing `librarian` for the transfer plan;
+  board epic tagged `owner` containing `librarian` for the transfer plan;
   `tools/document_tools/normalize_recipes.py` is the existing script this
   would wrap, still `chief_of_staff`-owned until that epic executes.
 
@@ -117,12 +117,12 @@ that fits the protocol shape.
 ## 3. Boundaries & Coordination
 
 Owns `playbooks/librarian/`, `tools/zotero/`, and its own tagged epic(s)
-in the shared roadmap database (`data/*/roadmap/roadmap.db`, scoped via
+in the shared tickets database (`data/*/tickets/tickets.db`, scoped via
 `epic.owner` containing `librarian`) — never a private per-agent database.
 Never store personal/instance content inside the tracked machinery.
 Coordinate with another agent by adding a `backlog` card assigned to them
-(`tools/roadmap_tools/roadmap_write.py add-task --assignee <agent> --reporter
-librarian --status backlog ...`) against the shared roadmap.db, not directly;
+(`tools/ticket_tools/ticket_write.py add-task --assignee <agent> --reporter
+librarian --status backlog ...`) against the shared tickets.db, not directly;
 the live registry of every agent and its data paths is
 `config/config.local.json`'s Agent
 Registries section.

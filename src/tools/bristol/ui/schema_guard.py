@@ -1,7 +1,7 @@
 """ui/schema_guard.py — on-launch, non-destructive schema migration.
 
 The viewer is a read/write client of a database it does not own (the shared
-roadmap.db). Older databases may predate columns/tables this UI expects, so on
+tickets.db). Older databases may predate columns/tables this UI expects, so on
 every launch we add only what is missing. This never drops or rewrites data —
 it is safe to run against an already-current database (all operations are
 idempotent: ADD COLUMN only when absent, CREATE TABLE IF NOT EXISTS).
@@ -49,7 +49,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 
     # The `handoff` table is retired. A per-agent "where things stand" note is
     # work state living somewhere other than a card, which is exactly what the
-    # board exists to prevent — being stored inside roadmap.db never made it
+    # board exists to prevent — being stored inside tickets.db never made it
     # part of the board. Carry-forward is now a `doing` card on the active
     # board with a real owner and priority. Dropped on launch; idempotent.
     _drop_retired_handoff(conn)
@@ -63,7 +63,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 
     # issue_log — the single, visible, structured per-issue progress log
     # (author + timestamp + body). Both the user (via the viewer's Post
-    # button) and agents (via roadmap_write.py add-issue-log) append to it.
+    # button) and agents (via ticket_write.py add-issue-log) append to it.
     conn.execute("""
         CREATE TABLE IF NOT EXISTS issue_log (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -169,7 +169,7 @@ _NOW_SQL = "strftime('%Y-%m-%dT%H:%M:%f000+00:00','now')"
 def _change_log_sql(actor: str) -> str:
     """The two triggers that write the change log, with `actor` baked in.
 
-    Mirrored by `_change_log_sql` in roadmap_tools/roadmap_write.py, following
+    Mirrored by `_change_log_sql` in ticket_tools/ticket_write.py, following
     this repo's convention that Bristol and the CLI writer each carry their own
     copy of shared DB logic so neither depends on the other's package (the
     viewer also ships as a relocatable .app).

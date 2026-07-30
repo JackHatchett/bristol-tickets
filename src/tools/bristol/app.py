@@ -1,11 +1,11 @@
 """app.py — launch the Bristol GUI.
 
 DB path resolution (highest to lowest priority):
-  1. ROADMAP_DB env var — explicit full path to the .db file (for testing/overrides).
+  1. TICKETS_DB env var — explicit full path to the .db file (for testing/overrides).
   2. Dynamic relative discovery — steps up to the project root and searches /data 
-     for the instance roadmap.db without hardcoding user identifiers.
+     for the instance tickets.db without hardcoding user identifiers.
 
-This tool is mechanism-only: it launches the PySide6 GUI for a roadmap DB.
+This tool is mechanism-only: it launches the PySide6 GUI for a tickets DB.
 It contains no agent-specific logic, no personal paths, and no complex provisioning.
 """
 
@@ -30,25 +30,25 @@ def _project_root() -> Path:
 
 
 def _resolve_db_path() -> Path:
-    """Resolve the roadmap DB path dynamically.
+    """Resolve the tickets DB path dynamically.
 
     Priority order (highest first). The `.local` file is what makes a relocated
     py2app bundle work: relative discovery (step 3) only succeeds when app.py is
     still sitting above the repo's data/ folder, which is NOT the case inside a
     built .app. So the bundle is told the absolute path via a git-ignored
-    `roadmap_db.local` file that is bundled at build time — keeping the personal
+    `tickets_db.local` file that is bundled at build time — keeping the personal
     path out of version control while still letting the double-clickable app
     find the database.
     """
 
-    # 1. Explicit DB path via ROADMAP_DB env var (testing/overrides).
-    env_db = os.environ.get("ROADMAP_DB")
+    # 1. Explicit DB path via TICKETS_DB env var (testing/overrides).
+    env_db = os.environ.get("TICKETS_DB")
     if env_db:
         return Path(os.path.expanduser(env_db))
 
     # 2. A git-ignored one-line file next to app.py holding an absolute path.
     #    Create it once (see BUILD_APP.md) before building the .app.
-    local_pointer = Path(__file__).resolve().parent / "roadmap_db.local"
+    local_pointer = Path(__file__).resolve().parent / "tickets_db.local"
     if local_pointer.exists():
         text = local_pointer.read_text().strip()
         if text:
@@ -57,15 +57,15 @@ def _resolve_db_path() -> Path:
     # 3. Relative discovery — works when run in-place from the repo.
     data_dir = _project_root() / "data"
 
-    # Search for the roadmap.db dynamically to avoid hardcoding an instance slug
+    # Search for the tickets.db dynamically to avoid hardcoding an instance slug
     if data_dir.exists():
-        matches = list(data_dir.glob("*/roadmap/roadmap.db"))
+        matches = list(data_dir.glob("*/tickets/tickets.db"))
         if matches:
             return matches[0]
 
     # 4. Fallback for fresh provisioning if the db does not exist yet.
     user_slug = os.environ.get("AGENT_INSTANCE_SLUG", "default_user")
-    return data_dir / user_slug / "roadmap" / "roadmap.db"
+    return data_dir / user_slug / "tickets" / "tickets.db"
 
 
 def main() -> None:

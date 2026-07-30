@@ -1,7 +1,7 @@
 # Storage Audit — Cleanup Inventory & Process
 
 **Cadence:** Monthly (or anytime a drive is getting full)
-**Logging:** After completing each audit, log a summary via `tools/roadmap_tools/roadmap_write.py add-task` against the shared roadmap.db — never a markdown state file.
+**Logging:** After completing each audit, log a summary via `tools/ticket_tools/ticket_write.py add-task` against the shared tickets.db — never a markdown state file.
 
 ---
 
@@ -81,15 +81,15 @@
 
 ## Reminder System
 
-### Approach: Session check-in + roadmap log
-Claude checks the shared roadmap.db at session start for the age of the last storage-audit task. If none in the past 30 days, flags it. After each audit, log a short summary (what was found, what was cleaned, freed space by service) via `roadmap_write.py add-task` — never a markdown state file.
+### Approach: Session check-in + ticket log
+Claude checks the shared tickets.db at session start for the age of the last storage-audit task. If none in the past 30 days, flags it. After each audit, log a short summary (what was found, what was cleaned, freed space by service) via `ticket_write.py add-task` — never a markdown state file.
 
 ### Monthly automated check (once available)
 Will check:
 - Mac storage via `df -h`
 - Configured backup drive capacity if mounted
 - Age of the last logged audit
-- Log the summary via `roadmap_write.py`
+- Log the summary via `ticket_write.py`
 
 ### Google's built-in tool
 For Gmail + GDrive + GPhotos storage combined:

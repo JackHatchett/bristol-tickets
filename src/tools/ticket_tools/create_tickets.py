@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-create_roadmap.py — provision a fully robust roadmap.db identical to the UI's schema.
+create_tickets.py — provision a fully robust tickets.db identical to the UI's schema.
 
 This script:
-    - Creates data/<instance>/roadmap/roadmap.db
+    - Creates data/<instance>/tickets/tickets.db
     - Ensures the DB schema matches the UI's auto-migrated schema
     - Seeds the DB with a default epic + default tasks
     - Throws an error if the DB already exists
@@ -11,7 +11,7 @@ This script:
     - Contains NO personal data, NO usernames, NO environment variables
 
 Usage:
-    python3 create_roadmap.py --instance <name>
+    python3 create_tickets.py --instance <name>
 """
 
 import sys
@@ -42,15 +42,15 @@ def _project_root() -> Path:
 def resolve_output_path(instance: str) -> Path:
     """
     Create:
-        data/<instance>/roadmap/roadmap.db
+        data/<instance>/tickets/tickets.db
     """
     data_root = _project_root() / "data"
 
     instance_dir = data_root / instance
-    roadmap_dir = instance_dir / "roadmap"
-    roadmap_dir.mkdir(parents=True, exist_ok=True)
+    tickets_dir = instance_dir / "tickets"
+    tickets_dir.mkdir(parents=True, exist_ok=True)
 
-    return roadmap_dir / "roadmap.db"
+    return tickets_dir / "tickets.db"
 
 
 # ---------------------------------------------------------------------------
@@ -176,7 +176,7 @@ DEFAULT_TASKS = [
     ("Define agent purpose and scope", "Write a clear one-paragraph statement.", 80),
     ("Create agent loader", "Scaffold CLAUDE.md with load order.", 70),
     ("Create charter", "Draft identity, authority, mandate.", 60),
-    ("Set up data store", "Create state and roadmap stubs.", 50),
+    ("Set up data store", "Create state and ticket stubs.", 50),
     ("Register agent", "Add entry to global registry.", 40),
 ]
 
@@ -211,7 +211,7 @@ def seed_db(conn: sqlite3.Connection, instance: str) -> None:
         )
         conn.execute(
             "INSERT INTO issue_log (task_id, author, body, created_at) VALUES (?,?,?,?)",
-            (cur2.lastrowid, "system", "created by create_roadmap.py", now),
+            (cur2.lastrowid, "system", "created by create_tickets.py", now),
         )
 
     conn.commit()
@@ -223,19 +223,19 @@ def seed_db(conn: sqlite3.Connection, instance: str) -> None:
 
 def main() -> None:
     if "--instance" not in sys.argv:
-        sys.exit("Usage: create_roadmap.py --instance <name>")
+        sys.exit("Usage: create_tickets.py --instance <name>")
 
     try:
         instance = sys.argv[sys.argv.index("--instance") + 1].strip()
     except Exception:
-        sys.exit("create_roadmap: missing instance name")
+        sys.exit("create_tickets: missing instance name")
 
     db_path = resolve_output_path(instance)
 
     if db_path.exists():
-        sys.exit(f"create_roadmap: ERROR — DB already exists at {db_path}")
+        sys.exit(f"create_tickets: ERROR — DB already exists at {db_path}")
 
-    print(f"Provisioning roadmap DB for instance '{instance}'")
+    print(f"Provisioning tickets DB for instance '{instance}'")
     print(f"  DB path: {db_path}")
 
     conn = sqlite3.connect(db_path)

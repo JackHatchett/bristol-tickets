@@ -75,14 +75,14 @@ invisible at runtime.
 Legacy data roots often contain a living "current state" file (`STATE.md`,
 `CHANGELOG.md`, `next_session.md`, or similar). Do not assume this content
 is still accurate just because it's the only tracking mechanism you can
-find — check it against the shared roadmap.db and, wherever possible,
+find — check it against the shared tickets.db and, wherever possible,
 against the real thing it describes by direct inspection (a stale status
 claim caught by actually looking at the files is far better than one
 propagated forward). Migrate any still-open, user-confirmed-relevant items
-into the agent's own roadmap epic as tasks
-(`tools/roadmap_tools/roadmap_write.py add-epic` / `add-task`), then move
+into the agent's own board epic as tasks
+(`tools/ticket_tools/ticket_write.py add-epic` / `add-task`), then move
 the file itself into the data root's own `archive/legacy_state_files/` —
-never leave it sitting at the data root's top level once a roadmap-db epic
+never leave it sitting at the data root's top level once a tickets-db epic
 exists for that agent.
 
 ### Step 3 — Grep for personal-data markers before moving anything
@@ -148,8 +148,8 @@ documented procedure, say so plainly in the closing report rather than
 writing a new one to fill the gap. A migration is a translation pass, not a
 feature-build pass.
 
-### Step 9 — Roadmap-db onboarding
-Give the migrated agent its own tagged epic in the shared roadmap.db
+### Step 9 — Tickets-db onboarding
+Give the migrated agent its own tagged epic in the shared tickets.db
 (`epic.owner` set to the agent's slug), seeded with any real open items
 carried over from Step 2b's quarantine pass.
 
@@ -161,7 +161,7 @@ disposable — durable lessons worth keeping past the conversation go to
 memory, not to a new file under `/src` or `/data`.
 
 ## Tools Used
-- `tools/roadmap_tools/roadmap_write.py` — epic/task/handoff creation during Step 9.
+- `tools/ticket_tools/ticket_write.py` — epic/task/handoff creation during Step 9.
 
 ## Logging Requirements
 Every quarantined state item and every judgment call gets recorded as a task

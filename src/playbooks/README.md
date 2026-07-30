@@ -9,7 +9,7 @@ Playbooks sit below:
 
 Playbooks sit above:
 - tools/ (scripts used by procedures)
-- the shared roadmap.db (`data/*/roadmap/roadmap.db`, via `tools/roadmap_tools/`), where results and structural changes are logged — never a markdown state file
+- the shared tickets.db (`data/*/tickets/tickets.db`, via `tools/ticket_tools/`), where results and structural changes are logged — never a markdown state file
 
 ## What Belongs Here
 A playbook is:
@@ -30,9 +30,9 @@ A playbook is not:
 Playbooks are organized into two tiers: **CoS-level** procedures that live at the top of this folder, and **agent-scoped** subfolders that hold the procedures belonging to a single agent.
 
 CoS-level (top-level) playbooks:
-- create_agent.md — bootstrap a brand-new agent from nothing (identity charter, playbooks/tools/protocols scaffolding, roadmap epic)
+- create_agent.md — bootstrap a brand-new agent from nothing (identity charter, playbooks/tools/protocols scaffolding, board epic)
 - migrate_legacy_agent.md — convert a legacy pre-reorg agent bundle into the current framework pattern
-- manage_roadmap.md — how chief_of_staff uses the roadmap DB as cross-session memory (when to read, when to update, how to treat it as the canonical queue)
+- manage_tickets.md — how chief_of_staff uses the tickets DB as cross-session memory (when to read, when to update, how to treat it as the canonical queue)
 - storage_audit.md — abstract procedure for monthly storage audits / cleanup inventory
 
 Agent-scoped subfolders (each holds the playbooks for that agent; see the agent's charter for authority):
@@ -49,13 +49,13 @@ Agent-scoped subfolders (each holds the playbooks for that agent; see the agent'
 - Do not auto‑load playbooks at session start.
 - Do not modify playbooks unless the task is explicitly “update this playbook.”
 - When a playbook references a script, use tools/ as the execution layer.
-- When a playbook produces structural changes, log them via `tools/roadmap_tools/roadmap_write.py` (add-task / add-issue-log) against the shared roadmap.db — never a parallel markdown ledger and never a handoff note (there is no such mechanism).
+- When a playbook produces structural changes, log them via `tools/ticket_tools/ticket_write.py` (add-task / add-issue-log) against the shared tickets.db — never a parallel markdown ledger and never a handoff note (there is no such mechanism).
 
 ## Cross‑Links
 - `src/agent_identities/<agent>.md` — each agent's own charter defines where that agent's durable content lives (its data root, per §2 of its charter); there is no shared routing file.
 - `config/config.local.json` (Agent Registries) — the live registry of every agent and its data paths.
 - tools/ — scripts used by playbooks.
-- `data/*/roadmap/roadmap.db` — ledger of executed actions and handoffs.
+- `data/*/tickets/tickets.db` — ledger of executed actions and handoffs.
 
 ## Human Audit Notes
 - Review this folder when changing workflows or adding new procedures.

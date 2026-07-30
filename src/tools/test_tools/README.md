@@ -1,11 +1,11 @@
 # test_tools — testing abilities for the fleet
 
-CLI / harness counterpart to the `test_control` GUI, the same way `roadmap_tools`
+CLI / harness counterpart to the `test_control` GUI, the same way `ticket_tools`
 is the CLI counterpart to `bristol`:
 
 | concern            | GUI (human-facing)     | CLI / harness (agent-facing) |
 | ------------------ | ---------------------- | ---------------------------- |
-| agent roadmap      | `bristol`              | `roadmap_tools`              |
+| agent tickets      | `bristol`              | `ticket_tools`               |
 | manual QA testing  | `test_control`         | **`test_tools`**             |
 
 This is the home for testing abilities in general — not only the manual

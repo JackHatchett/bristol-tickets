@@ -14,8 +14,8 @@ CLI
 ---
     python3 read_config.py drives.external1.path
         -> /Volumes/<ExternalDrive>
-    python3 read_config.py important_paths.roadmap_db
-        -> data/<instance>/roadmap/roadmap.db
+    python3 read_config.py important_paths.tickets_db
+        -> data/<instance>/tickets/tickets.db
     python3 read_config.py agents.career_coach.notebook_access.write
         -> false
     python3 read_config.py agents.teaching_assistant.key_data_paths.0
@@ -25,12 +25,12 @@ CLI
     python3 read_config.py --expanduser drives.icloud.path   # ~ expanded
 
 Exit status is non-zero if the key path is missing, so it composes in shells:
-    DB=$(python3 read_config.py important_paths.roadmap_db) || exit 1
+    DB=$(python3 read_config.py important_paths.tickets_db) || exit 1
 
 Import
 ------
     from read_config import get, load
-    db = get("important_paths.roadmap_db")
+    db = get("important_paths.tickets_db")
     everything = load()
 """
 

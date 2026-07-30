@@ -32,7 +32,7 @@ distinct rules:
 4. Route it: **worldbuilding/story or voice** → write the summary to the shared
    agent-output dir for the user to fold into the wiki (you don't write into the
    wiki itself).
-5. If it resolves an open blocker, close the roadmap task (see
+5. If it resolves an open blocker, close the ticket (see
    `project_context.md`).
 
 ## Notes

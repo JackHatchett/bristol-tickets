@@ -57,7 +57,7 @@ def _utcnow() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Storage (Qt-free; roadmap_write.py mirrors this logic for the CLI)
+# Storage (Qt-free; ticket_write.py mirrors this logic for the CLI)
 # ---------------------------------------------------------------------------
 
 def _pair(a: int, b: int) -> tuple[int, int]:

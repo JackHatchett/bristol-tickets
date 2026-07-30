@@ -8,7 +8,7 @@ not generate files. Does not decide priority — the board already did.
 
 **Work state comes from the board and only from the board.** What is in
 progress, what is finished, what comes next, and in what order are facts held
-in `roadmap.db`. This playbook may not re-derive any of them from a file on
+in `tickets.db`. This playbook may not re-derive any of them from a file on
 disk. Computing a ranking of its own out of `progress.json` would be a second
 next-action engine competing with the board.
 
@@ -22,7 +22,7 @@ renderer paints some of them as badges in generated output; a generated
 artifact displaying a value is not a channel an agent reads back.
 
 ## Preconditions
-The board is readable. Run `python3 src/tools/roadmap_tools/agent_status.py
+The board is readable. Run `python3 src/tools/ticket_tools/agent_status.py
 teaching_assistant` — that is the input to this playbook.
 
 ## Procedure
@@ -71,7 +71,7 @@ not appear in this output at all — its absence from the board is the answer.
 themselves when ready.
 
 ## Tools Used
-`src/tools/roadmap_tools/agent_status.py` (the input). `progress.json` is read
+`src/tools/ticket_tools/agent_status.py` (the input). `progress.json` is read
 for content lookup only.
 
 ## Logging Requirements
