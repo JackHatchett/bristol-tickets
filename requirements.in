@@ -1,0 +1,13 @@
+# Top‑level dependencies for my app
+requests
+playwright
+PySide6
+Pillow
+pillow-heif
+reverse_geocoder
+keyring
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+ocrmypdf

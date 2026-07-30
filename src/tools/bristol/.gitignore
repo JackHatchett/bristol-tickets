@@ -1,0 +1,12 @@
+# Keep the consultant-uploadable folder clean of machine junk.
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# py2app build artifacts (see setup.py)
+build/
+dist/
+
+# Personal absolute DB path for the built .app — never commit (holds a user path)
+roadmap_db.local

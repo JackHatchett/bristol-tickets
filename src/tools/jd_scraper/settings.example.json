@@ -1,0 +1,51 @@
+{
+  "paths": {
+    "project_root": "<agent_data_root>/career",
+    "job_feed": "applications/pipeline/job_feed.json",
+    "job_descriptions_base": "applications/job_descriptions_raw",
+    "pipeline_log": "applications/pipeline/logs/pipeline.log",
+    "applications_csv": "Applications.csv",
+    "ready_marker": "applications/pipeline/.pipeline_ready",
+    "_notes": "project_root is resolved per-instance via config, not hardcoded (the real instance root is data/*/career/ per the framework's generic-glob convention). applications_csv lives directly at project_root, not under applications/ -- it's the living/primary tracker, not historical data; its actual filename is instance-specific. Everything else under paths is historical/pipeline data and lives inside applications/."
+  },
+  "gmail": {
+    "credentials_file": "config/gmail_credentials.json",
+    "token_file": "config/gmail_token.json",
+    "lookback_days": 1,
+    "query": "(from:jobalert@linkedin.com OR from:alerts@indeed.com OR from:alerts@ziprecruiter.com OR from:no-reply@flexjobs.com OR from:noreply@jobs.lever.co OR from:greenhouse.io OR subject:\"job alert\" OR subject:\"new jobs for you\" OR subject:\"jobs matching\" OR subject:\"recommended jobs\")",
+    "known_senders": [
+      "jobalert@linkedin.com",
+      "alerts@indeed.com",
+      "alerts@ziprecruiter.com",
+      "no-reply@flexjobs.com"
+    ],
+    "_notes": "lookback_days: 1 = today's emails only (steady-state daily cron). 3 = catch-up window on first run or after a skipped day. known_senders are senders whose tracked redirect URLs are known to land on usable ATS pages; other senders get their canonical URL resolved by following the redirect. Tune query if you add or remove alert sources."
+  },
+  "scraper": {
+    "network_idle_timeout_ms": 12000,
+    "scroll_wait_ms": 2000,
+    "playwright_hosts": [
+      "jobs.lever.co",
+      "job-boards.greenhouse.io",
+      "boards.greenhouse.io",
+      "myworkdayjobs.com",
+      "jobs.ashbyhq.com",
+      "ziprecruiter.com",
+      "www.ziprecruiter.com",
+      "indeed.com",
+      "www.indeed.com",
+      "flexjobs.com",
+      "www.flexjobs.com"
+    ],
+    "skip_hosts": [
+      "linkedin.com",
+      "www.linkedin.com"
+    ],
+    "_notes": "playwright_hosts are ATS hosts the local Playwright scraper can handle. Greenhouse is SSR (web_fetch already works there too; Playwright is a harmless fallback). Lever is client-rendered and empty via web_fetch, so Playwright is the only local option. Workday and Ashby are listed but should be confirmed per-tenant before relying on them. ZipRecruiter, Indeed, and FlexJobs need the persistent browser_profile/ login session to get past bot walls reliably. skip_hosts (LinkedIn) is excluded because the interactive session's Chrome-extension same-origin fetch recipe (see README.md) returns cleaner structured text than any local scrape."
+  },
+  "pipeline": {
+    "max_jobs_per_run": 15,
+    "playwright_headless": true,
+    "_notes": "Daily caps: triage roughly 10-12 jobs per run, letters roughly 2-3 per run. Letters dominate compute cost, so the two caps are tracked separately. Set playwright_headless to false only for debugging or the one-time login flow."
+  }
+}
