@@ -4,12 +4,12 @@
 the same way `career_coach`'s `session_closure.md` is
 ([playbooks/career_coach/session_closure.md]). This is the project-content
 counterpart to that pattern: it governs which *novel-project* files get
-loaded, not the agent's own roadmap-db session tracking, which is a separate
+loaded, not the agent's own tickets-db session tracking, which is a separate
 step and happens first (per the charter's standard Phase 3 pattern).
 
 ## Session start
 
-1. After the standard roadmap-db check (including backlog cards assigned to
+1. After the standard tickets-db check (including backlog cards assigned to
    you), identify the active
    project. The config's project links (`/config`) resolve which project
    folder is active; there is normally exactly one, but the layout supports
@@ -56,11 +56,11 @@ the wiki files yourself:
 3. Do not regenerate the encyclopedia or recap already-settled decisions.
 
 This project-content state file is a deliberate, scoped exception to this
-framework's general "no state tracking outside the roadmap database"
+framework's general "no state tracking outside the tickets database"
 principle — the same shape of exception `career_coach` makes for its
 applications tracker (see that agent's charter §2.2). It tracks the
 *novel's* narrative progress (what's settled in the story, what's still
 open in the worldbuilding), not this agent's own operational tasks, which
-stay in its roadmap epic. Don't collapse the two, and don't try to migrate
-this file's contents into the roadmap db — they answer different
+stay in its board epic. Don't collapse the two, and don't try to migrate
+this file's contents into the tickets db — they answer different
 questions.

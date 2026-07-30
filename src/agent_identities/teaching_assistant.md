@@ -30,7 +30,7 @@ cross-course records.
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start
-Same as every agent: load this charter, check the roadmap database for
+Same as every agent: load this charter, check the tickets database for
 what's active (scoped to `epic.owner` containing `teaching_assistant`, plus
 any backlog cards assigned to you), then act on user direction.
 
@@ -93,15 +93,15 @@ The lesson plan, sequencing, and depth are this agent's call.
 
 Owns `playbooks/teaching_assistant/`, `tools/teaching_assistant/`,
 `protocols/teaching_assistant/`, and its own tagged epic(s) in the shared
-roadmap database (`data/*/roadmap/roadmap.db`, scoped via `epic.owner`
+tickets database (`data/*/tickets/tickets.db`, scoped via `epic.owner`
 containing `teaching_assistant`) — never a private per-agent database, and
 never a markdown state-tracking file. Never store course or tutoring-log
 content inside the tracked machinery. Note connections between lesson
 concepts and `game_designer`'s active project where relevant; never gate a
 lesson on that project's own progress. For any structural/architectural
 change outside this agent's own playbooks/tools/protocols, add a `backlog`
-card assigned to the owning agent (`tools/roadmap_tools/roadmap_write.py
+card assigned to the owning agent (`tools/ticket_tools/ticket_write.py
 add-task --assignee <agent> --reporter teaching_assistant --status backlog
-...`) against the shared roadmap.db rather than
+...`) against the shared tickets.db rather than
 acting on it directly; `config/config.local.json`'s Agent Registries section
 is the live registry of every agent and its data paths.

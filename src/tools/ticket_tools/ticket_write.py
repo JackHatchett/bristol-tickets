@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-roadmap_write.py — safe write helper for the roadmap DB.
+ticket_write.py — safe write helper for the tickets DB.
 
-Why this exists: an ad-hoc raw sqlite3 INSERT against roadmap.db
+Why this exists: an ad-hoc raw sqlite3 INSERT against tickets.db
 (run from a Cowork sandbox session, over the mounted-folder bridge to the
 user's real filesystem) can fail mid-write with a disk I/O error and leave a
 stuck rollback-journal file that then blocks ALL further access to the DB,
 including plain reads, until the journal is manually cleared. Root cause is
 unconfirmed, but the on-disk rollback journal is the suspect: this script
 avoids writing one at all (journal_mode=MEMORY) as a first line of defense.
-See src/tools/roadmap_tools/README.md (3a) for the read/write asymmetry
+See src/tools/ticket_tools/README.md (3a) for the read/write asymmetry
 observed on this mount.
 
 Usage:
-    python3 roadmap_write.py add-epic --name "..." --owner "..."
+    python3 ticket_write.py add-epic --name "..." --owner "..."
         [--type "..."] [--description "..."] [--next-action "..."]
         [--status not started|planning|active|done]
         Owner should be a single agent slug (e.g. "career_coach") for an
@@ -22,7 +22,7 @@ Usage:
         genuinely shared work. Tasks inherit ownership from their epic (see
         `add-task` below) -- there is no separate per-task owner column.
 
-    python3 roadmap_write.py add-task --title "..." [--description "..."]
+    python3 ticket_write.py add-task --title "..." [--description "..."]
         [--epic-id N] [--stage backlog|active|archive] [--status todo|doing|done]
         [--priority N] [--estimate S|M|L] [--reporter "..."] [--assignee "..."]
         [--record-type build|fix]
@@ -40,7 +40,7 @@ Usage:
         agent so `agent_status.py <slug>` picks it up. A ticket is a *build* (a
         thing to build — its --description is a Story + Given/When/Then
         acceptance criteria) or a *fix* (a broken thing — its --description is
-        Expected/Observed). Follow the format in playbooks/manage_roadmap.md
+        Expected/Observed). Follow the format in playbooks/manage_tickets.md
         (§Record types); the viewer shows the same skeletons when you create in
         the GUI.
 
@@ -51,7 +51,7 @@ Usage:
         not a settled command — and unlike the old inbox it is visible and
         editable in the board the user actually watches.
 
-    python3 roadmap_write.py add-issue-log --task N --author <slug|user>
+    python3 ticket_write.py add-issue-log --task N --author <slug|user>
         --body "..."
         Appends one brief, attributed line to a task's per-issue progress log
         (the `issue_log` table, surfaced in the viewer's inspector). Use it to
@@ -59,10 +59,10 @@ Usage:
         tasks. One
         short thought per entry (what happened / what's next).
 
-    python3 roadmap_write.py link-add --task N
+    python3 ticket_write.py link-add --task N
         (--to-task M | --uri "...") [--label "..."] [--author <slug|user>]
-    python3 roadmap_write.py link-list --task N
-    python3 roadmap_write.py link-remove --id L
+    python3 ticket_write.py link-list --task N
+    python3 ticket_write.py link-remove --id L
         A ticket's Description must stay inside its record-type template, so
         provenance -- "this came out of that review", "this relates to that
         note" -- belongs in a LINK, never in an off-template Source header.
@@ -80,14 +80,14 @@ Usage:
         link that clears it from both tickets at once.
 
 DB discovery: same project-relative rule as cos_status.py / agent_status.py
-(find the project root, then data/*/roadmap/roadmap.db). Resolved design: there is ONE shared roadmap.db for the whole fleet, not one per
+(find the project root, then data/*/tickets/tickets.db). Resolved design: there is ONE shared tickets.db for the whole fleet, not one per
 agent. Every agent reads and writes the same database; `epic.owner` tags
 which agent an epic belongs to (a task's owner is its `assignee`, else implicit
 via its epic). Cross-agent suggestions are ordinary `backlog` cards
 (`--assignee` = the target agent, `--reporter` = the originator), not a
 separate store. "First glob match" is safe under this model
-specifically because there's exactly one roadmap.db to match — don't
-provision a second one under a different data/<agent>/roadmap/ path; use
+specifically because there's exactly one tickets.db to match — don't
+provision a second one under a different data/<agent>/tickets/ path; use
 `add-epic` in this file instead to give a new agent its own epic in the
 existing db.
 """
@@ -117,9 +117,9 @@ def _project_root() -> Path:
 def resolve_db_path() -> Path:
     data_root = _project_root() / "data"
 
-    matches = list(data_root.glob("*/roadmap/roadmap.db"))
+    matches = list(data_root.glob("*/tickets/tickets.db"))
     if not matches:
-        sys.exit("roadmap_write: ERROR — no roadmap.db found under data/*/roadmap/")
+        sys.exit("ticket_write: ERROR — no tickets.db found under data/*/tickets/")
     return matches[0]
 
 
@@ -554,7 +554,7 @@ def link_remove(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Safe writer for roadmap.db")
+    p = argparse.ArgumentParser(description="Safe writer for tickets.db")
     sub = p.add_subparsers(dest="command", required=True)
 
     pe = sub.add_parser("add-epic")
@@ -589,7 +589,7 @@ def main() -> None:
                      help="'build' (a thing to build — Story + acceptance criteria) "
                           "or 'fix' (a broken thing — Expected/Observed). Default build. "
                           "Write --description in that record type's format (see "
-                          "playbooks/manage_roadmap.md §Record types).")
+                          "playbooks/manage_tickets.md §Record types).")
     pt.add_argument("--actor", default=None,
                      help="who is making this change, for the change log "
                           "(your write signature, e.g. cowork_chief_of_staff). "

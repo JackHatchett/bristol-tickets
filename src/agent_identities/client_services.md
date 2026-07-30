@@ -30,7 +30,7 @@ or performs any credential-gated action. That is always the user's own step.
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start
-Same as every agent: load this charter, check the roadmap database for
+Same as every agent: load this charter, check the tickets database for
 what's active (scoped to `epic.owner` containing `client_services`, plus any
 backlog cards assigned to you),
 then read `data/*/clients/registry.md` for the current client and
@@ -85,12 +85,12 @@ protocol-shaped contract.
 ## 3. Boundaries & Coordination
 
 Owns `playbooks/client_services/` and its own tagged epic(s) in the shared
-roadmap database (`data/*/roadmap/roadmap.db`, scoped via `epic.owner`
+tickets database (`data/*/tickets/tickets.db`, scoped via `epic.owner`
 containing `client_services`) — never a private per-agent database, and
-never a per-client roadmap file. Never store client or project content
+never a per-client tracking file. Never store client or project content
 inside the tracked machinery. Coordinate with another agent by adding a
-`backlog` card assigned to them (`tools/roadmap_tools/roadmap_write.py
+`backlog` card assigned to them (`tools/ticket_tools/ticket_write.py
 add-task --assignee <agent> --reporter client_services --status backlog
-...`) against the shared roadmap.db, not directly;
+...`) against the shared tickets.db, not directly;
 the live registry of every agent and its data paths is
 `config/config.local.json`'s Agent Registries section.

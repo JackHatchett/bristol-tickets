@@ -1,17 +1,17 @@
 ## Purpose
-Define how chief_of_staff uses the roadmap DB as its cross‑session memory system:
+Define how chief_of_staff uses the tickets DB as its cross‑session memory system:
 - when to read it
 - when to update it
 - how to treat it as the canonical queue of next actions
 - how to add small items during conversation
 - how to keep the DB consistent with user intent
 
-This playbook is conceptual; all mechanism lives in roadmap_tools and bristol.
+This playbook is conceptual; all mechanism lives in ticket_tools and bristol.
 
 ---
 
-## When to read the roadmap
-- At **every session start**, run `roadmap_reader` to load:
+## When to read the board
+- At **every session start**, run `ticket_tools/cos_status.py` to load:
   - milestone
   - active epics
   - ordered queue
@@ -25,7 +25,7 @@ This playbook is conceptual; all mechanism lives in roadmap_tools and bristol.
 
 ---
 
-## When to update the roadmap
+## When to update the board
 Update the DB whenever the user expresses:
 - a new task (“remind me to…”, “add…”, “we should…”, “later we need to…”)
 - a change to an existing task (“mark this done”, “block this”, “increase priority”)
@@ -36,8 +36,8 @@ All updates go directly into the DB via SQL.
 
 ---
 
-## How to treat the roadmap
-- The roadmap DB is the **single source of truth** for:
+## How to treat the board
+- The tickets DB is the **single source of truth** for:
   - next actions
   - active work
   - backlog
@@ -98,7 +98,7 @@ Acceptance Criteria:
 
 Add a numbered line per acceptance criterion. A worked one, from the loading
 protocol: "Given the active agent is chief_of_staff and Cowork is loading
-Bristol Tickets, when a session loads roadmap.db, then it treats its next priorities
+Bristol Tickets, when a session loads tickets.db, then it treats its next priorities
 as its own active-board tasks (stage='active') in precedence order."
 
 **Fix Description format:**
@@ -152,7 +152,7 @@ The only rule on a comment is §Format — scannable in about ten seconds.
 
 ## Links — a ticket's relations
 
-Two kinds, both via `roadmap_write.py link-add --task N`:
+Two kinds, both via `ticket_write.py link-add --task N`:
 
 - `--to-task M` links two tickets. It is stored once and symmetrically, so it
   shows on **both** tickets immediately. Never run the mirror call, and note
@@ -185,8 +185,8 @@ python3 tools/bristol/app.py
 
 ---
 
-## When to create or rebuild a roadmap
-Use roadmap_tools only when:
+## When to create or rebuild a tickets database
+Use ticket_tools only when:
 - creating a new agent
 - migrating schema
 - rebuilding from markdown archives
@@ -211,4 +211,4 @@ Never during normal operation.
 ## Human audit notes
 - Ensure DB path in user.yaml is correct.
 - Ensure no personal paths exist in mechanism tools.
-- Ensure roadmap_reader output matches DB state.
+- Ensure cos_status.py output matches DB state.

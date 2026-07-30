@@ -1,48 +1,43 @@
 #!/usr/bin/env python3
 """
-cos_status.py — machine-readable roadmap status snapshot for chief_of_staff.
+agent_status.py — lightweight ticket status reader for non‑CoS agents.
 
-This version uses ONLY relative project structure under the project root.
-No personal data, no usernames, no environment variables.
+Machine-readable snapshot SCOPED TO ONE AGENT:
+    - current milestone (fleet-wide; same for every agent)
+    - the active board size (fleet-wide; stage='active')
+    - this agent's own next action + own active-board queue
+    - COMMENTS on this agent's active-board tasks (issue_log); user-authored
+      ones flagged ⚠ — on-ticket decisions/direction a bare status line hides
+
+Uses ONLY relative project structure under the project root. No personal data,
+no usernames, no environment variables.
 
 DB discovery rule:
     Walk up from this file to the nearest ancestor holding src/app.md — the
-    project root, whatever the user named its folder — then search:
-        data/*/roadmap/roadmap.db
+    project root — then search data/*/tickets/tickets.db. There is ONE shared
+    tickets.db for the whole fleet; this script slices it to one agent.
 
-Environment note: don't shell out to a `sqlite3` CLI binary — it is not
-guaranteed to be on PATH in every execution environment this script may run
-in (e.g. sandboxed Cowork runtimes). Python's built-in sqlite3 module (used
-below) has no such dependency.
+NEXT-ACTION SEMANTICS (aligned with cos_status.py):
+    An agent's next action is its OWN work, scoped to the ACTIVE BOARD
+    (task.stage='active'), in precedence: active-board `doing` (priority desc) →
+    active-board `todo` (priority desc) → (fallback only if both empty) own
+    `backlog` (stage='backlog'), surfaced as a planning signal to activate onto
+    the board, not auto-executed. Work owned by other agents is never this
+    agent's next action. A task's stage (not any sprint)
+    is what puts it in play; stage is orthogonal to the epic.
 
-NEXT-ACTION SEMANTICS (Kanban model):
-    "What should chief_of_staff do next" is NOT the global top of a fleet-wide
-    doing/todo queue. It is chief_of_staff's OWN work, scoped to the ACTIVE
-    BOARD (task.stage='active'), in this precedence:
-        1. active-board tasks owned by me, status `doing`  (priority desc)
-        2. active-board tasks owned by me, status `todo`   (priority desc)
-        3. (fallback, only if 1+2 are empty) my `backlog` (stage='backlog') —
-           surfaced as a planning signal to activate onto the board, NOT
-           auto-executed.
-    Tasks owned by OTHER agents are never my next action. They are printed in a
-    clearly-labeled FLEET section for coordination visibility only — that is
-    the one thing that stays fleet-wide in the CoS view.
+    "Owned by me" resolves as: task.assignee == <agent_slug>; or, when a task
+    has no explicit assignee, its epic's `owner` names the agent (substring
+    match, since `owner` is sometimes a descriptive multi-agent string).
 
-    "Owned by me" resolves as: task.assignee == 'chief_of_staff'; or, when a
-    task has no explicit assignee, its epic's owner names chief_of_staff.
-    A task's stage (backlog | active | archive) — not any sprint — decides what's in play. stage is orthogonal to the epic, so
-    the active board can span epics.
+Usage:
+    python3 agent_status.py <agent_slug>
+    agent_slug is required (e.g. "career_coach", "librarian").
+    chief_of_staff should use cos_status.py, which additionally prints a
+    fleet-wide context section.
 
-This script prints:
-    - current milestone
-    - active epics (fleet-wide)
-    - active board (count of stage='active' tasks)
-    - YOUR next action + YOUR active-board queue (chief_of_staff, scoped)
-    - COMMENTS on your active-board tasks (issue_log), user-authored ones
-      flagged with ⚠ — these are decisions/direction left ON a ticket that a
-      bare status line does NOT show. Not reading them is how a user decision
-      gets missed.
-    - FLEET active-board items owned by other agents (context only)
+Environment note: don't shell out to a `sqlite3` CLI binary — not guaranteed
+on PATH in sandboxed runtimes. Use Python's built-in sqlite3 (as below).
 """
 
 import sys
@@ -64,7 +59,6 @@ def _project_root() -> Path:
     )
 
 
-ME = "chief_of_staff"
 STATUS_RANK = {"doing": 0, "todo": 1}
 
 
@@ -75,20 +69,17 @@ STATUS_RANK = {"doing": 0, "todo": 1}
 def resolve_db_path() -> Path:
     data_root = _project_root() / "data"
 
-    matches = list(data_root.glob("*/roadmap/roadmap.db"))
+    matches = list(data_root.glob("*/tickets/tickets.db"))
     if not matches:
-        sys.exit("cos_status: ERROR — no roadmap.db found under data/*/roadmap/")
+        sys.exit("agent_status: ERROR — no tickets.db found under data/*/tickets/")
     return matches[0]
 
 
 # ---------------------------------------------------------------------------
-# Ownership + active-board helpers
+# Ownership + active-board helpers (kept in lockstep with cos_status.py)
 # ---------------------------------------------------------------------------
 
 def owned_by(task_row: sqlite3.Row, me: str) -> bool:
-    """A task is 'mine' if its assignee is me, or — when it has no explicit
-    assignee — its epic's owner names me. `owner` may be a descriptive
-    multi-agent string, so we substring-match it (assignee is a bare slug)."""
     assignee = (task_row["assignee"] or "").strip()
     if assignee:
         return assignee == me
@@ -96,8 +87,7 @@ def owned_by(task_row: sqlite3.Row, me: str) -> bool:
 
 
 def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
-    """Every task on the active board — i.e. stage='active' (Kanban model).
-    These are the tasks 'in play right now'. A
+    """Every task on the active board — stage='active' (Kanban model).
     LEFT JOIN keeps epic-less tasks visible."""
     return conn.execute(
         "SELECT t.id, t.title, t.status, t.priority, t.blocked, t.depends_on, t.estimate, "
@@ -136,9 +126,8 @@ def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
 
 
 def my_backlog(conn: sqlite3.Connection, me: str) -> list[sqlite3.Row]:
-    """Fallback only: my Backlog-stage tasks. Epic-less tasks are
-    included; epic'd ones are limited to active/planning epics to cut noise.
-    Priority desc (a planning signal, not an execution order)."""
+    """Backlog-stage tasks owned by me. Epic-less tasks included;
+    epic'd ones limited to active/planning epics to cut noise. Priority desc."""
     rows = conn.execute(
         "SELECT t.id, t.title, t.status, t.priority, t.assignee, "
         "       e.name AS epic, e.owner AS epic_owner "
@@ -152,10 +141,9 @@ def my_backlog(conn: sqlite3.Connection, me: str) -> list[sqlite3.Row]:
 
 def latest_comment_per_task(conn: sqlite3.Connection,
                             task_ids: list[int]) -> dict[int, sqlite3.Row]:
-    """Most recent issue_log row per task id. issue_log is where task-level
-    comments live (both agent notes and USER decisions/direction); nothing
-    else in this snapshot reads it, so a user's on-ticket comment is otherwise
-    invisible at session start."""
+    """Most recent issue_log row per task id. issue_log holds task-level
+    comments (agent notes AND user decisions); nothing else in this snapshot
+    reads it, so a user's on-ticket comment is otherwise invisible at start."""
     if not task_ids:
         return {}
     placeholders = ",".join("?" * len(task_ids))
@@ -175,9 +163,9 @@ def latest_comment_per_task(conn: sqlite3.Connection,
 
 def print_comments(conn: sqlite3.Connection,
                    tasks: list[sqlite3.Row]) -> None:
-    """Surface the latest comment on each of `tasks` that has one. User-authored
-    latest comments are flagged ⚠ as context to read — they are NOT a priority
-    signal and never reroute which task is next (priority/stage decide that)."""
+    """Surface the latest comment on each of `tasks` that has one; ⚠ marks
+    user-authored ones (context to read, NOT a priority signal — priority/stage
+    decide the next task, never a comment)."""
     latest = latest_comment_per_task(conn, [t["id"] for t in tasks])
     if not latest:
         return
@@ -186,8 +174,7 @@ def print_comments(conn: sqlite3.Connection,
         c = latest.get(t["id"])
         if not c:
             continue
-        is_user = (c["author"] or "").strip() == "user"
-        mark = "⚠ " if is_user else "  "
+        mark = "⚠ " if (c["author"] or "").strip() == "user" else "  "
         body = " ".join((c["body"] or "").split())
         if len(body) > 300:
             body = body[:297] + "..."
@@ -209,15 +196,13 @@ def fmt(r: sqlite3.Row, blockers: dict | None = None) -> str:
             flag = f" [BLOCKED by #{dep}]"
         else:
             flag = f" [blocked flag is STALE — #{dep} is done; clear it]"
-    who = (r["assignee"] or "").strip() or f"(epic:{r['epic_owner']})"
     return (f"  {r['status']:5} p{r['priority']:>3} {r['estimate'] or '-':>4}  "
-            f"[{r['epic']}] {r['title']}  <{who}>{flag}")
+            f"[{r['epic']}] {r['title']}{flag}")
 
 
 def task_image_paths(conn: sqlite3.Connection, task_id: int, db_path) -> list[str]:
-    """Absolute paths of images attached to a task. Attachments store only the
-    filename; the bytes live in an images/ dir beside the DB. Returns [] if the
-    table predates this feature."""
+    """Absolute paths of images attached to a task (bytes live in an images/ dir
+    beside the DB). [] if the attachment table predates this feature."""
     try:
         rows = conn.execute(
             "SELECT filename FROM attachment WHERE task_id=? ORDER BY id", (task_id,)
@@ -229,10 +214,9 @@ def task_image_paths(conn: sqlite3.Connection, task_id: int, db_path) -> list[st
 
 
 def print_attachments(conn: sqlite3.Connection, tasks: list[sqlite3.Row], db_path) -> None:
-    """Surface image attachments on your active-board tasks with their real paths, so
-    they get VIEWED (Read the file), not ignored. Attached images are
-    supplementary prompt material — a screenshot of a bug, a mock of the wanted
-    result — and reading the ticket text alone silently drops them."""
+    """Surface image attachments on your active-board tasks with real paths so they get
+    VIEWED (Read the file), not ignored — attached images are supplementary
+    prompt material the ticket text alone drops."""
     hits = [(t, task_image_paths(conn, t["id"], db_path)) for t in tasks]
     hits = [(t, paths) for t, paths in hits if paths]
     if not hits:
@@ -291,33 +275,43 @@ def print_links(conn: sqlite3.Connection, tasks: list[sqlite3.Row]) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    if len(sys.argv) < 2 or not sys.argv[1]:
+        sys.exit(
+            "agent_status: ERROR — agent_slug is required, e.g.\n"
+            "  python3 agent_status.py career_coach\n"
+            "(chief_of_staff should use cos_status.py instead)"
+        )
+    me = sys.argv[1]
+
     db_path = resolve_db_path()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    print(f"=== CoS Roadmap status ({db_path}) ===\n")
+    print(f"=== Agent Ticket Status: {me} ({db_path}) ===\n")
 
     ms = cur.execute("SELECT name FROM theme WHERE is_milestone=1").fetchone()
-    print(f"DIRECTION — current milestone: {ms['name'] if ms else '(none set)'}")
+    print(f"MILESTONE: {ms['name'] if ms else '(none set)'}")
 
+    # This agent's own active epics (context)
+    owner_like = f"%{me}%"
     actives = cur.execute(
-        "SELECT name FROM epic WHERE status IN ('active','planning') ORDER BY id"
+        "SELECT name FROM epic WHERE status IN ('active','planning') "
+        "AND owner LIKE ? ORDER BY id",
+        (owner_like,),
     ).fetchall()
-    print(f"ACTIVE EPICS: {', '.join(e['name'] for e in actives) or '(none)'}")
+    print(f"ACTIVE EPICS ({me}): {', '.join(e['name'] for e in actives) or '(none)'}")
 
     board = board_tasks(conn)
     print(f"ACTIVE BOARD (stage=active): {len(board)} task(s)\n")
 
-    mine_all = [r for r in board if owned_by(r, ME)]
+    mine_all = [r for r in board if owned_by(r, me)]
     mine_q = queue_sort([r for r in board
-                         if owned_by(r, ME) and r["status"] in STATUS_RANK])
-    others_q = queue_sort([r for r in board
-                           if not owned_by(r, ME) and r["status"] in STATUS_RANK])
+                         if owned_by(r, me) and r["status"] in STATUS_RANK])
 
     if mine_q:
         nxt = mine_q[0]
-        print(f"▶ YOUR NEXT ACTION ({ME}, active board): "
+        print(f"▶ NEXT ACTION ({me}, active board): "
               f"[{nxt['epic']}] {nxt['title']}  (p{nxt['priority']}, {nxt['estimate'] or '?'})")
         print("\nYOUR QUEUE (active board, doing→todo, priority order):")
         print("  Work it top to bottom. A `doing` card outranks every `todo`.")
@@ -325,8 +319,8 @@ def main() -> None:
         for r in mine_q:
             print(fmt(r, blockers))
     else:
-        bl = my_backlog(conn, ME)
-        print(f"▶ YOUR NEXT ACTION ({ME}): nothing on the active board (no doing/todo).")
+        bl = my_backlog(conn, me)
+        print(f"▶ NEXT ACTION ({me}): nothing on the active board (no doing/todo).")
         if bl:
             print("   Fallback — your backlog (activate one onto the board before executing):")
             for r in bl[:5]:
@@ -338,21 +332,12 @@ def main() -> None:
     print_links(conn, mine_all)
     print_attachments(conn, mine_all, db_path)
 
-    print("\n--- FLEET (active-board items owned by OTHER agents — context only, not yours) ---")
-    if others_q:
-        for r in others_q:
-            print(fmt(r, blocker_statuses(conn, board)))
-    else:
-        print("  (none)")
-
-    _tail(cur, conn)
+    _tail(cur, conn, me)
 
 
-def _tail(cur: sqlite3.Cursor, conn: sqlite3.Connection) -> None:
-    # No handoff section by design. A session's carry-forward IS its cards: work
-    # left mid-flight is a `doing` card on the active board with a real owner and
-    # priority. There is no per-agent narrative block, because a note saying
-    # "where things stand" is work state living somewhere other than a ticket.
+def _tail(cur: sqlite3.Cursor, conn: sqlite3.Connection, me: str) -> None:
+    # No handoff section by design — see cos_status._tail. Carry-forward is a
+    # `doing` card on the active board, never a narrative note.
     conn.close()
 
 

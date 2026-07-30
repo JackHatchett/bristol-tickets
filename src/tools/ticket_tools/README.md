@@ -1,6 +1,6 @@
-# Roadmap Tools
+# Ticket Tools
 
-This folder contains the non‑UI roadmap utilities used by agents and system processes. All tools in this directory follow strict invariants:
+This folder contains the non‑UI ticket utilities used by agents and system processes. All tools in this directory follow strict invariants:
 
 1. No personal data  
    Tools never contain literal usernames, home directories, or cloud‑provider paths. Any directory that represents a user is referred to generically as <instance>.
@@ -9,13 +9,13 @@ This folder contains the non‑UI roadmap utilities used by agents and system pr
    All tools find the project root by marker (the nearest ancestor holding `src/app.md`). Paths are resolved only by walking relative to the tool’s own location. No environment variables, no config files, and no external path sources are used.
 
 3. Canonical database discovery  
-   The roadmap database is always discovered using the following rule:  
-   data/<instance>/roadmap/roadmap.db  
-   Tools search for the first matching roadmap.db under data/*/roadmap/.  
+   The tickets database is always discovered using the following rule:  
+   data/<instance>/tickets/tickets.db  
+   Tools search for the first matching tickets.db under data/*/tickets/.  
    Tools never assume the name of <instance>
 
 3c. One shared database per instance, not one per agent  
-   There is a single roadmap.db per instance, shared by every agent in the
+   There is a single tickets.db per instance, shared by every agent in the
    fleet — not a separate database per agent. Agent-level scoping is done by
    tagging, not by separate storage: `epic.owner` holds the agent slug that
    owns an epic (or a descriptive multi-agent string for genuinely shared
@@ -23,10 +23,10 @@ This folder contains the non‑UI roadmap utilities used by agents and system pr
    epic). Cross-agent suggestions are ordinary `backlog` cards
    (`assignee` = the target agent, `reporter` = the originator), not a separate
    store — see "Cross-agent suggestions" below. "First glob match" under
-   invariant 3 is safe specifically because exactly one roadmap.db should exist
+   invariant 3 is safe specifically because exactly one tickets.db should exist
    per instance. When onboarding a new agent, give it an epic via
-   `roadmap_write.py add-epic --owner <slug>` — never provision it a second
-   database under a different data/<agent>/roadmap/ path.
+   `ticket_write.py add-epic --owner <slug>` — never provision it a second
+   database under a different data/<agent>/tickets/ path.
 
 3a. Environment  
    // Tools use Python's built-in `sqlite3` module, never a `sqlite3` CLI
@@ -36,14 +36,14 @@ This folder contains the non‑UI roadmap utilities used by agents and system pr
 
 3b. Write safety over mounted-folder bridges  
    Any tool that writes to the DB opens with `PRAGMA journal_mode=MEMORY` (see
-   roadmap_write.py).
+   ticket_write.py).
    // A default-journal write from a sandbox session, over the bridge to the
    // user's real filesystem, can fail mid-write and leave a stuck
    // rollback-journal file that blocks all further access, reads included,
    // until it is cleared by hand. MEMORY mode writes no on-disk journal.
 
 4. Schema consistency  
-   The database schema created or read by these tools matches the schema used by Bristol (the viewer UI). Inline migrations performed by the UI are reflected in the schema used by create_roadmap.py.
+   The database schema created or read by these tools matches the schema used by Bristol (the viewer UI). Inline migrations performed by the UI are reflected in the schema used by create_tickets.py.
 
 5. No user‑facing commands  
    These tools are not intended for direct user invocation. They are internal mechanisms used by agents or future automation layers.
@@ -88,18 +88,18 @@ someone else's board task. A task's **stage** (backlog | active | archive) —
 not any sprint — decides what's in play;
 stage is orthogonal to the epic, so the active board can span epics.
 
-### create_roadmap.py  
-Provisioning tool for creating a new roadmap database under data/<instance>/roadmap/.  
+### create_tickets.py  
+Provisioning tool for creating a new tickets database under data/<instance>/tickets/.  
 Creates a fully robust schema matching the UI’s auto‑migrated structure (`issue_log`, `attachment`, `task_event`, etc.; no `inbox` and no `handoff` table).  
 Seeds the database with an initial epic and default tasks.  
 Throws an error if the target database already exists.  
 Does not write any config files or assume any external path sources.  
 This provisions a database for a brand-new *instance* of the whole system —
 not a second database for an individual agent within an existing instance
-(see 3c). Giving an existing instance's agent its own roadmap presence means
-`roadmap_write.py add-epic`, not this script.
+(see 3c). Giving an existing instance's agent its own presence on the board means
+`ticket_write.py add-epic`, not this script.
 
-### roadmap_write.py  
+### ticket_write.py  
 Safe write helper — `add-epic`, `add-task`, `update-task-status`, `set-stage`,
 and `add-issue-log` subcommands. (There is deliberately no `add-handoff`; see
 "There is no handoff" below.) Uses
@@ -147,8 +147,8 @@ one row to `task_event` — the field, its new value, the actor, an ISO timestam
 no person composes one, explains a change, or adds a reason. The grammar is
 fixed. An entry carrying prose has become the thing the no-narration rule bans.
 
-- **Both writers are covered.** Bristol writes to `roadmap.db` directly, so a
-  hook inside `roadmap_write.py` would miss every board move made by hand. The
+- **Both writers are covered.** Bristol writes to `tickets.db` directly, so a
+  hook inside `ticket_write.py` would miss every board move made by hand. The
   append is at the database layer instead, and a drag, a Clear Done sweep, a
   record-dialog edit and a CLI call are all recorded identically.
 - **Actor.** Each connection installs the triggers in its own TEMP schema with
@@ -184,7 +184,7 @@ optional and analytics-only — omitting it never changes board state.
 
 This is the system's first rule and every convention below is downstream of it.
 
-**Work state lives in `roadmap.db` and nowhere else.** What is done, what is
+**Work state lives in `tickets.db` and nowhere else.** What is done, what is
 next, what is in progress, what is awaited, who owes whom, in what order — all
 of it is board data. No file, folder, JSON field, note, README, or chat message
 is a second home for any of it.
@@ -210,7 +210,7 @@ Three consequences, each of which has been violated in this repo before:
   it in. Agents read the board themselves.
 
 **Payloads are not channels.** A file that exists because an outside party
-genuinely cannot read `roadmap.db` (a JSON envelope shown to an external LLM)
+genuinely cannot read `tickets.db` (a JSON envelope shown to an external LLM)
 is a payload: a ticket names it, the ticket holds the state, and deleting the
 payload loses nothing. It is never scanned to discover work.
 
@@ -221,7 +221,7 @@ Prose that promises future work is an untracked to-do.
 
 ## Board conventions (shared — every agent, every session)
 
-The roadmap DB is the whole fleet's — and the user's — single shared
+The tickets DB is the whole fleet's — and the user's — single shared
 state-tracking board. Every agent reads and writes it; the viewer renders it.
 These conventions govern how any session leaves the board so the next one (a
 new day, a different model, a different agent) and the user both see an
@@ -288,7 +288,7 @@ criteria); a *Fix* is a broken thing (Description = Expected/Observed). Default
 `build`. Set it with `add-task --record-type fix`, or in the viewer's Create
 dialog. The exact Description skeletons and precedence rules — governing how
 agents and the user write ticket bodies, not stored in the DB beyond the type
-flag — live in `src/playbooks/manage_roadmap.md` (§Record types). Keep tickets
+flag — live in `src/playbooks/manage_tickets.md` (§Record types). Keep tickets
 single-outcome: one Build or Fix per outcome, not one mega-ticket.
 
 **A Description holds its template and nothing else (agents only).** When *you*
@@ -316,7 +316,7 @@ legible.
 ## Links (`task_link`)
 
 A link is the relation a ticket carries to something else. Two kinds, one table,
-both created with `roadmap_write.py link-add --task N`:
+both created with `ticket_write.py link-add --task N`:
 
 - `--to-task M` — **a link between two tickets.** Stored as ONE symmetric row
   (normalized so `task_id` is the lower id), so it appears on both tickets the
@@ -374,7 +374,7 @@ subcommand, or status section.
 
 There is no `add-handoff` subcommand, no `handoff` table, and no Handoff tab. A
 per-agent narrative block answering "where do things stand" is work state living
-outside the cards; storing it inside `roadmap.db` does not make it part of the
+outside the cards; storing it inside `tickets.db` does not make it part of the
 board, and it gives every session a second place to look.
 
 **A card is the handoff.** Leave work mid-flight by putting its card on the
@@ -409,14 +409,14 @@ cards cover the whole job. Nothing reads or writes either any more.
 The expected structure under the project root is:
 
 <project-root>  
-    src/tools/roadmap_tools  
+    src/tools/ticket_tools  
         cos_status.py  
         agent_status.py  
-        create_roadmap.py  
-        roadmap_write.py  
+        create_tickets.py  
+        ticket_write.py  
         README.md  
-    data/<instance>/roadmap  
-        roadmap.db   (tables: theme, epic, scope, task, task_meta,
+    data/<instance>/tickets  
+        tickets.db   (tables: theme, epic, scope, task, task_meta,
                        issue_log, attachment, task_event)
                      (task carries stage + sort_order for the Kanban board)
 

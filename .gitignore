@@ -23,7 +23,7 @@ data/*
 .env.local
 *.local.json
 
-# One-line absolute-path pointer files (roadmap_db.local,
+# One-line absolute-path pointer files (tickets_db.local,
 # bristol_reports.local). They exist so a relocated .app bundle — which cannot
 # see config/ — still finds the database and the notebook, which means they
 # hold real user paths and must never be committed.

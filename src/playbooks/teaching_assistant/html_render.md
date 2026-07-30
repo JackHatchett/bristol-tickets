@@ -43,7 +43,7 @@ exist; the target course's `syllabus/progress.json` is populated.
 - `tools/teaching_assistant/html_renderer/template.html`
 
 ## Logging Requirements
-None beyond the standard session-end roadmap update — rendering doesn't
+None beyond the standard session-end board update — rendering doesn't
 change course progress state by itself.
 
 ## Failure Modes

@@ -72,7 +72,7 @@ Operating rules for this review:
 ## After the review comes back
 Treat every finding as a proposal, same as any other incoming suggestion —
 route it through `playbooks/game_designer/design_proposals.md` if it
-touches design content, or a plain roadmap task
-(`tools/roadmap_tools/roadmap_write.py add-task`) if it's a process/
+touches design content, or a plain ticket
+(`tools/ticket_tools/ticket_write.py add-task`) if it's a process/
 architecture action item. Never apply a structural recommendation directly
 just because the advisor's review sounded confident.

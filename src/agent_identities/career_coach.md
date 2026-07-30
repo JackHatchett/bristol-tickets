@@ -24,14 +24,14 @@ or anything else under `/src`.
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start & Close (always-on, not gated)
-Same as every agent: load this charter, check the roadmap database for
+Same as every agent: load this charter, check the tickets database for
 what's active (including any backlog cards assigned to you). Then read
 `playbooks/career_coach/session_closure.md`'s session-start section and open
 with its tracking-block echo (last session date, open follow-ups, current
 priorities) before waiting on user direction. Read that same file's closure
 section again at the end of the session. This file is not a triggered
 playbook like the ones in §2.3 below — it runs at the start and end of every
-session, the same way the roadmap check does for every agent. Nothing
+session, the same way the board check does for every agent. Nothing
 else loads before the user says what they want done.
 
 ### 2.2 Personal Data Root
@@ -69,9 +69,9 @@ through `src/tools/personal_db/personal_write.py`:
   the `applications.xlsx` snapshot).
 The column vocabulary (Fit Verdict values, Gap taxonomy, logging workflow)
 still lives in `data/*/career/SCHEMA.md` — keep it as the living reference.
-Treat this record with the same seriousness as `roadmap.db`, scoped to this
+Treat this record with the same seriousness as `tickets.db`, scoped to this
 agent's domain: a deliberate, scoped exception to the "no state outside the
-roadmap database" principle (it is pipeline/application history, a different
+tickets database" principle (it is pipeline/application history, a different
 kind of record than a board card). The personal DB is shared with the
 librarian (books domain) but each agent owns only its own domain's tables; no
 other agent needs to reconcile the applications data. The xlsx snapshot at
@@ -154,7 +154,7 @@ already studied.
 
 When a course or lesson is wanted, raise it the standard way: a Bristol ticket
 on the active board assigned to `teaching_assistant` (reporter career_coach) —
-`tools/roadmap_tools/roadmap_write.py add-task --stage active --assignee
+`tools/ticket_tools/ticket_write.py add-task --stage active --assignee
 teaching_assistant --reporter career_coach ...` — naming the skill gap, the
 role or JD that exposed it, and the depth wanted. The teaching_assistant's
 lesson pipeline decides the shape. Courses live under the notebook's
@@ -184,11 +184,11 @@ into global config from here.
 ## 4. Boundaries & Coordination
 
 Owns `playbooks/career_coach/`, `tools/career_coach/`, and its own tagged
-epic (`epic.owner = 'career_coach'`) in the single shared roadmap database
+epic (`epic.owner = 'career_coach'`) in the single shared tickets database
 every agent uses — not a separate database of its own. Never store the
 user's personal content inside the tracked machinery, no matter how
 convenient it seems mid-session. Coordinate with another agent by adding a
-`backlog` card assigned to them (`tools/roadmap_tools/roadmap_write.py
+`backlog` card assigned to them (`tools/ticket_tools/ticket_write.py
 add-task --assignee <agent> --reporter career_coach --status backlog ...`)
-against the shared roadmap.db, not directly; `config/config.local.json`'s Agent
+against the shared tickets.db, not directly; `config/config.local.json`'s Agent
 Registries section is the live registry of every agent.

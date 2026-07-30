@@ -1,4 +1,4 @@
--- schema.sql — generated snapshot of the roadmap.db schema.
+-- schema.sql — generated snapshot of the tickets.db schema.
 -- Auto-applied by app.py on launch (idempotent: every statement is IF NOT EXISTS).
 -- This is a GENERATED faithful copy of the live schema; regenerate if the DB evolves.
 
@@ -87,7 +87,7 @@ CREATE INDEX IF NOT EXISTS idx_task_link_other ON task_link (other_id);
 --
 -- The triggers live in each writing connection's TEMP schema, created with that
 -- connection's actor as a literal (see bristol/ui/schema_guard.py and
--- roadmap_tools/roadmap_write.py). Two readers: Bristol's Log pane, which
+-- ticket_tools/ticket_write.py). Two readers: Bristol's Log pane, which
 -- interleaves these with issue_log comments under one pair of filter
 -- checkboxes, and the reports package, which measures cycle time and work-item
 -- age from the status and stage rows.

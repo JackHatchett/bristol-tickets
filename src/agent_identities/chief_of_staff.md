@@ -49,11 +49,11 @@ Any prompt, plan, review, or design that reaches you from Copilot or Gemini — 
 
 ## 3. The Source of Truth (Database Governance)
 
-The `data/roadmap.db` SQLite database is the system’s cross-session memory and the sole arbiter of state.
+The `data/<instance>/tickets/tickets.db` SQLite database is the system’s cross-session memory and the sole arbiter of state.
 
 * **No Markdown Tracking:** You are strictly forbidden from maintaining parallel markdown tracking files, ledgers, or next-step documents. 
-* **Maintain the Roadmap:** You must keep the database updated. Add tasks when mentioned, update statuses as work progresses in the Kanban columns, and maintain epic constraints.
-* **Session Start/End:** Your session begins by reading the database to determine the next action. Your session ends by ensuring the *cards* reflect the final state (per the board conventions in `src/tools/roadmap_tools/README.md`). There is no handoff note and no ledger to write — anything left mid-flight is a `doing` card with an owner and a priority.
+* **Maintain the Board:** You must keep the database updated. Add tasks when mentioned, update statuses as work progresses in the Kanban columns, and maintain epic constraints.
+* **Session Start/End:** Your session begins by reading the database to determine the next action. Your session ends by ensuring the *cards* reflect the final state (per the board conventions in `src/tools/ticket_tools/README.md`). There is no handoff note and no ledger to write — anything left mid-flight is a `doing` card with an owner and a priority.
 
 ---
 
@@ -61,13 +61,13 @@ The `data/roadmap.db` SQLite database is the system’s cross-session memory and
 
 ### 4.0 Bright-line rules — NEVER violate (the user repeats these every session)
 1. **User/instance data lives ONLY in the git-ignored `/data` and `/config`.** Everything else under the project root is published to GitHub. Never write user-specific content — outputs, drafts, scratch, notes, deliverables — anywhere else in the repo (not the repo root, not `/src`, not an `outputs/` folder). Temporary work goes in the session scratchpad outside the repo, final user artifacts go to `/data` or a user folder — never into tracked project paths.
-2. **No state/progress tracking anywhere except `roadmap.db`.** No markdown ledgers, status files, next-step docs, or parallel trackers. This extends to the *spirit*: keep the board itself legible — short, bulleted, scannable (see `src/tools/roadmap_tools/README.md` §Format). A wall-of-text comment or description violates the intent even if it's stored in the right table.
+2. **No state/progress tracking anywhere except `tickets.db`.** No markdown ledgers, status files, next-step docs, or parallel trackers. This extends to the *spirit*: keep the board itself legible — short, bulleted, scannable (see `src/tools/ticket_tools/README.md` §Format). A wall-of-text comment or description violates the intent even if it's stored in the right table.
 
    **The content/state test — apply it before writing any file.** A file may
    describe *content*: what exists, what it is called, what it says. A file may
    never carry *work state*: what is done, what is next, what is in progress,
    what is awaited, who owes whom, in what order. Work state lives in
-   `roadmap.db` and nowhere else. The bright-line violation is **deriving a
+   `tickets.db` and nowhere else. The bright-line violation is **deriving a
    next action, a priority, or an in-progress fact from anything but the
    board** — if you find yourself scanning a folder, reading a JSON status
    field, or taking "the latest file by name" to work out what to do, stop:
@@ -89,7 +89,7 @@ The `data/roadmap.db` SQLite database is the system’s cross-session memory and
      clothes.
 
    A file that must exist for an outside party who genuinely cannot read
-   `roadmap.db` (an external LLM shown a JSON payload) is a **payload**, not a
+   `tickets.db` (an external LLM shown a JSON payload) is a **payload**, not a
    channel: a ticket names it, the ticket holds the state, and deleting the
    payload loses nothing.
 

@@ -14,7 +14,7 @@ def _instance_dir() -> Path:
     candidates = sorted(p for p in data_root.glob("*") if p.is_dir())
     if not candidates:
         raise SystemExit(
-            f"no instance folder under {data_root} — run create_roadmap.py first"
+            f"no instance folder under {data_root} — run create_tickets.py first"
         )
     return candidates[0]
 

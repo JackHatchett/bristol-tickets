@@ -34,7 +34,7 @@ twin (see `protocols/career_coach/gemini_gem_bridge.md`). The crew metaphor
 (Editor, Grammatizator, Proofer) describes **what an external AI is briefed to
 become for a session**, not separate agents this framework provisions or
 tracks. Only `writers_room` — the Quartermaster — has repo write access and a
-roadmap epic; the other roles are stateless externally-run
+board epic; the other roles are stateless externally-run
 counterparts it hands work to and receives proposals back from.
 
 ## The roles (what each is briefed to become)
@@ -63,7 +63,7 @@ ratification gate.
 
 **The board is the channel. These folders are only the payload.**
 
-An external crew role is a Gemini Gem with no access to `roadmap.db`, so the
+An external crew role is a Gemini Gem with no access to `tickets.db`, so the
 *content* of a brief has to travel as a file it can be shown. That is all these
 folders are: a place to put bytes an outside party can read. They carry no
 state, and no agent learns anything about outstanding work from them.
@@ -72,7 +72,7 @@ Every exchange is a **ticket**, and the ticket is the only record that a
 dispatch happened, that a reply is awaited, or that anything is in progress:
 
 - Dispatching a brief → open or update a card on the active board
-  (`roadmap_write.py add-task --stage active --assignee writers_room`), and
+  (`ticket_write.py add-task --stage active --assignee writers_room`), and
   name the envelope file in its description. Then write the envelope.
 - Receiving a reply → the *same* ticket moves to `doing` and its comment thread
   records the reconciliation. Never a new card for the reply half.

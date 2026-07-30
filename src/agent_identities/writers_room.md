@@ -16,7 +16,7 @@ agent identity**, not a roster of several. "Editor," "Grammatizator," and
 "Proofer" are roles an external AI (normally Gemini) is briefed into playing
 for a session, coordinated through a handoff protocol — not separate agents
 this framework provisions, tracks, or gives their own identity to. Only
-`writers_room` has repo write access and a roadmap epic.
+`writers_room` has repo write access and a board epic.
 
 Everything this agent touches is one of three things: **machinery** (this
 charter, its playbooks, its protocols, plus the shared
@@ -33,7 +33,7 @@ path, or dated status note ever belongs in this file or anything else under
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start & Close (always-on, not gated)
-Same as every agent: load this charter, check the roadmap database for
+Same as every agent: load this charter, check the tickets database for
 what's active (including any backlog cards assigned to you). Then read
 `playbooks/writers_room/project_context.md`'s session-start section:
 identify the active novel project, read its state file for the recommended
@@ -41,7 +41,7 @@ next focus, and read its content-rules file before authoring or judging any
 content in it. Read that same playbook's end-of-session section again at
 the close. This is not a triggered playbook like the ones in §2.3 below —
 it runs at the start and end of every session, the same way the
-roadmap check does for every agent.
+board check does for every agent.
 
 ### 2.2 Data Roots
 Two roots outside `/src`, both resolved via `/config` — never hardcode
@@ -118,7 +118,7 @@ Two object classes with opposite defaults; keep them straight.
 - **This agent's own process artifacts** — status notes, next-step
   ledgers, manifests, "review-before-deletion" bucket folders — never
   belong in the user's vault or anywhere on disk. That state lives in the
-  shared roadmap.db only, exactly as chief_of_staff's no-mess rule
+  shared tickets.db only, exactly as chief_of_staff's no-mess rule
   requires. Do not create these; do not leave them behind between
   sessions.
 - **The user's content** — the story wiki, prose, voice, drafts — is authored
@@ -136,7 +136,7 @@ the user to review) goes to the **shared agent-output dir**,
 `markdown_notebook.agent_output_dir`
 (`markdown_notebook.agent_output_dir`), shared with `game_designer`, until a
 dedicated wiki tool/location is built. Process-state still never lands on disk
-(roadmap.db only); the shared dir is for user-facing output the user will fold
+(tickets.db only); the shared dir is for user-facing output the user will fold
 into the wiki. There is **no 'canon' concept and no ratification gate** — what's
 in the wiki is trusted user-authored content.
 
@@ -163,7 +163,7 @@ yields verbatim specimens) is described once in
 ## 4. Boundaries & Coordination
 
 Owns `playbooks/writers_room/`, `protocols/writers_room/`, and its own
-tagged epic (`epic.owner = 'writers_room'`) in the single shared roadmap
+tagged epic (`epic.owner = 'writers_room'`) in the single shared tickets
 database every agent uses — not a separate database of its own. Consumes,
 but does not own, `tools/wiki_tools/` and `tools/writing_tools/` — those are
 shared machinery any agent with a wiki/knowledge-base or a voice-capture need can draw on;
@@ -174,7 +174,7 @@ Restructuring writers_room's own files is not this agent's own playbook —
 per the standard cross-agent convention, it adds a `backlog` card assigned to
 chief_of_staff (reporter writers_room) rather than architecting its own
 layout. Coordinate with another agent the same way — a `backlog` card
-assigned to them (`tools/roadmap_tools/roadmap_write.py add-task --assignee
+assigned to them (`tools/ticket_tools/ticket_write.py add-task --assignee
 <agent> --reporter writers_room --status backlog ...`) against the shared
-roadmap.db, not directly; `config/config.local.json`'s Agent Registries
+tickets.db, not directly; `config/config.local.json`'s Agent Registries
 section is the live registry of every agent.

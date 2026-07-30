@@ -6,7 +6,7 @@ Every personal_db tool imports these helpers so path discovery, write-safety,
 and the Mac-mount read/write-back workaround live in exactly one place.
 
 Path resolution (no hardcoded user paths in /src — invariant shared with
-tools/zotero and tools/roadmap_tools):
+tools/zotero and tools/ticket_tools):
   - PERSONAL_DB_DIR       : absolute path to the personal-db data root
                             (contains db/ and data/). Resolved from
                             config/config.local.json's `personal_db` block.
@@ -17,11 +17,11 @@ tools/zotero and tools/roadmap_tools):
 
 If PERSONAL_DB_DIR is unset, falls back to canonical discovery: the first
 match of data/*/personal/ walking up from this file's location — mirroring the
-roadmap/library "first glob match, one instance" convention.
+tickets/library "first glob match, one instance" convention.
 
 Write safety: connect() sets PRAGMA journal_mode=MEMORY to avoid the on-disk
 rollback journal that once wedged a mounted-folder DB (see
-tools/roadmap_tools/README.md §3b). Writers that must be extra safe can use
+tools/ticket_tools/README.md §3b). Writers that must be extra safe can use
 with_writeback(), which edits a /tmp copy and copies it back atomically.
 """
 

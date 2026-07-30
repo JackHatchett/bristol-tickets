@@ -39,7 +39,7 @@ pipeline spec.)
    disk, which is what this file is for. Do **not** write work state here —
    not `current_lesson`, not `lesson_complete`, not `studied`, `mastery`, or
    `course_complete`. Where a lesson stands is a board fact, held in this
-   agent's own cards in `roadmap.db`, and writing it to a JSON file creates a
+   agent's own cards in `tickets.db`, and writing it to a JSON file creates a
    second tracker that will disagree with the board. Advance the *ticket*, not
    `current_lesson`.
    **Filename check (required, not optional):** the `lesson_file` /
@@ -77,7 +77,7 @@ library only unless the lesson says otherwise.
 
 ## Logging Requirements
 Record a completed lesson batch on the board via
-`tools/roadmap_tools/roadmap_write.py` — close the card, or add one short
+`tools/ticket_tools/ticket_write.py` — close the card, or add one short
 `add-issue-log` comment to it. Not a per-course changelog file, and not a
 handoff note (there is no such mechanism).
 

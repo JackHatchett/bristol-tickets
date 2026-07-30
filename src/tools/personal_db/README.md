@@ -10,7 +10,7 @@ books tables, and `render_snapshot.py --domain books` reads
 `src/tools/zotero/zotero_export.py` instead. The `domains` registry says which
 source a domain uses.
 
-## Invariants (shared with tools/zotero and tools/roadmap_tools)
+## Invariants (shared with tools/zotero and tools/ticket_tools)
 
 1. **No personal data in `/src`.** Paths resolve from env
    (`config/config.local.json` → `personal_db` block); never hardcoded.

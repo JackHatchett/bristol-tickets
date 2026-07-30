@@ -15,7 +15,7 @@
   utility that bypasses full agentic mediation, same as `bristol`.
 - **Layout:** mirrors `bristol` for regularity — `app.py` is the entry point,
   the PySide6 window class lives under `ui/`.
-- **Out of scope:** cross-agent communication, the roadmap DB, or workspace
+- **Out of scope:** cross-agent communication, the tickets DB, or workspace
   orchestration.
 
 ---
@@ -38,8 +38,8 @@
 ## 3. Database
 
 - **Location:** `data/<instance>/test_control/test_control.db` —
-  resolved the same way `roadmap_tools` resolves `roadmap.db`: `app.py` looks for
-  the active instance dir via `data/*/roadmap/roadmap.db`'s parent, falls back to
+  resolved the same way `ticket_tools` resolves `tickets.db`: `app.py` looks for
+  the active instance dir via `data/*/tickets/tickets.db`'s parent, falls back to
   the first existing `data/<instance>/` dir, and only falls back further to
   `AGENT_INSTANCE_SLUG`/`default_user` if neither exists yet. No personal path is
   hardcoded in the tracked script.
@@ -49,9 +49,9 @@
   `control_run_item`, `control_run_step_item` (the cloned-session side — each
   session clones every current case/step into its own rows so later template edits
   don't retroactively change a run already in progress).
-- **Isolation from the roadmap DB:** this is a separate SQLite file from
-  `roadmap.db`. Manual QA test-case tracking and the agent roadmap are different
-  concerns; nothing here reads or writes `roadmap.db`.
+- **Isolation from the tickets DB:** this is a separate SQLite file from
+  `tickets.db`. Manual QA test-case tracking and the agent ticket board are different
+  concerns; nothing here reads or writes `tickets.db`.
 
 ---
 

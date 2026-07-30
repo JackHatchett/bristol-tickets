@@ -2,8 +2,8 @@
 
 An attachment is an image a user pins to a task from the create/edit modal's
 comment poster or the Properties Inspector's poster. The file bytes live in a
-git-ignored, per-instance images directory that sits next to the roadmap DB
-(``data/<instance>/roadmap/images/``); the database stores only the *filename*,
+git-ignored, per-instance images directory that sits next to the tickets DB
+(``data/<instance>/tickets/images/``); the database stores only the *filename*,
 never an absolute path — so no user-specific path is ever written into the DB or
 the tracked repo. The directory is derived at runtime from the live sqlite
 connection's own file, keeping this module mechanism-only and path-agnostic.

@@ -30,7 +30,7 @@ invariants hold regardless of which agent, vendor, or domain:
    pointed-at files — never a live link to the source of truth. The snapshot
    is a copy; keeping it current is the owning side's job (see invariant 6).
 3. **Cannot write to the source of truth.** It never writes canon, the
-   roadmap DB, an applications tracker, a file manifest, or voice cards.
+   tickets DB, an applications tracker, a file manifest, or voice cards.
    Those are the owning agent's to write. Nothing an external AI returns is
    work state, and the owning agent never lands its return as work state
    anywhere but the board.

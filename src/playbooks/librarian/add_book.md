@@ -58,10 +58,10 @@ the safety gates.
   library xlsx from Zotero; safe to run with Zotero open
 
 ## Logging Requirements
-No routine per-add logging against `roadmap.db` — this is the agent's default,
+No routine per-add logging against `tickets.db` — this is the agent's default,
 non-structural workflow, not a tracked task. Log a task only if the user asks
 for something bigger than routine entry (e.g. "audit the whole Edition
-column"), via `roadmap_write.py add-task` against this agent's own epic.
+column"), via `ticket_write.py add-task` against this agent's own epic.
 
 ## Failure Modes
 - No Zotero database at the resolved path → stop, report the exact path

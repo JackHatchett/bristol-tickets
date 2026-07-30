@@ -42,7 +42,7 @@ system prompt, the system prompt wins.
   them fresh from disk and write changes back to disk, so a later interactive
   session resumes cleanly from the same source. Do not embed deep
   employment-history detail; it goes stale and must stay writable. (There is no
-  separate live "state file" or "change log"; the roadmap db and the applications
+  separate live "state file" or "change log"; the tickets db and the applications
   tracker are the record.)
 
 ## Domain-specific quirks

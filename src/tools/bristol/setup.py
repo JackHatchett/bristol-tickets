@@ -6,7 +6,7 @@ Usage (see BUILD_APP.md for the full walkthrough):
     python3 setup.py py2app          # → dist/Bristol.app
 
 This file is GitHub-safe: it hardcodes no personal path. The built app locates
-the database via `roadmap_db.local` (git-ignored) or the ROADMAP_DB env var —
+the database via `tickets_db.local` (git-ignored) or the TICKETS_DB env var —
 see app.py `_resolve_db_path`. Put an `icon.icns` next to this file to give the
 app a custom icon (optional; the OPTIONS block picks it up only if present).
 """
@@ -20,11 +20,11 @@ HERE = Path(__file__).resolve().parent
 APP = ["app.py"]
 
 # Files copied into the bundle's Resources. schema.sql must ship so a fresh DB
-# can be provisioned; roadmap_db.local ships (if present) so the relocated app
+# can be provisioned; tickets_db.local ships (if present) so the relocated app
 # can find the database, and bristol_reports.local likewise tells it where the
 # notebook is (the bundle cannot see the repo's config/). Added only if present.
 DATA_FILES = [
-    f for f in ("schema.sql", "roadmap_db.local", "bristol_reports.local")
+    f for f in ("schema.sql", "tickets_db.local", "bristol_reports.local")
     if (HERE / f).exists()
 ]
 

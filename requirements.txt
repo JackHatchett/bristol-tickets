@@ -2,7 +2,7 @@
 #
 # Third-party packages only; the standard library covers everything else
 # (sqlite3, argparse, pathlib, json, csv, hashlib, subprocess, etc. — see
-# src/tools/roadmap_tools/README.md 3a for why sqlite3 specifically is
+# src/tools/ticket_tools/README.md 3a for why sqlite3 specifically is
 # always used as a library, never a CLI subprocess call).
 #
 # Install:

@@ -55,7 +55,7 @@ under it ships in the public repo. It holds **one file**:
 
 - `config/config.local.json` — the single structured source of truth for the
   whole system. It resolves the generic paths the tracked `src/` code uses
-  (e.g. `data/*/roadmap/roadmap.db`, "the active project") to your actual
+  (e.g. `data/*/tickets/tickets.db`, "the active project") to your actual
   drives, directories, and agent registry. It also carries `active_agent` (which agent is active on launch), a
   `keyword_scan` block (settings for
   `src/tools/file_management/keyword_scan.py`), and a `stack` block (your
@@ -66,7 +66,7 @@ Read individual fields without opening the whole file:
 
 ```bash
 python3 src/tools/config_tools/read_config.py active_agent
-python3 src/tools/config_tools/read_config.py important_paths.roadmap_db
+python3 src/tools/config_tools/read_config.py important_paths.tickets_db
 jq -r '.drives.external1.path' config/config.local.json   # jq works too
 ```
 
@@ -78,17 +78,17 @@ keeps `src/` publishable is the folder split:
 
 - **`src/` — GitHub-safe.** Operational logic only: no personal data, no
   absolute user paths, no usernames, not even as string literals. It refers to
-  user data by *generic relative* paths (`data/*/roadmap/roadmap.db`, where `*`
+  user data by *generic relative* paths (`data/*/tickets/tickets.db`, where `*`
   stands in for the git-ignored instance folder). Personal filenames that can't
   be genericized are resolved through env vars declared in the config
   (`agents.*.env`).
 - **`config/` — git-ignored.** The single `config.local.json`.
 - **`data/` — git-ignored.** The instance's real data, including the
-  state-bearing `roadmap.db`.
+  state-bearing `tickets.db`.
 
 Config is JSON (never YAML — an external consultant, Copilot, can't work with
 YAML; never SQLite — config must stay git-diffable and hand-editable). SQLite is
-reserved for high-volume keyed *state* (`roadmap.db`).
+reserved for high-volume keyed *state* (`tickets.db`).
 
 ### Overriding the active agent per Cowork session
 
@@ -104,16 +104,16 @@ to point a given Cowork project at a specific agent (e.g.
 default. `none`, absent, or an unrecognized slug all fall back to
 `active_agent`.
 
-## 6. Initialize the roadmap database
+## 6. Initialize the tickets database
 
 ```bash
-python3 src/tools/roadmap_tools/create_roadmap.py --instance <your_instance_name>
+python3 src/tools/ticket_tools/create_tickets.py --instance <your_instance_name>
 ```
 
-This creates `data/<instance>/roadmap/roadmap.db` with the base schema
+This creates `data/<instance>/tickets/tickets.db` with the base schema
 (`theme`, `epic`, `scope`, `task`, `task_meta`, `issue_log`, `task_event`) and
 seeds a starter epic. The `attachment` and `task_link` tables are created on
-first use by Bristol's schema guard and by `roadmap_write.py`, so a fresh DB
+first use by Bristol's schema guard and by `ticket_write.py`, so a fresh DB
 self-completes rather than needing a migration step. `data/` is entirely
 git-ignored — this is real per-instance state, not something the public repo
 ships with either.
@@ -123,4 +123,4 @@ ships with either.
 - **The Claude session**: point a Cowork session at this folder; it reads
   `src/app.md` and takes it from there.
 - **Bristol**: `python3 src/tools/bristol/app.py` — a PySide6 Kanban GUI over
-  `roadmap.db`.
+  `tickets.db`.

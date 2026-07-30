@@ -7,7 +7,7 @@
 --
 -- Modeled on:
 --   data/<instance>/library/db/schema.sql    (books/loans/lists pattern)
---   src/tools/roadmap_tools/                 (write-safety + discovery conventions)
+--   src/tools/ticket_tools/                 (write-safety + discovery conventions)
 --
 -- Multi-domain by design. Each domain = one (or a few) tables + an optional
 -- stats view, registered in the `domains` table. Adding a future domain
