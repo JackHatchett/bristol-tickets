@@ -15,12 +15,14 @@ no usernames, no environment variables.
 DB discovery rule:
     Walk up from this file to the nearest ancestor holding src/app.md — the
     project root — then search data/*/tickets/tickets.db. There is ONE shared
-    tickets.db for the whole fleet; this script slices it to one agent.
+    tickets.db for the whole fleet; this script slices it to one agent. On a
+    fresh clone nothing matches, and an empty board is provisioned there
+    (create_tickets.locate_or_provision) rather than the run failing.
 
 NEXT-ACTION SEMANTICS (aligned with cos_status.py):
     An agent's next action is its OWN work, scoped to the ACTIVE BOARD
-    (task.stage='active'), in precedence: active-board `doing` (priority desc) →
-    active-board `todo` (priority desc) → (fallback only if both empty) own
+    (task.stage='active'), in precedence: active-board `doing` (board order) →
+    active-board `todo` (board order) → (fallback only if both empty) own
     `backlog` (stage='backlog'), surfaced as a planning signal to activate onto
     the board, not auto-executed. Work owned by other agents is never this
     agent's next action. A task's stage (not any sprint)
@@ -44,19 +46,8 @@ import sys
 import sqlite3
 from pathlib import Path
 
-
-def _project_root() -> Path:
-    """The project root: the nearest ancestor holding src/app.md.
-
-    Located by marker rather than by folder name, so the install works whatever
-    the user named the folder they cloned into.
-    """
-    for parent in Path(__file__).resolve().parents:
-        if (parent / "src" / "app.md").is_file():
-            return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor holds src/app.md)"
-    )
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import create_tickets  # noqa: E402  (owns the schema and first-use provisioning)
 
 
 STATUS_RANK = {"doing": 0, "todo": 1}
@@ -67,12 +58,8 @@ STATUS_RANK = {"doing": 0, "todo": 1}
 # ---------------------------------------------------------------------------
 
 def resolve_db_path() -> Path:
-    data_root = _project_root() / "data"
-
-    matches = list(data_root.glob("*/tickets/tickets.db"))
-    if not matches:
-        sys.exit("agent_status: ERROR — no tickets.db found under data/*/tickets/")
-    return matches[0]
+    """The shared tickets.db, created empty on first use if it is not there."""
+    return create_tickets.locate_or_provision()
 
 
 # ---------------------------------------------------------------------------
@@ -90,7 +77,7 @@ def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Every task on the active board — stage='active' (Kanban model).
     LEFT JOIN keeps epic-less tasks visible."""
     return conn.execute(
-        "SELECT t.id, t.title, t.status, t.priority, t.blocked, t.depends_on, t.estimate, "
+        "SELECT t.id, t.title, t.status, t.pressure, t.sort_order, t.blocked, t.depends_on, t.estimate, "
         "       t.assignee, COALESCE(e.name, '(no epic)') AS epic, e.owner AS epic_owner "
         "FROM task t "
         "LEFT JOIN epic e ON t.epic_id = e.id "
@@ -110,8 +97,14 @@ def blocker_statuses(conn: sqlite3.Connection,
             conn.execute(f"SELECT id, status FROM task WHERE id IN ({ph})", ids)}
 
 def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
-    """Every `doing` card first (priority desc), then every `todo` card
-    (priority desc). Nothing else reorders this queue.
+    """Every `doing` card first, then every `todo` card, each in the board's own
+    manual order (task.sort_order asc — the position the card sits at in its
+    column). Nothing else reorders this queue.
+
+    The order you see on the board IS the order the agent works. Dragging a card
+    up a column moves it up the agent's queue, and an agent that reorders its
+    own queue does it by rewriting sort_order. `pressure` is a 0–100 rating of
+    how hard a card is pushing, not a rank, and it does not sort.
 
     `blocked` deliberately does NOT sort. It used to be the leading key, which
     silently sank a blocked `doing` card below every `todo` and made the script
@@ -121,22 +114,22 @@ def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
     it, works what it can, or reports why it cannot."""
     return sorted(
         rows,
-        key=lambda r: (STATUS_RANK.get(r["status"], 9), -r["priority"], r["id"]),
+        key=lambda r: (STATUS_RANK.get(r["status"], 9), r["sort_order"], r["id"]),
     )
 
 
 def my_backlog(conn: sqlite3.Connection, me: str) -> list[sqlite3.Row]:
     """Backlog-stage tasks owned by me. Epic-less tasks included;
-    epic'd ones limited to active/planning epics to cut noise. Priority desc."""
+    epic'd ones limited to active/planning epics to cut noise. Pressure desc."""
     rows = conn.execute(
-        "SELECT t.id, t.title, t.status, t.priority, t.assignee, "
+        "SELECT t.id, t.title, t.status, t.pressure, t.assignee, "
         "       e.name AS epic, e.owner AS epic_owner "
         "FROM task t LEFT JOIN epic e ON t.epic_id = e.id "
         "WHERE t.stage = 'backlog' "
         "  AND (e.id IS NULL OR e.status IN ('active','planning'))"
     ).fetchall()
     mine = [r for r in rows if owned_by(r, me)]
-    return sorted(mine, key=lambda r: (-r["priority"], r["id"]))
+    return sorted(mine, key=lambda r: (-r["pressure"], r["id"]))
 
 
 def latest_comment_per_task(conn: sqlite3.Connection,
@@ -164,12 +157,12 @@ def latest_comment_per_task(conn: sqlite3.Connection,
 def print_comments(conn: sqlite3.Connection,
                    tasks: list[sqlite3.Row]) -> None:
     """Surface the latest comment on each of `tasks` that has one; ⚠ marks
-    user-authored ones (context to read, NOT a priority signal — priority/stage
+    user-authored ones (context to read, NOT a pressure signal — pressure/stage
     decide the next task, never a comment)."""
     latest = latest_comment_per_task(conn, [t["id"] for t in tasks])
     if not latest:
         return
-    print("\n--- COMMENTS on your active-board tasks (⚠ = user; context to read, NOT a priority signal) ---")
+    print("\n--- COMMENTS on your active-board tasks (⚠ = user; context to read, NOT a pressure signal) ---")
     for t in tasks:
         c = latest.get(t["id"])
         if not c:
@@ -181,7 +174,8 @@ def print_comments(conn: sqlite3.Connection,
         print(f"{mark}#{t['id']} [{c['created_at'][:10]} {c['author']}] {body}")
 
 
-def fmt(r: sqlite3.Row, blockers: dict | None = None) -> str:
+def fmt(r: sqlite3.Row, blockers: dict | None = None,
+        position: int | None = None) -> str:
     # BLOCKED is shown only while it is still TRUE. The stored flag is set by
     # hand and was never cleared when the depended-on ticket finished, so a card
     # could sit flagged for weeks after nothing was actually blocking it. Resolve
@@ -196,7 +190,8 @@ def fmt(r: sqlite3.Row, blockers: dict | None = None) -> str:
             flag = f" [BLOCKED by #{dep}]"
         else:
             flag = f" [blocked flag is STALE — #{dep} is done; clear it]"
-    return (f"  {r['status']:5} p{r['priority']:>3} {r['estimate'] or '-':>4}  "
+    pos = f"{position:>2}." if position is not None else "   "
+    return (f"  {pos} {r['status']:5} pr{r['pressure']:>3} {r['estimate'] or '-':>4}  "
             f"[{r['epic']}] {r['title']}{flag}")
 
 
@@ -312,19 +307,19 @@ def main() -> None:
     if mine_q:
         nxt = mine_q[0]
         print(f"▶ NEXT ACTION ({me}, active board): "
-              f"[{nxt['epic']}] {nxt['title']}  (p{nxt['priority']}, {nxt['estimate'] or '?'})")
-        print("\nYOUR QUEUE (active board, doing→todo, priority order):")
+              f"[{nxt['epic']}] {nxt['title']}  (pressure {nxt['pressure']}, {nxt['estimate'] or '?'})")
+        print("\nYOUR QUEUE (active board, doing→todo, board order):")
         print("  Work it top to bottom. A `doing` card outranks every `todo`.")
         blockers = blocker_statuses(conn, board)
-        for r in mine_q:
-            print(fmt(r, blockers))
+        for n, r in enumerate(mine_q, start=1):
+            print(fmt(r, blockers, position=n))
     else:
         bl = my_backlog(conn, me)
         print(f"▶ NEXT ACTION ({me}): nothing on the active board (no doing/todo).")
         if bl:
             print("   Fallback — your backlog (activate one onto the board before executing):")
             for r in bl[:5]:
-                print(f"     backlog p{r['priority']:>3}  [{r['epic']}] {r['title']}")
+                print(f"     backlog pr{r['pressure']:>3}  [{r['epic']}] {r['title']}")
         else:
             print("   Your backlog is also empty — await direction.")
 

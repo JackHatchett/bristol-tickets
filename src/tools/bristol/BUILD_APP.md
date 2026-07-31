@@ -21,36 +21,32 @@ version control, never committed.
 
 ## Approach A — live-source launcher (no build)
 
-Make a minimal `.app` bundle that execs your PySide6 Python against the repo's
-`app.py`:
-
-```
-Bristol.app/Contents/
-├── Info.plist            CFBundleExecutable=Bristol, CFBundleIconFile=icon
-├── MacOS/Bristol         bash script, chmod +x
-└── Resources/icon.icns   copied from this folder
-```
-
-The `MacOS/Bristol` script is just:
-
 ```bash
-#!/bin/bash
-exec "/ABSOLUTE/PATH/TO/python3" "/ABSOLUTE/PATH/TO/src/tools/bristol/app.py"
+python3 src/tools/bristol/make_launcher.py
 ```
 
-Two things that make or break it:
+That writes `~/Applications/Bristol.app` — a minimal bundle whose executable is
+a shell script that runs this repo's `app.py`. Open it once from Finder, then
+right-click its Dock tile → Options → Keep in Dock. Editing any `ui/*.py` or
+`app.py` takes effect on the next launch; there is nothing to rebuild.
 
-- **Use the absolute path to the Python that actually has PySide6.** A
-  Finder-launched app gets a minimal `PATH`, so a bare `python3` often resolves
-  to a system Python without PySide6. Find the right one with
-  `python3 -c "import PySide6, sys; print(sys.executable)"` and hard-code that.
-- **Nothing to point at.** Because the launcher runs the in-repo `app.py`,
-  its relative discovery walks up to the repo and finds
-  `data/*/tickets/tickets.db` on its own (see `app.py` `_resolve_db_path`).
+Run the same command again after moving or renaming the repo folder, or after
+switching to a different Python.
 
-Drop `Bristol.app` in `~/Applications` (no admin needed) or `/Applications`,
-then right-click its Dock tile → Options → Keep in Dock. Editing any
-`ui/*.py` or `app.py` takes effect on the next launch — nothing to rebuild.
+What the tool handles for you:
+
+- **The Python that actually has PySide6.** A Finder-launched app gets a
+  minimal `PATH`, so a bare `python3` often resolves to a system Python
+  without PySide6. The tool tests candidates and bakes in the absolute path of
+  one that imports it.
+- **Surviving a repo move.** The generated script resolves the repo at launch
+  from the instance pointer (`instance.py`), falling back to the path baked in
+  when it was generated, and shows an alert naming this command if neither
+  resolves.
+- **The icon**, copied from `icon.icns` next to the tool.
+
+The bundle holds absolute paths, so it is a per-machine artifact: it lives in
+`~/Applications`, outside the repo, and is never committed.
 
 ---
 

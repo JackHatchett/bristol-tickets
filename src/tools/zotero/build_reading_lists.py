@@ -37,13 +37,16 @@ import unicodedata
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
 
+import data_paths as dp  # noqa: E402  (the shared declared-path resolver)
 import zotero_common as zc  # noqa: E402
 
 READ_COLLECTION = "Books I've Read"
 
 # Payload directory lives in the git-ignored data tree, resolved the same way
-# the personal_db tools resolve theirs.
+# the personal_db tools resolve theirs. A directory that does not exist yet is
+# not an error: --all simply finds no payloads.
 def payload_dir() -> Path:
     root = zc._project_root()
     matches = sorted(root.glob("data/*/personal/reading_lists"))
@@ -52,7 +55,7 @@ def payload_dir() -> Path:
     matches = sorted(root.glob("data/*/personal"))
     if matches:
         return matches[0] / "reading_lists"
-    raise SystemExit("No data/*/personal directory found for payloads.")
+    return root / "data" / dp.instance_slug() / "personal" / "reading_lists"
 
 
 # ---------------------------------------------------------------- normalising

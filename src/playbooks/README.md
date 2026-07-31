@@ -36,11 +36,11 @@ CoS-level (top-level) playbooks:
 - storage_audit.md — abstract procedure for monthly storage audits / cleanup inventory
 
 Agent-scoped subfolders (each holds the playbooks for that agent; see the agent's charter for authority):
-- career_coach/ — career_pivot, cover_letter, interview_prep, jd_evaluation, linkedin_editing, resume_tailoring, session_closure
+- career_coach/ — cover_letter, interview_prep, jd_evaluation, resume_tailoring, session_closure
 - client_services/ — operator_tasks, project_intake
 - game_designer/ — design_proposals, git_milestone_coaching, project_context, socratic_design_coaching
 - librarian/ — add_book, data_safety
-- teaching_assistant/ — content_generation, html_render, navigator
+- teaching_assistant/ — content_generation, html_render, lesson_pipeline, navigator
 - writers_room/ — story_proposals, crew_dispatch, project_context, voice_distillation
 
 ## How Claude Should Use This Folder
@@ -65,7 +65,7 @@ Agent-scoped subfolders (each holds the playbooks for that agent; see the agent'
 ## Known Open Questions
 - None at this abstraction level.
 
-## Session Bootstrap (for Claude / Copilot)
+## Session Bootstrap (for AI)
 - Role: Abstract procedural workflows.
 - Source of Truth: `src/playbooks/` (this repo).
 - When to Load: Only when a task matches a playbook’s purpose.

@@ -33,9 +33,8 @@ charter's §2.1).
    a page/fact, write a summary to the shared agent-output dir
    (`markdown_notebook.agent_output_dir`)
    for the user to review — see `design_proposals.md`.
-6. **Exception:** if this particular project has its own pre-existing,
-   legitimately-scoped local state file (e.g. `author_ship`'s frozen
-   `build/state.md` — see the charter's §2.2 exception note), read that too.
+6. **Exception:** if this particular project has its own pre-existing, frozen
+   local state file (see the charter's §2.2 exception note), read that too.
    This is a per-project fact to confirm, not a default to assume.
 
 ## On-demand lookup
@@ -43,8 +42,9 @@ charter's §2.1).
 When a request needs a project fact not already in hand, look it up in the
 right home:
 
-- **Worldbuilding** → the user's notebook. Its MOC / wiki-links are the index
-  (e.g. the game's root MOC at `33_game_design/diagonalization_argument.md`).
+- **Worldbuilding** → the user's notebook, in the wiki directory this project
+  names in `/config`. That directory's root map-of-content note and its
+  wiki-links are the index.
 - **Mechanics / art** → the repo `design/` folder's own file names.
 
 Read **one** target file per question. Needing three files to answer one
@@ -70,7 +70,7 @@ session:
    `chief_of_staff`).
 2. Put where-things-stand on the cards, not in a note. There is no handoff
    mechanism: the next session learns the state from the board. Anything the
-   next session should pick up is a `doing` card with a high `priority` and
+   next session should pick up is a `doing` card at the top of its column and
    `assignee: game_designer`; a one-line `add-issue-log` comment carries the
    detail. Durable design facts go in the project's bible, never on a card.
 3. If a decision resolves an open task, close it via `ticket_write.py

@@ -90,12 +90,12 @@ def check_bristol() -> list[str]:
         mconn = sqlite3.connect(":memory:")
         mconn.executescript(schema.read_text())
 
-        def _seed(title, stage, status, sort_order, priority=0):
+        def _seed(title, stage, status, sort_order, pressure=0):
             mconn.execute(
                 "INSERT INTO task (title, description, status, stage, sort_order, "
-                "priority, record_type, assignee, reporter, created_at, updated_at) "
+                "pressure, record_type, assignee, reporter, created_at, updated_at) "
                 "VALUES (?,?,?,?,?,?, 'build','user','user','2026-07-08','2026-07-08')",
-                (title, "d", status, stage, sort_order, priority))
+                (title, "d", status, stage, sort_order, pressure))
             return mconn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
         _seed("active todo", "active", "todo", 0, 50)
@@ -242,7 +242,7 @@ def check_bristol() -> list[str]:
         if guard_dlg.left_form.rowCount() == 0 or guard_dlg.right_form.rowCount() == 0:
             raise SmokeFailure("metadata fields are not split across two columns")
         for w in (guard_dlg.stage_combo, guard_dlg.status_combo, guard_dlg.owner_edit,
-                  guard_dlg.epic_combo, guard_dlg.priority_spin):
+                  guard_dlg.epic_combo, guard_dlg.pressure_spin):
             if guard_dlg._row_form.get(w) is None:
                 raise SmokeFailure(f"{w!r} was not placed in a column form")
         guard_dlg._update_visible_fields()  # must not raise across either column

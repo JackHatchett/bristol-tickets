@@ -161,14 +161,14 @@ def _load_cards(conn, task_ids):
         return []
     placeholders = ",".join("?" * len(task_ids))
     columns = [
-        "id", "title", "description", "status", "stage", "priority",
-        "record_type", "assignee", "reporter", "estimate", "story_points",
+        "id", "title", "description", "status", "stage", "pressure",
+        "record_type", "assignee", "reporter", "estimate",
         "created_at", "updated_at", "closed_at", "epic_name", "epic_id",
     ]
     rows = conn.execute(
-        f"""SELECT t.id, t.title, t.description, t.status, t.stage, t.priority,
+        f"""SELECT t.id, t.title, t.description, t.status, t.stage, t.pressure,
                    COALESCE(t.record_type, 'build'),
-                   t.assignee, t.reporter, t.estimate, t.story_points,
+                   t.assignee, t.reporter, t.estimate,
                    t.created_at, t.updated_at, t.closed_at,
                    e.name, e.id
             FROM task t LEFT JOIN epic e ON e.id = t.epic_id
@@ -216,7 +216,7 @@ def _load_cards(conn, task_ids):
             span is not None and span * SECONDS_PER_DAY <= INSTANT_CLOSE_SECONDS
         )
         cards.append(card)
-    cards.sort(key=lambda c: (-(c["priority"] or 0), c["id"]))
+    cards.sort(key=lambda c: (-(c["pressure"] or 0), c["id"]))
     return cards
 
 
@@ -246,11 +246,11 @@ def _work_in_progress(conn, now):
     while there is still time to act on it.
     """
     rows = conn.execute(
-        """SELECT t.id, t.title, t.priority, t.assignee, t.created_at,
+        """SELECT t.id, t.title, t.pressure, t.assignee, t.created_at,
                   COALESCE(t.record_type,'build'), e.name
            FROM task t LEFT JOIN epic e ON e.id = t.epic_id
            WHERE t.stage='active' AND t.status='doing'
-           ORDER BY t.priority DESC, t.id"""
+           ORDER BY t.pressure DESC, t.id"""
     ).fetchall()
     first_doing = {}
     if _table_exists(conn, "task_event"):
@@ -259,10 +259,10 @@ def _work_in_progress(conn, now):
             "WHERE field='status' AND to_value='doing' GROUP BY task_id"
         ).fetchall())
     out = []
-    for tid, title, priority, assignee, created_at, record_type, epic in rows:
+    for tid, title, pressure, assignee, created_at, record_type, epic in rows:
         started = first_doing.get(tid)
         out.append({
-            "id": tid, "title": title, "priority": priority,
+            "id": tid, "title": title, "pressure": pressure,
             "assignee": assignee or "(unassigned)", "record_type": record_type,
             "epic_name": epic, "created_at": created_at, "started_at": started,
             "age_days": _days_between(created_at, now),
@@ -275,7 +275,7 @@ def _queue_snapshot(conn, now):
     """The `todo` column — committed but not started. Its size relative to
     throughput is how long the current queue would take to drain."""
     rows = conn.execute(
-        "SELECT id, priority, created_at FROM task "
+        "SELECT id, pressure, created_at FROM task "
         "WHERE stage='active' AND status='todo'"
     ).fetchall()
     ages = [_days_between(created, now) for _, _, created in rows]
@@ -288,7 +288,7 @@ def _queue_snapshot(conn, now):
 
 def _backlog_snapshot(conn, now):
     rows = conn.execute(
-        "SELECT id, title, priority, created_at, updated_at FROM task "
+        "SELECT id, title, pressure, created_at, updated_at FROM task "
         "WHERE stage='backlog'"
     ).fetchall()
     ages = [_days_between(created, now) for _, _, _, created, _ in rows]
@@ -420,15 +420,15 @@ def _signals(facts):
             "Delete what you will not do. A backlog you do not trust is one you "
             "stop reading, and then it hides the things that mattered.")
 
-    # 8. Priority not steering delivery.
-    high = [c["lead_days"] for c in batch if (c["priority"] or 0) >= 60]
-    low = [c["lead_days"] for c in batch if (c["priority"] or 0) < 30]
+    # 8. Pressure not steering delivery.
+    high = [c["lead_days"] for c in batch if (c["pressure"] or 0) >= 60]
+    low = [c["lead_days"] for c in batch if (c["pressure"] or 0) < 30]
     hi_med, lo_med = _median(high), _median(low)
     if len(high) >= 3 and len(low) >= 3 and hi_med and lo_med and hi_med > lo_med * 1.5:
-        add("attention", "High-priority cards took longer than low-priority ones",
-            f"Median lead time: {hi_med:.1f}d for priority 60+, {lo_med:.1f}d for "
-            "priority under 30.",
-            "Priority is not currently predicting order of delivery. Either it is "
+        add("attention", "High-pressure cards took longer than low-pressure ones",
+            f"Median lead time: {hi_med:.1f}d for pressure 60+, {lo_med:.1f}d for "
+            "pressure under 30.",
+            "Pressure is not currently predicting order of delivery. Either it is "
             "set after the fact, or the hard cards are simply the important ones.")
 
     # 9. Cycle-time coverage.
@@ -444,11 +444,10 @@ def _signals(facts):
     #     binary: one card out of thirty-five carrying an estimate is the same
     #     situation as none of them, for anything you could compute from it.
     quality = facts["data_quality"]
-    sized = max(quality["story_points_used"], quality["estimates_used"])
+    sized = quality["estimates_used"]
     if n >= 5 and sized / n < SIZING_COVERAGE_FLOOR:
         add("watch", "Estimate and story-point fields are going unused",
-            f"{quality['estimates_used']} of {n} cards carried an estimate and "
-            f"{quality['story_points_used']} carried story points.",
+            f"{quality['estimates_used']} of {n} cards carried an effort estimate.",
             "Not a problem in itself — but velocity and forecast accuracy are "
             "unavailable without one of them filled consistently. Either commit "
             "to a single sizing field or drop both from the card.")
@@ -552,7 +551,6 @@ def collect(conn, task_ids, now=None, period_start=None, prior=None):
         },
         "batch_close_groups": _batch_close_groups(batch),
         "data_quality": {
-            "story_points_used": sum(1 for c in batch if c["story_points"]),
             "estimates_used": sum(1 for c in batch if c["estimate"]),
             "missing_created_at": sum(1 for c in batch if not c["created_at"]),
             "missing_closed_at": sum(1 for c in batch if not c["closed_at"]),

@@ -203,12 +203,19 @@ class UnifiedRecordDialog(QDialog):
                 continue
             self.epic_combo.addItem(ename, eid)
 
-        self.priority_spin = QSpinBox()
-        self.priority_spin.setRange(0, 100)
+        self.pressure_spin = QSpinBox()
+        self.pressure_spin.setRange(0, 100)
 
-        self.bites_spin = QSpinBox()
-        self.bites_spin.setRange(0, 20)
-        self.bites_spin.setSuffix(" bites")
+        # Effort: how much of a full usage budget this card would take. The
+        # scale and its anchors are defined once in src/app.md (Effort sizing);
+        # the blank first entry means "not sized yet".
+        self.estimate_combo = QComboBox()
+        for value, label in (("", "not sized"),
+                             ("S", "S — under a tenth of a budget"),
+                             ("M", "M — a tenth to about half"),
+                             ("L", "L — half a budget or more"),
+                             ("XL", "XL — more than one budget; split it")):
+            self.estimate_combo.addItem(label, value)
 
         self.epic_type_combo = QComboBox()
         self.epic_type_combo.addItems(["Epic (bounded)", "Epic (unbounded)"])
@@ -221,8 +228,8 @@ class UnifiedRecordDialog(QDialog):
             ("Owner", self.owner_edit),
             ("Originator", self.originator_edit),
             ("Epic Link", self.epic_combo),
-            ("Priority (0-100)", self.priority_spin),
-            ("Effort Sizing", self.bites_spin),
+            ("Pressure (0-100)", self.pressure_spin),
+            ("Effort", self.estimate_combo),
         ]
         self.epic_rows = [
             ("Epic Type", self.epic_type_combo),
@@ -360,8 +367,8 @@ class UnifiedRecordDialog(QDialog):
             self.owner_edit.currentText(),
             self.originator_edit.text(),
             self.epic_combo.currentIndex(),
-            self.priority_spin.value(),
-            self.bites_spin.value(),
+            self.pressure_spin.value(),
+            self.estimate_combo.currentData(),
             self.epic_type_combo.currentText(),
             self.epic_status_combo.currentText(),
             # Links buffered on a not-yet-saved ticket are unsaved work too, so
@@ -440,7 +447,7 @@ class UnifiedRecordDialog(QDialog):
     def _missing_required(self) -> list:
         """The required widgets that are currently empty. Title is the only
         required field for either kind: everything else the dialog collects has
-        a default (Stage, Status, Owner, Priority) or is legitimately optional
+        a default (Stage, Status, Owner, Pressure) or is legitimately optional
         (Description, Epic Link, links, attachments). Return widgets, not names,
         so the caller can mark exactly what it found."""
         missing = []
@@ -509,8 +516,8 @@ class UnifiedRecordDialog(QDialog):
         try:
             if self.mode == "task":
                 row = self.conn.execute(
-                    "SELECT title, description, status, priority, epic_id, "
-                    "COALESCE(assignee, 'user'), COALESCE(reporter, 'user'), COALESCE(story_points, 0), "
+                    "SELECT title, description, status, pressure, epic_id, "
+                    "COALESCE(assignee, 'user'), COALESCE(reporter, 'user'), COALESCE(estimate, ''), "
                     "COALESCE(record_type, 'build'), COALESCE(stage, 'backlog') "
                     "FROM task WHERE id=?", (self.record_id,)
                 ).fetchone()
@@ -519,7 +526,7 @@ class UnifiedRecordDialog(QDialog):
                     self.desc_edit.setPlainText(row[1] or "")
                     current_status = row[2] if row[2] in ["todo", "doing", "done"] else "todo"
                     self.status_combo.setCurrentText(current_status)
-                    self.priority_spin.setValue(row[3] or 0)
+                    self.pressure_spin.setValue(row[3] or 0)
                     if row[4] is not None:
                         idx = self.epic_combo.findData(row[4])
                         if idx < 0:
@@ -536,7 +543,8 @@ class UnifiedRecordDialog(QDialog):
                             self.epic_combo.setCurrentIndex(idx)
                     self._select_owner(row[5])
                     self.originator_edit.setText(row[6])
-                    self.bites_spin.setValue(row[7])
+                    est_idx = self.estimate_combo.findData((row[7] or "").upper())
+                    self.estimate_combo.setCurrentIndex(max(est_idx, 0))
                     rt_idx = self.recordtype_combo.findData((row[8] or "build").lower())
                     if rt_idx >= 0:
                         self.recordtype_combo.setCurrentIndex(rt_idx)
@@ -634,11 +642,11 @@ class UnifiedRecordDialog(QDialog):
         if chosen_type == "Task / Issue":
             status = self.status_combo.currentText()
             stage = self.stage_combo.currentText()
-            priority = self.priority_spin.value()
+            pressure = self.pressure_spin.value()
             epic_id = self.epic_combo.currentData() or fallback_epic or self.fallback_epic_id
             owner = self.owner_edit.currentText().strip() or "user"
             originator = self.originator_edit.text().strip() or "user"
-            bites = self.bites_spin.value()
+            estimate = self.estimate_combo.currentData() or None
             record_type = self._current_record_type()
             closed_at = _utcnow() if status == "done" else None
 
@@ -647,10 +655,10 @@ class UnifiedRecordDialog(QDialog):
                 ts = _utcnow()
                 cur = self.conn.execute(
                     "INSERT INTO task (epic_id, title, description, status, stage, sort_order, "
-                    "priority, assignee, reporter, story_points, record_type, closed_at, "
+                    "pressure, assignee, reporter, estimate, record_type, closed_at, "
                     "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    (epic_id, title, desc, status, stage, sort_order, priority, owner,
-                     originator, bites, record_type, closed_at, ts, ts),
+                    (epic_id, title, desc, status, stage, sort_order, pressure, owner,
+                     originator, estimate, record_type, closed_at, ts, ts),
                 )
                 # The ticket now has an id, so links entered during creation can
                 # finally be written against it.
@@ -667,18 +675,18 @@ class UnifiedRecordDialog(QDialog):
                     sort_order = self._append_order(stage, status)
                     self.conn.execute(
                         "UPDATE task SET epic_id=?, title=?, description=?, status=?, stage=?, "
-                        "sort_order=?, priority=?, assignee=?, reporter=?, story_points=?, "
+                        "sort_order=?, pressure=?, assignee=?, reporter=?, estimate=?, "
                         "record_type=?, closed_at=? WHERE id=?",
-                        (epic_id, title, desc, status, stage, sort_order, priority, owner,
-                         originator, bites, record_type, closed_at, self.record_id),
+                        (epic_id, title, desc, status, stage, sort_order, pressure, owner,
+                         originator, estimate, record_type, closed_at, self.record_id),
                     )
                 else:
                     self.conn.execute(
                         "UPDATE task SET epic_id=?, title=?, description=?, status=?, stage=?, "
-                        "priority=?, assignee=?, reporter=?, story_points=?, record_type=?, "
+                        "pressure=?, assignee=?, reporter=?, estimate=?, record_type=?, "
                         "closed_at=? WHERE id=?",
-                        (epic_id, title, desc, status, stage, priority, owner, originator,
-                         bites, record_type, closed_at, self.record_id),
+                        (epic_id, title, desc, status, stage, pressure, owner, originator,
+                         estimate, record_type, closed_at, self.record_id),
                     )
 
         elif chosen_type == "Epic":

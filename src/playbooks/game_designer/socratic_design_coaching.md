@@ -46,7 +46,7 @@ proposal is ready to lock.
    gemini_gem_bridge.md` — write a request, tell the user which file to
    paste, and file the return through `design_proposals.md` once it comes
    back. A periodic strategic health-check can instead go to an external
-   advisor AI via `tools/game_designer/copilot_strategic_review.md`, on
+   advisor AI via `tools/game_designer/strategic_review.md`, on
    request only.
 6. **Git milestones.** At each structural milestone (a design phase closes,
    a first buildable slice exists), run `git_milestone_coaching.md` before
@@ -59,7 +59,7 @@ proposal is ready to lock.
 ## Tools Used
 - `tools/game_designer/anti_plagiarism_checklist.md`
 - `tools/game_designer/art_pipeline_walkthrough.md`
-- `tools/game_designer/copilot_strategic_review.md`
+- `tools/game_designer/strategic_review.md`
 
 ## Failure Modes
 - **User asks the agent to just decide.** Push back once, explain why

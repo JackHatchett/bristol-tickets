@@ -31,7 +31,9 @@ Every agent's machinery lives inside this repo, under
    `src/templates/identity_template.md`. Reference the template by
    filename — do not restate its structure here; see that template for the
    exact shape (identity, session start, playbooks/tools/protocols
-   pointers, guardrails, boundaries).
+   pointers, guardrails, boundaries). Write it for a stranger: no assumption
+   about the user's job, clients, courses, notebook layout or software stack,
+   and every third-party prerequisite named as one.
 
 3. **Scaffold playbooks/tools/protocols as needed.**
    - `src/playbooks/<agent>/` — only once there's a real step-by-step
@@ -58,16 +60,18 @@ Every agent's machinery lives inside this repo, under
    If this agent will hold personal/instance content (records, a corpus,
    tracked application data), create `data/*/<domain>/` (naming follows
    the content, not the agent — see `career_coach`'s `data/*/career/` and
-   `writers_room`'s Markdown-notebook-resident data as two different real patterns).
-   Register the path in `config/config.local.json` and `config.local.json`.
-   Not every agent needs this — chief_of_staff's registry entry has none.
+   `writers_room`'s notebook-resident data as two different real patterns).
+   Register the path under the agent's `key_data_paths` in
+   `config/config.local.json`. Not every agent needs this — chief_of_staff's
+   registry entry has none.
 
 6. **Register the agent.**
-   Add the agent's entry to `config/config.local.json`'s Agent Registries
-   section (identity document link, notebook access permissions, one-line
-   notes) and the matching block in `config.local.json`'s `agents` key.
-   This is the entire registration step — there is no separate
-   `agent_registry.md` file.
+   Add the agent's entry under `agents` in `config/config.local.json`:
+   `identity` (repo-relative path to the charter), `description` (the one line
+   the first-run wizard and `docs/agents.md` show), `key_context_files`,
+   `key_data_paths`, `env` if its tools need variables, `notebook_access`, and
+   `notes`. `config/config.example.json` is the shape to copy. This is the
+   entire registration step — there is no separate `agent_registry.md` file.
 
 7. **Bootstrap the next session.**
    The agent's next session is driven by its charter and its board epic:
@@ -111,8 +115,9 @@ The user should periodically check:
 - Each agent's board epic for content freshness.
 
 ## Session bootstrap (for AI)
-- Role: Bootstrap a new agent from nothing (see `MIGRATION_GUIDE.md` instead
-  for converting an existing legacy bundle).
+- Role: Bootstrap a new agent from nothing (see
+  `src/playbooks/migrate_legacy_agent.md` instead for converting an existing
+  legacy bundle).
 - Source of truth: `src/playbooks/create_agent.md` (this repo).
 - When to load: Only when the user asks to create a genuinely new agent.
 - Allowed operations: File creation/edits under `src/agent_identities/`,

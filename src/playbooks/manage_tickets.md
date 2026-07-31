@@ -28,9 +28,14 @@ This playbook is conceptual; all mechanism lives in ticket_tools and bristol.
 ## When to update the board
 Update the DB whenever the user expresses:
 - a new task (“remind me to…”, “add…”, “we should…”, “later we need to…”)
-- a change to an existing task (“mark this done”, “block this”, “increase priority”)
+- a change to an existing task (“mark this done”, “block this”, “move this up”)
 - a new epic or project
-- a shift in priority or focus
+- a shift in order or focus
+
+Every card you touch carries an `estimate` — how much of a full usage budget it
+would take, on the S/M/L/XL scale defined in `src/app.md` (§Effort sizing).
+Size it in one pass against the anchors there. An XL card is one to split, not
+one to start.
 
 All updates go directly into the DB via SQL.
 
@@ -199,7 +204,7 @@ Never during normal operation.
 - Every session ends with the cards telling the truth. There is no handoff
   note and no `add-handoff` — a per-agent "where things stand" block is work
   state outside the cards. Work left mid-flight ends as a `doing` card on the
-  active board with a high `priority` and an `assignee`; the status scripts rank
+  active board at the top of its column and with an `assignee`; the status scripts rank
   it first, so the next session picks it up without being told.
 - Every new idea becomes a task.
 - Every shift in focus updates epic status.

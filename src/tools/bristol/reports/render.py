@@ -356,7 +356,7 @@ def _flow_health(f):
             "metric you can act on while there is still time — unlike lead time, "
             "which you only learn once the card is already finished.",
             "",
-            "| Card | Age | In Doing | Owner | Priority |",
+            "| Card | Age | In Doing | Owner | Pressure |",
             "| --- | --- | --- | --- | --- |",
         ]
         for card in sorted(wip, key=lambda w: -(w["age_days"] or 0)):
@@ -364,7 +364,7 @@ def _flow_health(f):
                 f"| **#{card['id']}** {_truncate(card['title'], 46)} "
                 f"| {_days(card['age_days'], 0)} "
                 f"| {_days(card['doing_days'], 0) if card['doing_days'] is not None else 'not recorded'} "
-                f"| {card['assignee']} | {card['priority']} |"
+                f"| {card['assignee']} | {card['pressure']} |"
             )
     else:
         out.append("Nothing is in Doing. The board is between pushes.")
@@ -468,9 +468,8 @@ def _data_quality(f):
                    f"{_pct(coverage)} of the batch.")
     else:
         out.append("- **Transition log** absent — lead time only.")
-    sized = max(quality["estimates_used"], quality["story_points_used"])
-    out.append(f"- **Estimates** on {quality['estimates_used']} of {n} cards; "
-               f"**story points** on {quality['story_points_used']}. "
+    sized = quality["estimates_used"]
+    out.append(f"- **Effort estimates** on {quality['estimates_used']} of {n} cards. "
                + ("Too sparse to compute velocity or forecast accuracy from."
                   if not n or sized / n < SIZING_COVERAGE_FLOOR
                   else "Dense enough to reason about sizing."))

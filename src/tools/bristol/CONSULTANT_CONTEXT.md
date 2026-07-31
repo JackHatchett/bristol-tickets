@@ -52,7 +52,7 @@ owns your concern:
 
 ## How it finds the DB (`app.py`)
 
-In priority order:
+In order of importance:
 
 1. `TICKETS_DB` environment variable — an explicit path to the `.db` file.
    Use this for local testing: `export TICKETS_DB=/tmp/test_tickets.db`.
@@ -75,8 +75,11 @@ What the viewer actually touches:
   appears in, and `status` (`todo` | `doing` | `done`) is its **board column**.
   `sort_order` is the manual drag-to-reorder position within a list (lower =
   higher; the Backlog is one list, each active status column its own list).
-  Other key columns: `title`, `priority` (0–100, drives card colour), `epic_id`,
-  `assignee` (shown as "owner"), `reporter` ("originator"), `story_points`.
+  Other key columns: `title`, `pressure` (0–100 gestalt rating, drives card
+  colour; `sort_order` is the rank, not this), `epic_id`,
+  `assignee` (shown as "owner"), `reporter` ("originator"), `estimate`
+  (S|M|L|XL effort; `story_points` is the retired predecessor and is no
+  longer written).
 - **`epic`** — tasks link to one via `task.epic_id`.
 - (**No `sprint` / `sprint_task` tables.** A task's tab is `task.stage`. The
   Board shows `stage='active'`; Backlog shows `stage='backlog'`; Archive shows
@@ -103,7 +106,7 @@ To build a double-clickable macOS `.app`, see `BUILD_APP.md`.
 
 ## Recipe examples
 
-- *"The priority pill colour is wrong"* → `ui/theme.py` (`_priority_color`) and/or
+- *"The pressure pill colour is wrong"* → `ui/theme.py` (`_pressure_color`) and/or
   `ui/card_delegate.py` (where the pill is drawn).
 - *"Add a field to the task edit form"* → `ui/record_dialog.py` (add the widget,
   add it to `task_rows`, load it in `_load_existing_data`, save it in

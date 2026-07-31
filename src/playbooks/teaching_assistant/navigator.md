@@ -2,7 +2,7 @@
 
 ## Purpose
 Return a bounded recommendation of what to study next. Does not teach. Does
-not generate files. Does not decide priority — the board already did.
+not generate files. Does not decide the order — the board already did.
 
 ## The one rule this playbook exists to obey
 
@@ -29,7 +29,7 @@ teaching_assistant` — that is the input to this playbook.
 
 **Step 1 — Read the board.** `agent_status.py teaching_assistant` returns this
 agent's own active-stage tasks in precedence order (`doing` first, then `todo`,
-both by priority), plus its epics. That ordering IS the recommendation. Do not
+both in board order), plus its epics. That ordering IS the recommendation. Do not
 re-sort it, re-weight it, or second-guess it.
 
 **Step 2 — Resolve each card to a concrete artifact.** For the top cards, look
@@ -87,5 +87,5 @@ None — this is a read-only recommendation, not a state change.
 
 ## Human Audit Notes
 If the recommendation order feels wrong, the fix is on the board — change a
-card's `priority` or `stage`. There is no ranking logic in this file to tune,
+card's position or `stage`. There is no ranking logic in this file to tune,
 and none should be added back.

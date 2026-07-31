@@ -16,7 +16,7 @@ the reporting cadence for free, and ties it to an action the user already takes.
 One note per sweep, plus a rebuilt `_index.md`:
 
 ```
-<notebook>/41_ai_workspace/bristol_reports/
+<markdown_notebook.reports_dir>/
     _index.md                              Dataview trend tables across all reports
     bristol_report_2026-07-20_0345.md      one period
     bristol_report_2026-07-28_1912.md

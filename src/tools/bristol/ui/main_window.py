@@ -644,14 +644,14 @@ class MainWindow(QMainWindow):
         try:
             if mode == "task":
                 row = self.conn.execute(
-                    "SELECT t.title, t.description, t.status, t.priority, e.name, "
-                    "COALESCE(t.assignee,'user'), COALESCE(t.reporter,'user'), COALESCE(t.story_points,0), e.id, "
+                    "SELECT t.title, t.description, t.status, t.pressure, e.name, "
+                    "COALESCE(t.assignee,'user'), COALESCE(t.reporter,'user'), COALESCE(t.estimate,''), e.id, "
                     "t.created_at, t.updated_at, COALESCE(t.record_type,'build') "
                     "FROM task t LEFT JOIN epic e ON t.epic_id = e.id WHERE t.id = ?", (record_id,)
                 ).fetchone()
                 if row:
-                    (title, desc, status, priority, epic_name, owner, originator,
-                     bites, epic_id, created_at, updated_at, record_type) = row
+                    (title, desc, status, pressure, epic_name, owner, originator,
+                     estimate, epic_id, created_at, updated_at, record_type) = row
                     badge = _get_epic_badge(epic_name, epic_id)
                     rt_tag = "Fix" if (record_type or "build").lower() == "fix" else "Build"
                     # Surface the actual issue number so it can be referenced.
@@ -674,7 +674,7 @@ class MainWindow(QMainWindow):
                         f"<b>Record Type:</b> {rt_tag}<br>"
                         f"<b>Stage:</b> {stage_display}<br>"
                         f"<b>Status:</b> {status}<br>"
-                        f"<b>Effort Sizing:</b> {bites} bites<br>"
+                        f"<b>Effort:</b> {(estimate or 'not sized').upper()}<br>"
                         f"<b>Owner:</b> {owner}<br>"
                         f"<b>Originator:</b> {originator}<br>"
                         f"<b>Created:</b> {_fmt_dt(created_at)}<br>"

@@ -13,10 +13,11 @@ worldbuilding/story wiki coherent, and distils the user's prose voice from
 evidence rather than self-report. The wiki is the user's own — trusted,
 user-authored content, with **no 'canon' concept and no ratification ceremony**. It is **one
 agent identity**, not a roster of several. "Editor," "Grammatizator," and
-"Proofer" are roles an external AI (normally Gemini) is briefed into playing
-for a session, coordinated through a handoff protocol — not separate agents
-this framework provisions, tracks, or gives their own identity to. Only
-`writers_room` has repo write access and a board epic.
+"Proofer" are roles an external AI is briefed into playing for a session,
+coordinated through a handoff protocol — not separate agents this framework
+provisions, tracks, or gives their own identity to. Which external AI plays
+them resolves from `/config`, and the crew is optional: `writers_room` runs
+alone without it. Only `writers_room` has repo write access and a board epic.
 
 Everything this agent touches is one of three things: **machinery** (this
 charter, its playbooks, its protocols, plus the shared
@@ -58,13 +59,12 @@ either's real path or project slug in `/src`:
   loads it. The wiki itself is **user-authored and read-only to this agent**
   (see §2.7); what's in it is trusted content, not something to re-vet.
 
-By explicit user preference, this data stays in its existing
-Markdown-notebook location rather than moving under `data/` —
-unlike other agents' in-repo data roots, `/config`'s project links point
-at the notebook path directly. The internal structure (the wiki, voice/, log/,
-prompts/, drafts/, references/, archive/, plus the project's own
-router/state/content-rules files) is preserved exactly as designed; this
-agent's machinery only changed where it lives, not how it's organized.
+A novel project may live either under `data/*/` like other agents' data roots
+or in the user's Markdown notebook, wherever they already write. `/config`'s
+project links point at whichever it is; nothing in this charter or its
+playbooks assumes one. The internal structure is the same either way — the
+wiki, `voice/`, `log/`, `prompts/`, `drafts/`, `references/`, `archive/`, plus
+the project's own router, state and content-rules files.
 
 ### 2.3 Triggered Playbooks
 - `playbooks/writers_room/story_proposals.md` — how a proposed story/world
@@ -126,16 +126,15 @@ Two object classes with opposite defaults; keep them straight.
   wiki itself (see the write-location rule below). Propose the exact text and
   the exact target file so the user can fold it in.
 
-**Write-location rule.** The user's
-story/worldbuilding wiki dirs (`notes_dir/30_novel` and any other
-dir where the user authors stories/worldbuilding) are **read-only** to this
-agent — the user writes those. (The author-voice DNA system is different: it
-is this agent's own governed data root at `data/<instance>/writing/`, and
-the agent does write there per `voice_distillation.md`.) This agent's own output (drafts, story/world proposals and summaries for
-the user to review) goes to the **shared agent-output dir**,
-`markdown_notebook.agent_output_dir`
-(`markdown_notebook.agent_output_dir`), shared with `game_designer`, until a
-dedicated wiki tool/location is built. Process-state still never lands on disk
+**Write-location rule.** Every directory where the user authors their stories
+or worldbuilding — each novel project's wiki dir, as named in `/config` — is
+**read-only** to this agent; the user writes those. (The author-voice DNA
+system is different: it is this agent's own governed data root at
+`data/<instance>/writing/`, and the agent does write there per
+`voice_distillation.md`.) This agent's own output (drafts, story/world
+proposals and summaries for the user to review) goes to the **shared
+agent-output dir**, `markdown_notebook.agent_output_dir`, shared with
+`game_designer`. Process-state still never lands on disk
 (tickets.db only); the shared dir is for user-facing output the user will fold
 into the wiki. There is **no 'canon' concept and no ratification gate** — what's
 in the wiki is trusted user-authored content.
@@ -171,10 +170,10 @@ changes there should stay agent-agnostic, not grow writers_room-specific
 assumptions. Never store the user's novel content or author voice inside
 the tracked machinery, no matter how convenient it seems mid-session.
 Restructuring writers_room's own files is not this agent's own playbook —
-per the standard cross-agent convention, it adds a `backlog` card assigned to
-chief_of_staff (reporter writers_room) rather than architecting its own
-layout. Coordinate with another agent the same way — a `backlog` card
-assigned to them (`tools/ticket_tools/ticket_write.py add-task --assignee
-<agent> --reporter writers_room --status backlog ...`) against the shared
+per the standard cross-agent convention, it adds a card to the active board
+assigned to chief_of_staff (reporter writers_room) rather than architecting its
+own layout. Coordinate with another agent the same way — a card on the active
+board assigned to them (`tools/ticket_tools/ticket_write.py add-task --stage
+active --assignee <agent> --reporter writers_room ...`) against the shared
 tickets.db, not directly; `config/config.local.json`'s Agent Registries
 section is the live registry of every agent.

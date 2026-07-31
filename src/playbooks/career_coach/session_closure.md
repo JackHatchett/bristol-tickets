@@ -33,7 +33,7 @@ evaluation/letter/resume workflow.
    <career_coach's epic id>` for new follow-ups, and adjust `next_action` on
    the epic if it changed. Don't invent a parallel tracking file for this.
 3. Leave nothing in prose. Anything still mid-flight ends the session as a
-   `doing` card on the active board — high `priority`, `assignee` set — and
+   `doing` card on the active board — top of its column, `assignee` set — and
    anything worth saying about it goes in one short `add-issue-log` comment on
    that card. There is no handoff note; the card is the handoff.
 

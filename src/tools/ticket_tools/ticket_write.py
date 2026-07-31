@@ -24,7 +24,7 @@ Usage:
 
     python3 ticket_write.py add-task --title "..." [--description "..."]
         [--epic-id N] [--stage backlog|active|archive] [--status todo|doing|done]
-        [--priority N] [--estimate S|M|L] [--reporter "..."] [--assignee "..."]
+        [--pressure N] [--estimate S|M|L|XL] [--reporter "..."] [--assignee "..."]
         [--record-type build|fix]
         (defaults: stage=backlog, status=todo, reporter="Claude (Cowork)",
         record-type=build)
@@ -45,11 +45,11 @@ Usage:
         the GUI.
 
         CROSS-AGENT SUGGESTION: to suggest work
-        that lands in another agent's or the user's zone, add a `backlog` card
-        with --assignee <that agent/user> and --reporter <you>. Backlog is a
-        planning signal that is never auto-executed, so it reads as a proposal,
-        not a settled command — and unlike the old inbox it is visible and
-        editable in the board the user actually watches.
+        that lands in another agent's or the user's zone, add a card with
+        --stage active, --assignee <that agent/user> and --reporter <you>. It
+        lands in that agent's `todo` on the board the user actually watches.
+        The --assignee is what makes it a proposal rather than a command: it is
+        that agent's card to accept, reorder, or drop.
 
     python3 ticket_write.py add-issue-log --task N --author <slug|user>
         --body "..."
@@ -83,9 +83,9 @@ DB discovery: same project-relative rule as cos_status.py / agent_status.py
 (find the project root, then data/*/tickets/tickets.db). Resolved design: there is ONE shared tickets.db for the whole fleet, not one per
 agent. Every agent reads and writes the same database; `epic.owner` tags
 which agent an epic belongs to (a task's owner is its `assignee`, else implicit
-via its epic). Cross-agent suggestions are ordinary `backlog` cards
-(`--assignee` = the target agent, `--reporter` = the originator), not a
-separate store. "First glob match" is safe under this model
+via its epic). Cross-agent suggestions are ordinary active-board cards
+(`--stage active`, `--assignee` = the target agent, `--reporter` = the
+originator), not a separate store. "First glob match" is safe under this model
 specifically because there's exactly one tickets.db to match — don't
 provision a second one under a different data/<agent>/tickets/ path; use
 `add-epic` in this file instead to give a new agent its own epic in the
@@ -98,29 +98,13 @@ import sqlite3
 import sys
 from pathlib import Path
 
-
-
-def _project_root() -> Path:
-    """The project root: the nearest ancestor holding src/app.md.
-
-    Located by marker rather than by folder name, so the install works whatever
-    the user named the folder they cloned into.
-    """
-    for parent in Path(__file__).resolve().parents:
-        if (parent / "src" / "app.md").is_file():
-            return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor holds src/app.md)"
-    )
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import create_tickets  # noqa: E402  (owns the schema and first-use provisioning)
 
 
 def resolve_db_path() -> Path:
-    data_root = _project_root() / "data"
-
-    matches = list(data_root.glob("*/tickets/tickets.db"))
-    if not matches:
-        sys.exit("ticket_write: ERROR — no tickets.db found under data/*/tickets/")
-    return matches[0]
+    """The shared tickets.db, created empty on first use if it is not there."""
+    return create_tickets.locate_or_provision()
 
 
 def connect(actor: str = "agent") -> sqlite3.Connection:
@@ -196,7 +180,7 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
 
 # Fields logged with their new value.
 CHANGE_LOG_FIELDS = (
-    "epic_id", "scope_id", "status", "stage", "priority", "estimate",
+    "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
     "blocked", "depends_on", "assignee", "reporter", "story_points",
     "record_type",
 )
@@ -283,6 +267,9 @@ def _ensure_stage_columns(conn: sqlite3.Connection) -> None:
     schema_guard migration; a DB touched by the CLI first simply gets the new
     columns at their defaults."""
     cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
+    if "pressure" not in cols and "priority" in cols:
+        conn.execute("ALTER TABLE task RENAME COLUMN priority TO pressure;")
+        cols = [c if c != "priority" else "pressure" for c in cols]
     if "stage" not in cols:
         conn.execute("ALTER TABLE task ADD COLUMN stage TEXT NOT NULL DEFAULT 'backlog';")
     if "sort_order" not in cols:
@@ -355,12 +342,12 @@ def add_task(args: argparse.Namespace) -> None:
         sort_order = _append_order(conn, stage, status)
         cur = conn.execute(
             """INSERT INTO task (epic_id, scope_id, title, description, status,
-                   priority, estimate, blocked, depends_on, created_at, updated_at,
+                   pressure, estimate, blocked, depends_on, created_at, updated_at,
                    closed_at, assignee, reporter, story_points, record_type,
                    stage, sort_order)
                VALUES (?, NULL, ?, ?, ?, ?, ?, 0, NULL, ?, ?, NULL, ?, ?, 0, ?, ?, ?)""",
             (args.epic_id, args.title, args.description, status,
-             args.priority, args.estimate, ts, ts, args.assignee, args.reporter,
+             args.pressure, args.estimate, ts, ts, args.assignee, args.reporter,
              record_type, stage, sort_order),
         )
         conn.commit()
@@ -405,8 +392,8 @@ def update_task_status(args: argparse.Namespace) -> None:
         # of its (new) destination list.
         if stage is not None or status is not None:
             sets.append("sort_order = ?"); vals.append(_append_order(conn, new_stage, new_status))
-        if args.priority is not None:
-            sets.append("priority = ?"); vals.append(args.priority)
+        if args.pressure is not None:
+            sets.append("pressure = ?"); vals.append(args.pressure)
         if args.assignee is not None:
             sets.append("assignee = ?"); vals.append(args.assignee)
         if sets:
@@ -416,8 +403,8 @@ def update_task_status(args: argparse.Namespace) -> None:
         extras = []
         if stage is not None:
             extras.append(f"stage {new_stage}")
-        if args.priority is not None:
-            extras.append(f"priority {args.priority}")
+        if args.pressure is not None:
+            extras.append(f"pressure {args.pressure}")
         if args.assignee is not None:
             extras.append(f"assignee {args.assignee}")
         tail = (" (" + ", ".join(extras) + ")") if extras else ""
@@ -448,6 +435,43 @@ def set_stage(args: argparse.Namespace) -> None:
         )
         conn.commit()
         print(f"OK: task #{args.id} -> stage {args.stage}")
+    finally:
+        conn.close()
+
+
+def set_order(args: argparse.Namespace) -> None:
+    """Move a task to a position in its own list — the CLI equivalent of
+    dragging its card up or down a column in Bristol.
+
+    A list is one active-board status column (stage='active' + that status), or
+    the whole backlog. `--position 1` is the top. The whole list is renumbered
+    contiguously afterwards, so positions stay readable instead of drifting into
+    gaps. This is the only thing that reorders an agent's queue: the status
+    scripts read sort_order, and pressure never sorts."""
+    conn = connect(getattr(args, "actor", None) or "agent")
+    try:
+        row = conn.execute(
+            "SELECT status, stage FROM task WHERE id=?", (args.id,)).fetchone()
+        if row is None:
+            print(f"WARN: no task with id {args.id}")
+            return
+        status, stage = row
+        if stage == "active":
+            siblings = conn.execute(
+                "SELECT id FROM task WHERE stage='active' AND status=? "
+                "ORDER BY sort_order ASC, id ASC", (status,)).fetchall()
+        else:
+            siblings = conn.execute(
+                "SELECT id FROM task WHERE stage=? ORDER BY sort_order ASC, id ASC",
+                (stage,)).fetchall()
+        ids = [r[0] for r in siblings if r[0] != args.id]
+        target = max(1, min(args.position, len(ids) + 1))
+        ids.insert(target - 1, args.id)
+        for pos, tid in enumerate(ids):
+            conn.execute("UPDATE task SET sort_order=? WHERE id=?", (pos, tid))
+        conn.commit()
+        listname = f"{stage}/{status}" if stage == "active" else stage
+        print(f"OK: task #{args.id} -> position {target} of {len(ids)} in {listname}")
     finally:
         conn.close()
 
@@ -577,13 +601,17 @@ def main() -> None:
     pt.add_argument("--status", default="todo",
                      help="board column: todo | doing | done (default todo). "
                           "'backlog' is accepted for back-compat and redirected to --stage backlog.")
-    pt.add_argument("--priority", type=int, default=0)
-    pt.add_argument("--estimate", default=None)
+    pt.add_argument("--pressure", type=int, default=0)
+    pt.add_argument("--estimate", default=None,
+                     help="S|M|L|XL — how much of a full usage budget this "
+                          "card would take. Scale and anchors in src/app.md "
+                          "(Effort sizing); XL means split it, not start it.")
     pt.add_argument("--reporter", default="Claude (Cowork)",
                      help="who/what originated this task (default: Claude (Cowork))")
     pt.add_argument("--assignee", default=None,
                      help="agent slug (or 'user') that owns this task. Set it to "
-                          "leave a cross-agent suggestion as a backlog card.")
+                          "leave a cross-agent suggestion: file it with --stage active, "
+                          "assigned to that agent.")
     pt.add_argument("--record-type", dest="record_type", default="build",
                      choices=["build", "fix"],
                      help="'build' (a thing to build — Story + acceptance criteria) "
@@ -603,8 +631,8 @@ def main() -> None:
                           "back-compat and redirected to a --stage backlog move.")
     pu.add_argument("--stage", default=None, choices=["backlog", "active", "archive"],
                      help="optionally move the task's tab in the same call")
-    pu.add_argument("--priority", type=int, default=None,
-                     help="optionally reset priority in the same call")
+    pu.add_argument("--pressure", type=int, default=None,
+                     help="optionally reset pressure in the same call")
     pu.add_argument("--assignee", default=None,
                      help="optionally set the task's assignee (an agent slug)")
     pu.add_argument("--actor", default=None,
@@ -622,6 +650,18 @@ def main() -> None:
                            "(your write signature, e.g. cowork_chief_of_staff). "
                            "Recorded against every field this call changes.")
     psg.set_defaults(func=set_stage)
+
+    pso = sub.add_parser("set-order")
+    pso.add_argument("--id", type=int, required=True)
+    pso.add_argument("--position", type=int, required=True,
+                      help="1 = top of the card's own list (its active-board "
+                           "status column, or the whole backlog). The list is "
+                           "renumbered contiguously. This is what reorders an "
+                           "agent's queue — pressure does not.")
+    pso.add_argument("--actor", default=None,
+                      help="who is making this change, for the change log "
+                           "(your write signature, e.g. cowork_chief_of_staff).")
+    pso.set_defaults(func=set_order)
 
     pil = sub.add_parser("add-issue-log")
     pil.add_argument("--task", type=int, required=True, help="task/issue id to log against")

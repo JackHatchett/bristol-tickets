@@ -17,7 +17,15 @@ tools/zotero and tools/ticket_tools):
 
 If PERSONAL_DB_DIR is unset, falls back to canonical discovery: the first
 match of data/*/personal/ walking up from this file's location — mirroring the
-tickets/library "first glob match, one instance" convention.
+tickets/library "first glob match, one instance" convention. When nothing
+matches — a fresh clone, whose data tree does not exist yet — the root resolves
+to <data root>/<instance>/personal and is created the first time something
+writes there.
+
+First access provisions: connect() creates the db/ folder and applies
+schema.sql when personal.db is absent, so a new install gets an empty database
+rather than a missing-path error. It creates the container only — no rows are
+seeded.
 
 Write safety: connect() sets PRAGMA journal_mode=MEMORY to avoid the on-disk
 rollback journal that once wedged a mounted-folder DB (see
@@ -32,38 +40,30 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(
+    0, str(Path(__file__).resolve().parents[1] / "config_tools")
+)
+import data_paths  # noqa: E402  (the shared declared-path resolver)
+
 DEFAULT_DB_FILENAME = "personal.db"
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
 
 
-def _project_root() -> Path:
-    """The project root: the nearest ancestor holding src/app.md.
-
-    Located by marker rather than by folder name, so the install works whatever
-    the user named the folder they cloned into.
-    """
-    for parent in Path(__file__).resolve().parents:
-        if (parent / "src" / "app.md").is_file():
-            return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor holds src/app.md)"
-    )
-
-
 def resolve_root() -> Path:
-    """The personal-db data root (folder containing db/ and data/)."""
+    """The personal-db data root (folder containing db/ and data/).
+
+    PERSONAL_DB_DIR, then the first data/*/personal match, then the path a
+    fresh install would use. Resolving never creates anything; the writers
+    below do that at the moment they write.
+    """
     env = os.environ.get("PERSONAL_DB_DIR")
     if env:
-        return Path(env)
-    # Fallback: canonical discovery under the repo's data/ tree.
-    data_root = _project_root() / "data"
-    matches = sorted(data_root.glob("*/personal"))
+        return Path(os.path.expanduser(env))
+    root = data_paths.data_root()
+    matches = sorted(root.glob("*/personal"))
     if matches:
         return matches[0]
-    sys.exit(
-        "db_common: ERROR — PERSONAL_DB_DIR unset and no data/*/personal/ found. "
-        "Set PERSONAL_DB_DIR (see config/config.local.json 'personal_db')."
-    )
+    return root / data_paths.instance_slug() / "personal"
 
 
 def db_path() -> Path:
@@ -83,8 +83,14 @@ def snapshot_base() -> Path:
 
 
 def connect(path: Path | None = None) -> sqlite3.Connection:
-    """Open the DB with the shared write-safety pragmas."""
+    """Open the DB with the shared write-safety pragmas.
+
+    An absent database is provisioned from schema.sql first, so the first tool
+    to reach for personal.db on a new install finds an empty one.
+    """
     p = Path(path) if path else db_path()
+    if not p.exists():
+        data_paths.ensure_db(p, SCHEMA_PATH)
     conn = sqlite3.connect(str(p), timeout=10)
     conn.execute("PRAGMA busy_timeout=5000")
     conn.execute("PRAGMA journal_mode=MEMORY")  # avoid the on-disk journal (README §3b)

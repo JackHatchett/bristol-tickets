@@ -7,7 +7,7 @@ of layout constants shared between ``sizeHint`` and ``paint`` so the reserved
 height always matches what is drawn.
 
 Reads its structured payload from ``CARD_ROLE`` (see theme.py); colours and the
-priority-colour helper also come from theme.py.
+pressure-colour helper also come from theme.py.
 
 Optional bulk-select checkbox: when ``show_checkbox`` is True (set
 by the Backlog column), a checkbox is drawn in a left gutter and clicking it
@@ -22,7 +22,7 @@ from PySide6.QtCore import Qt, QSize, QRectF, QRect, QEvent
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QStyle, QStyledItemDelegate
 
-from .theme import C, CARD_ROLE, _is_checked, _priority_color
+from .theme import C, CARD_ROLE, _is_checked, _pressure_color
 
 
 class CardDelegate(QStyledItemDelegate):
@@ -31,8 +31,8 @@ class CardDelegate(QStyledItemDelegate):
     # layout constants (px)
     MARGIN = 5        # gap between the item rect edge and the card
     PAD = 11          # inner card padding
-    ACCENT_W = 5      # left priority accent stripe
-    PILL_H = 18       # priority pill height
+    ACCENT_W = 5      # left pressure accent stripe
+    PILL_H = 18       # pressure pill height
     BADGE_H = 19      # epic pill height
     FOOT_H = 16       # footer row height
     GAP = 7           # vertical gap between blocks
@@ -150,14 +150,14 @@ class CardDelegate(QStyledItemDelegate):
         painter.setBrush(fill)
         painter.drawRoundedRect(card, 9, 9)
 
-        # left priority accent stripe, clipped to the rounded card outline
-        priority = int(data.get("priority", 0) or 0)
+        # left pressure accent stripe, clipped to the rounded card outline
+        pressure = int(data.get("pressure", 0) or 0)
         painter.save()
         clip_path = QPainterPath()
         clip_path.addRoundedRect(card, 9, 9)
         painter.setClipPath(clip_path)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(_priority_color(priority))
+        painter.setBrush(_pressure_color(pressure))
         painter.drawRect(QRectF(card.left(), card.top(),
                                 self.ACCENT_W, card.height()))
         painter.restore()
@@ -166,9 +166,9 @@ class CardDelegate(QStyledItemDelegate):
         cw = card.right() - self.PAD - cx
         y = card.top() + self.PAD
 
-        # priority pill (+ issue number to its right, so cards are referenceable)
-        pcolor = _priority_color(priority)
-        pill_w, _ = self._draw_pill(painter, cx, y, f"P{priority}",
+        # pressure pill (+ issue number to its right, so cards are referenceable)
+        pcolor = _pressure_color(pressure)
+        pill_w, _ = self._draw_pill(painter, cx, y, f"PR{pressure}",
                                     pcolor.name(), "#ffffff", self._small_font())
         issue_id = data.get("issue_id")
         if issue_id is not None:
@@ -179,7 +179,7 @@ class CardDelegate(QStyledItemDelegate):
             painter.drawText(QRectF(cx + pill_w + 6, y, cw - pill_w - 6, self.PILL_H),
                              int(Qt.AlignLeft | Qt.AlignVCenter), f"#{issue_id}")
 
-        # record-type pill (Build/Fix), right-aligned on the priority row so the
+        # record-type pill (Build/Fix), right-aligned on the pressure row so the
         # two kinds of ticket read apart at a glance.
         rtype = (data.get("record_type") or "build").lower()
         if rtype == "fix":
@@ -228,13 +228,15 @@ class CardDelegate(QStyledItemDelegate):
         painter.setPen(QColor(C["INK_SOFT"]))
         painter.drawText(QRectF(cx, y, cw, self.FOOT_H),
                          int(Qt.AlignLeft | Qt.AlignVCenter), owner_txt)
-        pts = int(data.get("story_points", 0) or 0)
-        if pts:
+        # Effort: how much of one working session this card takes (src/app.md
+        # Phase 4). Absent on a card nobody has sized, and drawn as-is.
+        est = str(data.get("estimate", "") or "").upper()
+        if est:
             pfont = self._small_font()
             painter.setFont(pfont)
             painter.setPen(QColor(C["ACCENT_DK"]))
             painter.drawText(QRectF(cx, y, cw, self.FOOT_H),
-                             int(Qt.AlignRight | Qt.AlignVCenter), f"{pts} pts")
+                             int(Qt.AlignRight | Qt.AlignVCenter), est)
 
         painter.restore()
 

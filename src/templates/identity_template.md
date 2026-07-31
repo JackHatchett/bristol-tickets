@@ -16,9 +16,16 @@
 ## 1. Identity & System Role
 
 {{One or two short paragraphs: what this agent is for, in domain-neutral
-language. If it runs on a machinery/personal-data split like career_coach
-does, say so and name the two roots in general terms — never name the actual
-personal-data path here.}}
+language. Write it for a stranger — someone with a different job, different
+clients, a different notebook and a different software stack. Anything the
+agent needs installed (a third-party app, an account, credentials) is named
+here as a prerequisite, and if the agent works without it, say so. If it runs
+on a machinery/personal-data split like career_coach does, say so and name the
+two roots in general terms — never name the actual personal-data path here.}}
+
+{{Then write the same thing in one line and put it in
+`config/config.local.json` at `agents.<agent>.description` — that line is what
+the first-run agent picker and `docs/agents.md` show.}}
 
 ---
 
@@ -45,7 +52,16 @@ and point at the shared location.}}
 {{One line each, pointing at `protocols/{{agent_name}}/<file>.md` — omit this
 section entirely if the agent has no external-coordination contracts.}}
 
-### 2.5 Bright-Line Guardrails Only
+### 2.5 Data Locations
+The paths in `agents.{{agent_name}}.key_data_paths` are declared, not
+guaranteed to exist. Resolve them through
+`tools/config_tools/data_paths.py`: `ensure_dir()` right before a write,
+`read_dir()` for a read that returns nothing when the folder is not there yet.
+Create the container and stop — never a placeholder file, a sample record, or a
+README explaining the folder. Full statement of the rule: `src/app.md`
+(§A missing data location is created, never an error).
+
+### 2.6 Bright-Line Guardrails Only
 {{The hard rules that halt execution — never approval-seeking on routine
 work, only real bright lines specific to this agent's domain.}}
 
@@ -64,7 +80,7 @@ with another agent by adding a card assigned to them
 tickets.db, not directly; the live registry of every agent and its data
 paths is `config/config.local.json`'s Agent Registries section. (There is no
 session-handoff mechanism: work you leave mid-flight is a `doing` card on the
-active board with a high priority and your slug as `assignee`, never a
+active board at the top of its column with your slug as `assignee`, never a
 narrative note.)
 
 **Content is yours; behavior is chief_of_staff's.** Add content freely — a fact
