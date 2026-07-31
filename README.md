@@ -16,6 +16,12 @@ There are two ways to use the system, and both act on the same database and the 
 
 Whichever surface acts, the other sees the change on its next read. `src/tools/` also holds the rest of the standalone utilities — schema tools, scrapers, renderers — each independently runnable.
 
+### Design constraints
+
+* **The tools stay small and separately runnable.** `src/tools/` is a set of independent programs, each readable and modifiable in a single pass. They are not consolidated into one program, and a launcher that presents several of them composes them rather than fusing their codebases.
+* **Bristol is self-contained.** `src/tools/bristol/` imports nothing from the rest of `src/tools/`. It opens, runs and changes in isolation, without requiring an understanding of the rest of the system.
+* **Legibility beats cleverness.** The repo is written to be read by people learning to build alongside AI. The data and config contract is explicit and inspectable, separation of concerns is stated plainly rather than through metaphor, and a clever construction that costs a reader is the wrong choice.
+
 ## Repository Structure
 
 ├── requirements.in             # Dependency inputs, compiled to requirements.txt

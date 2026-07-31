@@ -58,8 +58,9 @@ guaranteed to exist. Resolve them through
 `tools/config_tools/data_paths.py`: `ensure_dir()` right before a write,
 `read_dir()` for a read that returns nothing when the folder is not there yet.
 Create the container and stop — never a placeholder file, a sample record, or a
-README explaining the folder. Full statement of the rule: `src/app.md`
-(§A missing data location is created, never an error).
+README explaining the folder. Full statement of the rule:
+`src/tools/config_tools/README.md` (§A missing data location is created, never
+an error).
 
 ### 2.6 Bright-Line Guardrails Only
 {{The hard rules that halt execution — never approval-seeking on routine
