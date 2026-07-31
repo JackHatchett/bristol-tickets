@@ -114,8 +114,6 @@ CREATE TABLE IF NOT EXISTS task (
     status      TEXT NOT NULL DEFAULT 'todo',      -- todo | doing | done (board columns)
     pressure    INTEGER NOT NULL DEFAULT 0,      -- 0-100 gestalt: how hard this card is pushing. A rating, not a rank; sort_order is the rank.
     estimate    TEXT,
-    blocked     INTEGER NOT NULL DEFAULT 0,
-    depends_on  INTEGER,
     created_at  TEXT DEFAULT (datetime('now')),
     updated_at  TEXT DEFAULT (datetime('now')),
     closed_at   TEXT,
@@ -126,8 +124,7 @@ CREATE TABLE IF NOT EXISTS task (
     stage       TEXT NOT NULL DEFAULT 'backlog',   -- backlog | active | archive (which tab; orthogonal to status).
     sort_order  INTEGER NOT NULL DEFAULT 0,        -- manual drag-to-reorder position; lower = higher in its list.
     FOREIGN KEY (epic_id)    REFERENCES epic  (id),
-    FOREIGN KEY (scope_id)   REFERENCES scope (id),
-    FOREIGN KEY (depends_on) REFERENCES task  (id)
+    FOREIGN KEY (scope_id)   REFERENCES scope (id)
 );
 
 CREATE TABLE IF NOT EXISTS task_meta (
@@ -188,14 +185,20 @@ CREATE TABLE IF NOT EXISTS attachment (
 
 -- task_link — a ticket's relations: to another ticket (kind='issue') or to an
 -- external address (kind='uri': a web URL, a zotero:// citation, an
--- obsidian:// note, or a bare file path). An issue link is ONE symmetric edge,
--- normalized to task_id=MIN(a,b) / other_id=MAX(a,b), so it reads from either
--- end and deletes once.
+-- obsidian:// note, or a bare file path).
+--
+-- An issue link carries a dep_type: 'related' (the default) or 'blocks'.
+-- A 'related' row is ONE symmetric edge, normalized to task_id=MIN(a,b) /
+-- other_id=MAX(a,b), so it reads from either end and deletes once. A 'blocks'
+-- row is the same single edge carrying a direction: task_id blocks other_id,
+-- which renders as "blocks #other" on one card and "blocked by #task" on the
+-- other. Direction lives on the row; there is never a mirror record.
 CREATE TABLE IF NOT EXISTS task_link (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     kind       TEXT    NOT NULL,
     task_id    INTEGER NOT NULL,
     other_id   INTEGER,
+    dep_type   TEXT    NOT NULL DEFAULT 'related',   -- issue links only: related | blocks
     uri        TEXT,
     label      TEXT,
     author     TEXT,
@@ -242,6 +245,86 @@ def locate_or_provision() -> Path:
     if matches:
         return matches[0]
     return provision(root / data_paths.instance_slug() / "tickets" / "tickets.db")
+
+
+# ---------------------------------------------------------------------------
+# MIGRATION (bring a live DB up to the schema above; idempotent)
+# ---------------------------------------------------------------------------
+
+def migrate(conn: sqlite3.Connection) -> None:
+    """Apply the schema changes an existing database is missing.
+
+    Every step is idempotent and non-destructive to content, so this is safe to
+    run on every connection. Bristol carries its own copy in
+    ui/schema_guard.py — the two clients each hold their own DB logic so
+    neither package depends on the other.
+    """
+    _ensure_link_dep_type(conn)
+    _retire_blocked_columns(conn)
+    conn.commit()
+
+
+def _ensure_link_dep_type(conn: sqlite3.Connection) -> None:
+    """Add task_link.dep_type to a DB that predates typed links. Existing rows
+    default to 'related', which is what every link written before the type
+    existed meant."""
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(task_link)").fetchall()]
+    if cols and "dep_type" not in cols:
+        conn.execute(
+            "ALTER TABLE task_link ADD COLUMN dep_type TEXT NOT NULL DEFAULT 'related'"
+        )
+
+
+def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
+    """Fold task.blocked / task.depends_on into 'blocks' links, then drop them.
+
+    There is one dependency mechanism: a typed link. The old pair of columns
+    could only say "this card depends on that one" once per card, was set by
+    hand and never cleared, and had to be trusted against the depended-on
+    ticket's real status. Each row that named a dependency becomes the link that
+    says the same thing, and the columns go.
+
+    // ALTER TABLE ... DROP COLUMN needs SQLite 3.35; on an older library the
+    // drop is skipped and the columns are left in place at their defaults,
+    // unread and unwritten by anything.
+    """
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
+    if "depends_on" not in cols and "blocked" not in cols:
+        return
+
+    if "depends_on" in cols:
+        pairs = conn.execute(
+            "SELECT id, depends_on FROM task WHERE depends_on IS NOT NULL"
+        ).fetchall()
+        for task_id, blocker_id in pairs:
+            if conn.execute("SELECT 1 FROM task WHERE id=?", (blocker_id,)).fetchone() is None:
+                continue
+            row = conn.execute(
+                "SELECT id FROM task_link WHERE kind='issue' AND "
+                "((task_id=? AND other_id=?) OR (task_id=? AND other_id=?))",
+                (blocker_id, task_id, task_id, blocker_id),
+            ).fetchone()
+            if row:
+                conn.execute(
+                    "UPDATE task_link SET dep_type='blocks', task_id=?, other_id=? "
+                    "WHERE id=?",
+                    (blocker_id, task_id, row[0]),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO task_link (kind, task_id, other_id, dep_type, author) "
+                    "VALUES ('issue',?,?,'blocks','migration')",
+                    (blocker_id, task_id),
+                )
+    conn.commit()
+
+    for column, neutral in (("blocked", "0"), ("depends_on", "NULL")):
+        if column not in cols:
+            continue
+        try:
+            conn.execute(f"ALTER TABLE task DROP COLUMN {column}")
+        except sqlite3.OperationalError:
+            conn.execute(f"UPDATE task SET {column} = {neutral}")
 
 
 # ---------------------------------------------------------------------------

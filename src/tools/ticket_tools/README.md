@@ -339,20 +339,43 @@ legible.
 A link is the relation a ticket carries to something else. Two kinds, one table,
 both created with `ticket_write.py link-add --task N`:
 
-- `--to-task M` — **a link between two tickets.** Stored as ONE symmetric row
-  (normalized so `task_id` is the lower id), so it appears on both tickets the
-  moment it is written and both read it with `WHERE task_id=? OR other_id=?`.
-  **Never run the mirror call** — there is no second row, and `link-remove`
-  clears it from both ends at once. Bidirectionality is a property of the
-  storage, not a pair of writes that could drift apart.
+- `--to-task M` — **a link between two tickets.** Stored as ONE row, so it
+  appears on both tickets the moment it is written and both read it with
+  `WHERE task_id=? OR other_id=?`. **Never run the mirror call** — there is no
+  second row, and `link-remove` clears it from both ends at once.
+  Bidirectionality is a property of the storage, not a pair of writes that
+  could drift apart.
+
+  `--type` says what the link means, and there are two meanings:
+
+  - `related` (the default) — they belong together. The row is normalized so
+    `task_id` is the lower id, because it reads the same from either card.
+  - `blocks` / `blocked-by` — **a dependency.** `--task N --to-task M --type
+    blocks` means N must be `done` before M may start; `--type blocked-by` is
+    the same sentence from the other end. Both store the one directed row
+    (`task_id` blocks `other_id`), which renders as `blocks #M` on one card and
+    `blocked by #N` on the other. There is no third stored value and never a
+    mirror row.
+
+  Re-running `link-add` on a pair that is already linked **retypes** it rather
+  than erroring, so changing a relation is one call, not a remove-and-re-add.
 - `--uri "…"` — **a link to an address**: a web URL, a `zotero://` citation, an
   `obsidian://` note, or a filesystem path. Bristol hands whatever is stored to
   the OS to open, so the tool encodes no schemes, vault names or user paths. Add
   `--label` for a caption.
 
-`link-list --task N` prints link ids; `link-remove --id L` deletes one. Bristol
-shows the same links above the Issue Log in both the inspector and the
-create/edit dialog, and the status scripts print them in a `LINKS` section.
+`link-list --task N` prints link ids and how each link reads from that ticket;
+`link-remove --id L` deletes one. Bristol shows the same links above the Issue
+Log in both the inspector and the create/edit dialog, with the Add-link dialog
+offering the relation from the open ticket's point of view, and the status
+scripts print them in a `LINKS` section.
+
+**A dependency is the one mechanism for "not yet."** There is no `blocked` flag
+and no `depends_on` column — both were retired into this link, because a stored
+flag had to be cleared by hand and sat lying about a blocker that had long since
+finished. The status scripts resolve a blocker live against the blocking
+ticket's status and print `[BLOCKED by #N]` only while it is genuinely unmet, so
+there is nothing to clear and nothing to go stale.
 
 **Follow the links on a ticket before you execute it.** Same standing as an
 attached image: the ticket text alone is deliberately incomplete now that

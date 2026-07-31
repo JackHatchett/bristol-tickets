@@ -3,12 +3,20 @@
 A **link** is the relation a ticket carries to something else. There are two
 kinds and they share one table (`task_link`):
 
-* ``issue`` — a link between two tickets. It is stored as **one symmetric
-  edge**: the row is normalized so ``task_id`` is the lower id and ``other_id``
-  the higher, and both ends read it with ``WHERE task_id=? OR other_id=?``. So
-  the link is bidirectional because of how it is *stored*, not because two rows
-  are kept in step — there is no half-link state to drift into, and one delete
-  removes it from both tickets at once.
+* ``issue`` — a link between two tickets, carrying a ``dep_type`` that says what
+  the relation means: ``related`` (they belong together) or ``blocks`` (the one
+  must be ``done`` before the other may start). Either way it is **one edge**:
+  both ends read it with ``WHERE task_id=? OR other_id=?``, so the link is
+  bidirectional because of how it is *stored*, not because two rows are kept in
+  step — there is no half-link state to drift into, and one delete removes it
+  from both tickets at once.
+
+  A ``related`` row is normalized so ``task_id`` is the lower id and
+  ``other_id`` the higher, since it reads the same from both cards. A ``blocks``
+  row keeps its direction instead — ``task_id`` blocks ``other_id`` — and the
+  same row renders as "blocks #M" on one card and "blocked by #N" on the other.
+  "Blocked by" is a reading of the one row, never a second value and never a
+  mirror.
 
 * ``uri`` — a link from a ticket to an address: a web URL, a ``zotero://``
   citation, an ``obsidian://`` note, or a bare filesystem path. Whatever is
@@ -36,6 +44,7 @@ from datetime import datetime, timezone
 from PySide6.QtCore import QUrl, Qt
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QHBoxLayout,
@@ -51,6 +60,12 @@ from PySide6.QtWidgets import (
 
 MAX_LABEL_CHARS = 72  # where a long URI is elided in the one-line row
 
+# How a ticket link opens its row. A plain relation says nothing and leads with
+# the ticket number; a dependency has to say which way it runs before anything
+# else, because that is the part the reader needs and the part that is easy to
+# read backwards.
+_ROW_PREFIX = {"blocks": "blocks ", "blocked-by": "blocked by "}
+
 
 def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -60,31 +75,72 @@ def _utcnow() -> str:
 # Storage (Qt-free; ticket_write.py mirrors this logic for the CLI)
 # ---------------------------------------------------------------------------
 
+RELATIONS = ("related", "blocks", "blocked-by")
+
+# What each relation is called on screen, in the order the dialog offers them.
+RELATION_LABELS = {
+    "related": "Related to it",
+    "blocks": "Blocks it — it cannot start until this ticket is done",
+    "blocked-by": "Blocked by it — this ticket cannot start until that one is done",
+}
+
+
 def _pair(a: int, b: int) -> tuple[int, int]:
     """Normalize an issue pair so the same link is always the same row."""
     return (a, b) if a <= b else (b, a)
 
 
+def _issue_ends(near: int, far: int, relation: str) -> tuple[int, int, str]:
+    """Where a new issue link's two ends go, given what the relation means.
+
+    'related' is normalized, because it reads the same from both cards. A
+    dependency does not: it is stored as task_id blocks other_id, so 'blocks'
+    keeps the ends as given and 'blocked-by' swaps them. Both store
+    dep_type='blocks' — the two names are the two readings of one row.
+    """
+    if relation == "blocks":
+        return near, far, "blocks"
+    if relation == "blocked-by":
+        return far, near, "blocks"
+    lo, hi = _pair(near, far)
+    return lo, hi, "related"
+
+
 def add_issue_link(conn: sqlite3.Connection, task_id: int, other_id: int,
-                   author: str = "user") -> str | None:
+                   author: str = "user", relation: str = "related") -> str | None:
     """Link two tickets. Returns None on success, or a message explaining the
-    refusal (self-link, missing ticket, already linked)."""
+    refusal (self-link, missing ticket, already linked in the same way).
+
+    A pair that is already linked differently is retyped rather than refused, so
+    a user who meant "blocks" after writing "related" changes the one row
+    instead of deleting and re-adding it."""
+    if relation not in RELATIONS:
+        return f"'{relation}' is not a link relation."
     if task_id == other_id:
         return "A ticket cannot be linked to itself."
     for tid in (task_id, other_id):
         if conn.execute("SELECT 1 FROM task WHERE id=?", (tid,)).fetchone() is None:
             return f"There is no ticket #{tid}."
-    lo, hi = _pair(task_id, other_id)
+    a, b, dep_type = _issue_ends(task_id, other_id, relation)
     existing = conn.execute(
-        "SELECT 1 FROM task_link WHERE kind='issue' AND task_id=? AND other_id=?",
-        (lo, hi),
+        "SELECT id, task_id, other_id, dep_type FROM task_link WHERE kind='issue' "
+        "AND ((task_id=? AND other_id=?) OR (task_id=? AND other_id=?))",
+        (a, b, b, a),
     ).fetchone()
     if existing:
-        return f"#{task_id} and #{other_id} are already linked."
+        link_id, cur_a, cur_b, cur_type = existing
+        if (cur_a, cur_b, cur_type) == (a, b, dep_type):
+            return f"#{task_id} and #{other_id} are already linked."
+        conn.execute(
+            "UPDATE task_link SET task_id=?, other_id=?, dep_type=? WHERE id=?",
+            (a, b, dep_type, link_id),
+        )
+        conn.commit()
+        return None
     conn.execute(
-        "INSERT INTO task_link (kind, task_id, other_id, author, created_at) "
-        "VALUES ('issue',?,?,?,?)",
-        (lo, hi, author, _utcnow()),
+        "INSERT INTO task_link (kind, task_id, other_id, dep_type, author, created_at) "
+        "VALUES ('issue',?,?,?,?,?)",
+        (a, b, dep_type, author, _utcnow()),
     )
     conn.commit()
     return None
@@ -109,14 +165,16 @@ def add_uri_link(conn: sqlite3.Connection, task_id: int, uri: str,
 
 def list_links(conn: sqlite3.Connection, task_id: int | None) -> list[dict]:
     """Every link on ``task_id``, issue links first, each flattened to the shape
-    the caller renders: ``{id, kind, other_id, other_title, uri, label}``. An
-    issue link is returned regardless of which end of the pair this task is."""
+    the caller renders: ``{id, kind, relation, other_id, other_title, uri,
+    label}``. An issue link is returned regardless of which end of the pair this
+    task is, and ``relation`` is how it reads from *this* end: ``related``,
+    ``blocks`` (this ticket blocks the other) or ``blocked-by``."""
     if task_id is None:
         return []
     out: list[dict] = []
     try:
         rows = conn.execute(
-            "SELECT l.id, l.task_id, l.other_id, "
+            "SELECT l.id, l.task_id, l.other_id, l.dep_type, "
             "       ta.title, tb.title "
             "FROM task_link l "
             "LEFT JOIN task ta ON ta.id = l.task_id "
@@ -127,10 +185,16 @@ def list_links(conn: sqlite3.Connection, task_id: int | None) -> list[dict]:
         ).fetchall()
     except sqlite3.OperationalError:
         return []
-    for link_id, a, b, title_a, title_b in rows:
-        far_id, far_title = (b, title_b) if a == task_id else (a, title_a)
+    for link_id, a, b, dep_type, title_a, title_b in rows:
+        near_is_first = a == task_id
+        far_id, far_title = (b, title_b) if near_is_first else (a, title_a)
+        if dep_type == "blocks":
+            relation = "blocks" if near_is_first else "blocked-by"
+        else:
+            relation = "related"
         out.append({
-            "id": link_id, "kind": "issue", "other_id": far_id,
+            "id": link_id, "kind": "issue", "relation": relation,
+            "other_id": far_id,
             "other_title": far_title or "(missing ticket)",
             "uri": None, "label": None,
         })
@@ -144,7 +208,7 @@ def list_links(conn: sqlite3.Connection, task_id: int | None) -> list[dict]:
         rows = []
     for link_id, uri, label in rows:
         out.append({
-            "id": link_id, "kind": "uri", "other_id": None,
+            "id": link_id, "kind": "uri", "relation": None, "other_id": None,
             "other_title": None, "uri": uri, "label": label,
         })
     return out
@@ -192,7 +256,7 @@ class AddLinkDialog(QDialog):
     """A small modal with the two link kinds as mutually exclusive choices, so
     the entry fields cost one button on the screen that hosts them rather than
     two permanent rows. ``result_values()`` returns
-    ``(kind, issue_id, uri, label)`` after an accepted exec()."""
+    ``(kind, issue_id, uri, label, relation)`` after an accepted exec()."""
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -211,6 +275,17 @@ class AddLinkDialog(QDialog):
         self.issue_input.setPlaceholderText("153")
         issue_row.addWidget(self.issue_input, 1)
         v.addLayout(issue_row)
+        relation_row = QHBoxLayout()
+        relation_row.addSpacing(22)
+        relation_row.addWidget(QLabel("This ticket is"))
+        # A dependency is a link with a direction, and the direction is the part
+        # a user gets wrong, so the choices are phrased from this ticket's point
+        # of view rather than as the stored value.
+        self.relation_combo = QComboBox()
+        for value in RELATIONS:
+            self.relation_combo.addItem(RELATION_LABELS[value], value)
+        relation_row.addWidget(self.relation_combo, 1)
+        v.addLayout(relation_row)
 
         self.uri_radio = QRadioButton("Link to an address")
         v.addWidget(self.uri_radio)
@@ -254,18 +329,20 @@ class AddLinkDialog(QDialog):
     def _sync_enabled(self, *args) -> None:
         is_issue = self.issue_radio.isChecked()
         self.issue_input.setEnabled(is_issue)
+        self.relation_combo.setEnabled(is_issue)
         self.uri_input.setEnabled(not is_issue)
         self.label_input.setEnabled(not is_issue)
 
-    def result_values(self) -> tuple[str, int | None, str, str]:
+    def result_values(self) -> tuple[str, int | None, str, str, str]:
         if self.issue_radio.isChecked():
+            relation = self.relation_combo.currentData() or "related"
             raw = self.issue_input.text().strip().lstrip("#")
             try:
-                return ("issue", int(raw), "", "")
+                return ("issue", int(raw), "", "", relation)
             except ValueError:
-                return ("issue", None, "", "")
+                return ("issue", None, "", "", relation)
         return ("uri", None, self.uri_input.text().strip(),
-                self.label_input.text().strip())
+                self.label_input.text().strip(), "related")
 
 
 # ---------------------------------------------------------------------------
@@ -296,8 +373,9 @@ class LinkBar(QWidget):
         self.author = author
         self.allow_pending = allow_pending
         self.on_open_issue = None
-        # Links entered before the ticket exists: (kind, other_id, uri, label).
-        self._pending: list[tuple[str, int | None, str, str]] = []
+        # Links entered before the ticket exists:
+        # (kind, other_id, uri, label, relation).
+        self._pending: list[tuple[str, int | None, str, str, str]] = []
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -333,9 +411,9 @@ class LinkBar(QWidget):
         """Write the links buffered during creation against the new ticket id.
         A pending link that has become invalid (the other ticket was deleted in
         the meantime) is dropped silently rather than blocking the save."""
-        for kind, other_id, uri, label in self._pending:
+        for kind, other_id, uri, label, relation in self._pending:
             if kind == "issue" and other_id is not None:
-                add_issue_link(self.conn, task_id, other_id, self.author)
+                add_issue_link(self.conn, task_id, other_id, self.author, relation)
             elif kind == "uri":
                 add_uri_link(self.conn, task_id, uri, label, self.author)
         self._pending.clear()
@@ -356,7 +434,7 @@ class LinkBar(QWidget):
         dlg = AddLinkDialog(self)
         if dlg.exec() != QDialog.Accepted:
             return
-        kind, issue_id, uri, label = dlg.result_values()
+        kind, issue_id, uri, label, relation = dlg.result_values()
 
         if kind == "issue":
             if issue_id is None:
@@ -368,9 +446,10 @@ class LinkBar(QWidget):
                         "SELECT 1 FROM task WHERE id=?", (issue_id,)).fetchone() is None:
                     QMessageBox.warning(self, "Add link", f"There is no ticket #{issue_id}.")
                     return
-                self._pending.append(("issue", issue_id, "", ""))
+                self._pending.append(("issue", issue_id, "", "", relation))
             else:
-                problem = add_issue_link(self.conn, self.task_id, issue_id, self.author)
+                problem = add_issue_link(self.conn, self.task_id, issue_id,
+                                         self.author, relation)
                 if problem:
                     QMessageBox.warning(self, "Add link", problem)
                     return
@@ -379,7 +458,7 @@ class LinkBar(QWidget):
                 QMessageBox.warning(self, "Add link", "Enter an address to link.")
                 return
             if self.task_id is None:
-                self._pending.append(("uri", None, uri, label))
+                self._pending.append(("uri", None, uri, label, "related"))
             else:
                 problem = add_uri_link(self.conn, self.task_id, uri, label, self.author)
                 if problem:
@@ -440,7 +519,8 @@ class LinkBar(QWidget):
         for link in list_links(self.conn, self.task_id):
             if link["kind"] == "issue":
                 other = link["other_id"]
-                text = f"#{other} — {_elide(link['other_title'])}"
+                prefix = _ROW_PREFIX.get(link["relation"], "")
+                text = f"{prefix}#{other} — {_elide(link['other_title'])}"
                 click = None
                 if callable(self.on_open_issue):
                     click = (lambda o=other: self.on_open_issue(o))
@@ -457,9 +537,9 @@ class LinkBar(QWidget):
                      self._confirm_remove(i, d)),
                 ))
 
-        for idx, (kind, other_id, uri, label) in enumerate(self._pending):
-            text = (f"#{other_id} (on save)" if kind == "issue"
-                    else f"{_elide(label or uri)} (on save)")
+        for idx, (kind, other_id, uri, label, relation) in enumerate(self._pending):
+            text = (f"{_ROW_PREFIX.get(relation, '')}#{other_id} (on save)"
+                    if kind == "issue" else f"{_elide(label or uri)} (on save)")
             desc = f"#{other_id}" if kind == "issue" else _elide(label or uri)
             self._list_layout.addWidget(self._row(
                 text, "Written when this ticket is saved", None,

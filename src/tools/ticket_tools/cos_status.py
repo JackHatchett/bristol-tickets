@@ -87,7 +87,7 @@ def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     These are the tasks 'in play right now'. A
     LEFT JOIN keeps epic-less tasks visible."""
     return conn.execute(
-        "SELECT t.id, t.title, t.status, t.pressure, t.sort_order, t.blocked, t.depends_on, t.estimate, "
+        "SELECT t.id, t.title, t.status, t.pressure, t.sort_order, t.estimate, "
         "       t.assignee, COALESCE(e.name, '(no epic)') AS epic, e.owner AS epic_owner "
         "FROM task t "
         "LEFT JOIN epic e ON t.epic_id = e.id "
@@ -95,16 +95,29 @@ def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     ).fetchall()
 
 
-def blocker_statuses(conn: sqlite3.Connection,
-                     rows: list[sqlite3.Row]) -> dict[int, str]:
-    """{task id -> status} for every ticket some row claims to depend on, so the
-    BLOCKED flag can be checked against reality instead of trusted."""
-    ids = sorted({r["depends_on"] for r in rows if r["blocked"] and r["depends_on"]})
+def unmet_blockers(conn: sqlite3.Connection,
+                   rows: list[sqlite3.Row]) -> dict[int, list[int]]:
+    """{blocked task id -> the ids still blocking it}.
+
+    A dependency is a `blocks` link: its task_id must be `done` before its
+    other_id may start. Read live rather than stored, so a blocker that has
+    since finished simply stops appearing — there is no flag to go stale and
+    nothing to clear by hand.
+    """
+    ids = [r["id"] for r in rows]
     if not ids:
         return {}
     ph = ",".join("?" * len(ids))
-    return {i: s for i, s in
-            conn.execute(f"SELECT id, status FROM task WHERE id IN ({ph})", ids)}
+    out: dict[int, list[int]] = {}
+    for blocked_id, blocker_id in conn.execute(
+        f"SELECT l.other_id, l.task_id FROM task_link l "
+        f"JOIN task b ON b.id = l.task_id "
+        f"WHERE l.kind='issue' AND l.dep_type='blocks' AND b.status != 'done' "
+        f"AND l.other_id IN ({ph}) ORDER BY l.task_id",
+        ids,
+    ):
+        out.setdefault(blocked_id, []).append(blocker_id)
+    return out
 
 def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
     """Every `doing` card first, then every `todo` card, each in the board's own
@@ -116,12 +129,13 @@ def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
     own queue does it by rewriting sort_order. `pressure` is a 0–100 rating of
     how hard a card is pushing, not a rank, and it does not sort.
 
-    `blocked` deliberately does NOT sort. It used to be the leading key, which
+    A blocker deliberately does NOT sort. It was once the leading key, which
     silently sank a blocked `doing` card below every `todo` and made the script
     contradict the precedence it documents — the agent then executed the wrong
-    ticket in good faith. Blocked is a flag to act on, not a reason to skip: the
-    card stays at the top of the queue wearing its flag, and the agent unblocks
-    it, works what it can, or reports why it cannot."""
+    ticket in good faith. A dependency annotates the queue and never reorders
+    it: the card keeps its position wearing its blocker, and the agent stops
+    there and says what would clear it rather than moving on to the card
+    below."""
     return sorted(
         rows,
         key=lambda r: (STATUS_RANK.get(r["status"], 9), r["sort_order"], r["id"]),
@@ -189,20 +203,14 @@ def print_comments(conn: sqlite3.Connection,
 
 def fmt(r: sqlite3.Row, blockers: dict | None = None,
         position: int | None = None) -> str:
-    # BLOCKED is shown only while it is still TRUE. The stored flag is set by
-    # hand and was never cleared when the depended-on ticket finished, so a card
-    # could sit flagged for weeks after nothing was actually blocking it. Resolve
-    # it against the dependency's live status and name the blocker.
+    # A blocker is named on the card so the agent sees it before it acts, and it
+    # is a stop rather than a warning: the card keeps its place in the queue, and
+    # the agent that reaches it says what would clear it instead of starting it,
+    # doing "the unblocked part", or moving down to the next card.
+    held_by = (blockers or {}).get(r["id"]) or []
     flag = ""
-    if r["blocked"]:
-        dep = r["depends_on"]
-        dep_status = (blockers or {}).get(dep)
-        if dep is None:
-            flag = " [BLOCKED]"
-        elif dep_status != "done":
-            flag = f" [BLOCKED by #{dep}]"
-        else:
-            flag = f" [blocked flag is STALE — #{dep} is done; clear it]"
+    if held_by:
+        flag = " [BLOCKED by " + ", ".join(f"#{b}" for b in held_by) + "]"
     who = (r["assignee"] or "").strip() or f"(epic:{r['epic_owner']})"
     pos = f"{position:>2}." if position is not None else "   "
     return (f"  {pos} {r['status']:5} pr{r['pressure']:>3} {r['estimate'] or '-':>4}  "
@@ -239,13 +247,14 @@ def print_attachments(conn: sqlite3.Connection, tasks: list[sqlite3.Row], db_pat
 
 
 def task_links(conn: sqlite3.Connection, task_id: int) -> list[str]:
-    """One line per link on a task. Issue links are a single symmetric row, so
-    both ends are found with `task_id=? OR other_id=?`. [] if the table predates
-    this feature."""
+    """One line per link on a task. Issue links are a single row read from
+    either end (`task_id=? OR other_id=?`); a `blocks` row reads as "blocks" on
+    the ticket that must finish first and "blocked by" on the one waiting. []
+    if the table predates this feature."""
     out: list[str] = []
     try:
         rows = conn.execute(
-            "SELECT l.task_id, l.other_id, ta.title, tb.title "
+            "SELECT l.task_id, l.other_id, l.dep_type, ta.title, tb.title "
             "FROM task_link l "
             "LEFT JOIN task ta ON ta.id = l.task_id "
             "LEFT JOIN task tb ON tb.id = l.other_id "
@@ -254,9 +263,14 @@ def task_links(conn: sqlite3.Connection, task_id: int) -> list[str]:
         ).fetchall()
     except sqlite3.OperationalError:
         return []
-    for a, b, title_a, title_b in rows:
-        far, title = (b, title_b) if a == task_id else (a, title_a)
-        out.append(f"ticket #{far} — {title or '(missing)'}")
+    for a, b, dep_type, title_a, title_b in rows:
+        near_is_first = a == task_id
+        far, title = (b, title_b) if near_is_first else (a, title_a)
+        if dep_type == "blocks":
+            relation = "blocks" if near_is_first else "blocked by"
+        else:
+            relation = "ticket"
+        out.append(f"{relation} #{far} — {title or '(missing)'}")
     for uri, label in conn.execute(
         "SELECT uri, label FROM task_link WHERE kind='uri' AND task_id=? ORDER BY id",
         (task_id,),
@@ -289,6 +303,10 @@ def main() -> None:
     db_path = resolve_db_path()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    # A snapshot of a database one schema behind would read blockers that are
+    # not there yet, so the schema is brought current first — the same reason
+    # resolve_db_path provisions a missing database instead of failing.
+    create_tickets.migrate(conn)
     cur = conn.cursor()
 
     print(f"=== CoS Ticket status ({db_path}) ===\n")
@@ -316,7 +334,7 @@ def main() -> None:
               f"[{nxt['epic']}] {nxt['title']}  (pressure {nxt['pressure']}, {nxt['estimate'] or '?'})")
         print("\nYOUR QUEUE (active board, doing→todo, board order):")
         print("  Work it top to bottom. A `doing` card outranks every `todo`.")
-        blockers = blocker_statuses(conn, board)
+        blockers = unmet_blockers(conn, board)
         for n, r in enumerate(mine_q, start=1):
             print(fmt(r, blockers, position=n))
     else:
@@ -336,7 +354,7 @@ def main() -> None:
     print("\n--- FLEET (active-board items owned by OTHER agents — context only, not yours) ---")
     if others_q:
         for r in others_q:
-            print(fmt(r, blocker_statuses(conn, board)))
+            print(fmt(r, unmet_blockers(conn, board)))
     else:
         print("  (none)")
 
