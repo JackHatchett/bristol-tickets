@@ -145,7 +145,7 @@ in the shared tickets database (`data/*/tickets/tickets.db`, scoped via
 `epic.owner` containing `librarian`) — never a private per-agent database.
 Never store personal/instance content inside the tracked machinery.
 Coordinate with another agent by adding a card to the active board assigned to
-them (`tools/ticket_tools/ticket_write.py add-task --stage active --assignee
+them (`tools/ticket_tools/ticket_write.py add-task --assignee
 <agent> --reporter librarian ...`) against the shared tickets.db, not directly;
 the live registry of every agent and its data paths is
 `config/config.local.json`'s Agent

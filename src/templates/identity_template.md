@@ -77,7 +77,7 @@ in the shared tickets database (`data/*/tickets/tickets.db`, scoped via
 store personal/instance content inside the tracked machinery. Coordinate
 with another agent by adding a card assigned to them
 (`tools/ticket_tools/ticket_write.py add-task --assignee <agent>
---reporter {{agent_name}} --stage active ...`) against the shared
+--reporter {{agent_name}} ...`) against the shared
 tickets.db, not directly; the live registry of every agent and its data
 paths is `config/config.local.json`'s Agent Registries section. (There is no
 session-handoff mechanism: work you leave mid-flight is a `doing` card on the

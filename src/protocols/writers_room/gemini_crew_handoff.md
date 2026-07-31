@@ -72,7 +72,7 @@ Every exchange is a **ticket**, and the ticket is the only record that a
 dispatch happened, that a reply is awaited, or that anything is in progress:
 
 - Dispatching a brief → open or update a card on the active board
-  (`ticket_write.py add-task --stage active --assignee writers_room`), and
+  (`ticket_write.py add-task --assignee writers_room`), and
   name the envelope file in its description. Then write the envelope.
 - Receiving a reply → the *same* ticket moves to `doing` and its comment thread
   records the reconciliation. Never a new card for the reply half.

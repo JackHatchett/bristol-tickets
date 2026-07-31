@@ -10,9 +10,12 @@ again on the packed docx. This is the mechanism that makes the voice
 guardrails actually enforced instead of merely documented.
 
 Usage:
-    python3 cl_lint.py <draft.txt | letter.docx> --blacklist PATH
-    (or place a file named cl_blacklist.txt next to this script / in the CWD
-    to skip passing --blacklist explicitly)
+    python3 cl_lint.py <draft.txt | letter.docx> [--blacklist PATH]
+
+The blacklist is found in the instance's own career data root — the
+`agents.career_coach.key_data_paths` this installation declares, then
+`applications/cover_letters/*_CL_Blacklist.txt`. `--blacklist` overrides that
+for a one-off file.
 
 Exit codes:
     0  clean (FLAG warnings may still print)
@@ -24,6 +27,34 @@ import sys
 import re
 import os
 import zipfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
+import data_paths  # noqa: E402  (the shared declared-path resolver)
+
+BLACKLIST_GLOB = "applications/cover_letters/*_CL_Blacklist.txt"
+
+
+def discover_blacklist():
+    """The instance's blacklist, resolved from config rather than from the
+    shared tool's own folder.
+
+    The list is the user's personal content, so it lives in their data root and
+    never in tracked `/src`. Returns the path, or a message saying where it
+    looked.
+    """
+    roots = data_paths.agent_data_paths("career_coach")
+    if not roots:
+        return None, ("config declares no agents.career_coach.key_data_paths, "
+                      "so there is no career data root to search")
+    hits = [p for root in roots for p in sorted(root.glob(BLACKLIST_GLOB))]
+    if len(hits) == 1:
+        return hits[0], None
+    where = ", ".join(f"{root}/{BLACKLIST_GLOB}" for root in roots)
+    if not hits:
+        return None, f"no blacklist at {where}"
+    return None, ("more than one blacklist — pass --blacklist to choose: "
+                  + ", ".join(str(p) for p in hits))
 
 
 def load_blacklist(path):
@@ -107,18 +138,19 @@ def main():
     if "--blacklist" in sys.argv:
         bl_path = sys.argv[sys.argv.index("--blacklist") + 1]
     if not args:
-        print("usage: python3 cl_lint.py <draft.txt|letter.docx> [--blacklist PATH]")
+        print("usage: python3 cl_lint.py <draft.txt|letter.docx> [--blacklist PATH]\n"
+              "       (the blacklist is found in the instance's career data root "
+              "when --blacklist is omitted)")
         return 2
     draft = args[0]
     if bl_path is None:
-        here = os.path.dirname(os.path.abspath(__file__))
-        for cand in (os.path.join(here, "cl_blacklist.txt"),
-                     "cl_blacklist.txt"):
-            if os.path.exists(cand):
-                bl_path = cand
-                break
-    if not bl_path or not os.path.exists(bl_path):
-        print("error: blacklist not found; pass --blacklist PATH")
+        found, why = discover_blacklist()
+        if found is None:
+            print(f"error: {why}")
+            return 2
+        bl_path = str(found)
+    if not os.path.exists(bl_path):
+        print(f"error: blacklist not found: {bl_path}")
         return 2
     if not os.path.exists(draft):
         print(f"error: draft not found: {draft}")

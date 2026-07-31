@@ -101,8 +101,9 @@ not a second database for an individual agent within an existing instance
 `ticket_write.py add-epic`, not this script.
 
 ### ticket_write.py  
-Safe write helper — `add-epic`, `add-task`, `update-task-status`, `set-stage`,
-and `add-issue-log` subcommands. (There is deliberately no `add-handoff`; see
+Safe write helper — `add-epic`, `add-task`, `update-task`,
+`update-task-status`, `set-stage`, `set-order`, `add-issue-log` and the `link-*`
+subcommands. (There is deliberately no `add-handoff`; see
 "There is no handoff" below.) Uses
 `journal_mode=MEMORY` (see 3b) instead of ad-hoc raw sqlite3 writes.
 `connect()` self-heals the `issue_log` table and the Kanban `stage`/`sort_order`
@@ -110,13 +111,18 @@ columns into older DBs that predate them, mirroring the UI's
 `ensure_schema_up_to_date()`. Preferred over inline/one-off write queries from
 an agent session. `add-epic --owner <slug>` is how a new or existing agent gets
 its own tagged epic in the shared db (see 3c). A task's owner is its
-`--assignee` (else implicit via its `--epic-id`'s epic); set `--assignee` on an
-`add-task --stage active` to leave a cross-agent suggestion on the Board (filed
-active, not backlog). A task carries two orthogonal fields:
-`--stage` (backlog | active | archive — which tab) and `--status`
-(todo | doing | done — the board column); `add-task` still defaults to the
-backlog stage, but agents pass `--stage active`
-so new to-dos land on the Board in `todo` (see Board conventions below).
+`--assignee` (else implicit via its `--epic-id`'s epic); set `--assignee` to
+leave a cross-agent suggestion on the Board. A task carries two orthogonal
+fields: `--stage` (backlog | active | archive — which tab) and `--status`
+(todo | doing | done — the board column); `add-task` defaults to
+`--stage active --status todo`, so a new card lands on the Board where it is
+seen and worked, and `--stage backlog` is the deliberate exception, asked for by
+name (see Board conventions below).
+
+Three writes change a card and each does one job. `update-task --id N` edits
+what it **says** — `--title`, `--description`, `--estimate`, `--record-type`,
+`--reporter`, `--epic-id` — and touches no board position, so editing a ticket
+body is an ordinary write rather than a reason to reach for SQL.
 `update-task-status --id N --status ... [--stage ...] [--pressure N]
 [--assignee ...]` moves a task across the Kanban columns (sets/clears
 `closed_at` on the done transition; a bare `--status backlog` is redirected to a
@@ -240,9 +246,8 @@ agent's private protocol.
 - `stage` — `backlog` | `active` | `archive`.
   - `backlog` — real work, but "get to it whenever." Not on the board. The
     Backlog tab is one manually-ordered list (drag to reorder; new cards append
-    to the bottom — `task.sort_order`). **Agents do not file NEW to-dos
-    here — every new card goes onto the active Board in `todo` (`add-task
-    --stage active`). Existing backlog cards remain.**
+    to the bottom — `task.sort_order`). A card gets here by being asked for by
+    name; `add-task` lands on the Board.
   - `active` — on the board, in play right now.
   - `archive` — retired/historical. The Archive tab is a stripped chronological
     list, most-recently-modified first.
@@ -293,7 +298,7 @@ engage this session.)
 
 **Leaving in-progress work is how you hand off — no separate mechanism.** When
 a session ends with chained work only partway done, put that task on the
-**active board** (`set-stage --task... --stage active`, or
+**active board** (`set-stage --id N --stage active`, or
 `update-task-status --stage active`) in `doing`, move it to the top of its
 column (`set-order --id N --position 1`), and
 set the owning agent as its `assignee` (`update-task-status ... --assignee
@@ -318,7 +323,8 @@ skeleton — Story + Acceptance Criteria, or Expected + Observed. Nothing above
 it, nothing after it, no extra headers. No `Source:` line, no "Addressed to
 …", no preamble explaining where the ticket came from, no notes to the reader,
 no options-and-recommendations essay. You may edit a Description and its
-acceptance criteria freely — but only into that shape.
+acceptance criteria freely (`update-task --id N --description "…"`) — but only
+into that shape.
 
 Everything that does not belong in the Description has a home:
 
@@ -393,16 +399,16 @@ while other tasks in those same epics remain "whenever" backlog. A task's stage
 **Stay in your lane; cross-zone requests are cards, not commands.**
 An agent may freely author board tasks for *itself or the user within its own
 zone of responsibility*. Anything that lands in another agent's or the user's
-decision domain also goes on the board — `add-task --stage active` with
-`--assignee` = that agent/user and `--reporter` = you. It lands in `todo` on
+decision domain also goes on the board — `add-task` with `--assignee` = that
+agent/user and `--reporter` = you. It lands in `todo` on
 the active board, where the user actually looks, and the `assignee` is what
 makes it a request rather than a command: it is that agent's card to accept,
 reorder, or drop. Examples: the `librarian` does not put "delete the xyz
 database" in `doing` for `chief_of_staff`; it files a `todo` card assigned to
 `chief_of_staff`, reporter `librarian`. A note for the novel is a card assigned
 to `writers_room`, not a `doing` task saying "add a character who shoots
-lasers." The `backlog` stage still means never-auto-executed and older cards
-still live there, but nothing new is filed to it.
+lasers." The `backlog` stage means never-auto-executed, and a card gets there by
+being asked for by name.
 
 ## Cross-agent suggestions
 
@@ -410,7 +416,7 @@ Cross-agent suggestions are ordinary active-board cards, not a separate store.
 `task` already carries `reporter` (originator) and `assignee` (owner), so a card
 assigned to another agent *is* a suggestion — a visible, user-editable one that
 that agent sees at the top of its own snapshot. To suggest work for another
-agent, write an `add-task --stage active` with `--assignee`/`--reporter`; there
+agent, write an `add-task` with `--assignee`/`--reporter`; there
 is no separate inbox store, subcommand, or status section.
 
 ## There is no handoff
