@@ -319,6 +319,28 @@ def check_bristol() -> list[str]:
         if not (add_issue_link(lc, la, la) and add_issue_link(lc, la, 9999)):
             raise SmokeFailure("self-link or missing-ticket link was accepted")
 
+        # A dependency is the same single row carrying a direction: it must
+        # still be one row, read as 'blocks' from one end and 'blocked-by' from
+        # the other, and retype in place rather than spawning a second row.
+        if add_issue_link(lc, la, lb, relation="blocks") is not None:
+            raise SmokeFailure("retyping an existing link to 'blocks' was refused")
+        if lc.execute("SELECT COUNT(*) FROM task_link").fetchone()[0] != 1:
+            raise SmokeFailure("retyping a link wrote a second row")
+        rel = lambda t: [x["relation"] for x in list_links(lc, t)
+                         if x["kind"] == "issue"]
+        if rel(la) != ["blocks"] or rel(lb) != ["blocked-by"]:
+            raise SmokeFailure("a 'blocks' link does not read from both ends")
+        if lc.execute("SELECT task_id, other_id FROM task_link").fetchone() != (la, lb):
+            raise SmokeFailure("a 'blocks' row lost its direction to normalization")
+        if add_issue_link(lc, lb, la, relation="blocked-by") is not None:
+            raise SmokeFailure("'blocked-by' from the far end was refused")
+        if rel(la) != ["blocks"]:
+            raise SmokeFailure("'blocked-by' did not store the same directed row")
+        if add_issue_link(lc, la, lb, relation="related") is not None:
+            raise SmokeFailure("retyping back to 'related' was refused")
+        if rel(la) != ["related"]:
+            raise SmokeFailure("retyping back to 'related' did not take")
+
         if add_uri_link(lc, la, "obsidian://open?vault=V&file=n.md", "note") is not None:
             raise SmokeFailure("add_uri_link refused a valid address")
         if not add_uri_link(lc, la, "   "):
@@ -342,7 +364,8 @@ def check_bristol() -> list[str]:
         # widget and are written once the INSERT yields an id.
         bar = LinkBar(lc, allow_pending=True)
         bar.set_task(None)
-        bar._pending += [("issue", lb, "", ""), ("uri", None, "https://x.test", "X")]
+        bar._pending += [("issue", lb, "", "", "blocked-by"),
+                         ("uri", None, "https://x.test", "X", "related")]
         if not bar.has_pending():
             raise SmokeFailure("LinkBar did not buffer links for an unsaved ticket")
         le = _seed_link_task("Echo")
@@ -350,7 +373,10 @@ def check_bristol() -> list[str]:
         if bar.has_pending() or sorted(x["kind"] for x in list_links(lc, le)) != [
                 "issue", "uri"]:
             raise SmokeFailure("flush_pending did not write the buffered links")
-        ok.append("Links: symmetric issue edge, uri links, pending buffer")
+        if rel(le) != ["blocked-by"]:
+            raise SmokeFailure("flush_pending dropped a buffered link's relation")
+        ok.append("Links: one directed edge, related/blocks types, uri links, "
+                  "pending buffer")
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok

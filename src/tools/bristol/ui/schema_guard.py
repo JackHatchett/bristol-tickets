@@ -98,16 +98,19 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 
     # task_link — a ticket's relations: to another ticket (kind='issue') or to
     # an external address (kind='uri': a web URL, a zotero:// citation, an
-    # obsidian:// note, or a bare file path). An issue link is ONE symmetric
-    # edge, normalized to task_id=MIN(a,b) / other_id=MAX(a,b), so it reads from
-    # either end and deletes once — bidirectional by storage rather than by two
-    # rows a write path has to keep in sync. See ui/links.py.
+    # obsidian:// note, or a bare file path). An issue link is ONE edge that
+    # reads from either end and deletes once — bidirectional by storage rather
+    # than by two rows a write path has to keep in sync. Its dep_type says what
+    # it means: 'related' (normalized to task_id=MIN / other_id=MAX) or 'blocks'
+    # (task_id must be done before other_id starts, direction on the row). See
+    # ui/links.py.
     conn.execute("""
         CREATE TABLE IF NOT EXISTS task_link (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             kind       TEXT    NOT NULL,
             task_id    INTEGER NOT NULL,
             other_id   INTEGER,
+            dep_type   TEXT    NOT NULL DEFAULT 'related',
             uri        TEXT,
             label      TEXT,
             author     TEXT,
@@ -116,6 +119,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (other_id) REFERENCES task (id)
         );
     """)
+    _ensure_link_dep_type(conn)
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_task_link_pair "
         "ON task_link (task_id, other_id) WHERE kind = 'issue'"
@@ -146,6 +150,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
     )
 
     _consolidate_legacy_history(conn)
+    _retire_blocked_columns(conn)
     install_change_log(conn, actor="user")
     conn.commit()
 
@@ -154,11 +159,11 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 # The mechanical change log
 # ---------------------------------------------------------------------------
 
-# Fields logged with their new value.
+# Fields logged with their new value. A dependency is not among them: it lives
+# on a link now, and a link's own history is the row's presence or absence.
 CHANGE_LOG_FIELDS = (
     "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
-    "blocked", "depends_on", "assignee", "reporter", "story_points",
-    "record_type",
+    "assignee", "reporter", "story_points", "record_type",
 )
 
 # Fields logged as having changed, without their content. A change log records
@@ -296,6 +301,71 @@ def _migrate_stage_from_sprints(conn: sqlite3.Connection) -> None:
     # 4. drop the sprint tables.
     conn.execute("DROP TABLE IF EXISTS sprint_task")
     conn.execute("DROP TABLE IF EXISTS sprint")
+
+
+def _ensure_link_dep_type(conn: sqlite3.Connection) -> None:
+    """Add task_link.dep_type to a DB that predates typed links. Existing rows
+    default to 'related', which is what every link written before the type
+    existed meant. Mirrors create_tickets._ensure_link_dep_type."""
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(task_link)").fetchall()]
+    if cols and "dep_type" not in cols:
+        conn.execute(
+            "ALTER TABLE task_link ADD COLUMN dep_type TEXT NOT NULL DEFAULT 'related'"
+        )
+
+
+def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
+    """Fold task.blocked / task.depends_on into 'blocks' links, then drop them.
+
+    There is one dependency mechanism: a typed link. The old pair of columns
+    could only say "this card depends on that one" once per card, was set by
+    hand and never cleared, and had to be trusted against the depended-on
+    ticket's real status. Each row that named a dependency becomes the link that
+    says the same thing, and the columns go. Mirrors
+    create_tickets._retire_blocked_columns; runs before the change-log triggers
+    are installed, since they name the task columns.
+
+    // ALTER TABLE ... DROP COLUMN needs SQLite 3.35; on an older library the
+    // drop is skipped and the columns are left in place at their defaults,
+    // unread and unwritten by anything.
+    """
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
+    if "depends_on" not in cols and "blocked" not in cols:
+        return
+
+    if "depends_on" in cols:
+        for task_id, blocker_id in conn.execute(
+            "SELECT id, depends_on FROM task WHERE depends_on IS NOT NULL"
+        ).fetchall():
+            if conn.execute("SELECT 1 FROM task WHERE id=?",
+                            (blocker_id,)).fetchone() is None:
+                continue
+            row = conn.execute(
+                "SELECT id FROM task_link WHERE kind='issue' AND "
+                "((task_id=? AND other_id=?) OR (task_id=? AND other_id=?))",
+                (blocker_id, task_id, task_id, blocker_id),
+            ).fetchone()
+            if row:
+                conn.execute(
+                    "UPDATE task_link SET dep_type='blocks', task_id=?, other_id=? "
+                    "WHERE id=?",
+                    (blocker_id, task_id, row[0]),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO task_link (kind, task_id, other_id, dep_type, author) "
+                    "VALUES ('issue',?,?,'blocks','migration')",
+                    (blocker_id, task_id),
+                )
+    conn.commit()
+
+    for column, neutral in (("blocked", "0"), ("depends_on", "NULL")):
+        if column not in cols:
+            continue
+        try:
+            conn.execute(f"ALTER TABLE task DROP COLUMN {column}")
+        except sqlite3.OperationalError:
+            conn.execute(f"UPDATE task SET {column} = {neutral}")
 
 
 def _drop_retired_handoff(conn: sqlite3.Connection) -> None:

@@ -60,7 +60,8 @@ Usage:
         short thought per entry (what happened / what's next).
 
     python3 ticket_write.py link-add --task N
-        (--to-task M | --uri "...") [--label "..."] [--author <slug|user>]
+        (--to-task M | --uri "...") [--type related|blocks|blocked-by]
+        [--label "..."] [--author <slug|user>]
     python3 ticket_write.py link-list --task N
     python3 ticket_write.py link-remove --id L
         A ticket's Description must stay inside its record-type template, so
@@ -72,6 +73,15 @@ Usage:
                        tickets from the moment it is written. Never run the
                        mirror call; there is no second row to create and no
                        one-way state to fall into.
+                       --type says what the relation means:
+                         related    (default) they belong together.
+                         blocks     ticket N must be done before M starts.
+                         blocked-by ticket M must be done before N starts.
+                       'blocked-by' is the same stored row as 'blocks' with the
+                       two ends swapped, so a dependency is one directed edge
+                       that reads correctly from either card. Re-running
+                       link-add on a pair that is already linked changes its
+                       type instead of erroring.
           --uri "..."  links the ticket to an address: a web URL, a zotero://
                        citation, an obsidian:// note, or a filesystem path. The
                        viewer hands it to the OS to open, so nothing here knows
@@ -145,15 +155,18 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
         "CREATE INDEX IF NOT EXISTS idx_task_event_task ON task_event (task_id, at)"
     )
     # Self-healing: a ticket's links (mirrors the viewer's schema_guard). An
-    # issue link is ONE symmetric row normalized to task_id=MIN / other_id=MAX,
-    # so it reads from either end and deletes once; a uri link hangs an address
-    # (web URL, zotero://, obsidian://, or a file path) off a single ticket.
+    # issue link is ONE row read from either end and deleted once — normalized
+    # to task_id=MIN / other_id=MAX when its dep_type is 'related', and carrying
+    # its direction (task_id blocks other_id) when it is 'blocks'. A uri link
+    # hangs an address (web URL, zotero://, obsidian://, or a file path) off a
+    # single ticket.
     conn.execute("""
         CREATE TABLE IF NOT EXISTS task_link (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             kind       TEXT    NOT NULL,
             task_id    INTEGER NOT NULL,
             other_id   INTEGER,
+            dep_type   TEXT    NOT NULL DEFAULT 'related',
             uri        TEXT,
             label      TEXT,
             author     TEXT,
@@ -170,6 +183,10 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_task_link_other ON task_link (other_id)")
     _ensure_stage_columns(conn)
     conn.commit()
+    # Schema changes that need more than a CREATE IF NOT EXISTS — typed links,
+    # and the retirement of task.blocked / task.depends_on into them. Runs
+    # before the triggers are built, since they name the task columns.
+    create_tickets.migrate(conn)
     install_change_log(conn, actor)
     return conn
 
@@ -178,11 +195,11 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
 # The mechanical change log
 # ---------------------------------------------------------------------------
 
-# Fields logged with their new value.
+# Fields logged with their new value. A dependency is not among them: it lives
+# on a link now, and a link's own history is the row's presence or absence.
 CHANGE_LOG_FIELDS = (
     "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
-    "blocked", "depends_on", "assignee", "reporter", "story_points",
-    "record_type",
+    "assignee", "reporter", "story_points", "record_type",
 )
 
 # Fields logged as having changed, without their content. A change log records
@@ -342,10 +359,10 @@ def add_task(args: argparse.Namespace) -> None:
         sort_order = _append_order(conn, stage, status)
         cur = conn.execute(
             """INSERT INTO task (epic_id, scope_id, title, description, status,
-                   pressure, estimate, blocked, depends_on, created_at, updated_at,
+                   pressure, estimate, created_at, updated_at,
                    closed_at, assignee, reporter, story_points, record_type,
                    stage, sort_order)
-               VALUES (?, NULL, ?, ?, ?, ?, ?, 0, NULL, ?, ?, NULL, ?, ?, 0, ?, ?, ?)""",
+               VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 0, ?, ?, ?)""",
             (args.epic_id, args.title, args.description, status,
              args.pressure, args.estimate, ts, ts, args.assignee, args.reporter,
              record_type, stage, sort_order),
@@ -494,13 +511,35 @@ def add_issue_log(args: argparse.Namespace) -> None:
         conn.close()
 
 
+def _link_ends(near: int, far: int, link_type: str) -> tuple[int, int, str]:
+    """Where a new issue link's two ends go, given what the relation means.
+
+    A 'related' row is normalized (task_id = the lower id) because the relation
+    reads the same from both cards. A dependency does not: it is stored as
+    task_id blocks other_id, so `--type blocks` keeps the ends as given and
+    `--type blocked-by` swaps them. Both store dep_type='blocks' — 'blocked by'
+    is how that one row reads from the other end, not a second value.
+    """
+    if link_type == "blocks":
+        return near, far, "blocks"
+    if link_type == "blocked-by":
+        return far, near, "blocks"
+    lo, hi = sorted((near, far))
+    return lo, hi, "related"
+
+
 def link_add(args: argparse.Namespace) -> None:
     """Attach a link to a ticket: either another ticket (--to-task) or an
-    address (--uri). An issue link is stored once, normalized, so it appears on
-    BOTH tickets immediately — there is no second call to make and no way to end
-    up with a one-way link."""
+    address (--uri). An issue link is stored ONCE and read from both ends — a
+    'related' link normalized, a 'blocks' link carrying its direction — so there
+    is no second call to make and no way to end up with a one-way link."""
     if (args.to_task is None) == (args.uri is None):
         sys.exit("link-add: ERROR — pass exactly one of --to-task or --uri")
+    link_type = (args.type or "related").lower()
+    if link_type not in ("related", "blocks", "blocked-by"):
+        sys.exit("link-add: ERROR — --type must be related|blocks|blocked-by")
+    if args.uri is not None and link_type != "related":
+        sys.exit("link-add: ERROR — --type applies to a ticket link, not a --uri")
     conn = connect()
     try:
         if conn.execute("SELECT 1 FROM task WHERE id=?", (args.task,)).fetchone() is None:
@@ -512,20 +551,35 @@ def link_add(args: argparse.Namespace) -> None:
             if conn.execute("SELECT 1 FROM task WHERE id=?",
                             (args.to_task,)).fetchone() is None:
                 sys.exit(f"link-add: ERROR — no task with id {args.to_task}")
-            lo, hi = sorted((args.task, args.to_task))
-            if conn.execute(
-                "SELECT 1 FROM task_link WHERE kind='issue' AND task_id=? AND other_id=?",
-                (lo, hi),
-            ).fetchone():
-                print(f"OK: #{args.task} and #{args.to_task} were already linked")
+            a, b, dep_type = _link_ends(args.task, args.to_task, link_type)
+            existing = conn.execute(
+                "SELECT id, task_id, other_id, dep_type FROM task_link "
+                "WHERE kind='issue' AND ((task_id=? AND other_id=?) OR "
+                "(task_id=? AND other_id=?))",
+                (a, b, b, a),
+            ).fetchone()
+            if existing:
+                link_id, cur_a, cur_b, cur_type = existing
+                if (cur_a, cur_b, cur_type) == (a, b, dep_type):
+                    print(f"OK: #{args.task} and #{args.to_task} were already "
+                          f"linked ({dep_type})")
+                    return
+                conn.execute(
+                    "UPDATE task_link SET task_id=?, other_id=?, dep_type=? WHERE id=?",
+                    (a, b, dep_type, link_id),
+                )
+                conn.commit()
+                print(f"OK: link #{link_id} retyped {cur_type} -> {dep_type} "
+                      f"— #{a} {'blocks' if dep_type == 'blocks' else '<->'} #{b}")
                 return
             cur = conn.execute(
-                "INSERT INTO task_link (kind, task_id, other_id, author, created_at) "
-                "VALUES ('issue',?,?,?,?)",
-                (lo, hi, args.author, now()),
+                "INSERT INTO task_link (kind, task_id, other_id, dep_type, author, created_at) "
+                "VALUES ('issue',?,?,?,?,?)",
+                (a, b, dep_type, args.author, now()),
             )
             conn.commit()
-            print(f"OK: link #{cur.lastrowid} — #{args.task} <-> #{args.to_task}")
+            arrow = "blocks" if dep_type == "blocks" else "<->"
+            print(f"OK: link #{cur.lastrowid} — #{a} {arrow} #{b}")
         else:
             cur = conn.execute(
                 "INSERT INTO task_link (kind, task_id, uri, label, author, created_at) "
@@ -539,20 +593,28 @@ def link_add(args: argparse.Namespace) -> None:
 
 
 def link_list(args: argparse.Namespace) -> None:
-    """Print every link on a ticket, from either end of an issue pair."""
+    """Print every link on a ticket, from either end of an issue pair. A
+    dependency reads from the end you asked about: the same row prints as
+    `blocks` on the ticket that must finish first and `blocked by` on the one
+    waiting."""
     conn = connect()
     try:
         rows = conn.execute(
-            "SELECT l.id, l.task_id, l.other_id, ta.title, tb.title "
+            "SELECT l.id, l.task_id, l.other_id, l.dep_type, ta.title, tb.title "
             "FROM task_link l "
             "LEFT JOIN task ta ON ta.id = l.task_id "
             "LEFT JOIN task tb ON tb.id = l.other_id "
             "WHERE l.kind='issue' AND (l.task_id=? OR l.other_id=?) ORDER BY l.id",
             (args.task, args.task),
         ).fetchall()
-        for link_id, a, b, title_a, title_b in rows:
-            far, title = (b, title_b) if a == args.task else (a, title_a)
-            print(f"  [{link_id}] issue -> #{far} {title or '(missing)'}")
+        for link_id, a, b, dep_type, title_a, title_b in rows:
+            near_is_first = a == args.task
+            far, title = (b, title_b) if near_is_first else (a, title_a)
+            if dep_type == "blocks":
+                relation = "blocks    " if near_is_first else "blocked by"
+            else:
+                relation = "related   "
+            print(f"  [{link_id}] {relation} -> #{far} {title or '(missing)'}")
         for link_id, uri, label in conn.execute(
             "SELECT id, uri, label FROM task_link WHERE kind='uri' AND task_id=? "
             "ORDER BY id", (args.task,)
@@ -675,6 +737,13 @@ def main() -> None:
     pla.add_argument("--to-task", dest="to_task", type=int, default=None,
                       help="link to another ticket. Stored once and symmetric, so it "
                            "shows on BOTH tickets — do not also run the mirror call.")
+    pla.add_argument("--type", default="related",
+                      choices=["related", "blocks", "blocked-by"],
+                      help="what a ticket link means (default related). "
+                           "'blocks': --task must be done before --to-task can "
+                           "start. 'blocked-by': the reverse. A dependency is "
+                           "one directed row, so never add the mirror. Re-running "
+                           "link-add on an existing pair retypes it.")
     pla.add_argument("--uri", default=None,
                       help="link to an address: a web URL, a zotero:// citation, an "
                            "obsidian:// note, or a file path. The viewer hands it to "

@@ -41,12 +41,15 @@ CREATE TABLE IF NOT EXISTS issue_log (
 -- is shared (owner task, author, timestamp, delete semantics) and the UI renders
 -- them as one ordered list above the log.
 --
---   kind='issue' — a link between two tickets. Stored as ONE symmetric edge,
---     normalized so task_id = MIN(a,b) and other_id = MAX(a,b). Bidirectionality
---     is therefore a property of the storage, not a pair of rows kept in sync: a
---     reader asks `WHERE task_id=? OR other_id=?` and sees the link from either
---     end, and a single DELETE removes it from both. Two mirrored rows were
---     rejected precisely because they can half-delete into a one-way link.
+--   kind='issue' — a link between two tickets, carrying a dep_type that says
+--     what the relation means: 'related' (they belong together) or 'blocks'
+--     (task_id must be done before other_id may start). Either way it is ONE
+--     edge: a reader asks `WHERE task_id=? OR other_id=?` and sees the link
+--     from either end, and a single DELETE removes it from both. Two mirrored
+--     rows were rejected precisely because they can half-delete into a one-way
+--     link. A 'related' row is normalized so task_id = MIN(a,b) and other_id =
+--     MAX(a,b); a 'blocks' row keeps its direction instead, and renders as
+--     "blocks #other" on one card and "blocked by #task" on the other.
 --
 --   kind='uri' — a link from one ticket to an address: a web URL, a
 --     `zotero://` citation, an `obsidian://` note, or a bare filesystem path.
@@ -60,8 +63,9 @@ CREATE TABLE IF NOT EXISTS issue_log (
 CREATE TABLE IF NOT EXISTS task_link (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     kind       TEXT    NOT NULL,          -- 'issue' | 'uri'
-    task_id    INTEGER NOT NULL,          -- issue: MIN(a,b); uri: the owning task
-    other_id   INTEGER,                   -- issue: MAX(a,b); NULL for uri
+    task_id    INTEGER NOT NULL,          -- related: MIN(a,b); blocks: the blocker; uri: the owning task
+    other_id   INTEGER,                   -- related: MAX(a,b); blocks: the blocked ticket; NULL for uri
+    dep_type   TEXT    NOT NULL DEFAULT 'related',  -- issue: 'related' | 'blocks'
     uri        TEXT,                      -- uri: the target address; NULL for issue
     label      TEXT,                      -- uri: optional human caption
     author     TEXT,                      -- agent slug, or 'user'
@@ -69,7 +73,9 @@ CREATE TABLE IF NOT EXISTS task_link (
     FOREIGN KEY (task_id)  REFERENCES task (id),
     FOREIGN KEY (other_id) REFERENCES task (id)
 );
--- Normalization makes this partial index a true "one link per pair" constraint.
+-- One row per ordered pair. A directed 'blocks' row means the pair could also
+-- be written the other way round, so the writers check both orders before
+-- inserting; this index is the backstop, not the whole constraint.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_task_link_pair
     ON task_link (task_id, other_id) WHERE kind = 'issue';
 CREATE INDEX IF NOT EXISTS idx_task_link_task  ON task_link (task_id);
@@ -130,7 +136,7 @@ CREATE TABLE IF NOT EXISTS task (
     title       TEXT    NOT NULL,
     description TEXT,
     status      TEXT    NOT NULL DEFAULT 'todo',      -- todo | doing | done (the board columns)
-    pressure    INTEGER NOT NULL DEFAULT 0, estimate TEXT, blocked INTEGER NOT NULL DEFAULT 0, depends_on INTEGER, created_at TEXT, updated_at TEXT, closed_at TEXT, assignee TEXT, reporter TEXT, story_points INTEGER DEFAULT 0,          -- pressure: 0-100 gestalt of how hard the card is pushing. A rating, not a rank.
+    pressure    INTEGER NOT NULL DEFAULT 0, estimate TEXT, created_at TEXT, updated_at TEXT, closed_at TEXT, assignee TEXT, reporter TEXT, story_points INTEGER DEFAULT 0,          -- pressure: 0-100 gestalt of how hard the card is pushing. A rating, not a rank. A dependency is a 'blocks' link, not a column here.
     record_type TEXT    NOT NULL DEFAULT 'build',     -- 'build' (Story + acceptance criteria) | 'fix' (Expected/Observed).
     stage       TEXT    NOT NULL DEFAULT 'backlog',   -- backlog | active | archive (which tab; orthogonal to status).
     sort_order  INTEGER NOT NULL DEFAULT 0,           -- manual drag-to-reorder position; lower = higher in its list.
