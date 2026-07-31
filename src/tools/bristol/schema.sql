@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS epic (
 
 -- (There is no `epic_log` table and no `handoff` table. Both were per-agent
 -- narrative state, which is exactly what the board replaces: a session's
--- carry-forward is a `doing` card with an owner and a priority, and to-dos/done
+-- carry-forward is a `doing` card with an owner and a pressure, and to-dos/done
 -- are ordinary issues. schema_guard._drop_retired_handoff removes any surviving
 -- `handoff` table on launch.)
 
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS task (
     title       TEXT    NOT NULL,
     description TEXT,
     status      TEXT    NOT NULL DEFAULT 'todo',      -- todo | doing | done (the board columns)
-    priority    INTEGER NOT NULL DEFAULT 0, estimate TEXT, blocked INTEGER NOT NULL DEFAULT 0, depends_on INTEGER, created_at TEXT, updated_at TEXT, closed_at TEXT, assignee TEXT, reporter TEXT, story_points INTEGER DEFAULT 0,          -- 0 (low) → 100 (critical)
+    pressure    INTEGER NOT NULL DEFAULT 0, estimate TEXT, blocked INTEGER NOT NULL DEFAULT 0, depends_on INTEGER, created_at TEXT, updated_at TEXT, closed_at TEXT, assignee TEXT, reporter TEXT, story_points INTEGER DEFAULT 0,          -- pressure: 0-100 gestalt of how hard the card is pushing. A rating, not a rank.
     record_type TEXT    NOT NULL DEFAULT 'build',     -- 'build' (Story + acceptance criteria) | 'fix' (Expected/Observed).
     stage       TEXT    NOT NULL DEFAULT 'backlog',   -- backlog | active | archive (which tab; orthogonal to status).
     sort_order  INTEGER NOT NULL DEFAULT 0,           -- manual drag-to-reorder position; lower = higher in its list.

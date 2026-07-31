@@ -1,4 +1,4 @@
-# copilot_strategic_review.md — game_designer tool
+# strategic_review.md — game_designer tool
 
 A fixed briefing template for a periodic external strategic-health pass on
 a game project — a different kind of collaborator than the Gemini Gem

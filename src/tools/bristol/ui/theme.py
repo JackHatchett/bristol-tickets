@@ -393,9 +393,9 @@ def _get_epic_badge(epic_name: str, epic_id: int | None) -> str:
     return f"[{first_letter}{epic_id}] "
 
 
-def _priority_color(priority: int) -> QColor:
-    if priority >= 70:
+def _pressure_color(pressure: int) -> QColor:
+    if pressure >= 70:
         return QColor("#dc2626")   # high — red
-    if priority >= 40:
+    if pressure >= 40:
         return QColor("#d97706")   # medium — amber
     return QColor("#0f9d58")       # low — green

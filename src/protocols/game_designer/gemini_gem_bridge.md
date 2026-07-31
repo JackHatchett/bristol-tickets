@@ -160,5 +160,5 @@ the Gem's own check is not a substitute for it.
   cited, never restated.
 - `playbooks/game_designer/design_proposals.md` — the procedure that handles
   a RETURN.
-- `tools/game_designer/copilot_strategic_review.md` — a one-off external
+- `tools/game_designer/strategic_review.md` — a one-off external
   strategic-review consultation (a related but non-ongoing external-AI use).

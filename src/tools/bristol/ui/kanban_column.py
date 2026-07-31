@@ -95,8 +95,8 @@ class KanbanColumn(QWidget):
     # ----- loading ---------------------------------------------------------
 
     _SELECT = (
-        "SELECT t.id, t.title, t.priority, e.name, e.id, t.status, "
-        "COALESCE(t.assignee,'user'), COALESCE(t.story_points,0), "
+        "SELECT t.id, t.title, t.pressure, e.name, e.id, t.status, "
+        "COALESCE(t.assignee,'user'), COALESCE(t.estimate,''), "
         "COALESCE(t.record_type,'build') FROM task t "
         "LEFT JOIN epic e ON t.epic_id = e.id "
     )
@@ -125,17 +125,17 @@ class KanbanColumn(QWidget):
         for row in self.conn.execute(query, tuple(params)).fetchall():
             self._add_item(*row)
 
-    def _add_item(self, task_id, title, priority, epic_name, epic_id, _status,
-                  owner, story_pts, record_type):
+    def _add_item(self, task_id, title, pressure, epic_name, epic_id, _status,
+                  owner, estimate, record_type):
         item = QListWidgetItem()
         item.setData(Qt.UserRole, task_id)
         item.setData(CARD_ROLE, {
             "issue_id": task_id,
             "title": title or "",
-            "priority": priority or 0,
+            "pressure": pressure or 0,
             "epic_name": (epic_name or "") if epic_id else "",
             "owner": owner or "user",
-            "story_points": story_pts or 0,
+            "estimate": (estimate or "").upper(),
             "record_type": (record_type or "build").lower(),
         })
         if self.is_backlog:

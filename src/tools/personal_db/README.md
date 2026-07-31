@@ -60,9 +60,9 @@ not delete `archive/` or `checkpoints/` as tidy-up.
 `checkpoints/` holds pinned pre-policy snapshots. They pre-date the retention
 policy, cannot be regenerated, and are exempt from it.
 
-Scheduled daily at 09:00 by
-`~/Library/LaunchAgents/com.<user>.library-snapshot.plist`, logging to
-`LOG_ROOT/library_snapshot.log` / `.err`.
+Nothing schedules the render. A user who wants a daily snapshot points a cron
+entry or a launchd plist of their own at `render_snapshot.py` and logs to
+`LOG_ROOT/`; run by hand it works the same.
 
 ## Commands
 
@@ -71,9 +71,6 @@ export PERSONAL_DB_DIR=.../data/<instance>/personal
 
 # create / patch the DB (idempotent)
 python3 src/tools/personal_db/build_db.py
-
-# one-time domain import (parity report; --replace to rebuild the domain)
-python3 src/tools/personal_db/import_applications.py
 
 # render snapshots (books reads Zotero, applications reads this DB)
 python3 src/tools/personal_db/render_snapshot.py --domain all   # or applications | books

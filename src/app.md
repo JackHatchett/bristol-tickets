@@ -23,16 +23,21 @@ granted (see chief_of_staff.md §2.3). Other agents skip this step.
    - For every other agent: execute `src/tools/ticket_tools/agent_status.py <agent_slug>` instead, passing the active agent's own slug (e.g. `career_coach`). This returns the same shape of snapshot but scoped to that agent's own epics/tasks (via `epic.owner`/`assignee`) — it is not a global view.
    - Both scripts read the same single shared `tickets.db` (one database for the whole fleet, not one per agent); the script choice only changes how much of that db's contents come back.
 2. **Fallback — Full Ingest:** Only read the *entire* tickets database directly (all tables, all statuses) if the script exits with an error, the DB was just created/migrated, or the user explicitly asks for full backlog/history context the snapshot doesn't cover.
-3. **Cross-agent suggestions are board cards, not a separate inbox.** A suggestion another session left for you is an ordinary backlog card with `assignee` = you and `reporter` = whoever raised it; the status snapshot already surfaces your own cards, so there is no separate inbox to check (there is no separate inbox table). Triage such cards like any other backlog item.
+3. **Cross-agent suggestions are board cards, not a separate inbox.** A suggestion another session left for you is an ordinary active-board card with `assignee` = you and `reporter` = whoever raised it; the status snapshot already surfaces your own cards, so there is no separate inbox to check (there is no separate inbox table). Triage such a card like any other card in your queue — you may reorder it or hand it back; the `assignee` makes it yours to decide, not an order.
 4. **Evaluate — the next action is YOUR OWN work on the ACTIVE BOARD, in strict precedence:** the status scripts now compute this for you; do not re-derive a "top task" from a fleet-wide list. The board is full-Kanban: a task's tab is `task.stage` (backlog | active | archive), orthogonal to its `task.status` (todo | doing | done). The rule (identical for every agent, CoS included):
-   1. active-stage tasks **you own**, status `doing` (highest priority first);
-   2. then active-stage tasks **you own**, status `todo` (highest priority first);
+   1. active-stage tasks **you own**, status `doing` (board order — top of the column first);
+   2. then active-stage tasks **you own**, status `todo` (board order — top of the column first);
    3. only if 1+2 are empty, your own `backlog` (stage=`backlog`) — and treat that as a planning signal (activate one onto the board / confirm with the user), not something to auto-execute.
-   **`priority` is agent-local.** It ranks a task only against other tasks with the same `assignee`. Never compare priority values across assignees — a p20 of yours may outrank another agent's p90 in the user's real ordering, and the board does not encode that. A high number on someone else's card is not a reason to defer your own work. Only the user sequences across agents; you order your own queue and nothing else.
+   **Order, blockers and pressure are three different things. Never let one do another's job.**
+   - **Order — `task.sort_order`.** Where a card sits in its column, and the only thing that decides what you work next. The status scripts hand you the queue already in this order and number it; position 1 is next. The user sets it by dragging a card in Bristol; you set it with `ticket_write.py set-order --id N --position K`. Nothing else reorders your work.
+   - **Blockers — a `blocks` link between two cards.** A hard prerequisite: you may not start this card until that one is `done`. A blocker never moves a card up or down. It exists because order alone cannot say "this `doing` card is waiting on that `todo` one" — precedence keeps the `doing` card first and it must stay first. On an unmet blocker you stop, name the blocking ticket and what you need, and hand back to the user.
+   - **Pressure — `task.pressure`, 0–100.** One gestalt reading of how hard a card is pushing: urgency, impact and live interest in a single number. A rating, not a rank. It sorts nothing and gates nothing. It is there so a human can see where the weight sits, and so a low-in-the-order card carrying high pressure shows up as a question worth asking.
 
-   "You own" a task = its `assignee` is your slug, or (when unassigned) its epic `owner` names you. **A task owned by another agent is never your next action** — cos_status.py lists those in a separate FLEET section for visibility only. Never pick up work outside your zone; if it needs doing, that's a `backlog` card assigned to the owning agent (reporter you), not an action you take.
+   Pressure is also agent-local: it is your reading of your own cards, and comparing it across assignees is meaningless. Only the user sequences across agents; you order your own queue and nothing else.
 
-   **`doing` outranks EVERY `todo`, without exception — including a blocked one.** A `doing` card is work already opened; leaving it sitting while you start something new is how work gets abandoned mid-flight. `blocked` is a flag to act on, not a reason to skip: unblock it, do the part that is not blocked, or say plainly why you cannot and what you need. Nothing about a card — not its blocked flag, not a comment on it, not how hard it looks — moves it down this queue. If a script and this list ever disagree, this list is right and the script is the bug.
+   "You own" a task = its `assignee` is your slug, or (when unassigned) its epic `owner` names you. **A task owned by another agent is never your next action** — cos_status.py lists those in a separate FLEET section for visibility only. Never pick up work outside your zone; if it needs doing, that's an active-board card assigned to the owning agent (reporter you), not an action you take.
+
+   **`doing` outranks EVERY `todo`, without exception — including a blocked one.** A `doing` card is work already opened; leaving it sitting while you start something new is how work gets abandoned mid-flight. Nothing about a card moves it down this queue — not a blocker, not a comment on it, not how hard it looks. What a blocker changes is whether you may execute, never where the card sits: if the ticket blocking it is not `done`, you do not start it, you do not do "the unblocked part," and you do not decide the blocker no longer applies. Name the blocking ticket and what you need, and stop there — the user clears the blocker, drops the link, or tells you to go ahead. If a script and this list ever disagree, this list is right and the script is the bug.
 5. **Follow a task's links before acting.** A ticket's Description is confined to its record-type template, so where the ticket came from and what it relates to live in its **links** — a sibling ticket, an Obsidian note, a citation, a web page. The status snapshot lists them under `LINKS`. Follow them before you execute; the ticket text alone is deliberately incomplete. Add links yourself with `ticket_write.py link-add` (`--to-task N` for a ticket, `--uri "…"` for an address); an issue link is stored once and symmetrically, so it lands on both tickets and never needs a mirror call. Full spec: `src/tools/ticket_tools/README.md` (§Links).
 6. **View attached images before acting.** Tasks can carry image attachments — a screenshot of a bug, a mock of the wanted result, an annotated UI — that are supplementary prompt material the ticket *text* does not contain. The status snapshot lists them under `ATTACHED IMAGES` with real file paths. Before you execute a task (and whenever you triage a comment on one), `Read` every image attached to that task; reading the prose alone silently drops what the picture was added to say. This applies to every agent.
 7. **Touching a ticket puts it in `doing`. Immediately, before the work.** If you act on a card in any way — execute it, part-execute it, investigate it, or merely leave a comment or a link on it — its status becomes `doing` at that moment, unless the same session takes it all the way to `done`. Do it with `ticket_write.py update-task-status --id N --status doing` as your FIRST write to that card, not as a tidy-up at the end: a session that ends unexpectedly must leave the board true, and a card you commented advice onto is a card you have opened. The only cards you touch and leave in `todo` are ones you never touched.
@@ -41,25 +46,26 @@ granted (see chief_of_staff.md §2.3). Other agents skip this step.
 
    **The complete list of reasons to stop early:**
    - **You need the user.** A decision that is theirs, a missing credential, a folder or connector or capability you have not been granted. Always fine — ask, and make saying yes one click (see §Enablement).
+   - **The next card is blocked by a ticket that is not done.** Stop on that card, name the blocker, say what would clear it. Do not skip past it to the card below.
    - **You have hit inefficient grinding.** You are guess-and-checking: the same scripted call against an API failing repeatedly, a fix that keeps not fixing it, a loop of small variations with no new information. The moment a competent human would be getting frustrated, STOP. Do not push through it silently. Say what you tried, what actually happened, and what you think is going on, and ask for guidance.
-   - **Token usage is getting bad.** Halt fully, say so, and say where you got to. Do not start a ticket you cannot finish, and do not burn the remainder narrating.
+   - **This conversation is running out of room.** A different limit from the one a card's size measures: this is the context of the conversation you are in right now, and you are the only one who can feel it. Halt fully, say so plainly, and say where you got to. Do not start a card you cannot finish, and do not burn what is left narrating.
    Nothing else qualifies. "This one looks big," "I have done a lot already," and "this feels like a good stopping point" are not reasons.
 
-9. **Await or Act — priority decides, always.** The next action is the step-4 top task, full stop. **A comment on a ticket never promotes it or reroutes execution** — comments (⚠ user ones included) are context to read, not a priority signal, and if the user wants something done sooner that belongs in the task's `priority`/`stage`, not inferred from a comment. On an explicit "continue," start at the step-4 next action and work the queue down per step 8 — "continue" means the board, not one card. Otherwise, respond to whatever the user actually said this turn; if they said nothing actionable, state the step-4 next action and ask whether to start it. Never go hunting the board for a ticket that happens to carry a comment and work that instead of the step-4 task.
+9. **Await or Act — board order decides, always.** The next action is the step-4 top task, full stop. **A comment on a ticket never promotes it or reroutes execution** — comments (⚠ user ones included) are context to read, not an ordering signal, and if the user wants something done sooner that belongs in the card's position or `stage`, not inferred from a comment. On an explicit "continue," start at the step-4 next action and work the queue down per step 8 — "continue" means the board, not one card. Otherwise, respond to whatever the user actually said this turn; if they said nothing actionable, state the step-4 next action and ask whether to start it. Never go hunting the board for a ticket that happens to carry a comment and work that instead of the step-4 task.
 
 ## The board is the only channel (all agents, read this before acting)
 
 `tickets.db` holds all work state: what is done, what is next, what is in
 progress, what is awaited, who owes whom, in what order. Nothing else does.
 
-- **Never derive a next action, a priority, or an in-progress fact from
+- **Never derive a next action, an ordering, or an in-progress fact from
   anything but the board.** Not a folder listing, not a JSON status field, not
   "the latest file by name," not a note, not this chat. If you are doing that,
   you are reading a second tracker and it will disagree with the board.
 - **Agents task each other with tickets only** — a card with `assignee` = them,
   `reporter` = you. Never a file, a folder drop, a note left to be found, or a
   request relayed through the user.
-- **Never write task state outside the board** — no ticket lists, priority
+- **Never write task state outside the board** — no ticket lists, ordering
   tables, status roll-ups, or "what I filed" recaps in any note, report, or
   README. Analysis may live in a document; state may not.
 - **Never leave commentary about your own process in a user's file. This is
@@ -138,6 +144,30 @@ A file an outside party must be shown because it genuinely cannot read
 holds the state, deleting it loses nothing. Full statement of this rule and its
 rationale: `src/tools/ticket_tools/README.md` (§The board is the only channel).
 
+## A missing data location is created, never an error (all agents)
+
+A fresh clone ships `/src` and `/config` and no `/data`. Every location an
+agent uses is declared in config long before it exists, so finding it absent is
+a normal first state rather than a failure.
+
+- **Resolve every declared location through the shared helper**,
+  `src/tools/config_tools/data_paths.py` — `resolve()` for the absolute path,
+  `ensure_dir()` immediately before a write, `read_dir()` for a read that
+  returns an empty list when nothing is there, `ensure_db()` for a store
+  provisioned from its own schema. An agent's declared locations are its
+  `agents.<agent>.key_data_paths` in config.
+- **Create at the moment of the write.** A read of a location that does not
+  exist reports an empty result and carries on; it never creates and never
+  raises.
+- **Create the container and stop.** A new directory stays empty and a new
+  database stays row-free. A placeholder file, a sample record, or a README
+  explaining the folder is invented content, and inventing content is not
+  provisioning.
+- **An agent-owned database is provisioned from its schema on first access.**
+  The shared `tickets.db` comes from `create_tickets.locate_or_provision()`;
+  `personal.db` comes from `personal_db/db_common.py`'s `connect()`. Both apply
+  a schema whose every statement is `IF NOT EXISTS`, and neither seeds rows.
+
 ## Design constraints
 
 - **The tools stay small and separately runnable.** `src/tools/` is a set of
@@ -154,21 +184,61 @@ rationale: `src/tools/ticket_tools/README.md` (§The board is the only channel).
 
 ## Phase 4: Session Closure (all agents)
 Before wrapping up any working session (skip only for pure Q&A that changed no state), reflect the true state into the shared board — it, not chat, is the record, and it is how the next session (a new day, possibly a different model or agent) knows where things stand. Follow the board conventions in `src/tools/ticket_tools/README.md` (§Board conventions). In short:
-- Move each task you touched to the column that reflects reality via `ticket_write.py update-task-status`: `done` when finished, `doing` for anything else you touched (per Phase 3 step 7, that move should already have happened when you first touched it — this is the check, not the moment) — and when you leave such work half-done, also give it a high `priority`, put it on the active board (`ticket_write.py set-stage --stage active`, or `update-task-status --stage active`), and set the proper owner, so it lands at the top of the viewer's in-progress column for whoever resumes. **A finished task stays on the active board in the `done` column — do NOT move it to `archive` when you complete it. Archiving is the user's call (a manual board-tidy action), not part of marking work done.**
+- Move each task you touched to the column that reflects reality via `ticket_write.py update-task-status`: `done` when finished, `doing` for anything else you touched (per Phase 3 step 7, that move should already have happened when you first touched it — this is the check, not the moment) — and when you leave such work half-done, also move it to the top of its column (`ticket_write.py set-order --id N --position 1`), put it on the active board (`ticket_write.py set-stage --stage active`, or `update-task-status --stage active`), and set the proper owner, so it is the first thing whoever resumes picks up. **A finished task stays on the active board in the `done` column — do NOT move it to `archive` when you complete it. Archiving is the user's call (a manual board-tidy action), not part of marking work done.**
 - **New to-dos go straight onto the active Board in the `todo` column, never the backlog.** Create every new card with `ticket_write.py add-task --stage active` (status defaults to `todo`) — `add-task` still defaults to `--stage backlog`, so you must pass `--stage active` explicitly. This applies to *all* new to-dos you raise, including cross-agent suggestions and items in another agent's or the user's decision domain: still set `--assignee <that agent/user>` and `--reporter <you>`, but place them on the active Board (`--stage active`), not in backlog. Stay in your zone — leave to-dos only for yourself or the user within your own area of responsibility. (The backlog stage still exists and older cards may live there; this rule governs what *you* create going forward.)
 - **Continue a ticket; don't finish-and-spawn.** When your work on a ticket leaves follow-up in another agent's or the user's court, do **not** mark it `done` and open a fresh card for the remainder — that clutters the board with duplicate walls. Instead keep the *same* ticket alive: move it to `doing`, retitle/trim its description to the work that remains, add ONE short comment (a couple of bullets of what you did + what's needed next), and reassign it to whoever acts next. Open a genuinely new card only for genuinely new, separable work.
+- **Leave the queue in the order you would work it, and rate what you touched.** Three separate acts, all cheap:
+  - **Order.** Put your own column in the sequence the next session should follow — `ticket_write.py set-order --id N --position K`, position 1 = next. Order by what actually should happen next, not by what you happened to open. The user overrides it by dragging; a stale order is worse than none.
+  - **Size.** Give every card you touched an `--estimate`: **S**, **M**, **L** or **XL**, on the scale in §Effort sizing below. Size by comparison against the anchors there, in one pass, and move on — a size is a rough shape, and time spent refining it is time not spent on the work. XL is a split signal rather than a size: you do not start an XL card, you say what its parts are and ask.
+  - **Pressure.** Give every card you touched a `--pressure` 0–100 that is your honest gestalt of how hard it is pushing — urgency, impact and how alive the thing feels, in one number. It changes no sequence and blocks nothing; it is a reading, for a human. Say it in the card's comment if the number is surprising.
 - **Board legibility is a hard rule.** Every comment and description must be scannable by a human in ~10 seconds — short bullets under 2–4 headers, never a wall-of-text paragraph. Full spec in `src/tools/ticket_tools/README.md` (§Format). A note that runs past ~10 lines is too long: cut it, or move durable detail to the file that owns it.
 - **Carry forward with a card, never a note.** There is no session-handoff
   mechanism: no `add-handoff`, no `handoff` table, no Handoff tab. A per-agent
   "where things stand" note is work state living somewhere other than a ticket,
   and being stored inside `tickets.db` never made it part of the board. When you
   leave work mid-flight, the card IS the handoff — put it on the active board in
-  `doing`, give it a high `priority`, set its `assignee`, and say what remains in
+  `doing`, move it to position 1 of its column, set its `assignee`, and say what remains in
   its description or in one short `add-issue-log` comment. Your next session
   reads that card first because the status scripts rank it first. Nothing else
   carries between sessions; if it is not on a card, it does not exist.
 
 // Query the DB with Python's built-in `sqlite3` module (`import sqlite3`), never a `sqlite3` CLI subprocess — the CLI binary is not guaranteed to exist in every execution environment (e.g. sandboxed Cowork runtimes).
+
+## Effort sizing — what S/M/L/XL measure
+
+A card's `estimate` answers one question: **how much of a full usage budget
+would this card consume?** The budget is the user's plan allowance over its
+rolling window; what that is for this installation is one string in config
+(`read_config.py sizing.usage_window`), so nothing here assumes a vendor or a
+number. It is a hypothetical full budget, not the one you are part-way through.
+
+- **S** — under a tenth of a budget.
+- **M** — a tenth to about half.
+- **L** — half a budget or more, but finishable within one.
+- **XL** — more than one budget. Not a size: a card to split, not to start.
+
+**Three things this is not.**
+- **Not the conversation you are in.** A conversation is one chat; a budget
+  spans several. Running low on conversation room is a reason to stop (step 8),
+  never a reason to re-size a card.
+- **Not a countdown.** An estimate is the size of the whole card and stays put
+  as the work proceeds. You never decrement it because you have done some of
+  it. It changes only when the card's *scope* changes.
+- **Not a measurement.** You cannot see the budget meter and must not pretend
+  to. Size by comparison with the anchors below.
+
+**Anchors — size by nearest match, not by calculation.**
+- **S** — a rule reworded across two or three files; one CLI flag added; a card
+  triaged, commented and re-linked; a config key renamed.
+- **M** — one self-contained tool written and wired in; a doc rewritten with
+  its call sites updated; one UI field replaced end to end.
+- **L** — a column renamed across the schema, both writers, the UI and every
+  document that names it; a subsystem's behaviour changed with its migration.
+- **XL** — a build that needs a design decision before it can start; anything
+  whose shape you would have to investigate before you could size it.
+
+Size in one pass against that list and stop. A card sized wrong is cheap to
+correct; a card sized slowly is not.
 
 ## Enablement — make it easy to say yes
 

@@ -1,10 +1,16 @@
 # tools/zotero
 
+**Prerequisite: Zotero, installed locally.** These scripts read and write a
+Zotero data directory on the same machine. Without Zotero there is no book
+domain, and `librarian` still runs its other collections.
+
 Zotero is the source of truth for book data. `personal.db` holds no book
 tables; everything about a book — read, owned, loaned, on a list — is a fact
 recorded in Zotero.
 
-The model, because it is not obvious from the collection names:
+The model, because it is not obvious from the collection names. These are the
+shipped default names; a user who renames one records the new name in
+`/config`:
 
 - **Books I've Read** means *read*, not owned. It is the read set.
 - **Owned** is a subset collection of it, built from the **Shelved** tag.
@@ -12,10 +18,10 @@ The model, because it is not obvious from the collection names:
 - **Reading Lists** parents one collection per list. A list is aspirational and
   never adds to Books I've Read.
 - **Loaned** holds books currently out, alongside their other memberships.
-- The **library** is not "every item in Zotero" — the list collections hold
-  ~1,700 titles the user has neither read nor owns. An item is in the library
+- The **library** is not "every item in Zotero" — the list collections can hold
+  far more titles than the user has read or owns. An item is in the library
   iff it is in Books I've Read or carries an ownership tag.
-- Item type is not the test either: 89 magazines are `magazineArticle`, which
+- Item type is not the test either: a magazine is a `magazineArticle`, which
   has no `numPages` field and uses `pages` instead.
 
 ## Why direct SQLite

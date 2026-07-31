@@ -1,5 +1,13 @@
 # jd_scraper: the JD-acquisition pipeline
 
+**Optional.** `career_coach` works fully without any of this — the user pastes
+a job description into the session and every playbook runs. This folder is for
+users who want the incoming half automated, and it asks for real setup: a Gmail
+account receiving job alerts, Google API credentials (`credentials.example.json`
+is the shape), a settings file (`settings.example.json`), the OS keychain for
+secrets, and a cron entry (`setup_cron.sh`). Skip the folder and nothing else
+breaks.
+
 Everything under this folder handles getting job-description text from a job
 alert into a triage-ready file. It has two halves: a local pipeline (this
 folder's scripts, run outside Cowork on the user's own machine) and an

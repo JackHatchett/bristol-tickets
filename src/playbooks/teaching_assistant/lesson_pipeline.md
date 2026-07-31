@@ -80,17 +80,17 @@ authorizes generation — see the guardrail rewording below.
 Generate the three files **from the plan** per
 `content_generation.md` (that playbook is now Stage 2's execution detail:
 file shapes, markers, metadata sync). Writer engine is chosen by config
-(`stages.materials`, below). If the engine is external (Copilot), the plan is
-the payload and the hand-off follows `protocols/teaching_assistant/copilot_bridge.md`;
-if it's teaching_assistant, this agent writes them directly. Either way the
-output is drafts on disk, not a finished lesson.
+(`stages.materials`, below). If the engine is external, the plan is the payload
+and the hand-off follows `protocols/teaching_assistant/copilot_bridge.md`; if
+it's teaching_assistant, this agent writes them directly. Either way the output
+is drafts on disk, not a finished lesson.
 
 ## Stage 3 — Lint / fix / edit (always runs)
 
 A review pass over the drafts: markup defects, voice/style drift, cross-lesson
 consistency. Engine is config-routed (`stages.lint`) and **may differ from
-stage 2** — e.g. Copilot writes, Claude lints, or vice versa. Always runs,
-whoever wrote stage 2.
+stage 2** — the external engine writes and this agent lints, or the reverse.
+Always runs, whoever wrote stage 2.
 
 ## Stage 4 — QA + render (always runs, non-AI)
 
@@ -98,7 +98,8 @@ Deterministic validation, no engine choice: check markers present and balanced
 (even `**`, even backticks, `:::checkpoint`/`:::drill` well-formed, no leftover
 tokens), then run `tools/teaching_assistant/html_renderer/render.py <course>
 <NN>` (see `html_render.md`). Runs on every lesson regardless of who wrote or
-linted it. This is the stage that caught L03's stray `**` and backtick.
+linted it. Stray markup survives both a writer and a linter; this is where it
+gets caught.
 
 ## Config-driven routing
 
@@ -126,18 +127,17 @@ configured engines runs the identical pipeline.
 the invoking head may supply a session-scoped `lesson_pipeline_override` naming
 per-stage engines for this session only. It takes precedence over config,
 is read-only, and never writes config — so offline/Python runs are unaffected.
-Interactive path: after the plan is approved, ask the user *who writes today*
-(Claude or Copilot); their answer sets the session override for stage 2. If
-Copilot, emit the hand-off prompt + the file list — both derived
-deterministically from the plan.
+Interactive path: after the plan is approved, ask the user *who writes today* —
+this agent, or the configured external engine; their answer sets the session
+override for stage 2. If external, emit the hand-off prompt + the file list —
+both derived deterministically from the plan.
 
 ## Why this shape
 
-- **Plan-gated, not source-gated.** The old bright line ("never generate
-  without an external co-planner's prompt") assumed the planner was always
-  outside. The planner is now inside teaching_assistant, so the guarantee is
-  reworded to "never generate materials without an **approved plan**" —
-  preserving the no-improvising intent while letting either engine write.
+- **Plan-gated.** What authorizes generation is an **approved plan**, not who
+  produced it. The planner lives inside teaching_assistant, so a gate on an
+  external prompt would gate nothing; a gate on the plan keeps the
+  no-improvising guarantee while letting either engine write.
 - **Nothing here is chat-specific.** Every stage is defined by
   `lesson_pipeline.stages` in config, so any caller dispatches the same stages
   to the same engines.

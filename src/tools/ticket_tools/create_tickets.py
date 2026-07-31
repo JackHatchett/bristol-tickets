@@ -10,6 +10,12 @@ This script:
     - Uses ONLY relative project structure under the project root
     - Contains NO personal data, NO usernames, NO environment variables
 
+It is also the home of the two functions the other ticket tools call when they
+find no database at all: `provision()` applies the schema to an empty file, and
+`locate_or_provision()` finds the one shared tickets.db or makes it. Those
+create an EMPTY board; the seeding below happens only when someone runs this
+script by hand.
+
 Usage:
     python3 create_tickets.py --instance <name>
 """
@@ -19,6 +25,10 @@ import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
 
+sys.path.insert(
+    0, str(Path(__file__).resolve().parents[1] / "config_tools")
+)
+import data_paths  # noqa: E402  (the shared declared-path resolver)
 
 
 def _project_root() -> Path:
@@ -102,7 +112,7 @@ CREATE TABLE IF NOT EXISTS task (
     title       TEXT NOT NULL,
     description TEXT,
     status      TEXT NOT NULL DEFAULT 'todo',      -- todo | doing | done (board columns)
-    priority    INTEGER NOT NULL DEFAULT 0,
+    pressure    INTEGER NOT NULL DEFAULT 0,      -- 0-100 gestalt: how hard this card is pushing. A rating, not a rank; sort_order is the rank.
     estimate    TEXT,
     blocked     INTEGER NOT NULL DEFAULT 0,
     depends_on  INTEGER,
@@ -143,7 +153,7 @@ CREATE TABLE IF NOT EXISTS issue_log (
 
 -- (There is no `handoff` table. A per-agent "where things stand" note is work
 -- state living outside the cards; being inside this DB never made it part of
--- the board. Carry-forward is a `doing` card with an owner and a priority.)
+-- the board. Carry-forward is a `doing` card with an owner and a pressure.)
 
 
 -- task_event — the mechanical change log: one row per changed task field,
@@ -163,7 +173,75 @@ CREATE TABLE IF NOT EXISTS task_event (
     FOREIGN KEY (task_id) REFERENCES task (id)
 );
 CREATE INDEX IF NOT EXISTS idx_task_event_task ON task_event (task_id, at);
+
+-- attachment — image files pinned to a task from the viewer's comment poster.
+-- The row stores only the filename; the bytes live in a per-instance images/
+-- dir next to the DB, so no personal path is ever written here.
+CREATE TABLE IF NOT EXISTS attachment (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id       INTEGER NOT NULL,
+    filename      TEXT    NOT NULL,
+    original_name TEXT,
+    created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (task_id) REFERENCES task (id)
+);
+
+-- task_link — a ticket's relations: to another ticket (kind='issue') or to an
+-- external address (kind='uri': a web URL, a zotero:// citation, an
+-- obsidian:// note, or a bare file path). An issue link is ONE symmetric edge,
+-- normalized to task_id=MIN(a,b) / other_id=MAX(a,b), so it reads from either
+-- end and deletes once.
+CREATE TABLE IF NOT EXISTS task_link (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind       TEXT    NOT NULL,
+    task_id    INTEGER NOT NULL,
+    other_id   INTEGER,
+    uri        TEXT,
+    label      TEXT,
+    author     TEXT,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (task_id)  REFERENCES task (id),
+    FOREIGN KEY (other_id) REFERENCES task (id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_task_link_pair
+    ON task_link (task_id, other_id) WHERE kind = 'issue';
+CREATE INDEX IF NOT EXISTS idx_task_link_task  ON task_link (task_id);
+CREATE INDEX IF NOT EXISTS idx_task_link_other ON task_link (other_id);
 """
+
+
+# ---------------------------------------------------------------------------
+# PROVISIONING (schema only — the shape every reader of this DB relies on)
+# ---------------------------------------------------------------------------
+
+def provision(db_path: Path) -> Path:
+    """Apply SCHEMA to `db_path`, creating the file and its folder if absent.
+
+    This is what the ticket tools call when they find no database: an agent on
+    a fresh clone gets an empty board rather than a missing-path error. Seeding
+    is deliberately not part of it — an empty board is the correct first state,
+    and `main()` below is the explicit command that asks for sample content.
+
+    Idempotent: every statement is IF NOT EXISTS, so running it against a live
+    database adds only what is missing.
+    """
+    return data_paths.ensure_db(db_path, SCHEMA)
+
+
+def locate_or_provision() -> Path:
+    """The one shared tickets.db, created on first use if it is not there yet.
+
+    Discovery is data_root/*/tickets/tickets.db, the same glob every reader has
+    always used. When nothing matches — a fresh clone, or a data root the user
+    has just pointed somewhere new — the database is provisioned empty at
+    data_root/<instance>/tickets/tickets.db instead of the caller exiting with a
+    missing-path error.
+    """
+    root = data_paths.data_root()
+    matches = sorted(root.glob("*/tickets/tickets.db"))
+    if matches:
+        return matches[0]
+    return provision(root / data_paths.instance_slug() / "tickets" / "tickets.db")
 
 
 # ---------------------------------------------------------------------------
@@ -203,11 +281,11 @@ def seed_db(conn: sqlite3.Connection, instance: str) -> None:
         (epic_id, "v1", "bootstrap", "Initial provisioning tasks."),
     )
 
-    for order_idx, (title, desc, priority) in enumerate(DEFAULT_TASKS):
+    for order_idx, (title, desc, pressure) in enumerate(DEFAULT_TASKS):
         cur2 = conn.execute(
-            "INSERT INTO task (epic_id, title, description, status, stage, sort_order, priority) "
+            "INSERT INTO task (epic_id, title, description, status, stage, sort_order, pressure) "
             "VALUES (?,?,?,?,?,?,?)",
-            (epic_id, title, desc, "todo", "backlog", order_idx, priority),
+            (epic_id, title, desc, "todo", "backlog", order_idx, pressure),
         )
         conn.execute(
             "INSERT INTO issue_log (task_id, author, body, created_at) VALUES (?,?,?,?)",

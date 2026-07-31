@@ -20,7 +20,7 @@ This folder contains the non‑UI ticket utilities used by agents and system pro
    tagging, not by separate storage: `epic.owner` holds the agent slug that
    owns an epic (or a descriptive multi-agent string for genuinely shared
    work), and a task's ownership is its `assignee` (else inherited from its
-   epic). Cross-agent suggestions are ordinary `backlog` cards
+   epic). Cross-agent suggestions are ordinary active-board cards
    (`assignee` = the target agent, `reporter` = the originator), not a separate
    store — see "Cross-agent suggestions" below. "First glob match" under
    invariant 3 is safe specifically because exactly one tickets.db should exist
@@ -71,10 +71,11 @@ cos_status.py (kept in lockstep — the two scripts share the same
 
 ### How the next action is selected (every agent, every session)  
 Both status scripts answer "what should *this* agent do next" the same way.
-It is **not** the global top of a priority list. Precedence:
+It is **not** the global top of a fleet-wide list. Precedence:
 
-1. active-stage tasks the agent owns, status `doing` (priority desc);
-2. then active-stage tasks the agent owns, status `todo` (priority desc);
+1. active-stage tasks the agent owns, status `doing` (board order — top of
+   the column first);
+2. then active-stage tasks the agent owns, status `todo` (board order);
 3. only if 1+2 are empty, the agent's own `backlog` (stage='backlog') —
    surfaced as a planning signal (activate onto the board / confirm with the
    user), not auto-executed.
@@ -82,8 +83,8 @@ It is **not** the global top of a priority list. Precedence:
 "Owns" = `task.assignee` equals the agent slug, or (when a task has no
 explicit assignee) its epic `owner` names the agent (substring match, since
 `owner` is sometimes a descriptive multi-agent string). **Tasks owned by other
-agents are never a given agent's next action** — cross-zone work travels as a
-`backlog` card assigned to the owning agent, never by silently picking up
+agents are never a given agent's next action** — cross-zone work travels as an
+active-board card assigned to the owning agent, never by silently picking up
 someone else's board task. A task's **stage** (backlog | active | archive) —
 not any sprint — decides what's in play;
 stage is orthogonal to the epic, so the active board can span epics.
@@ -116,12 +117,17 @@ active, not backlog). A task carries two orthogonal fields:
 (todo | doing | done — the board column); `add-task` still defaults to the
 backlog stage, but agents pass `--stage active`
 so new to-dos land on the Board in `todo` (see Board conventions below).
-`update-task-status --id N --status ... [--stage ...] [--priority N]
+`update-task-status --id N --status ... [--stage ...] [--pressure N]
 [--assignee ...]` moves a task across the Kanban columns (sets/clears
 `closed_at` on the done transition; a bare `--status backlog` is redirected to a
 stage move); `set-stage --id N --stage backlog|active|archive` moves a task
 between tabs, appending it to the bottom of the destination's order (the CLI
 equivalent of the viewer's Board "Bulk Change" and the Backlog "Activate").
+`set-order --id N --position K` moves a task within its own list — one
+active-board status column, or the whole backlog — with position 1 the top; the
+list is renumbered contiguously afterwards. It is the CLI equivalent of
+dragging a card up or down a column, and it is the only thing that reorders an
+agent's queue.
 Intended to grow more subcommands (close-epic, etc.) as repeated session actions
 get identified — keep each addition single-purpose rather than merging into one
 large CLI.
@@ -192,7 +198,7 @@ is a second home for any of it.
 **Apply the content/state test before writing anything.** A file may describe
 *content* — what exists, what it is called, what it says. A file may never
 carry *work state*. The bright-line violation is **deriving a next action, a
-priority, or an in-progress fact from anything but the board.** If you are
+ordering, or an in-progress fact from anything but the board.** If you are
 scanning a folder, reading a status field out of a JSON file, or taking "the
 latest file by name" to decide what to do, you are reading a second tracker and
 it will disagree with the board.
@@ -203,7 +209,7 @@ Three consequences, each of which has been violated in this repo before:
   other agent and `reporter` = you. Never a file, never a folder drop, never a
   note left for them to find, never a request relayed through the user.
 - **No summary of the board outside the board.** Never write a ticket list, a
-  priority table, a "what I filed" recap, or a status roll-up into a note,
+  ordering table, a "what I filed" recap, or a status roll-up into a note,
   report, or README. A report may hold analysis; it may not hold task state.
 - **Never make the user the transport.** Nothing may be designed so the user
   carries work between the board and an agent — copying a ticket out, pasting
@@ -251,13 +257,27 @@ agent's private protocol.
 ('backlog' is not a *status* value — it lives on the stage axis. The CLI
 still accepts `--status backlog` and redirects it to a stage move.)
 
-**`priority` is agent-local. It has no cross-agent meaning.** A task's priority
-ranks it only against other tasks with the same `assignee`. Never compare
-priority values across assignees: a p20 owned by one agent may sit well above a
-p90 owned by another in the user's real ordering, and nothing on the board
-encodes that. Seeing a high number on someone else's card is not a reason to
-defer your own work. Only the user sequences work across agents; an agent orders
-its own queue and nothing else.
+**Order, blockers and pressure are three separate mechanisms.** Confusing any
+two of them is how the board and the agent stop agreeing.
+
+- **Order — `task.sort_order`.** A card's position in its column. This is the
+  queue: the status scripts return it already sorted and numbered, and position
+  1 is next. The user sets it by dragging in Bristol; an agent sets it with
+  `set-order --id N --position K`. Nothing else decides what gets worked next.
+- **Blockers — a `blocks` link.** A hard prerequisite between two named cards:
+  this one may not start until that one is `done`. A blocker never moves a card
+  in the queue. It exists precisely because order cannot express it — a `doing`
+  card can be waiting on a `todo` one, and precedence keeps the `doing` card
+  first. An agent that meets an unmet blocker stops on that card, names the
+  blocker, and hands back to the user rather than working around it.
+- **Pressure — `task.pressure`, 0–100.** How hard a card is pushing: urgency,
+  impact and live interest collapsed into one gestalt reading. A rating, not a
+  rank. It sorts nothing and gates nothing. It is written for a human eye — a
+  card low in the order carrying high pressure is a question worth asking.
+
+Pressure is agent-local: it is one agent's reading of its own cards, and
+comparing numbers across assignees means nothing. Only the user sequences work
+across agents; an agent orders its own queue and nothing else.
 
 **Move a ticket to `doing` the moment you pick it up — before you comment, not
 after.** The operational tell: **if you have read into a ticket and left a
@@ -274,7 +294,8 @@ engage this session.)
 **Leaving in-progress work is how you hand off — no separate mechanism.** When
 a session ends with chained work only partway done, put that task on the
 **active board** (`set-stage --task... --stage active`, or
-`update-task-status --stage active`) in `doing`, give it a high `priority`, and
+`update-task-status --stage active`) in `doing`, move it to the top of its
+column (`set-order --id N --position 1`), and
 set the owning agent as its `assignee` (`update-task-status ... --assignee
 <slug>`). The viewer's Board shows only active-stage tasks, and the status
 scripts rank your own active-stage `doing` first, so the next session picks it
@@ -346,29 +367,28 @@ things actively in play right now; those tasks may belong to several epics,
 while other tasks in those same epics remain "whenever" backlog. A task's stage
 — not its epic — is what puts it on the Board.
 
-**Stay in your lane; cross-zone requests are backlog cards, not commands.**
+**Stay in your lane; cross-zone requests are cards, not commands.**
 An agent may freely author board tasks for *itself or the user within its own
 zone of responsibility*. Anything that lands in another agent's or the user's
-decision domain goes on the board as a **`backlog` card** with `--assignee`
-= that agent/user and `--reporter` = you (`add-task`). Backlog is a planning
-signal that is never auto-executed, so it reads as a suggestion, not a settled
-command — and it is visible and editable in the board the user actually
-watches. Examples: the `librarian` does not put "delete the xyz database" in
-`todo`/`doing` for `chief_of_staff`; it adds a `backlog` card assigned to
-`chief_of_staff`, reporter `librarian`, for review. A note for the novel is a
-`backlog` card assigned to `writers_room`, not a `doing` task saying "add a
-character who shoots lasers." The active columns hold decisions already owned;
-backlog is where cross-zone work waits *before* it becomes a committed
-decision on someone else's board.
+decision domain also goes on the board — `add-task --stage active` with
+`--assignee` = that agent/user and `--reporter` = you. It lands in `todo` on
+the active board, where the user actually looks, and the `assignee` is what
+makes it a request rather than a command: it is that agent's card to accept,
+reorder, or drop. Examples: the `librarian` does not put "delete the xyz
+database" in `doing` for `chief_of_staff`; it files a `todo` card assigned to
+`chief_of_staff`, reporter `librarian`. A note for the novel is a card assigned
+to `writers_room`, not a `doing` task saying "add a character who shoots
+lasers." The `backlog` stage still means never-auto-executed and older cards
+still live there, but nothing new is filed to it.
 
 ## Cross-agent suggestions
 
-Cross-agent suggestions are ordinary backlog cards, not a separate store. Since
-`task` already carries `reporter` (originator) and `assignee` (owner), and
-`backlog` is defined as never-auto-executed, a backlog card *is* a suggestion —
-a visible, user-editable one. To suggest work for another agent, write an
-`add-task` with `--assignee`/`--reporter`; there is no separate inbox store,
-subcommand, or status section.
+Cross-agent suggestions are ordinary active-board cards, not a separate store.
+`task` already carries `reporter` (originator) and `assignee` (owner), so a card
+assigned to another agent *is* a suggestion — a visible, user-editable one that
+that agent sees at the top of its own snapshot. To suggest work for another
+agent, write an `add-task --stage active` with `--assignee`/`--reporter`; there
+is no separate inbox store, subcommand, or status section.
 
 ## There is no handoff
 
@@ -378,7 +398,7 @@ outside the cards; storing it inside `tickets.db` does not make it part of the
 board, and it gives every session a second place to look.
 
 **A card is the handoff.** Leave work mid-flight by putting its card on the
-active board in `doing`, with a high `priority` and the owning agent as
+active board in `doing`, at the top of its column and with the owning agent as
 `assignee`. The status scripts rank exactly that first, so the next session
 picks it up without being told. What remains goes in the card's description or
 in one short `add-issue-log` comment. There is no other channel and no other

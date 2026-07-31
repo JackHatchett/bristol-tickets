@@ -46,7 +46,6 @@ src/tools/personal_db/
   schema.sql                # multi-domain DDL (meta, domains registry, per-domain tables + views)
   db_common.py              # path discovery, connect() with write-safety, with_writeback()
   build_db.py               # create/patch DB from schema.sql; seed meta + domains registry
-  import_applications.py    # (one-time) applications CSV -> applications (parity report)
   render_snapshot.py        # THE renderer: applications from this DB, books from Zotero
   personal_write.py         # write CLI (add/update application, find-company, render)
   DESIGN.md / README.md

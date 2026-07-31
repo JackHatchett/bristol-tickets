@@ -18,6 +18,13 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
     cursor.execute("PRAGMA table_info(task)")
     columns = [row[1] for row in cursor.fetchall()]
 
+    # `priority` is now `pressure` — one 0–100 rating of how much a card is
+    # pushing to be done, not a rank. Rank is task.sort_order. The rename is a
+    # column rename, so every existing value carries over unchanged.
+    if "pressure" not in columns and "priority" in columns:
+        conn.execute("ALTER TABLE task RENAME COLUMN priority TO pressure;")
+        columns = [c if c != "priority" else "pressure" for c in columns]
+
     if "assignee" not in columns:
         conn.execute("ALTER TABLE task ADD COLUMN assignee TEXT;")
     if "reporter" not in columns:
@@ -51,10 +58,10 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
     # work state living somewhere other than a card, which is exactly what the
     # board exists to prevent — being stored inside tickets.db never made it
     # part of the board. Carry-forward is now a `doing` card on the active
-    # board with a real owner and priority. Dropped on launch; idempotent.
+    # board with a real owner and pressure. Dropped on launch; idempotent.
     _drop_retired_handoff(conn)
 
-    # (Cross-agent suggestions are ordinary backlog cards: task.assignee =
+    # (Cross-agent suggestions are ordinary active-board cards: task.assignee =
     # target agent and task.reporter = originator, so they live in the board
     # the user watches.
     # No CREATE TABLE here. A leftover inbox table on an old DB is left untouched
@@ -149,7 +156,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 
 # Fields logged with their new value.
 CHANGE_LOG_FIELDS = (
-    "epic_id", "scope_id", "status", "stage", "priority", "estimate",
+    "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
     "blocked", "depends_on", "assignee", "reporter", "story_points",
     "record_type",
 )
@@ -241,7 +248,7 @@ def _migrate_stage_from_sprints(conn: sqlite3.Connection) -> None:
          status is still 'backlog' becomes stage='backlog', status='todo' (the
          status axis is now only todo/doing/done);
       3. seed sort_order so each list keeps roughly its old on-screen order
-         (priority desc, then id) — a contiguous sequence per (stage, status);
+         (pressure desc, then id) — a contiguous sequence per (stage, status);
       4. DROP sprint_task then sprint.
     After the drop this function is a no-op, so it is safe to run on every
     launch. Runs inside the caller's transaction (committed by
@@ -270,14 +277,14 @@ def _migrate_stage_from_sprints(conn: sqlite3.Connection) -> None:
     # 2. retire the 'backlog' status value.
     conn.execute("UPDATE task SET status='todo' WHERE status='backlog'")
 
-    # 3. seed a manual order from the old priority ordering. The ordering key
+    # 3. seed a manual order from the old pressure ordering. The ordering key
     #    matches how each stage is DISPLAYED, so seeded order == old on-screen
     #    order: the Backlog is ONE combined list (key = stage alone), while the
     #    active Board is three separate columns (key = stage+status). Archive is
     #    shown chronologically by modified date, so its sort_order is unused.
     rows = conn.execute(
         "SELECT id, stage, status FROM task "
-        "ORDER BY stage, priority DESC, id ASC"
+        "ORDER BY stage, pressure DESC, id ASC"
     ).fetchall()
     counters: dict[tuple, int] = {}
     for tid, stage, status in rows:
