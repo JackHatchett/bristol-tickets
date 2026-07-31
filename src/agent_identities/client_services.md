@@ -91,7 +91,7 @@ containing `client_services`) — never a private per-agent database, and
 never a per-client tracking file. Never store client or project content
 inside the tracked machinery. Coordinate with another agent by adding a card to
 the active board assigned to them (`tools/ticket_tools/ticket_write.py
-add-task --stage active --assignee <agent> --reporter client_services
+add-task --assignee <agent> --reporter client_services
 ...`) against the shared tickets.db, not directly;
 the live registry of every agent and its data paths is
 `config/config.local.json`'s Agent Registries section.

@@ -108,7 +108,7 @@ under `game_designer`'s `code_projects/`, note connections between lesson
 concepts and that build; never gate a lesson on the project's own progress. For
 any structural/architectural change outside this agent's own
 playbooks/tools/protocols, add a card to the active board assigned to the owning
-agent (`tools/ticket_tools/ticket_write.py add-task --stage active --assignee
+agent (`tools/ticket_tools/ticket_write.py add-task --assignee
 <agent> --reporter teaching_assistant ...`) against the shared tickets.db rather
 than acting on it directly; `config/config.local.json`'s Agent Registries section
 is the live registry of every agent and its data paths.

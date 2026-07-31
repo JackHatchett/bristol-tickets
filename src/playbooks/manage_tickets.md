@@ -138,7 +138,7 @@ actually been written into a Description:
 - Any note to whoever reads the ticket next.
 
 You may rewrite a Description and its acceptance criteria whenever the work
-changes — but only into that shape.
+changes (`update-task --id N --description "…"`) — but only into that shape.
 
 **Where the banned material goes instead:**
 
@@ -207,19 +207,18 @@ Archiving is the user's board-tidy call, not part of marking work done.
 **2. Leave half-done work as the handoff.** There is no handoff note and no
 handoff table (`src/tools/ticket_tools/README.md` §There is no handoff). Move
 the card to the top of its column (`set-order --id N --position 1`), put it on
-the active board (`set-stage --stage active`), set the proper `assignee`, and
+the active board (`set-stage --id N --stage active`), set the proper `assignee`, and
 say what remains in its description or in one short `add-issue-log` comment.
 
 **3. Continue a ticket; do not finish-and-spawn.** When your work leaves
 follow-up in another agent's or the user's court, do not mark the card `done`
 and open a fresh one for the remainder — that clutters the board with duplicate
 walls. Keep the same ticket alive: move it to `doing`, trim its title and
-description to the work that remains, add one short comment (what you did, what
-is needed next), and reassign it to whoever acts next. Open a new card only for
-genuinely new, separable work.
+description to the work that remains (`update-task --id N --title … --description
+…`), add one short comment (what you did, what is needed next), and reassign it
+to whoever acts next. Open a new card only for genuinely new, separable work.
 
-**4. File new to-dos onto the active board.** `add-task --stage active` — the
-subcommand still defaults to `--stage backlog`, so pass it explicitly. This
+**4. File new to-dos onto the active board.** `add-task` puts them there. This
 applies to every to-do you raise, cross-agent suggestions included: set
 `--assignee` to that agent or the user and `--reporter` to yourself, and still
 place it on the active board. `assignee` is the routing key — the user runs
@@ -238,7 +237,8 @@ touched.** Three separate acts, all cheap:
   should actually happen next, not by what you happened to open. The user
   overrides by dragging; a stale order is worse than none.
 - **Size.** Give every card you touched an `--estimate` — S, M, L or XL, on the
-  scale in §Effort sizing below. One pass against the anchors, then move on.
+  scale in §Effort sizing below (`update-task --id N --estimate M`). One pass
+  against the anchors, then move on.
 - **Pressure.** Give every card you touched a `--pressure` 0–100: your honest
   gestalt of urgency, impact and how alive the thing feels. It changes no
   sequence and blocks nothing. Say so in the card's comment if the number is

@@ -14,7 +14,7 @@ only because a Gemini Gem cannot read `tickets.db` — it is bytes to show an
 outsider, never a message between sessions and never a place work state lives.
 
 Before writing any envelope, open or update the card that owns the exchange
-(`ticket_write.py add-task --stage active --assignee writers_room
+(`ticket_write.py add-task --assignee writers_room
 --reporter writers_room`) and name the envelope file in its description. The
 ticket is the only record that a dispatch is outstanding. Never scan
 `handoff/` to discover what is in flight — an empty board means nothing is in

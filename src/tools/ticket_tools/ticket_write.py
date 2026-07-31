@@ -26,14 +26,15 @@ Usage:
         [--epic-id N] [--stage backlog|active|archive] [--status todo|doing|done]
         [--pressure N] [--estimate S|M|L|XL] [--reporter "..."] [--assignee "..."]
         [--record-type build|fix]
-        (defaults: stage=backlog, status=todo, reporter="Claude (Cowork)",
+        (defaults: stage=active, status=todo, reporter="Claude (Cowork)",
         record-type=build)
         A task carries TWO orthogonal fields (Kanban model):
         `stage` = which tab it lives in (backlog | active | archive), and
-        `status` = the board column (todo | doing | done). New self-authored
-        tasks default to the Backlog stage, appended to the BOTTOM of the
-        backlog's manual order (task.sort_order). 'backlog' is not a
-        status; passing --status backlog is accepted but redirected to
+        `status` = the board column (todo | doing | done). A new task lands on
+        the active Board in `todo`, appended to the BOTTOM of that column's
+        manual order (task.sort_order); pass --stage backlog for work that is
+        genuinely "whenever". 'backlog' is not a status; passing
+        --status backlog is accepted but redirected to
         --stage backlog / --status todo.
         A task's owning agent is its --assignee if set, else whatever agent owns
         its --epic-id (see `epic.owner`); pass an epic that belongs to the right
@@ -46,10 +47,22 @@ Usage:
 
         CROSS-AGENT SUGGESTION: to suggest work
         that lands in another agent's or the user's zone, add a card with
-        --stage active, --assignee <that agent/user> and --reporter <you>. It
-        lands in that agent's `todo` on the board the user actually watches.
-        The --assignee is what makes it a proposal rather than a command: it is
-        that agent's card to accept, reorder, or drop.
+        --assignee <that agent/user> and --reporter <you>. It lands in that
+        agent's `todo` on the board the user actually watches. The --assignee is
+        what makes it a proposal rather than a command: it is that agent's card
+        to accept, reorder, or drop.
+
+    python3 ticket_write.py update-task --id N [--title "..."]
+        [--description "..."] [--estimate S|M|L|XL] [--record-type build|fix]
+        [--reporter "..."] [--epic-id N] [--actor "..."]
+        Edits a card's CONTENT. Its board position is the other two commands'
+        job: `update-task-status` moves it between columns and tabs, `set-order`
+        moves it within a column. Every field changed here reaches the change
+        log through the same triggers as any other write — title and
+        description as '(changed)', the rest with their new value.
+        Write --title and --description to the record type's shape (see
+        playbooks/manage_tickets.md §Record types); editing a ticket body is an
+        ordinary board write, not a reason to reach for SQL.
 
     python3 ticket_write.py add-issue-log --task N --author <slug|user>
         --body "..."
@@ -94,7 +107,7 @@ DB discovery: same project-relative rule as cos_status.py / agent_status.py
 agent. Every agent reads and writes the same database; `epic.owner` tags
 which agent an epic belongs to (a task's owner is its `assignee`, else implicit
 via its epic). Cross-agent suggestions are ordinary active-board cards
-(`--stage active`, `--assignee` = the target agent, `--reporter` = the
+(`--assignee` = the target agent, `--reporter` = the
 originator), not a separate store. "First glob match" is safe under this model
 specifically because there's exactly one tickets.db to match — don't
 provision a second one under a different data/<agent>/tickets/ path; use
@@ -313,10 +326,14 @@ def _append_order(conn: sqlite3.Connection, stage: str, status: str) -> int:
 
 def _normalize_stage_status(stage, status):
     """Fold the legacy 'backlog' *status* into the Stage model: --status backlog
-    means stage=backlog / status=todo unless an explicit --stage was given."""
+    means stage=backlog / status=todo unless an explicit --stage was given.
+
+    A new card otherwise lands on the active Board, which is where a to-do is
+    seen and worked; the backlog is the deliberate exception, asked for by name.
+    """
     if (status or "").lower() == "backlog":
         return (stage or "backlog"), "todo"
-    return (stage or "backlog"), (status or "todo")
+    return (stage or "active"), (status or "todo")
 
 
 def now() -> str:
@@ -370,6 +387,50 @@ def add_task(args: argparse.Namespace) -> None:
         conn.commit()
         print(f"OK: {record_type} #{cur.lastrowid} added — {args.title} "
               f"(stage={stage}, status={status})")
+    finally:
+        conn.close()
+
+
+def update_task(args: argparse.Namespace) -> None:
+    """Edit a card's content: title, description, estimate, record type,
+    reporter, epic.
+
+    The board's three writes are separate on purpose — this one changes what a
+    card *says*, `update-task-status` changes which column and tab it sits in,
+    and `set-order` changes where it sits in that column. Nothing here touches
+    stage, status or sort_order.
+
+    The change log is written by the same triggers that cover every other write,
+    so an edit made here is recorded identically to one typed into Bristol's
+    record dialog: title and description as '(changed)', the rest with their new
+    value.
+    """
+    conn = connect(getattr(args, "actor", None) or "agent")
+    try:
+        if conn.execute("SELECT 1 FROM task WHERE id=?", (args.id,)).fetchone() is None:
+            sys.exit(f"update-task: ERROR — no task with id {args.id}")
+        fields = {
+            "title": args.title,
+            "description": args.description,
+            "estimate": args.estimate,
+            "record_type": args.record_type,
+            "reporter": args.reporter,
+            "epic_id": args.epic_id,
+        }
+        given = {k: v for k, v in fields.items() if v is not None}
+        if not given:
+            sys.exit("update-task: ERROR — pass at least one field to change")
+        if "epic_id" in given and conn.execute(
+                "SELECT 1 FROM epic WHERE id=?", (given["epic_id"],)).fetchone() is None:
+            sys.exit(f"update-task: ERROR — no epic with id {given['epic_id']}")
+        # updated_at is not set here: the change log's triggers derive it from
+        # the newest entry this write produces.
+        conn.execute(
+            f"UPDATE task SET {', '.join(f'{k} = ?' for k in given)} WHERE id = ?",
+            list(given.values()) + [args.id],
+        )
+        conn.commit()
+        print(f"OK: task #{args.id} -> {', '.join(sorted(given))} updated")
     finally:
         conn.close()
 
@@ -658,22 +719,28 @@ def main() -> None:
     pt.add_argument("--title", required=True)
     pt.add_argument("--description", default=None)
     pt.add_argument("--epic-id", dest="epic_id", type=int, default=None)
-    pt.add_argument("--stage", default="backlog",
-                     help="which tab: backlog | active | archive (default backlog).")
+    # default None, not 'active': _normalize_stage_status supplies the default,
+    # so it can still tell an unset --stage from an explicit one when the legacy
+    # --status backlog is redirected onto the stage axis.
+    pt.add_argument("--stage", default=None,
+                     help="which tab: backlog | active | archive (default active — "
+                          "a new card goes on the Board, where it is seen and "
+                          "worked). Pass 'backlog' for genuine 'whenever' work.")
     pt.add_argument("--status", default="todo",
                      help="board column: todo | doing | done (default todo). "
                           "'backlog' is accepted for back-compat and redirected to --stage backlog.")
     pt.add_argument("--pressure", type=int, default=0)
     pt.add_argument("--estimate", default=None,
                      help="S|M|L|XL — how much of a full usage budget this "
-                          "card would take. Scale and anchors in src/app.md "
-                          "(Effort sizing); XL means split it, not start it.")
+                          "card would take. Scale and anchors in "
+                          "playbooks/manage_tickets.md (§Effort sizing); XL "
+                          "means split it, not start it.")
     pt.add_argument("--reporter", default="Claude (Cowork)",
                      help="who/what originated this task (default: Claude (Cowork))")
     pt.add_argument("--assignee", default=None,
                      help="agent slug (or 'user') that owns this task. Set it to "
-                          "leave a cross-agent suggestion: file it with --stage active, "
-                          "assigned to that agent.")
+                          "leave a cross-agent suggestion: a card assigned to "
+                          "that agent, reporter you.")
     pt.add_argument("--record-type", dest="record_type", default="build",
                      choices=["build", "fix"],
                      help="'build' (a thing to build — Story + acceptance criteria) "
@@ -685,6 +752,32 @@ def main() -> None:
                           "(your write signature, e.g. cowork_chief_of_staff). "
                           "Defaults to --reporter.")
     pt.set_defaults(func=add_task)
+
+    pct = sub.add_parser("update-task")
+    pct.add_argument("--id", type=int, required=True)
+    pct.add_argument("--title", default=None, help="replace the card's title")
+    pct.add_argument("--description", default=None,
+                      help="replace the card's description. Write it to the "
+                           "record type's skeleton — Story + Acceptance Criteria "
+                           "for a build, Expected + Observed for a fix (see "
+                           "playbooks/manage_tickets.md §Record types).")
+    pct.add_argument("--estimate", default=None,
+                      help="S|M|L|XL — how much of a full usage budget this card "
+                           "would take. Scale and anchors in "
+                           "playbooks/manage_tickets.md (§Effort sizing).")
+    pct.add_argument("--record-type", dest="record_type", default=None,
+                      choices=["build", "fix"],
+                      help="retype the card: 'build' (a thing to build) or "
+                           "'fix' (a broken thing). Rewrite --description to match.")
+    pct.add_argument("--reporter", default=None,
+                      help="who/what originated this task")
+    pct.add_argument("--epic-id", dest="epic_id", type=int, default=None,
+                      help="move the card to another epic")
+    pct.add_argument("--actor", default=None,
+                      help="who is making this change, for the change log "
+                           "(your write signature, e.g. cowork_chief_of_staff). "
+                           "Recorded against every field this call changes.")
+    pct.set_defaults(func=update_task)
 
     pu = sub.add_parser("update-task-status")
     pu.add_argument("--id", type=int, required=True)

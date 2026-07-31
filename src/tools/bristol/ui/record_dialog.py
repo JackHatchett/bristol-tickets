@@ -184,8 +184,9 @@ class UnifiedRecordDialog(QDialog):
         self.originator_edit = QLineEdit()
 
         if record_id is None:
-            # New tasks default to the Backlog stage (appended to the bottom of
-            # the backlog list on save).
+            # A new task opens on the stage of the tab Create was pressed on
+            # (main_window._stage_for_current_tab), appended to the bottom of
+            # that list on save.
             self.stage_combo.setCurrentText(initial_stage or "backlog")
             self._select_owner("user")
             active_agent = os.environ.get("AGENT_NAME", "user")

@@ -232,14 +232,11 @@ the `cl_lint` blacklist below is only a backstop that catches known wordings,
 so novel phrasings must be caught here, at draft time. Rewrite anything that
 trips these.
 
-Then: run the lint tool (`tools/career_coach/cl_lint.py`) on the draft text,
-always passing `--blacklist` with this instance's blacklist file at
-`data/*/career/applications/cover_letters/<name>_CL_Blacklist.txt`. The tool's
-bare-name auto-discovery (`cl_blacklist.txt` next to the script or CWD) will NOT
-find it — the real list lives in the user's data root, deliberately kept out of
-the shared `/src` tool, so the path must be supplied every run. Fix every HARD,
-dash, and period-emphasis hit, review FLAG hits, pack the docx, and run the lint
-tool again on the packed docx (same `--blacklist`) as a final backstop. It
+Then: run the lint tool (`tools/career_coach/cl_lint.py`) on the draft text. It
+finds this instance's blacklist in the user's own career data root, where the
+list lives because it is their content and not the shared tool's. Fix every
+HARD, dash, and period-emphasis hit, review FLAG hits, pack the docx, and run
+the lint tool again on the packed docx as a final backstop. It
 must pass before delivery. There is no separate validator; if you want to
 confirm the docx is well-formed, unzipping it and checking that
 `word/document.xml` parses is optional, not a blocking step.

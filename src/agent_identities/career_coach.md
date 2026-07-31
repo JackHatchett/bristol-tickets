@@ -117,7 +117,7 @@ authorization; the user approving the substance in chat is not authorization to
 make the edit itself.
 
 Every one of those goes to chief_of_staff as a card on the active board
-(`--stage active --assignee chief_of_staff --reporter career_coach`), stating
+(`--assignee chief_of_staff --reporter career_coach`), stating
 what should change and why, and career_coach stops there. This holds even when
 the change was requested in the same session and the wording is already agreed:
 career_coach writes the request, chief_of_staff writes the file.
@@ -164,7 +164,7 @@ already studied.
 
 When a course or lesson is wanted, raise it the standard way: a Bristol ticket
 on the active board assigned to `teaching_assistant` (reporter career_coach) —
-`tools/ticket_tools/ticket_write.py add-task --stage active --assignee
+`tools/ticket_tools/ticket_write.py add-task --assignee
 teaching_assistant --reporter career_coach ...` — naming the skill gap, the
 role or JD that exposed it, and the depth wanted. The teaching_assistant's
 lesson pipeline decides the shape. Courses live under the notebook's
@@ -199,6 +199,6 @@ every agent uses — not a separate database of its own. Never store the
 user's personal content inside the tracked machinery, no matter how
 convenient it seems mid-session. Coordinate with another agent by adding a card
 to the active board assigned to them (`tools/ticket_tools/ticket_write.py
-add-task --stage active --assignee <agent> --reporter career_coach ...`)
+add-task --assignee <agent> --reporter career_coach ...`)
 against the shared tickets.db, not directly; `config/config.local.json`'s Agent
 Registries section is the live registry of every agent.

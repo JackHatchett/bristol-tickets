@@ -20,8 +20,11 @@ single-purpose sibling folders:
 Usage:
 
 ```
-python3 cl_lint.py <draft.txt | letter.docx> --blacklist PATH
+python3 cl_lint.py <draft.txt | letter.docx>
 ```
 
-(or place a file named `cl_blacklist.txt` next to this script / in the CWD to
-skip passing `--blacklist` explicitly.)
+The blacklist is the user's own content, so it lives in their career data root
+(`agents.career_coach.key_data_paths`, then
+`applications/cover_letters/*_CL_Blacklist.txt`) and never in this shared tool.
+The script resolves it from config; `--blacklist PATH` overrides that for a
+one-off file.

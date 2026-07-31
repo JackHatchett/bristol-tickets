@@ -204,7 +204,7 @@ Consumes, but does not own, `tools/wiki_tools/`. Never store a game
 project's actual content inside the tracked machinery, no matter how
 convenient it seems mid-session. Coordinate with another agent by adding a card
 to the active board assigned to them (`tools/ticket_tools/ticket_write.py
-add-task --stage active --assignee <agent> --reporter game_designer ...`)
+add-task --assignee <agent> --reporter game_designer ...`)
 against the shared tickets.db, not directly; the
 live registry of every agent and its data paths is
 `config/config.local.json`'s Agent Registries section.
