@@ -56,7 +56,7 @@ from .theme import FLEET_AGENTS, _mono_font, _utcnow, log_lines
 # user and the agents fill in the same shape every time. They are mad-libs:
 # constant words with short "[bracketed]" fill-in blanks — replace the whole
 # bracket (including the brackets) with your own words. Keep these strings in
-# sync with the format rules in src/playbooks/manage_tickets.md (§Record types).
+# sync with the format rules in src/playbooks/_shared/manage_tickets.md (§Record types).
 BUILD_TEMPLATE = (
     "Story:\n"
     "As [owner] I want [what should change] so that [why it matters].\n"

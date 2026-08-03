@@ -54,6 +54,8 @@ internal structure is the same either way.
   reconciling what it sends back.
 - `playbooks/writers_room/voice_distillation.md` — entered on a natural request
   or the `VOICE` keyword. This agent's half of the voice-capture method.
+- `playbooks/_shared/notebook_proposal.md` — the notebook half of
+  `story_proposals.md`.
 
 ### 2.4 Tools
 No private `tools/writers_room/`. This agent's reusable machinery is generic

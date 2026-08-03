@@ -41,7 +41,8 @@ authority flows.}}
 - **Never restate a charter guardrail** — cite the owning agent's
   `src/agent_identities/<agent>.md`. Drift between a protocol and its charter is
   the defect this rule exists to prevent.
-- **Each agent owns its own `protocols/<agent>/` folder.**
+- **Each agent maintains its own `protocols/<agent>/` folder**, and any agent
+  may load what is in it — `src/app.md` §Any capability is loadable.
 - **Promote a contract two or more agents would otherwise restate into an
   archetype under `protocols/_shared/`**, and make the per-agent files thin
   specializations that cite it. **Never duplicate a contract across agents**:

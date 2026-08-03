@@ -1,7 +1,7 @@
 # session_closure — career_coach playbook
 
 What this agent does at the open and close of a session, on top of the shared
-mechanics in `src/playbooks/manage_tickets.md` §Session closure.
+mechanics in `src/playbooks/_shared/manage_tickets.md` §Session closure.
 
 ## Session start echo
 

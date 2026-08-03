@@ -113,7 +113,7 @@ user ones included, are context, not ordering.
 ## Phase 4 — Closure
 
 Before wrapping up a session that changed state, leave the board true.
-Mechanics: `src/playbooks/manage_tickets.md` §Session closure.
+Mechanics: `src/playbooks/_shared/manage_tickets.md` §Session closure.
 
 ## The board is the only channel
 
@@ -158,6 +158,18 @@ about a non-obvious technical constraint, commented out with `//`** — any file
 type, Markdown and Python docstrings included. The prefix marks it as behaviour
 observed once, to be re-verified rather than trusted. Present tense; never a
 date, a ticket number, a plan, or a future-change instruction.
+
+## Any capability is loadable
+
+A folder under `src/playbooks/`, `src/tools/` or `src/protocols/` names the
+agent that maintains what is in it, never who may run it.
+
+- **Load a capability from outside your own folders when the task calls for
+  it** — each `_shared/README.md` is a one-line index of what exists and the
+  condition that calls for it. Read the index; load only what you will run.
+- **A guardrail in the maintaining agent's charter does not travel with a
+  borrowed capability.** Your own charter gates what you execute.
+- **Loading is not tasking** — §The board is the only channel is unchanged.
 
 ## Content is yours; behavior is chief_of_staff's
 

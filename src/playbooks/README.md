@@ -23,11 +23,17 @@ Below `src/agent_identities/` (authority, mandate, guardrails) and
 
 ## Folder structure
 
-Top-level playbooks belong to chief_of_staff:
+A folder here names the agent that maintains its playbooks, never who may run
+them. Any agent loads any playbook on demand: `src/app.md` §Any capability is
+loadable.
+
+`_shared/` holds the procedures that serve more than one agent, indexed one line
+each in its own README.
+
+Top-level playbooks are chief_of_staff's:
 
 - `create_agent.md` — bootstrap a new agent from nothing.
 - `migrate_legacy_agent.md` — convert a pre-framework agent bundle.
-- `manage_tickets.md` — how any agent writes to the board.
 - `storage_audit.md` — the recurring storage cleanup inventory.
 
 Each other folder holds one agent's own playbooks, and that agent's charter
@@ -36,7 +42,7 @@ names them:
 - `career_coach/` — cover_letter, interview_prep, jd_evaluation,
   resume_tailoring, session_closure
 - `client_services/` — operator_tasks, project_intake
-- `game_designer/` — design_proposals, git_milestone_coaching, project_context,
+- `game_designer/` — design_proposals, project_context,
   socratic_design_coaching
 - `librarian/` — add_book, data_safety
 - `teaching_assistant/` — content_generation, html_render, lesson_pipeline,

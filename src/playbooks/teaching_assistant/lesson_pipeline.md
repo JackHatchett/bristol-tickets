@@ -6,8 +6,8 @@ persisted artifact and the config rather than from whoever ran the last one.
 
 | # | Stage | Engine | Input | Output |
 |---|-------|--------|-------|--------|
-| 1 | **Plan** | always teaching_assistant | course state (`syllabus.md`, `progress.json`, epic curriculum map) | an approved lesson plan |
-| 2 | **Write materials** | config-routed | the approved plan | `lesson_NN`, `exercise_NN`, `quiz_NN` drafts |
+| 1 | **Plan** | always teaching_assistant | course state (`syllabus.md`, `progress.json`, epic curriculum map) | a complete lesson plan |
+| 2 | **Write materials** | config-routed | the plan | `lesson_NN`, `exercise_NN`, `quiz_NN` drafts |
 | 3 | **Lint / fix / edit** | config-routed, may differ from stage 2 | the drafts | corrected drafts |
 | 4 | **QA + render** | non-AI, deterministic | the drafts | validated files plus rendered HTML |
 
@@ -36,9 +36,6 @@ alongside `lessons/` and `exercises/`. The course folder resolves via `/config`
 ## Meta
 - course: <course-slug>
 - lesson: NN
-- planner: teaching_assistant
-- status: draft | approved        # stage-2 gate: must be `approved`
-- approved_by:                    # user or teaching_assistant; blank until signed off
 
 ## Objectives
 - <learning objective>  (2–5)
@@ -64,9 +61,9 @@ alongside `lessons/` and `exercises/`. The course folder resolves via `/config`
 - <deviations from content_generation.md's default house style, if any>
 ```
 
-**Stage 2 may not start until `status: approved`.** Approval is the user's
-sign-off, or teaching_assistant's own where the user has delegated it for a run.
-An approved plan is what authorizes generation, whoever produced the materials.
+**Stage 2 runs on a complete plan** — every section present and filled, no
+placeholder left, File targets naming real paths. An incomplete plan is finished
+in stage 1 rather than carried into generation.
 
 ## Stage 2 — Write materials
 
@@ -117,7 +114,7 @@ Stage 4 has no key — it is always the deterministic renderer and validator.
   naming per-stage engines for this session only. It is read-only and never
   writes config, so offline runs are unaffected. This mirrors `src/app.md`'s
   `agent_override` over `active_agent`.
-- **Ask the user who writes today once the plan is approved** — this agent or
+- **Ask the user who writes today once the plan is complete** — this agent or
   the configured external engine. Their answer sets the session override for
   stage 2. For an external engine, emit the hand-off prompt and the file list,
   both derived from the plan.

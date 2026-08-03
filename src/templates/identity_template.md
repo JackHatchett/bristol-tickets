@@ -39,10 +39,11 @@ an error).
 
 ### Boundaries and coordination
 
-- **An agent owns its own `playbooks/<agent>/`, `tools/<agent>/`,
+- **An agent maintains its own `playbooks/<agent>/`, `tools/<agent>/`,
   `protocols/<agent>/` and its tagged epics** in the shared tickets database
   (`data/*/tickets/tickets.db`, `epic.owner` = its slug). Never a private
-  per-agent database.
+  per-agent database. The folder name marks maintenance, not permission —
+  `src/app.md` §Any capability is loadable.
 - **Task another agent with a card** — `tools/ticket_tools/ticket_write.py
   add-task --assignee <agent> --reporter <you>` — never directly, and never
   through a file or the user. The live registry of every agent and its data
@@ -124,7 +125,7 @@ Every governing document under `/src` — a charter written from this template,
 `src/app.md`, playbooks, protocols, tool READMEs, the other templates — is
 written to be executed by a model, not to convince a reader. The reader already
 does what it says; what it needs is the rule, its boundary, and which rule wins.
-Seven rules:
+Eight rules:
 
 - **State a rule once, in the one file that owns it.** Every other file
   references that file and adds nothing of its own. Two statements of a rule are
@@ -138,6 +139,15 @@ Seven rules:
 - **One rule per bullet, imperative mood.** Never two rules sharing a bullet,
   and never a rule buried mid-paragraph where it reads as commentary. The
   bullet's first clause is the rule; whatever follows is its boundary.
+- **Write a procedure as input, operation and output, and name neither who
+  authored the input nor who releases the output.** A procedure is a capability:
+  it says what it is given, what it does to it, and what comes back. Its trigger
+  is the condition the operation applies under — "on any name, character or
+  beat," never "before it is proposed as ready to lock," which is an authorship
+  sequence wearing a trigger's clothes. A lifecycle state the output rests in
+  until someone clears it makes the same claim from the other end, and
+  `src/app.md` §What a file may say already bars it as a status label on
+  content. What the caller does with the output is not the procedure's business.
 - **Keep a negative where it names a plausible failure mode; cut it where it is
   the logical complement of the positive.** "Never make the user the transport"
   earns its line because an agent will otherwise reach for it. "Do not leave the

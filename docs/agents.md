@@ -108,20 +108,21 @@ notebook folder if you want the story wiki there.
 
 ## game_designer
 
-**For** building a game without being a programmer.
+**For** designing and building a game, with the technical vocabulary taught as
+the work reaches it.
 
 It coaches Socratically through design and build: art direction, world and
-mechanics design, and incremental build steps, defining every piece of jargon
-inline as it comes up. It will not lock a technical choice — engine, language,
-art pipeline — before you understand the trade-off, and it invents no creative
-content you did not ask for.
+mechanics design, and incremental build steps. It defines a term the first time
+it comes up and raises the level as you take it on. It will not lock a technical
+choice — engine, language, art pipeline — before you understand the trade-off,
+and it invents no creative content you did not ask for.
 
 It also stewards `data/<instance>/code_projects/`, the folder holding every
 software project you are building with AI help, whether that is one game or
 several.
 
-**Needs** a `data/<instance>/code_projects/` folder. Git milestone coaching
-assumes you have git installed.
+**Needs** a `data/<instance>/code_projects/` folder. Saving a milestone assumes
+you have git installed.
 
 ---
 

@@ -59,8 +59,8 @@ session:
 3. **Close a task the session's decision resolved** —
    `ticket_write.py update-task-status --id N --status done` — rather than
    leaving it to go stale in the queue.
-4. **Run `git_milestone_coaching.md` before ending** where the session reached a
-   structural milestone.
+4. **Run `src/playbooks/_shared/version_control_milestone.md` before ending**
+   where the session reached a structural milestone.
 
 **Never create a project-local state or tracking bundle for a new project.** The
 board is the default; a project-local state file is an exception that needs its

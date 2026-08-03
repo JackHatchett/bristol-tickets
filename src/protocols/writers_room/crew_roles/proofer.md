@@ -41,7 +41,8 @@ world-accuracy matters.
   tells: hedging, over-balanced "not just X but Y", generic sensory filler, tidy
   summary closers, dash tics, register flattening. **Run it on a different model
   from the one that drafted the prose.**
-- **Plagiarism scan (`PLAGIARISM_SCAN`).** **On explicit request only**; assume
+- **Plagiarism scan (`PLAGIARISM_SCAN`).** The mechanism is
+  `src/tools/_shared/originality_scan.md`. **On explicit request only**; assume
   it is expensive.
 
 ## Inputs and outputs

@@ -58,6 +58,18 @@ Around it:
   configuration resolver, file management, document conversion, scrapers,
   renderers, a test harness.
 
+Inside those last three, a folder named for an agent says who maintains what is
+in it, not who may run it. Any agent may load any playbook, tool or protocol.
+What serves more than one agent lives in that directory's `_shared/`, whose
+README indexes each capability in one line with the condition that calls for it;
+an agent reads the index and loads only what it will run. So a session pays
+context for a capability at the moment the task needs it, and a capability is
+written once instead of once per agent.
+
+Borrowing a capability carries none of its maintainer's authority: the loading
+agent's own charter gates what it executes, and handing work to another agent is
+still a card on the board rather than a file left where it will be found.
+
 ## How the three meet
 
 Bristol writes to the database directly. An agent writes to it through
