@@ -1,0 +1,92 @@
+# Sessions
+
+A session is one Claude conversation, pointed at this folder, running as one
+agent, working one board. The loop is short:
+
+1. **Pick the agent** in the strip above the board — *Start next session as*.
+2. **Open Cowork** in the Claude desktop app with the `bristol_tickets` folder
+   selected.
+3. **Say what you want.**
+4. **Watch the board.** Cards move as the work happens.
+
+## What happens when a session starts
+
+You do not have to prompt any of this. Claude reads `src/app.md`, which tells it
+how to boot: read the configuration one key at a time, find out which agent is
+active, load that agent's charter, then read the board and work out what it
+should be doing.
+
+The last step prints a snapshot: the current milestone, the active epics, and
+the agent's own queue in order, with the next action named at the top. The
+chief of staff also sees a fleet section — the cards other agents own — as
+context, never as its own work.
+
+## What "continue" means
+
+Say **continue** and the agent starts at the top of its queue and works down
+through every card, without asking permission between them. It stops when the
+queue is empty or when one of a short list of things happens: it needs a
+decision only you can make, it needs a credential or a permission it has not
+been granted, the next card is blocked by a card that is not Done, it is
+grinding on something that keeps failing, or the conversation is running out of
+room.
+
+Anything else you say, it responds to. If nothing you said was actionable, it
+names the next action and asks whether to start.
+
+## How the agent decides what is next
+
+Ordering is entirely the board's, and you own it by dragging cards.
+
+- Cards in **Doing** come before cards in **To Do**, in board order.
+- Only if both are empty does the agent look at its **Backlog**, and then only
+  to raise it with you. A backlog card is a planning signal, never something it
+  starts on its own.
+- An agent owns a card when the card is assigned to it, or when the card is
+  unassigned and its epic names it as owner.
+- A blocked card is not skipped. The agent stops at it, names the blocker, and
+  hands back.
+
+Nothing else moves a card up or down that list — not pressure, not a comment,
+not how big the card looks. If you want something done first, drag it to the
+top.
+
+## What an agent does to the board
+
+Touching a card puts it in **Doing** immediately, before the work starts:
+reading into it, commenting on it, linking it, part-executing it. The only cards
+left in To Do at the end of a session are the ones nobody touched.
+
+When the work finishes, the card goes to **Done** with a comment saying what
+changed. When it cannot finish this session, the card stays in Doing at the top
+of its column with a comment about where it got to — that card *is* the handoff,
+and the next session picks it up from there.
+
+Work an agent cannot finish, or that a different agent should own, becomes a
+card and nothing else. There is no note left in a folder, no message relayed
+through you, no status file to check. If you find yourself copying text from one
+session into another, something has gone wrong: agents hand work to each other
+by assigning a card.
+
+## Working alongside it
+
+The board is not read-only while a session runs. Drag a card, write a comment,
+change a description, retire something — whichever surface acts, the other sees
+it on its next read. **Refresh** picks up changes an agent made while the window
+was open.
+
+The rules above bind the agents, not you. Chat is how you talk to Claude and it
+does not need to be a card first: ask, think out loud, change your mind, correct
+it. An agent will not tell you to file a ticket for something it could simply
+do.
+
+## Running one agent per session
+
+Sessions are per agent on purpose — "do the chief_of_staff cards," then later
+"do the career_coach cards." A session loads only that agent's charter and
+playbooks rather than the whole library, which is why the assignee on a card
+matters: it is the routing key.
+
+To pin a Cowork project to a specific agent regardless of the board's setting,
+put `agent_override: <slug>` in that project's instructions. It applies to that
+project's sessions only and never writes back to your configuration.

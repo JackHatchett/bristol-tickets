@@ -1,0 +1,215 @@
+# Configuration
+
+One file holds every choice an installation makes: `config/config.local.json`.
+The setup wizard writes it, Bristol's Settings tab edits parts of it, and you
+can edit the rest by hand. It is git-ignored and never published.
+
+`config/config.example.json` is the tracked template — every key the system
+expects, filled with obvious placeholders. Copy it if you are setting up by
+hand.
+
+## Reading and editing it
+
+```bash
+python3 src/tools/config_tools/read_config.py active_agent
+python3 src/tools/config_tools/read_config.py important_paths.tickets_db
+```
+
+Any dotted key works. `jq` works too — it is ordinary JSON, deliberately, so it
+stays diffable and hand-editable. Editing it in a text editor is fine; Bristol
+round-trips the whole document when it saves, so a key it does not recognise
+survives.
+
+## Why paths live here rather than in the code
+
+Nothing under `src/` names a real path, a username, or a personal filename, even
+as a string literal — that is what makes the repository publishable. The code
+refers to your data by generic relative paths like `data/*/tickets/tickets.db`,
+where the `*` is your instance folder, and resolves everything through this
+file. Anything that cannot be genericised is passed as an environment variable
+declared in an agent's `env` block.
+
+Three folders, three rules: `src/` is published, `config/` is git-ignored,
+`data/` is git-ignored.
+
+---
+
+## Keys
+
+### `active_agent`
+
+**Required. Default `chief_of_staff`.** The agent slug every runtime uses. Set
+it from the strip above the board rather than by hand.
+
+A Cowork project can override it for its own sessions with an
+`agent_override: <slug>` line in its instructions. The override is read-only and
+never writes back. `none`, absent, or an unrecognised slug all fall through to
+this key.
+
+### `board`
+
+**Required.** How the board behaves. Edited in Bristol's Settings tab.
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `cross_agent_stage` | `active` | Where a card one agent files for another lands: `active` (the Board) or `backlog`. |
+
+### `sizing`
+
+**Required.** What a card's S/M/L/XL estimate is measured against.
+
+| Key | Meaning |
+| --- | --- |
+| `usage_window` | Your plan's budget in plain words. Agents read this string rather than assuming any vendor's limits. |
+| `notes` | Free text. |
+
+The scale itself does not vary per installation.
+
+### `important_paths`
+
+**Required.** Repository-relative paths to the databases.
+
+| Key | Meaning |
+| --- | --- |
+| `tickets_db` | `data/<instance>/tickets/tickets.db`. Required — every session reads it. |
+| `personal_db` | `data/<instance>/personal/db/personal.db`. Only meaningful with the `personal_db` block below. |
+
+### `agents`
+
+**Required.** One entry per agent, keyed by slug.
+
+| Key | Meaning |
+| --- | --- |
+| `identity` | Required. Repository-relative path to the charter. Read at every session start. |
+| `key_context_files` | Files this agent reads on sight. Declarative. |
+| `key_data_paths` | The data folders this agent owns. The setup wizard creates these. |
+| `env` | Environment variables this agent's tools expect. |
+| `notebook_access` | `{ "read": bool, "write": bool }` — whether it may read and write your notebook. |
+| `notes` | The one-line description shown in the setup wizard's agent list. |
+
+Delete an agent's entry to remove it from the fleet; add one, with a charter, to
+introduce your own.
+
+### `markdown_notebook`
+
+**Optional.** A folder of Markdown notes you edit yourself, outside the
+repository. Delete the block if you do not keep one.
+
+| Key | Meaning |
+| --- | --- |
+| `notes_dir` | The notebook root. |
+| `courses_dir` | Where `teaching_assistant` writes courses. |
+| `recipes_dir` | Where `librarian` keeps recipes. |
+| `agent_output_dir` | Where agents drop drafts for you to review. |
+| `reports_dir` | Where Clear Done writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
+
+### `zotero`
+
+**Optional.** Needed only for `librarian`'s book domain. Absent, the Zotero
+tools fall back to `~/Zotero`.
+
+| Key | Meaning |
+| --- | --- |
+| `env.ZOTERO_DATA_DIR` | Your Zotero data folder. |
+
+### `personal_db`
+
+**Optional.** A single SQLite database of personal tracking, one table per
+domain. Absent, the tools discover `data/*/personal/`.
+
+| Key | Meaning |
+| --- | --- |
+| `env.PERSONAL_DB_DIR` | Where the database lives. |
+| `env.PERSONAL_DB_FILENAME` | Its filename. |
+| `env.PERSONAL_SNAPSHOT_BASE` | Where snapshots are written. |
+
+### `drives`
+
+**Optional.** Named roots outside the project. Only `external1.path` is read by
+code — the photo tools, which exit with a clear message when it is absent. The
+rest are reference entries agents can consult. Delete any drive you do not have.
+
+| Key | Meaning |
+| --- | --- |
+| `<name>.path` | Absolute path to the root. |
+| `<name>.tags` | Free-form labels. |
+| `<name>.notes` | Free text. |
+
+### `code_projects`
+
+**Optional.** Application code held as instance data, stewarded by
+`game_designer`.
+
+| Key | Meaning |
+| --- | --- |
+| `root` | The folder holding every project. |
+| `projects.<slug>` | One entry per project: `path`, `status`, `owner`, `notes`. |
+
+### `projects`
+
+**Optional.** Two lists: `local_projects`, repository-resident project folders,
+and `notebook_projects`, notebook folders an agent should treat as a project
+rather than as loose notes.
+
+### `governance`
+
+**Required.** Free-text statements about who decides what. Agents read these as
+context.
+
+| Key | Meaning |
+| --- | --- |
+| `real_world_roles` | Which AI is the architect of this system and which are consultants whose output is advice. |
+| `virtual_agent_roles` | Which agent may edit the system's own runtime documents. `chief_of_staff` by default. |
+| `code_projects_layer` | Who stewards `data/*/code_projects/` and on what terms. |
+| `project_local_nicknames_caveat` | Any word one of your projects uses in a sense that differs from this file's. |
+
+### `keyword_scan`
+
+**Required.** Settings for the sweep that checks the tree for personal data
+before anything is published (`src/tools/file_management/keyword_scan.py`).
+
+| Key | Meaning |
+| --- | --- |
+| `keywords` | Your own name and usernames. |
+| `exclude_suffixes` | File extensions to skip. |
+| `exclude_prefixes` | Directory name prefixes to skip. |
+
+### `tools`, `playbooks`, `protocols`
+
+**Required.** Each holds a `root` path and a `files` list. The roots point at
+`src/tools/`, `src/playbooks/` and `src/protocols/`.
+
+### `stack`
+
+**Optional.** A reference block binding stable roles to whichever tool currently
+fills them, so a charter names a role and this file names the tool.
+
+| Key | Meaning |
+| --- | --- |
+| `external_agent_roles.<role>` | `collaborator` (the tool), `surface` (where it runs), `owner` (the agent that owns the routing decision), `trigger`, `notes`. |
+| `ai_collaborators` | Which AI services you use and for what. |
+| `creative_art_production`, `development`, `notes_knowledge_storage` | Free-form inventories of your tooling. |
+
+---
+
+## Where the code looks for your installation
+
+Every resolver — the tickets database, the reports directory, the config file —
+follows one order:
+
+1. An explicit environment variable (`TICKETS_DB`, `BRISTOL_REPORTS_DIR`).
+2. The instance pointer at `~/Library/Application Support/BristolTickets/instance.json`
+   (`$XDG_CONFIG_HOME/BristolTickets/instance.json` off macOS), which names the
+   data root and instance slug.
+3. A legacy single-line pointer file next to the tool.
+4. Discovery: walk up the source tree to `src/app.md` and search
+   `data/*/tickets/tickets.db`.
+
+Running from the repository needs no pointer; step 4 finds everything. A
+standalone app is relocatable and cannot see the repository, so write one:
+
+```bash
+python3 src/tools/config_tools/instance_pointer.py --write
+```
+
+The pointer lives outside the repository, so it can never be committed.

@@ -25,9 +25,8 @@ Whichever surface acts, the other sees the change on its next read. `src/tools/`
 ## Repository Structure
 
 ├── requirements.in             # Dependency inputs, compiled to requirements.txt
-├── requirements.txt            # Python dependencies (see docs/SETUP.md)
-├── docs/                       # Setup and other documentation beyond this README
-│   └── SETUP.md
+├── requirements.txt            # Python dependencies (see docs/install.md)
+├── docs/                       # The user manual (start at docs/index.md)
 ├── src/
 │   ├── app.md                  # Claude session initialization pipeline
 │   ├── tools/                  # Standalone local scripts and UIs, incl. Bristol
@@ -51,14 +50,14 @@ To run this application locally, you must establish the links between the generi
 
 ## Getting Started
 
-See `docs/SETUP.md` for the full walkthrough (dependencies, non-pip system
-packages, config, and DB init). Short version:
+See `docs/install.md` for the full walkthrough — the Claude Desktop and Cowork
+prerequisite, dependencies, non-pip system packages, and the first-run setup
+wizard. Short version:
 
 ```bash
-pip install pip-tools
-pip-compile requirements.in
 pip install -r requirements.txt
-# + a couple of post-install/system steps — see docs/SETUP.md §3
-cp config/config.example.json config/config.local.json  # then fill it in — see docs/SETUP.md §5
-python3 src/tools/ticket_tools/create_tickets.py --instance <your_instance_name>
+python3 src/tools/bristol/app.py    # opens the setup wizard on first run
 ```
+
+Setting up by hand instead of using the wizard, and every configuration key:
+`docs/configuration.md`.

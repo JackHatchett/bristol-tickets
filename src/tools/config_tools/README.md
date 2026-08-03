@@ -13,7 +13,7 @@ or a cloud-provider path.
 `config/config.local.json`. Agents query single keys — `active_agent`,
 `important_paths.tickets_db`, `agents.<agent>.identity` — rather than reading
 the file whole. The routing model the config expresses is described for humans
-in `docs/SETUP.md` §Configuration.
+in `docs/configuration.md`.
 
 ### instance_pointer.py
 
