@@ -491,7 +491,7 @@ class MainWindow(QMainWindow):
 
         Everything here is advisory. The archive sweep is done and durable
         before this method is called; a missing notebook folder, an unmounted
-        iCloud drive, or a bug in the reports package must never turn a
+        cloud drive, or a bug in the reports package must never turn a
         successful Clear Done into a failure the user has to reason about. So
         both the import and the call are guarded — a relocated .app may not
         carry the package at all.

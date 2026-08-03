@@ -16,7 +16,7 @@ FAILURE POSTURE
 ---------------
 Called from the Qt button, this must never be able to cost the user their Clear
 Done. The sweep has already committed by the time we run; a missing notebook,
-an unmounted iCloud folder or a bug in here returns a result object saying so
+an unmounted cloud folder or a bug in here returns a result object saying so
 instead of raising. The CLI surfaces the same information as an exit code.
 """
 

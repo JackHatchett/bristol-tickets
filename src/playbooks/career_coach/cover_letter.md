@@ -153,8 +153,8 @@ in the delivery note; never by a letter code.
 - **"Pivot toward meaning"**: the user's industry history is the elephant in
   the room, and naming it memorably beats hoping the reader overlooks it.
   Honest reckoning with the previous work, then a specific reason this role
-  would feel different. Best for mission-driven, environmental, medical, or
-  animal-health roles.
+  would feel different. Best where the role's mission is itself the draw; which
+  sectors those are for this user is in their context files.
 - **Mixed**: combine approaches with a clear structural reason.
 
 ## Structure

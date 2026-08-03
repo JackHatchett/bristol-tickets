@@ -109,7 +109,7 @@ def resolve_reports_dir(explicit: str | os.PathLike | None = None) -> Path | Non
 
     `explicit` (a CLI --out-dir) wins over everything. The directory is created
     if its parent exists; if the parent does not, the notebook itself is
-    missing (an unmounted iCloud folder, say) and we return None rather than
+    missing (an unmounted cloud folder, say) and we return None rather than
     materialising a stray tree in the wrong place.
     """
     candidate = (

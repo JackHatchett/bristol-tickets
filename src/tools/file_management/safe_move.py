@@ -24,7 +24,7 @@ USAGE:
 
 NOTES:
   • Never overwrites: if a destination exists, it appends _1, _2, …
-  • --copy-only is for building backups (e.g. pushing photos to OneDrive) where
+  • --copy-only is for building backups (e.g. pushing photos to a cloud folder) where
     the source must stay put.
   • Large files are verified by full MD5 by default; pass --sample for a
     size + head/tail check instead (faster for multi-GB media you re-download).
