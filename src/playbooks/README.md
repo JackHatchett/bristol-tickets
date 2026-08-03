@@ -33,6 +33,8 @@ each in its own README.
 Top-level playbooks are chief_of_staff's:
 
 - `create_agent.md` — bootstrap a new agent from nothing.
+- `fresh_clone_rehearsal.md` — prove a stranger can install the repository,
+  before anything is pushed to a public remote.
 - `migrate_legacy_agent.md` — convert a pre-framework agent bundle.
 - `storage_audit.md` — the recurring storage cleanup inventory.
 
