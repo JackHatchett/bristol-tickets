@@ -50,7 +50,7 @@ TODAY = datetime.date.today().isoformat()
 # ---------------------------------------------------------------- inline
 def _inline(text):
     """Convert inline Markdown to HTML on a single logical line/segment."""
-    # Obsidian wiki-links [[path|Display]] or [[path]] -> plain display text.
+    # Wiki-links [[path|Display]] or [[path]] -> plain display text.
     # The renderer has no notion of the notebook's other files, so it can't
     # emit a working href; showing the display text (dropping the path) beats
     # leaking raw [[...]] syntax into the reading page.
