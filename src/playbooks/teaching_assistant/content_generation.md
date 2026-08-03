@@ -1,92 +1,81 @@
-# Content Generation — teaching_assistant Playbook (Stage 2: Write materials)
+# content_generation — teaching_assistant playbook
 
-*This is Stage 2 of `lesson_pipeline.md`. It owns the file-writing detail;
-the pipeline spec owns the stages, plan schema, engine routing, and gates.
-Read `lesson_pipeline.md` first.*
-
-## Purpose
-Turn an **approved lesson plan** into a course's actual lesson, exercise, and
-quiz files, then keep every course metadata file in sync with what was just
-generated. (Stages 3 lint and 4 QA/render run after this, always, per the
-pipeline spec.)
+Stage 2 of `lesson_pipeline.md`: turn an approved lesson plan into a course's
+lesson, exercise and quiz files, then bring every course metadata file in line
+with what was generated. Read `lesson_pipeline.md` first — it owns the stages,
+the plan schema, engine routing and the gates. Stages 3 and 4 run after this,
+always.
 
 ## Preconditions
-- An **approved lesson plan** exists at `<course>/plans/lesson_NN_plan.md`
-  with `status: approved` (Stage 1). If it's missing, incomplete, or still
-  `draft`, stop — finish/approve the plan first; never generate from no plan.
-- The target course's folder already exists (resolved via `/config`, one
-  Markdown-notebook project per course).
+
+- **An approved plan exists** at `<course>/plans/lesson_NN_plan.md` with
+  `status: approved`. Where it is missing, incomplete or still `draft`, stop and
+  finish stage 1; **never generate from no plan**.
+- **The target course's folder exists**, resolved via `/config`, one
+  Markdown-notebook project per course.
 
 ## Procedure
 
-1. Load the approved plan (`<course>/plans/lesson_NN_plan.md`). Confirm
-   `status: approved` and that its File targets, objectives, and outline are
-   present before doing anything else. The plan — not chat scrollback — is the
-   spec you write from.
-2. Generate three files in the course's folder (paths from the plan's File targets):
-   - `lessons/lesson_NN_topic.md` — 2–4 `:::checkpoint` markers at natural
-     break points (never in Summary / What's Next)
-   - `exercises/exercise_NN_topic.md` — for **skill courses** (terminal,
-     git), use `:::drill` markers (ordered commands → expected output →
-     verification)
+1. **Load the approved plan** and confirm `status: approved` and that its File
+   targets, objectives and outline are present. **The plan, not chat scrollback,
+   is the spec you write from.**
+2. **Generate three files** in the course's folder, at the plan's File-target
+   paths, with zero-padded two-digit lesson numbers throughout:
+   - `lessons/lesson_NN_topic.md` — 2 to 4 `:::checkpoint` markers at natural
+     break points, **never in Summary or What's Next**
+   - `exercises/exercise_NN_topic.md` — for skill courses (terminal, git), use
+     `:::drill` markers: ordered commands, expected output, verification
    - `quizzes/quiz_NN_topic.md`
-   Zero-padded two-digit lesson numbers throughout (`lesson_01_topic.md`, etc).
-3. Update `syllabus/syllabus.md` — add a row for the new lesson.
-4. Update `syllabus/progress.json` (schema v2 — `lessons[]` objects) — set
-   `lesson_generated` / `exercise_generated` / `quiz_generated` to `true` for
-   this lesson's entry, and write the three filenames.
-   **Write content facts only.** Those four fields describe what exists on
-   disk, which is what this file is for. Do **not** write work state here —
-   not `current_lesson`, not `lesson_complete`, not `studied`, `mastery`, or
-   `course_complete`. Where a lesson stands is a board fact, held in this
-   agent's own cards in `tickets.db`, and writing it to a JSON file creates a
-   second tracker that will disagree with the board. Advance the *ticket*, not
-   `current_lesson`.
-   **Filename check (required, not optional):** the `lesson_file` /
-   `exercise_file` / `quiz_file` values you write must be the *actual*
-   filenames landing on disk in step 2, not filenames derived from the
-   lesson's topic/slug. A topic-derived guess silently drifts from disk the
-   moment a written filename differs from the topic wording, and any tool
-   trusting `progress.json` then hits a missing file. Verify each path
-   resolves before writing it.
-5. Update `PROJECT_MANIFEST.md` — mark the three files as generated.
-6. **Render the HTML reading page** — run `tools/teaching_assistant/
-   html_renderer/render.py <course> <NN>` (see `html_render.md`). The
-   Markdown is the source of truth; the HTML is generated from it and both
-   are kept long-term.
+3. **Add a row for the new lesson to `syllabus/syllabus.md`.**
+4. **Update `syllabus/progress.json`** (schema v2, `lessons[]` objects): set
+   `lesson_generated`, `exercise_generated` and `quiz_generated` to `true` for
+   this lesson and write the three filenames.
+   - **Write content facts only.** Those four fields describe what exists on
+     disk. **Never write work state here** — not `current_lesson`,
+     `lesson_complete`, `studied`, `mastery` or `course_complete`. Where a
+     lesson stands is a board fact; writing it here creates a second tracker
+     that will disagree with the board. Advance the ticket, not
+     `current_lesson`.
+   - **Verify each filename resolves before writing it.** The `lesson_file`,
+     `exercise_file` and `quiz_file` values must be the actual filenames landing
+     on disk in step 2, never derived from the topic or slug — a topic-derived
+     guess drifts silently the moment a written filename differs from the topic
+     wording, and any tool trusting `progress.json` then hits a missing file.
+5. **Mark the three files as generated in `PROJECT_MANIFEST.md`.**
+6. **Render the HTML reading page** —
+   `tools/teaching_assistant/html_renderer/render.py <course> <NN>`, per
+   `html_render.md`. The Markdown is the source of truth; the HTML is generated
+   from it, and both are kept.
 
 ## File shapes
 
-**Lesson:** `# Lesson NN: [Title]` → Learning Objectives → core concept
-section(s) → a game-flavored connection (CS/Python-track courses only,
-never forced onto terminal/git/math) → Summary → What's Next.
+- **Lesson**: `# Lesson NN: [Title]` → Learning Objectives → core concept
+  sections → a game-flavored connection for CS and Python tracks only, never
+  forced onto terminal, git or math → Summary → What's Next.
+- **Exercise**: Overview → 5 to 8 problems of increasing difficulty with an
+  answer key → Verification.
+- **Quiz**: Instructions → 5 multiple-choice (4 options, 1 correct) → 3
+  short-answer → 1 proof or derivation → answer key.
 
-**Exercise:** Overview → 5–8 problems, increasing difficulty, with an answer
-key → Verification.
-
-**Quiz:** Instructions → 5 multiple-choice (4 options, 1 correct) → 3
-short-answer → 1 proof/derivation → answer key.
-
-**Style:** Professor-style prose, dense, examples-first — not a tutorial,
-not a listicle. Define jargon inline on first use with a plain-language
-analogy. Unicode math notation, no LaTeX. Code: valid, runnable, standard
+**Style**: professor-style prose, dense, examples-first — not a tutorial and not
+a listicle. Define jargon inline on first use with a plain-language analogy.
+Unicode math notation, never LaTeX. Code must be valid, runnable, and standard
 library only unless the lesson says otherwise.
 
-## Tools Used
-- `tools/teaching_assistant/html_renderer/render.py`
+## Logging
 
-## Logging Requirements
-Record a completed lesson batch on the board via
-`tools/ticket_tools/ticket_write.py` — close the card, or add one short
-`add-issue-log` comment to it. Not a per-course changelog file, and not a
-handoff note (there is no such mechanism).
+**Record a completed lesson batch on the board** — close the card, or add one
+short `add-issue-log` comment to it.
 
-## Failure Modes
-- Plan missing or still `status: draft` → stop; finish/approve Stage 1 first.
-- Course folder doesn't exist or `progress.json` is missing/malformed →
-  stop and surface this rather than guessing a structure.
+## Failure modes
 
-## Human Audit Notes
-Periodically confirm `PROJECT_MANIFEST.md` and `progress.json` still match
-what's actually on disk for each course — these are metadata mirrors, not
-the source of truth (the Markdown files are).
+- **The plan is missing or still `status: draft`** → stop; finish and approve
+  stage 1 first.
+- **The course folder is absent, or `progress.json` is missing or malformed** →
+  stop and surface it rather than guessing a structure.
+
+## Audit
+
+**Whether `PROJECT_MANIFEST.md` and `progress.json` still match what is on disk
+for each course.** They are metadata mirrors; the Markdown files are the source
+of truth.
