@@ -18,6 +18,7 @@ at runtime) and show it.
 ```
 bristol/
 ├── app.py               launcher: locate DB, apply schema, open the window
+├── config_file.py       read/write config.local.json (unknown keys survive)
 ├── icon.icns / icon.png the app icon (bundle icon + window/Dock icon)
 ├── schema.sql           idempotent (IF NOT EXISTS) schema snapshot, auto-applied on launch
 ├── __init__.py          package marker
@@ -28,6 +29,8 @@ bristol/
 │   ├── links.py         LinkBar — a ticket's links to tickets and addresses
 │   ├── record_dialog.py UnifiedRecordDialog — create/edit modal
 │   ├── kanban_column.py KanbanColumn — a populated column + its queries
+│   ├── setup_wizard.py  first-run setup: folders, board, config, pointer
+│   ├── settings_tab.py  SettingsTab — board behaviour, stored in config
 │   └── main_window.py   MainWindow — toolbar, tabs, filters, search, inspector
 ├── reports/             the analytic report written on Clear Done (own README)
 │   ├── paths.py         where the report goes (env → .local → config)
@@ -56,12 +59,43 @@ an external consultant to ingest in one pass. The split is behaviour-preserving.
 4. **Auto-discovery** — walks up to the project root and searches
    `data/*/tickets/tickets.db`, using the first match. The `*` avoids
    hardcoding any user-specific folder name.
-5. **Fresh provisioning** — if none exists, creates an empty DB at a default
-   location and applies `schema.sql` so the app still opens.
+5. **Fresh provisioning** — a configured installation whose board is missing
+   gets an empty DB at a default location with `schema.sql` applied, so the app
+   still opens.
 
 The order is stated once, in `src/tools/config_tools/instance_pointer.py`.
 
 No user-specific paths are hardcoded anywhere in this tool.
+
+## First run (`ui/setup_wizard.py`)
+
+When nothing above resolves and no `config/config.local.json` has been written,
+launch opens a setup wizard instead of an empty board. It asks for an instance
+name, the folder that instance's data lives in, which of the shipped agents to
+enable, and — optionally — a Markdown notebook and a Zotero data folder.
+
+Finish creates the data folders each enabled agent declares, provisions
+`tickets/tickets.db` from `schema.sql`, writes `config/config.local.json` from
+`config/config.example.json` with the answers substituted in, and writes the
+instance pointer. Cancel writes nothing. Replacing an existing configuration
+asks first, and **File → Setup…** re-runs the flow from a running Bristol.
+
+The wizard reads `config.example.json` as data and imports nothing from the rest
+of `src/tools`, so the mechanism-only rule holds.
+
+## Settings, and the active agent
+
+The **Settings** tab holds choices about how the board behaves, read and written
+through `config_file.py` — the same file the wizard fills in, never a second
+store. A save round-trips the whole document, so a key an older build does not
+recognise survives untouched. The first setting is
+`board.cross_agent_stage`: where a card one agent files for another lands, the
+Board or the Backlog. `ticket_tools/ticket_write.py` reads the same key.
+
+The **active agent** is not a setting. It names who the next Claude session runs
+as, which changes what the whole application means, so it sits above the tabs on
+every screen: *Start next session as*. Choosing one writes `active_agent` into
+the configuration and nothing else.
 
 ## Links
 

@@ -21,6 +21,7 @@ Exit code 0 = all green; non-zero = at least one target failed.
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sqlite3
 import sys
@@ -332,8 +333,12 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("a 'blocks' link does not read from both ends")
         if lc.execute("SELECT task_id, other_id FROM task_link").fetchone() != (la, lb):
             raise SmokeFailure("a 'blocks' row lost its direction to normalization")
-        if add_issue_link(lc, lb, la, relation="blocked-by") is not None:
-            raise SmokeFailure("'blocked-by' from the far end was refused")
+        # The same dependency restated from the far end is the same one row: it
+        # reports the pair as already linked and changes nothing. What must not
+        # happen is a second row or a flipped direction.
+        add_issue_link(lc, lb, la, relation="blocked-by")
+        if lc.execute("SELECT COUNT(*) FROM task_link").fetchone()[0] != 1:
+            raise SmokeFailure("'blocked-by' from the far end wrote a second row")
         if rel(la) != ["blocks"]:
             raise SmokeFailure("'blocked-by' did not store the same directed row")
         if add_issue_link(lc, la, lb, relation="related") is not None:
@@ -377,6 +382,137 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("flush_pending dropped a buffered link's relation")
         ok.append("Links: one directed edge, related/blocks types, uri links, "
                   "pending buffer")
+
+        # First-run setup. The properties worth guarding are that a cancelled
+        # wizard writes nothing, that a finished one produces a board, a
+        # config with no placeholders left in it and a pointer, and that the
+        # window offers the menu route back to it.
+        import ui.setup_wizard as wiz
+
+        root = TOOLS.parent.parent
+        menu_actions = [a.text() for m in win.menuBar().actions() if m.menu()
+                        for a in m.menu().actions()]
+        if "Setup…" not in menu_actions:
+            raise SmokeFailure("no menu route back to first-run setup")
+        ok.append("File → Setup… is on the menu bar")
+
+        if wiz.project_root() != root:
+            raise SmokeFailure("setup wizard cannot find the clone it lives in")
+        if not wiz.needs_setup(None) and not (root / "config" / "config.local.json").exists():
+            raise SmokeFailure("a clone with no config and no board should need setup")
+        if wiz.needs_setup(schema):  # any existing file stands in for a board
+            raise SmokeFailure("an existing board should not trigger setup")
+
+        with tempfile.TemporaryDirectory() as scratch:
+            scratch_root = Path(scratch) / "clone"
+            (scratch_root / "config").mkdir(parents=True)
+            (scratch_root / "src").mkdir()
+            (scratch_root / "src" / "app.md").write_text("marker\n")
+            (scratch_root / "config" / "config.example.json").write_text(
+                (root / "config" / "config.example.json").read_text(encoding="utf-8"),
+                encoding="utf-8")
+
+            cfg = wiz.build_config(
+                root=scratch_root,
+                instance_dir=scratch_root / "data" / "tester",
+                slug="tester",
+                agents=["chief_of_staff", "librarian"],
+                notebook="",
+                zotero="",
+            )
+            if set(cfg["agents"]) - {"_notes", "chief_of_staff", "librarian"}:
+                raise SmokeFailure("unchosen agents survived into the config")
+            if cfg["active_agent"] != "chief_of_staff":
+                raise SmokeFailure("active_agent was not set from the chosen agents")
+            if "markdown_notebook" in cfg or "zotero" in cfg:
+                raise SmokeFailure("a skipped integration was written into the config")
+            blob = json.dumps(cfg)
+            for token in ("<your-instance>", "/path/to/project", "/path/to/notebook",
+                          "/path/to/Zotero"):
+                if token in blob:
+                    raise SmokeFailure(f"placeholder {token!r} survived into the config")
+            if cfg["important_paths"]["tickets_db"] != "data/tester/tickets/tickets.db":
+                raise SmokeFailure("tickets_db does not point at the new instance")
+            ok.append("build_config fills every placeholder and drops what was skipped")
+
+            # The whole flow, driven through the wizard's own pages: a scratch
+            # clone with no pointer and no config is exactly the fresh-install
+            # state, and Finish is the only thing that writes.
+            pointer = Path(scratch) / "instance.json"
+            _orig_pointer = wiz.instance.pointer_path
+            wiz.instance.pointer_path = lambda: pointer
+            try:
+                wizard = wiz.SetupWizard(scratch_root)
+                wizard.instance_page.slug_edit.setText("tester")
+                if wizard.instance_page.instance_dir() != scratch_root / "data" / "tester":
+                    raise SmokeFailure("the data folder did not follow the instance name")
+                if not wizard.agents_page.boxes:
+                    raise SmokeFailure("the agents page offers no agents")
+                for slug_name, box in wizard.agents_page.boxes.items():
+                    box.setChecked(slug_name in ("chief_of_staff", "librarian"))
+                wizard.summary_page.initializePage()
+                if "tester" not in wizard.summary_page.body.text():
+                    raise SmokeFailure("the summary does not name what will be written")
+                if pointer.exists() or (scratch_root / "data").exists():
+                    raise SmokeFailure("the wizard wrote something before Finish")
+                wizard.accept()
+                db = wizard.db_path
+            finally:
+                wiz.instance.pointer_path = _orig_pointer
+            if db is None or not db.exists():
+                raise SmokeFailure("setup did not provision a board")
+            fresh = sqlite3.connect(db)
+            if not fresh.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='task'"
+            ).fetchone():
+                raise SmokeFailure("the provisioned board has no task table")
+            if fresh.execute("SELECT COUNT(*) FROM task").fetchone()[0]:
+                raise SmokeFailure("setup seeded rows; an empty board is the first state")
+            fresh.close()
+            if not (scratch_root / "config" / "config.local.json").exists():
+                raise SmokeFailure("setup did not write config.local.json")
+            if not (scratch_root / "data" / "tester" / "personal").is_dir():
+                raise SmokeFailure("setup did not create a chosen agent's data folder")
+            if (scratch_root / "data" / "tester" / "career").exists():
+                raise SmokeFailure("setup created a folder for an agent that was not chosen")
+            written = json.loads(pointer.read_text())
+            if written["instance_slug"] != "tester" or \
+                    Path(written["data_root"]) != scratch_root / "data":
+                raise SmokeFailure("the instance pointer does not name the new instance")
+            ok.append("Setup wizard writes nothing until Finish, then folders, "
+                      "an empty board, config and pointer")
+
+            # Settings and the active agent, against the config the wizard just
+            # wrote. The property that matters is that both read and write that
+            # one file, and that a key this build does not offer survives a save.
+            import config_file
+            from ui.settings_tab import SettingsTab
+
+            written_config = scratch_root / "config" / "config.local.json"
+            _orig_path = config_file.path
+            config_file.path = lambda: written_config
+            try:
+                config_file.update({"a_key_from_a_newer_build": {"kept": True}})
+                tab = SettingsTab()
+                if tab.cross_agent.currentData() != "active":
+                    raise SmokeFailure("Settings did not load the stored board setting")
+                tab.cross_agent.setCurrentIndex(tab.cross_agent.findData("backlog"))
+                tab._save()
+                if config_file.get(config_file.CROSS_AGENT_STAGE) != "backlog":
+                    raise SmokeFailure("Settings did not write the board setting")
+                if config_file.get("a_key_from_a_newer_build.kept") is not True:
+                    raise SmokeFailure("saving Settings dropped an unrecognised key")
+                agent_win = MainWindow(mconn)
+                if agent_win.agent_combo.currentText() not in config_file.agent_slugs():
+                    raise SmokeFailure("the agent control does not show a configured agent")
+                agent_win._set_active_agent("librarian")
+                if config_file.get("active_agent") != "librarian":
+                    raise SmokeFailure("choosing an agent did not reach the config")
+                if agent_win.tabs.tabText(agent_win.tabs.count() - 1) != "Settings":
+                    raise SmokeFailure("no Settings tab alongside the board tabs")
+            finally:
+                config_file.path = _orig_path
+            ok.append("Settings and the agent control read and write one config file")
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok

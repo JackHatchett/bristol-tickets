@@ -3,7 +3,9 @@
 The DB path follows the canonical resolution order documented in
 ``src/tools/config_tools/instance_pointer.py``: TICKETS_DB env var, then the
 per-machine instance pointer, then the legacy ``tickets_db.local`` file, then
-relative discovery from the source tree.
+relative discovery from the source tree. When none of them resolves and no
+configuration has been written, launch opens ``ui/setup_wizard.py`` instead of
+an empty board.
 
 This tool is mechanism-only: it launches the PySide6 GUI for a tickets DB.
 It contains no agent-specific logic, no personal paths, and no complex provisioning.
@@ -32,15 +34,17 @@ def _project_root() -> Path:
     )
 
 
-def _resolve_db_path() -> Path:
-    """Resolve the tickets DB path.
+def _discover_db() -> Path | None:
+    """The tickets DB this machine already has, or None.
 
     Order per ``config_tools/instance_pointer.py``. Steps 2 and 3 exist because
     step 4 only succeeds while app.py still sits above the repo's data/ folder,
     which is not the case inside a built .app.
     """
 
-    # 1. Explicit DB path via TICKETS_DB env var (testing/overrides).
+    # 1. Explicit DB path via TICKETS_DB env var (testing/overrides). Honoured
+    #    as written, existing or not — an override that is silently ignored is
+    #    worse than one that creates the file it names.
     env_db = os.environ.get("TICKETS_DB")
     if env_db:
         return Path(os.path.expanduser(env_db))
@@ -72,9 +76,13 @@ def _resolve_db_path() -> Path:
         if matches:
             return matches[0]
 
-    # Nothing resolved: name where a fresh instance would go.
+    return None
+
+
+def _fallback_db_path() -> Path:
+    """Where a board goes for an installation that is configured but empty."""
     user_slug = os.environ.get("AGENT_INSTANCE_SLUG", "default_user")
-    return data_dir / user_slug / "tickets" / "tickets.db"
+    return _project_root() / "data" / user_slug / "tickets" / "tickets.db"
 
 
 def main() -> None:
@@ -88,14 +96,30 @@ def main() -> None:
         from PySide6.QtGui import QIcon
         from PySide6.QtWidgets import QApplication
         from ui.main_window import MainWindow
+        from ui.setup_wizard import needs_setup, run_setup
     except ImportError as exc:
         sys.exit(
             f"app: missing dependency — {exc}. "
             "Install PySide6: pip3 install PySide6 --break-system-packages"
         )
 
-    db_path = _resolve_db_path()
-    
+    app = QApplication(sys.argv)
+    app.setApplicationName("Bristol")
+    app.setApplicationDisplayName("Bristol")
+    # Set the app-wide icon so the Dock/taskbar shows it when Bristol is
+    # launched as a script (the built .app uses setup.py's iconfile instead).
+    icon_file = Path(__file__).resolve().parent / "icon.png"
+    if icon_file.exists():
+        app.setWindowIcon(QIcon(str(icon_file)))
+
+    db_path = _discover_db()
+    if not os.environ.get("TICKETS_DB") and needs_setup(db_path):
+        db_path = run_setup()
+        if db_path is None:
+            return
+    elif db_path is None:
+        db_path = _fallback_db_path()
+
     # Ensure the target directory structure exists before attempting connection
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -106,15 +130,6 @@ def main() -> None:
     if schema.exists():
         conn.executescript(schema.read_text())
         conn.commit()
-
-    app = QApplication(sys.argv)
-    app.setApplicationName("Bristol")
-    app.setApplicationDisplayName("Bristol")
-    # Set the app-wide icon so the Dock/taskbar shows it when Bristol is
-    # launched as a script (the built .app uses setup.py's iconfile instead).
-    icon_file = Path(__file__).resolve().parent / "icon.png"
-    if icon_file.exists():
-        app.setWindowIcon(QIcon(str(icon_file)))
 
     window = MainWindow(conn, initial_db=db_path)
     window.show()
