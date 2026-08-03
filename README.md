@@ -1,63 +1,109 @@
 # Bristol Tickets
 
-A local, multi-agent simulation and orchestration layer designed to manage tasks, digital architecture, and file systems. 
+A Kanban board on your desktop whose cards are the work you hand to Claude,
+shipped with a set of ready-made agents.
 
-This repository serves as the generic, forkable shell of the application. It provides the runtime architecture, agent identities, and structural modules required to operate the system. All user-specific runtime state, cloud backup targets, and personal drive configurations are intentionally excluded from version control.
+You keep your work on a board of cards: to-do, doing, done. Open a Claude
+session pointed at this folder, say "continue," and the agent reads the board,
+takes the top card in its queue, does the work on your real files, and writes
+back what it did. Next time you open the board, the card has moved.
 
-## System Architecture
+## Before you install
 
-There are two ways to use the system, and both act on the same database and the same configuration.
+**A Claude subscription that includes Cowork, and the Claude desktop app.**
+Cowork is what lets Claude read and write files in a folder you choose. Without
+it there is no agent — you get a working Kanban board and nothing else. Also
+macOS and Python 3.10 or later.
 
-1. **Bristol (`src/tools/bristol/`)** 
-   A PySide6 desktop app: a Kanban board over `tickets.db`. You read the board, create and edit tickets, move them between columns, and attach links and images by hand, without an agent involved.
+## Install
 
-2. **The Claude session (`src/app.md`)** 
-   A markdown-defined initialization pipeline. Claude reads `src/app.md`, resolves the local config, takes on one agent identity from the registry, restores state from `tickets.db`, and works the board. It is the surface that edits files and executes work.
+1. **Get Cowork.** Check the Claude plan comparison; it is not on the free tier.
+2. **Install the Claude desktop app** and sign in. Cowork is a mode inside it,
+   not in the browser.
+3. **Clone this repository and install its dependencies.**
 
-Whichever surface acts, the other sees the change on its next read. `src/tools/` also holds the rest of the standalone utilities — schema tools, scrapers, renderers — each independently runnable.
+   ```bash
+   git clone <this-repo> bristol_tickets
+   cd bristol_tickets
+   pip install -r requirements.txt
+   ```
 
-### Design constraints
+4. **Run Bristol.** The first launch opens a setup wizard: it asks for an
+   instance name, where your data lives, which agents you want, and optionally a
+   Markdown notebook and a Zotero folder.
 
-* **The tools stay small and separately runnable.** `src/tools/` is a set of independent programs, each readable and modifiable in a single pass. They are not consolidated into one program, and a launcher that presents several of them composes them rather than fusing their codebases.
-* **Bristol is self-contained.** `src/tools/bristol/` imports nothing from the rest of `src/tools/`. It opens, runs and changes in isolation, without requiring an understanding of the rest of the system.
-* **Legibility beats cleverness.** The repo is written to be read by people learning to build alongside AI. The data and config contract is explicit and inspectable, separation of concerns is stated plainly rather than through metaphor, and a clever construction that costs a reader is the wrong choice.
+   ```bash
+   python3 src/tools/bristol/app.py
+   ```
 
-## Repository Structure
+5. **Point Cowork at this folder** and start a session.
 
-├── requirements.in             # Dependency inputs, compiled to requirements.txt
-├── requirements.txt            # Python dependencies (see docs/install.md)
-├── docs/                       # The user manual (start at docs/index.md)
-├── src/
-│   ├── app.md                  # Claude session initialization pipeline
-│   ├── tools/                  # Standalone local scripts and UIs, incl. Bristol
-│   ├── agent_identities/       # Operating mandates for the agent fleet
-│   ├── protocols/              # Standard operating procedures
-│   ├── playbooks/              # Execution steps for specific agent tasks
-│   └── templates/              # Provisioning templates for new agents and docs
-├── config/                     # Local path resolution mapping (contents git-ignored)
-│   ├── config.example.json     # Tracked template: every key, placeholder values
-│   └── config.local.json       # Your real file: paths, agent registry, active_agent,
-│                               # and the personal software `stack` block
-└── data/                       # (Git-ignored) Cross-session database state
-    └── <instance>/tickets/tickets.db   # The SQLite single source of truth (one per instance)
+[docs/install.md](docs/install.md) covers the whole chain, including the three
+optional tools that need something pip cannot install.
 
-## Configuration & State Management
-
-To run this application locally, you must establish the links between the generic repository logic and your specific hardware.
-
-* **Configuration (`/config`):** Copy `config/config.example.json` to `config/config.local.json` — the single structured source of truth — and fill in the placeholders to resolve the pointers to your personal directories and targeted external drives. The tracked repository code uses generic relative paths (e.g., `data/*/tickets/tickets.db`) which map to this local config. Read individual fields with `python3 src/tools/config_tools/read_config.py <dotted.key>`.
-* **State (`/data`):** The system relies on a JIRA-like SQLite database (`tickets.db`). Agents are strictly forbidden from maintaining parallel markdown ledgers for task tracking. The database is the ultimate, machine-readable cross-session memory. 
-
-## Getting Started
-
-See `docs/install.md` for the full walkthrough — the Claude Desktop and Cowork
-prerequisite, dependencies, non-pip system packages, and the first-run setup
-wizard. Short version:
+## Quickstart
 
 ```bash
-pip install -r requirements.txt
-python3 src/tools/bristol/app.py    # opens the setup wizard on first run
+python3 src/tools/bristol/app.py                           # open the board
+python3 src/tools/bristol/make_launcher.py                 # put it in your Dock
+python3 src/tools/config_tools/read_config.py active_agent # who the next session runs as
 ```
 
-Setting up by hand instead of using the wizard, and every configuration key:
-`docs/configuration.md`.
+Then, in Cowork with this folder selected, say `continue`.
+
+## Rebuilding and reinstalling
+
+Your data lives outside the app bundle — in `data/` and `config/` in this
+repository — so upgrading never touches it.
+
+**Running from source** (`python3 src/tools/bristol/app.py`, or the launcher
+`make_launcher.py` writes): `git pull` and relaunch. There is nothing to
+rebuild.
+
+**Running a frozen `Bristol.app`:**
+
+```bash
+rm -rf ~/Applications/Bristol.app          # or wherever you installed it
+cd src/tools/bristol
+rm -rf build dist
+python3 setup.py py2app
+```
+
+Then drag `dist/Bristol.app` back to `~/Applications`. Full detail, and the
+choice between the two, in
+[src/tools/bristol/BUILD_APP.md](src/tools/bristol/BUILD_APP.md).
+
+## The two surfaces
+
+Both act on the same database and the same configuration, and each sees the
+other's changes on its next read.
+
+- **Bristol** (`src/tools/bristol/`) — the desktop app. Read the board, create
+  and edit cards, drag them between columns, attach links and images, with no
+  agent involved.
+- **The Claude session** (`src/app.md`) — Claude reads `src/app.md`, resolves
+  your config, takes on one agent identity, and works the board.
+
+`src/tools/` holds the rest of the standalone utilities, each independently
+runnable.
+
+## Documentation
+
+Start at [docs/index.md](docs/index.md).
+
+- [install.md](docs/install.md) — the prerequisites, in the order they have to
+  happen.
+- [sessions.md](docs/sessions.md) — the loop you actually live in.
+- [board.md](docs/board.md) — tabs, columns, cards, links, images, reports.
+- [agents.md](docs/agents.md) — the shipped agents and what each needs.
+- [configuration.md](docs/configuration.md) — every key and its default.
+- [architecture.md](docs/architecture.md) — how the app, the database and the
+  agent files fit together.
+
+## Contributing
+
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
