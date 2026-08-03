@@ -1,28 +1,28 @@
-# crew_roles/ — external advisory role profiles
+# crew_roles/
 
-One profile per external crew role, same format. These are project-agnostic:
-the same roles serve every active project. A role profile never contains a
-particular project's content rules — those live in that project's own
-content-rules file and are handed to the role in its brief (see
-`../gemini_crew_handoff.md`).
+One profile per external advisory crew role, in a common format. **A role
+profile is project-agnostic**: the same roles serve every active project, and a
+project's own content rules reach the role through its brief
+(`../gemini_crew_handoff.md`), never through this folder.
 
-| Role | Runs on | Writes to repo? | What it does |
+| Role | Runs on | Writes to repo | What it does |
 |---|---|---|---|
-| Quartermaster | `writers_room` itself | **Yes** | Reasons world/plot, keeps the story wiki coherent, hosts, distils voice, and summarizes accepted changes for the user to fold in. Not an external role — this is the agent's own identity; see `agent_identities/writers_room.md`. |
-| [Editor](editor.md) | External (usually Gemini) | No (proposes) | Drafts, coaches, beat-engineers prose; hands back deltas |
-| [Grammatizator](grammatizator.md) | External (usually Gemini) | No (returns pack) | Scouts voice specimens from the author's prose |
-| [Proofer](proofer.md) | External, reserved | No (comments) | Reader-tests + AI-style scans finished prose. Not yet built. |
+| Quartermaster | `writers_room` itself | Yes | Reasons world and plot, keeps the story wiki coherent, hosts, distils voice, and summarizes accepted changes for the user to fold in. Its identity is `agent_identities/writers_room.md`. |
+| [Editor](editor.md) | External | No — proposes | Drafts, coaches and beat-engineers prose, handing back deltas |
+| [Grammatizator](grammatizator.md) | External | No — returns a pack | Scouts voice specimens from the author's prose |
+| [Proofer](proofer.md) | External | No — comments | Reader-tests and AI-style-scans finished prose |
+
+Each profile's capability header declares that role's permissions, modes and
+status.
 
 ## The model
 
-- **One external role per session.** At session start, the human tells the
-  external client which role to be, and it adopts that profile.
-- **Only `writers_room` writes to the repo.** Editor, Grammatizator, and
-  Proofer are advisory — they propose through Handoff Envelopes
-  (`../gemini_crew_handoff.md`); every change funnels through `writers_room`,
-  which reconciles it and summarizes it to the shared agent-output dir for the
-  user to fold into the wiki. No 'canon' concept, no ratification gate.
-- **This directory is protocol material, not a separate agent roster.**
-  These three roles have no board epic and no identity in this
-  framework — they are what an external AI is briefed to become for one
-  session, per `../gemini_bootstrap.md`.
+- **One external role per session.** The human tells the external client which
+  role to be at session start, and it adopts that profile.
+- **Only `writers_room` writes to the repo.** Every other role is advisory and
+  proposes through a Handoff Envelope; every change funnels through
+  `writers_room`, which reconciles it and summarizes it to the shared
+  agent-output dir for the user to fold into the wiki.
+- **This directory is protocol material, not an agent roster.** These roles have
+  no board epic and no identity in this framework — they are what an external AI
+  is briefed to become for one session, per `../gemini_bootstrap.md`.

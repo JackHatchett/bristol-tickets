@@ -1,80 +1,55 @@
-# {{PLAYBOOK_NAME}} — Playbook Template
+# {{PLAYBOOK_NAME}} — playbook template
 
-## Purpose
-Describe the purpose of this playbook in one short paragraph.  
-A playbook is a repeatable, provider‑agnostic procedure that Claude executes when a task matches its purpose.
+Builds `playbooks/<agent>/<name>.md`, or a top-level `playbooks/<name>.md` for
+chief_of_staff: a repeatable, provider-agnostic procedure a session runs when a
+task matches its purpose. Style contract:
+`src/templates/identity_template.md` §The governing-doc style contract. What
+belongs in the folder: `src/playbooks/README.md`.
+
+---
+
+```markdown
+# {{playbook_name}} — {{agent}} playbook
+
+{{One or two sentences: what this procedure does and what triggers it. Name the
+playbook that owns an adjacent stage rather than restating it.}}
 
 ## Preconditions
-List any conditions that must be true before running this playbook.  
-Examples:
-- Required tools in tools/
-- Required context mode
-- Required mounted drives
-- Required user confirmation (if any)
+
+{{One rule per bullet: what must be true before this runs, and what to do when
+it is not. Omit the section when there are none.}}
 
 ## Procedure
-Describe the step‑by‑step workflow.  
-Keep steps abstract and provider‑agnostic.  
-Example structure:
 
-1. Identify target items.
-2. Stage items in a temporary working directory.
-3. Apply classification or transformation.
-4. Route results to the correct destination (the owning agent's own data root, per its charter — not a shared routing config).
-5. Log structural changes via `tools/ticket_tools/ticket_write.py` (add-task / add-issue-log) against the shared tickets.db — never a markdown state file, and never a handoff note (there is no such mechanism).
+{{Numbered steps in execution order. Each step opens with the imperative that is
+the rule; the rest of the step is its boundary. Command lines exact, in a fenced
+block.}}
 
-## The board is the only channel (applies to every playbook)
+## Failure modes
 
-Do not write a procedure that violates any of these. Full rule:
-`src/tools/ticket_tools/README.md` (§The board is the only channel).
+{{One bullet per failure the procedure will actually meet, in the form
+"**what went wrong** → what to do". Omit the section when there are none.}}
 
-- Work state — done / next / in progress / awaited / who owes whom / order —
-  lives in `tickets.db` and nowhere else.
-- **Never derive a next action from a file.** No scanning a folder, no reading
-  a JSON status field, no "take the latest file by name." A step that does this
-  is a second tracker.
-- Task another agent with a ticket (`assignee` = them, `reporter` = you), never
-  a file, a folder drop, or a message passed through the user.
-- Never require the user to carry work between the board and an agent.
-- No phases and no deferral in prose — no "phase 1," "later," "next pass," or
-  "TODO." Either it is in scope or it is another card.
-- A file an outside party must be shown because it cannot read `tickets.db` is
-  a **payload**: a ticket names it, the ticket holds the state, deleting it
-  loses nothing.
+## Audit
 
-## Provider-Specific Logic
-If the procedure requires Gmail, Outlook, or other provider‑specific behavior, state:
+{{Structural checks that keep this procedure honest over time. Omit the section
+when there are none.}}
+```
 
-Provider‑specific logic is handled live via the provider's connected MCP (e.g. Gmail MCP) — not hardcoded here, and not routed through a static config file.
+---
 
-This playbook must not contain provider‑specific rules.
+## Rules for this template
 
-## Tools Used
-List any scripts in tools/ that this playbook calls.  
-Example:
-- tools/document_tools/normalize_recipes.py
-- tools/maintenance/build_diagrams.py
-
-## Logging Requirements
-Describe what must be logged via `ticket_write.py` against the shared tickets.db.  
-Examples:
-- Items processed
-- Items routed
-- Errors encountered
-- Structural changes
-
-## Failure Modes
-Describe what Claude should do if:
-- A required file is missing
-- A script fails
-- A classification is ambiguous
-- A routing target is unclear
-
-## Human Audit Notes
-Describe what the user should periodically check.  
-Examples:
-- Outdated assumptions
-- Stale references
-- Missing cross‑links
-
-
+- **State a rule once**, in the file that owns it. A playbook cites `src/app.md`
+  and the agent's charter rather than restating either.
+- **Never restate the board rules.** `src/app.md` §The board is the only channel
+  owns work state, cross-agent tasking and the ban on deriving a next action
+  from a file. A playbook step that scans a folder, reads a JSON status field or
+  takes the latest file by name is a second tracker and a defect.
+- **Name the tool, never reimplement it.** Where a procedure calls a script,
+  give the exact command line and let `src/tools/` hold the behavior.
+- **Provider-specific behavior goes to that provider's connected MCP**, never
+  into a playbook and never into a shared config file.
+- **A file an outside party must be shown, because it cannot read
+  `tickets.db`, is a payload**: a ticket names it, the ticket holds the state,
+  and deleting it loses nothing.
