@@ -1,15 +1,65 @@
-# {{AGENT_NAME}}.md — Agent Charter Template
+# Agent Charter Template
 
-> Skeleton for `src/agent_identities/<agent>.md`, in the same shape
-> `chief_of_staff.md`, `career_coach.md`, and `writers_room.md` all use.
+Skeleton and shared clauses for `src/agent_identities/<agent>.md`.
 
 ---
 
+## Shared charter clauses
+
+Stated here once. A charter names the clause and adds only what is specific to
+its own agent.
+
+### Session start
+
+Load this charter, then follow `src/app.md` Phases 2 and 3. Nothing beyond the
+charter and the board snapshot loads before the user says what they want done.
+An agent's own snapshot is `python3 src/tools/ticket_tools/agent_status.py
+<slug>`.
+
+### The machinery/personal-data split
+
+- **Machinery is this charter plus the agent's own playbooks, tools and
+  protocols.** It is reusable, GitHub-safe, and holds no user content.
+- **Personal content lives outside `/src`**, under `data/*/<domain>/` or a
+  configured folder, and is resolved through `/config` at runtime.
+- **Never write a name, a real path, a client, a course, a project or any other
+  instance specific into a tracked file**, including as a string literal.
+- **Load personal context from its files each session**, never from memory of a
+  previous one.
+
+### Data locations
+
+The paths in `agents.<agent>.key_data_paths` are declared, not guaranteed to
+exist. Resolve them through `tools/config_tools/data_paths.py`: `ensure_dir()`
+right before a write, `read_dir()` for a read that returns nothing when the
+folder is not there yet. Create the container and stop — never a placeholder
+file, a sample record, or a README explaining the folder. Full statement:
+`src/tools/config_tools/README.md` (§A missing data location is created, never
+an error).
+
+### Boundaries and coordination
+
+- **An agent owns its own `playbooks/<agent>/`, `tools/<agent>/`,
+  `protocols/<agent>/` and its tagged epics** in the shared tickets database
+  (`data/*/tickets/tickets.db`, `epic.owner` = its slug). Never a private
+  per-agent database.
+- **Task another agent with a card** — `tools/ticket_tools/ticket_write.py
+  add-task --assignee <agent> --reporter <you>` — never directly, and never
+  through a file or the user. The live registry of every agent and its data
+  paths is the `agents` block of `config/config.local.json`.
+- **Content is yours; behavior is chief_of_staff's** — `src/app.md`, the section
+  of that name. A change to how you work is a card assigned to chief_of_staff,
+  and you stop there.
+
+---
+
+## The skeleton
+
 ```markdown
-# {{agent_name}}.md — Agent Charter
+# <agent>.md — Agent Charter
 
 **Single source of truth for identity and operating mandate.**
-**Loaded at every session start via `src/app.md`, same as `chief_of_staff.md`.**
+**Loaded at every session start via `src/app.md`.**
 
 ---
 
@@ -17,73 +67,53 @@
 
 {{One or two short paragraphs: what this agent is for, in domain-neutral
 language. Write it for a stranger — someone with a different job, different
-clients, a different notebook and a different software stack. Anything the
-agent needs installed (a third-party app, an account, credentials) is named
-here as a prerequisite, and if the agent works without it, say so. If it runs
-on a machinery/personal-data split like career_coach does, say so and name the
-two roots in general terms — never name the actual personal-data path here.}}
+clients, a different notebook and a different software stack. Name anything the
+agent needs installed as a prerequisite, and say whether it works without it.
+Name the personal-data root in general terms; the split itself is
+`src/templates/identity_template.md` §The machinery/personal-data split.}}
 
-{{Then write the same thing in one line and put it in
-`config/config.local.json` at `agents.<agent>.description` — that line is what
-the first-run agent picker and `docs/agents.md` show.}}
+{{Then write the same thing in one line into `config/config.local.json` at
+`agents.<agent>.notes` — that line is what the first-run agent picker and
+`docs/agents.md` show.}}
 
 ---
 
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start
-Same as every agent — `src/app.md` Phases 2 and 3. Nothing beyond this charter
-and the board snapshot loads before the user says what they want done.
+`src/templates/identity_template.md` §Session start{{, plus anything this agent
+must read before acting — name the file and stop}}.
 
-### 2.2 Playbooks
-{{One line each, pointing at `playbooks/{{agent_name}}/<file>.md` — name and
-one-sentence purpose only. No procedure logic here.}}
+### 2.2 Personal Data Root
+{{Where this agent's content lives, in generic terms, and which file inside it
+carries the concrete paths. Omit if the agent has no personal-data root.}}
 
-### 2.3 Tools
-{{One line each, pointing at `tools/{{agent_name}}/<file>` — name and
-one-sentence purpose only. If a tool is generic enough for other agents to
-use, it belongs in a shared folder under `tools/` instead (e.g.
-`tools/wiki_tools/`, `tools/writing_tools/`), not duplicated here — say so
-and point at the shared location.}}
+### 2.3 Playbooks
+{{One line each, pointing at `playbooks/<agent>/<file>.md` — name and purpose
+only. No procedure logic here.}}
 
-### 2.4 Protocols (only if this agent coordinates with an external party)
-{{One line each, pointing at `protocols/{{agent_name}}/<file>.md` — omit this
-section entirely if the agent has no external-coordination contracts.}}
+### 2.4 Tools
+{{One line each, pointing at `tools/<agent>/<file>`. A tool generic enough for
+other agents lives in a shared folder under `tools/` and is referenced there,
+never duplicated here.}}
 
-### 2.5 Data Locations
-The paths in `agents.{{agent_name}}.key_data_paths` are declared, not
-guaranteed to exist. Resolve them through
-`tools/config_tools/data_paths.py`: `ensure_dir()` right before a write,
-`read_dir()` for a read that returns nothing when the folder is not there yet.
-Create the container and stop — never a placeholder file, a sample record, or a
-README explaining the folder. Full statement of the rule:
-`src/tools/config_tools/README.md` (§A missing data location is created, never
-an error).
+### 2.5 Protocols
+{{One line each, pointing at `protocols/<agent>/<file>.md`. Omit the section
+when the agent coordinates with no external party, and renumber what follows so
+the numbers stay contiguous.}}
 
 ### 2.6 Bright-Line Guardrails Only
-{{The hard rules that halt execution — never approval-seeking on routine
-work, only real bright lines specific to this agent's domain.}}
+{{The hard rules that halt execution. One rule per bullet, imperative. Only real
+bright lines specific to this agent's domain — never approval-seeking on routine
+work.}}
 
 ---
 
 ## 3. Boundaries & Coordination
 
-Owns `playbooks/{{agent_name}}/`, `tools/{{agent_name}}/`
-{{, `protocols/{{agent_name}}/` if applicable}}, and its own tagged epic(s)
-in the shared tickets database (`data/*/tickets/tickets.db`, scoped via
-`epic.owner = '{{agent_name}}'`) — never a private per-agent database. Never
-store personal/instance content inside the tracked machinery. Coordinate
-with another agent by adding a card assigned to them
-(`tools/ticket_tools/ticket_write.py add-task --assignee <agent>
---reporter {{agent_name}} ...`) against the shared
-tickets.db, not directly; the live registry of every agent and its data
-paths is `config/config.local.json`'s Agent Registries section. There is no
-session-handoff mechanism — `src/tools/ticket_tools/README.md` §Board
-conventions.
-
-**Content is yours; behavior is chief_of_staff's** — `src/app.md`, the section
-of that name. Raise any change to how you work as a card assigned to
-chief_of_staff and stop there.
+`src/templates/identity_template.md` §Boundaries and coordination, and §Data
+locations. {{Then only what is specific: which folders this agent owns, and any
+named boundary with another agent.}}
 ```
 
 ---
