@@ -61,8 +61,8 @@ Usage:
         log through the same triggers as any other write — title and
         description as '(changed)', the rest with their new value.
         Write --title and --description to the record type's shape (see
-        playbooks/manage_tickets.md §Record types); editing a ticket body is an
-        ordinary board write, not a reason to reach for SQL.
+        playbooks/manage_tickets.md §Record types: Build vs Fix); editing a
+        ticket body is an ordinary board write, not a reason to reach for SQL.
 
     python3 ticket_write.py add-issue-log --task N --author <slug|user>
         --body "..."
@@ -746,7 +746,7 @@ def main() -> None:
                      help="'build' (a thing to build — Story + acceptance criteria) "
                           "or 'fix' (a broken thing — Expected/Observed). Default build. "
                           "Write --description in that record type's format (see "
-                          "playbooks/manage_tickets.md §Record types).")
+                          "playbooks/manage_tickets.md §Record types: Build vs Fix).")
     pt.add_argument("--actor", default=None,
                      help="who is making this change, for the change log "
                           "(your write signature, e.g. cowork_chief_of_staff). "
@@ -760,7 +760,7 @@ def main() -> None:
                       help="replace the card's description. Write it to the "
                            "record type's skeleton — Story + Acceptance Criteria "
                            "for a build, Expected + Observed for a fix (see "
-                           "playbooks/manage_tickets.md §Record types).")
+                           "playbooks/manage_tickets.md §Record types: Build vs Fix).")
     pct.add_argument("--estimate", default=None,
                       help="S|M|L|XL — how much of a full usage budget this card "
                            "would take. Scale and anchors in "

@@ -29,7 +29,7 @@ seeded.
 
 Write safety: connect() sets PRAGMA journal_mode=MEMORY to avoid the on-disk
 rollback journal that once wedged a mounted-folder DB (see
-tools/ticket_tools/README.md §3b). Writers that must be extra safe can use
+tools/ticket_tools/README.md §Invariants). Writers that must be extra safe can use
 with_writeback(), which edits a /tmp copy and copies it back atomically.
 """
 
@@ -93,7 +93,7 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
         data_paths.ensure_db(p, SCHEMA_PATH)
     conn = sqlite3.connect(str(p), timeout=10)
     conn.execute("PRAGMA busy_timeout=5000")
-    conn.execute("PRAGMA journal_mode=MEMORY")  # avoid the on-disk journal (README §3b)
+    conn.execute("PRAGMA journal_mode=MEMORY")  # avoid the on-disk journal (ticket_tools/README.md §Invariants)
     conn.execute("PRAGMA foreign_keys=ON")
     conn.row_factory = sqlite3.Row
     return conn

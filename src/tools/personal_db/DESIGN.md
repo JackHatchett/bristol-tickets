@@ -28,7 +28,8 @@ data stores behind one SQLite DB that renders xlsx snapshots — the same
   `ZOTERO_DATA_DIR` / tickets discovery. Falls back to canonical
   `data/*/personal/` discovery when the env is unset (forkable).
 - **Write safety over the mount.** Every writer opens with
-  `PRAGMA journal_mode=MEMORY` (see `tools/ticket_tools/README.md` §3b). Never
+  `PRAGMA journal_mode=MEMORY` (see `tools/ticket_tools/README.md`
+  §Invariants). Never
   do ad-hoc default-journal `sqlite3.connect` writes against the mounted DB.
   // A default-journal write over the sandbox→Mac bridge can wedge the DB with
   // a hot rollback journal; MEMORY mode writes no such file.

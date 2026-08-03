@@ -32,10 +32,8 @@ the first-run agent picker and `docs/agents.md` show.}}
 ## 2. Operating Mandate & Execution
 
 ### 2.1 Session Start
-Same as every agent: load this charter, check the tickets database for
-what's active (including any backlog cards assigned to you), then act on whatever the user directs.
-Nothing beyond the charter and the board snapshot loads before the user
-says what they want done.
+Same as every agent — `src/app.md` Phases 2 and 3. Nothing beyond this charter
+and the board snapshot loads before the user says what they want done.
 
 ### 2.2 Playbooks
 {{One line each, pointing at `playbooks/{{agent_name}}/<file>.md` — name and
@@ -79,19 +77,49 @@ with another agent by adding a card assigned to them
 (`tools/ticket_tools/ticket_write.py add-task --assignee <agent>
 --reporter {{agent_name}} ...`) against the shared
 tickets.db, not directly; the live registry of every agent and its data
-paths is `config/config.local.json`'s Agent Registries section. (There is no
-session-handoff mechanism: work you leave mid-flight is a `doing` card on the
-active board at the top of its column with your slug as `assignee`, never a
-narrative note.)
+paths is `config/config.local.json`'s Agent Registries section. There is no
+session-handoff mechanism — `src/tools/ticket_tools/README.md` §Board
+conventions.
 
-**Content is yours; behavior is chief_of_staff's.** Add content freely — a fact
-into the section that owns it, a tracker row, a deliverable, a correction in
-place. Never change how you work: no editing this charter, your playbooks,
-protocols or tools, no adding or repealing a rule, no changing a file's
-structure, no new file others must consult. The user approving the substance in
-chat is not authorization to make the edit. Raise it as a card assigned to
+**Content is yours; behavior is chief_of_staff's** — `src/app.md`, the section
+of that name. Raise any change to how you work as a card assigned to
 chief_of_staff and stop there.
 ```
 
 ---
 
+## The governing-doc style contract
+
+Every governing document under `/src` — a charter written from this template,
+`src/app.md`, playbooks, protocols, tool READMEs, the other templates — is
+written to be executed by a model, not to convince a reader. The reader already
+does what it says; what it needs is the rule, its boundary, and which rule wins.
+Seven rules:
+
+- **State a rule once, in the one file that owns it.** Every other file
+  references that file and adds nothing of its own. Two statements of a rule are
+  two rules the moment either one is edited, and the copy is the one that goes
+  stale.
+- **The resident core owns whatever must be resident.** `src/app.md` loads at
+  every session start and nothing else does, so a rule an agent must hold
+  without opening a file is stated there and the reference documents point back
+  to it. A rule that only bites once you are already reading the mechanism is
+  owned by the mechanism's own file.
+- **One rule per bullet, imperative mood.** Never two rules sharing a bullet,
+  and never a rule buried mid-paragraph where it reads as commentary. The
+  bullet's first clause is the rule; whatever follows is its boundary.
+- **Keep a negative where it names a plausible failure mode; cut it where it is
+  the logical complement of the positive.** "Never make the user the transport"
+  earns its line because an agent will otherwise reach for it. "Do not leave the
+  field blank" after "fill in the field" earns nothing.
+- **Keep rationale only where the rule under-determines a case the agent will
+  meet.** Explain a rule when knowing why changes what the agent does at an edge
+  it will actually reach. Otherwise state the rule and stop — a rule that holds
+  everywhere needs no defence.
+- **State precedence wherever two rules can conflict.** Name the winner at the
+  point of conflict, in both files if the conflict spans two. Saying which rule
+  wins is a boundary, not a claim that one document outranks another; the latter
+  is banned by `src/app.md` §What a file may say.
+- **Cut anything that is neither a rule nor a fact.** No preamble justifying the
+  file's existence, no history of how a rule came to be, no reassurance, no
+  restatement of the previous paragraph in different words.
