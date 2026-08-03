@@ -1,126 +1,86 @@
 # create_agent — Playbook
 
-## Purpose
-Bootstrap a brand-new agent from nothing: identity charter, playbooks/tools/
-protocols scaffolding, board epic, etc.
-
-Every agent's machinery lives inside this repo, under
-`src/`; every agent's personal/instance data (if any) lives under
-`data/*/` (the `*` resolves to the instance's own data-root slug via
-`config/config.local.json`); all agents share one tickets database, scoped by
-`epic.owner`.
+Bootstrap a new agent from nothing: charter, scaffolding, board epic,
+registration. For converting an existing pre-framework bundle, use
+`src/playbooks/migrate_legacy_agent.md` instead.
 
 ## Preconditions
-- The user has confirmed the agent's canonical name (snake_case).
-- The user has confirmed, in general terms, what this agent is for and
-  whether it needs its own personal/instance data root under `data/*/`.
-- The shared tickets database already exists at
-  `data/*/tickets/tickets.db` (provisioned once, fleet-wide, via
-  `tools/ticket_tools/create_tickets.py --instance <instance_slug>` — not
-  re-run per agent).
+
+- **The user has confirmed the agent's canonical name** in snake_case.
+- **The user has said in general terms what the agent is for**, and whether it
+  needs a personal-data root under `data/*/`.
+- **The shared board exists** at `data/*/tickets/tickets.db`. It is provisioned
+  once per instance by `tools/ticket_tools/create_tickets.py --instance
+  <instance_slug>`, never per agent.
 
 ## Procedure
 
-1. **Identify agent name.**
-   Confirm the agent's canonical name (snake_case). Check uniqueness
-   against `config/config.local.json`'s Agent Registries section — that
-   section, not a separate registry file, is the live list of every agent.
+1. **Check the name is unique against the `agents` block of
+   `config/config.local.json`.** That block is the live list of every agent;
+   there is no separate registry file. On a collision, ask the user to choose
+   another name or confirm they mean to extend the existing agent.
 
-2. **Generate the charter.**
-   Create `src/agent_identities/<agent>.md` from
-   `src/templates/identity_template.md`. Reference the template by
-   filename — do not restate its structure here; see that template for the
-   exact shape (identity, session start, playbooks/tools/protocols
-   pointers, guardrails, boundaries). Write it for a stranger: no assumption
-   about the user's job, clients, courses, notebook layout or software stack,
-   and every third-party prerequisite named as one.
+2. **Write `src/agent_identities/<agent>.md` from
+   `src/templates/identity_template.md`.** Write it for a stranger: no
+   assumption about the user's job, clients, courses, notebook layout or
+   software stack, and every third-party prerequisite named as one.
 
-3. **Scaffold playbooks/tools/protocols as needed.**
-   - `src/playbooks/<agent>/` — only once there's a real step-by-step
-     procedure to write, generated from `src/templates/playbook_template.md`.
-   - `src/tools/<agent>/` — only for genuinely agent-specific callables. If
-     a tool would be useful to more than one agent, it belongs in a shared
-     folder nested under `tools/` instead (e.g. `tools/wiki_tools/`,
-     `tools/writing_tools/`, `tools/ticket_tools/`), never a new top-level
-     `src/` sibling.
-   - `src/protocols/<agent>/` — only if this agent needs to coordinate with
-     an external party (another AI service, another agent, the user, on a
-     specific recurring contract). Generate from
-     `src/templates/protocol_template.md`. Most new agents start with none
-     of these three and add them as real needs appear — an empty scaffold
-     with no content is not required up front.
+3. **Scaffold only what has real content to hold.** Most new agents start with
+   none of the three and add them as needs appear.
+   - `src/playbooks/<agent>/` — once a real step-by-step procedure exists, from
+     `src/templates/playbook_template.md`.
+   - `src/tools/<agent>/` — for genuinely agent-specific callables. A tool
+     useful to more than one agent goes in a shared folder nested under
+     `src/tools/` (`tools/wiki_tools/`, `tools/writing_tools/`,
+     `tools/ticket_tools/`), never a new top-level `src/` sibling.
+   - `src/protocols/<agent>/` — only if the agent coordinates with an external
+     party on a recurring contract, from `src/templates/protocol_template.md`.
+     That template draws the line: a protocol is a contract between two parties,
+     a playbook is a procedure one session runs.
 
 4. **Give the agent a board epic.**
-   `python3 tools/ticket_tools/ticket_write.py add-epic --name "<agent> —
-   initial setup" --owner <agent>` (plus `--description`/`--next-action` as
-   appropriate). This is the agent's own tagged slice of the one shared
-   tickets.db — there is no separate per-agent database to create.
 
-5. **Set up a data root only if the agent actually needs one.**
-   If this agent will hold personal/instance content (records, a corpus,
-   tracked application data), create `data/*/<domain>/` (naming follows
-   the content, not the agent — see `career_coach`'s `data/*/career/` and
-   `writers_room`'s notebook-resident data as two different real patterns).
-   Register the path under the agent's `key_data_paths` in
-   `config/config.local.json`. Not every agent needs this — chief_of_staff's
-   registry entry has none.
+   ```
+   python3 src/tools/ticket_tools/ticket_write.py add-epic \
+     --name "<agent> — initial setup" --owner <agent>
+   ```
 
-6. **Register the agent.**
-   Add the agent's entry under `agents` in `config/config.local.json`:
-   `identity` (repo-relative path to the charter), `description` (the one line
-   the first-run wizard and `docs/agents.md` show), `key_context_files`,
+   Add `--description` and `--next-action` as appropriate. The epic is the
+   agent's tagged slice of the one shared board; there is no per-agent database.
+
+5. **Create a data root only if the agent holds personal content.** Name the
+   folder after the content rather than the agent (`data/*/career/`,
+   `data/*/clients/`), and register the path under the agent's
+   `key_data_paths`. chief_of_staff has none.
+
+6. **Register the agent under `agents` in `config/config.local.json`**:
+   `identity` (repo-relative path to the charter), `description` (the line the
+   first-run wizard and `docs/agents.md` show), `key_context_files`,
    `key_data_paths`, `env` if its tools need variables, `notebook_access`, and
-   `notes`. `config/config.example.json` is the shape to copy. This is the
-   entire registration step — there is no separate `agent_registry.md` file.
+   `notes`. `config/config.example.json` is the shape to copy. This is the whole
+   registration step.
 
-7. **Bootstrap the next session.**
-   The agent's next session is driven by its charter and its board epic:
-   load the charter, check the tickets database for what's active under
-   this agent's `owner` tag (including any backlog cards assigned to it), then act on user direction.
-   No separate onboarding-task seeding step is needed beyond the epic
-   created in step 4.
+7. **Stop there.** The agent's first session loads its charter and its board
+   epic and takes direction from the user; no onboarding tasks are seeded beyond
+   the epic.
 
-## Provider-specific logic
-If this agent needs provider-specific behavior (a specific API, a specific
-external service), that logic is handled live via a connected MCP where one
-exists, or documented in the agent's own protocol/tool files — never in this
-playbook, and never routed through a shared config file.
+**Provider-specific behavior belongs to the new agent's own protocol or tool
+files**, or to a connected MCP where one exists — never to this playbook and
+never to a shared config file.
 
-## Tools used
-- `tools/ticket_tools/ticket_write.py` (add-epic, add-task, add-issue-log)
-- `tools/ticket_tools/create_tickets.py` (fleet-level, one-time only — not
-  part of the normal per-agent flow)
-
-## Logging requirements
-Log the creation via `ticket_write.py add-task` (or note it in your own
-one `add-issue-log` comment on the relevant card) against the
-shared tickets.db — items
-created, decisions made, any deviations. Never a markdown state file.
+**Record the creation on the new agent's epic**: what was created, what was
+decided, and any deviation from these steps.
 
 ## Failure modes
-- **Name collision:** abort; ask the user to choose a different name or
-  confirm they mean to extend an existing agent.
-- **Charter drifts into inlining procedure logic:** stop, move that content
-  into its own playbook/tool/protocol file, and reduce the charter section
-  back to a one-line pointer.
-- **Uncertainty about whether something is a tool, playbook, or protocol:**
-  see `src/templates/protocol_template.md`'s distinction (a protocol is a
-  coordination contract, not a procedure) and
-  `src/playbooks/migrate_legacy_agent.md` Step 5 (the same split applies
-  whether the agent is brand-new or being migrated from a legacy bundle).
 
-## User audit notes
-The user should periodically check:
-- `config/config.local.json`'s Agent Registries section for staleness.
-- Each agent's board epic for content freshness.
+- **The charter starts inlining procedure logic** → move that content into its
+  own playbook, tool or protocol file and reduce the charter section to a
+  one-line pointer.
+- **A capability is unclear as tool, playbook or protocol** →
+  `src/templates/protocol_template.md` draws the line, and
+  `src/playbooks/migrate_legacy_agent.md` Step 5 applies the same split.
 
-## Session bootstrap (for AI)
-- Role: Bootstrap a new agent from nothing (see
-  `src/playbooks/migrate_legacy_agent.md` instead for converting an existing
-  legacy bundle).
-- Source of truth: `src/playbooks/create_agent.md` (this repo).
-- When to load: Only when the user asks to create a genuinely new agent.
-- Allowed operations: File creation/edits under `src/agent_identities/`,
-  `src/playbooks/<agent>/`, `src/tools/<agent>/`, `src/protocols/<agent>/`,
-  `config/`, and `data/*/` as scoped above; tickets-db writes via
-  `ticket_write.py`.
+## Audit
+
+**Whether the `agents` block has gone stale**, and **whether each agent's board
+epic still reflects real work.**

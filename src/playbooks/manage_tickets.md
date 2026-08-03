@@ -130,9 +130,9 @@ Three separate acts, all cheap:
   should actually happen next, not by what you happened to open. A stale order
   is worse than none; the user overrides by dragging.
 - **Size.** `update-task --id N --estimate S|M|L|XL`, per §Effort sizing.
-- **Pressure.** `--pressure` 0–100, your honest gestalt of urgency, impact and
-  how alive the thing feels. Say so in the card's comment if the number is
-  surprising.
+- **Pressure.** `update-task-status --id N --status <its column> --pressure K`,
+  0–100, your honest gestalt of urgency, impact and how alive the thing feels.
+  Say so in the card's comment if the number is surprising.
 
 ## Effort sizing — what S/M/L/XL measure
 

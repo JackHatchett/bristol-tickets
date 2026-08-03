@@ -1,107 +1,96 @@
-# Storage Audit — Cleanup Inventory & Process
+# storage_audit — Playbook
 
-**Cadence:** Monthly (or anytime a drive is getting full)
-**Logging:** After completing each audit, log a summary via `tools/ticket_tools/ticket_write.py add-task` against the shared tickets.db — never a markdown state file.
+The recurring pass over every storage location the user keeps, to find what can
+be freed. Run it monthly, or whenever a drive is filling.
 
----
+## Triggering the audit
 
-## Storage Locations to Audit
+- **Check the board at session start for the last storage-audit card.** Flag the
+  audit when the most recent one closed more than thirty days ago.
+- **Record each completed audit as a card** carrying what was found, what was
+  cleaned, and the space freed per service.
 
-### 1. Gmail (Google)
-**Why it fills up:** Large attachments accumulate silently. Gmail counts against Google One quota.
-**How to optimize:**
-- Open: https://one.google.com/storage → "Free up account storage" → guided cleanup of Gmail
-- Or in Gmail: search `has:attachment larger:5mb` → review and delete
-- Empty Spam and Trash after cleanup
-**Who does it:** the user manually (Gmail MCP can help identify large threads)
-**Frequency:** Quarterly, or when Google One storage > 70%
+## What only the user can do
 
-### 2. Google Drive
-**Why it fills up:** Old drafts, duplicate exports, staging files from projects.
-**How to optimize:**
-- https://drive.google.com → Storage → sort by size → delete large unused files
-- Empty GDrive Trash (auto-empties after 30 days, but manual is faster)
-- Check for duplicate copies of any living tracker files
-**Folder structure:** the user's Drive has its own designated top-level structure (travel, personal/health, finance, employment, legacy/archive categories, shared budget or planning docs, etc.) — do not reorganize it; treat the current layout as green-lit and out of scope for this audit beyond size checks. Any third party's personal or health-related files that appear here are out of scope entirely — audit for size only, never open or summarize their contents.
-**Who does it:** the user manually (no MCP delete tool)
-**Frequency:** Quarterly
+Most of these locations have no delete API. **Audit and report sizes; the user
+performs the deletion**, except where a location is named below as scriptable.
 
-### 3. Google Photos
-**Why it fills up:** Original quality uploads count against Google One quota.
-**How to optimize:**
-- https://photos.google.com → Utilities → Free up space (removes already-backed-up originals from device)
-- Check for trash (auto-empties after 60 days)
-- Review shared albums — anything inbound that should route to the configured backup drive?
-**Current structure:** Shared albums only (social layer). No full archive here.
-**Who does it:** the user manually
-**Frequency:** Quarterly
+## Locations
 
-### 4. OneDrive (Microsoft 365)
-**Why it fills up:** Mirror accumulation, a pending-review mirror folder not yet deleted, version history.
-**How to optimize:**
-- https://onedrive.live.com → right-click storage bar → Manage Storage
-- Delete the pending-review mirror folder (only after confirming the primary backup drive is current)
-- Empty OneDrive Recycle Bin
-- Version history: Settings → Options → Version history
-**Who does it:** Mix — some Claude (via scripts), some the user (UI deletes)
-**Frequency:** Quarterly for general cleanup; one-time legacy-mirror cleanup is a standing follow-up until confirmed done
+### Mail
 
-### 5. iCloud
-**Why it fills up:** iCloud Drive accumulation, old device backups, Photos if enabled.
-**How to optimize:**
-- System Settings → Apple ID → iCloud → Manage Storage
-- Delete old device backups (Settings → iCloud → Manage Account Storage → Backups)
-- Review the iCloud Downloads folder (resolved via the configured iCloud drive root)
-**Current designated use:** one small identity-documents zone (the user manages). Everything else should move out.
-**Who does it:** the user manually
-**Frequency:** Annually (iCloud is lean by design)
+Large attachments accumulate silently and count against the account's shared
+quota.
 
-### 6. Mac Local Storage
-**Why it fills up:** Downloads folder, caches, iOS backups, Xcode data.
-**How to optimize:**
-- System Settings → General → Storage → built-in recommendations
-- Downloads folder — clear anything not needed
-- Desktop — temp files, migration artifacts
-- Caches — Claude can audit and list largest dirs
-- iOS/iPhone backups (via Finder/MobileSync) — often huge
-- Empty Trash
-**Who does it:** Claude audits, the user decides on deletes
-**Frequency:** Monthly for Downloads/Desktop; quarterly for caches/backups
+- Search for attachments over a few megabytes, review, delete, then empty Spam
+  and Trash.
+- The provider's own storage page usually offers a guided cleanup across mail,
+  drive and photos together.
+- Cadence: quarterly, or once the shared quota passes 70%.
 
-### 7. Configured Backup Drive
-**Why it fills up:** pending-review folders, photo intake backlog, old archive content.
-**How to optimize (when mounted):**
-- Review and delete confirmed pending-review folders after spot-checking
-- Process photo intake queue → move processed items to their organized destination
-- Check for obvious duplicates in the archive tree
-**Who does it:** Claude (once permissions allow it), the user spot-checks
-**Frequency:** Quarterly
+### Cloud drive
 
----
+Old drafts, duplicate exports and project staging files.
 
-## Reminder System
+- Sort by size, delete large unused files, then empty the trash rather than
+  waiting out its retention window.
+- **Treat the existing folder layout as settled** — audit for size only, never
+  reorganize it.
+- **Audit a third party's personal or health-related files for size only.**
+  Never open or summarize their contents.
+- Cadence: quarterly.
 
-### Approach: Session check-in + ticket log
-Claude checks the shared tickets.db at session start for the age of the last storage-audit task. If none in the past 30 days, flags it. After each audit, log a short summary (what was found, what was cleaned, freed space by service) via `ticket_write.py add-task` — never a markdown state file.
+### Photo service
 
-### Monthly automated check (once available)
-Will check:
-- Mac storage via `df -h`
-- Configured backup drive capacity if mounted
-- Age of the last logged audit
-- Log the summary via `ticket_write.py`
+Original-quality uploads count against the shared quota.
 
-### Google's built-in tool
-For Gmail + GDrive + GPhotos storage combined:
-**https://one.google.com/storage** → "Free up account storage" walks you through all three in one flow.
+- Use the service's "free up space" utility to drop already-backed-up originals
+  from the device, and check its trash.
+- Route anything inbound that belongs in long-term storage to the configured
+  backup drive.
+- Cadence: quarterly.
 
----
+### Secondary cloud storage
 
-## Quick Reference: Storage Caps
+Mirror accumulation, review folders left behind after a migration, and version
+history.
 
-| Service | Quota | Shared With | Current % |
-|---------|-------|-------------|------------|
-| Google One | varies | Gmail + GDrive + GPhotos | check one.google.com/storage |
-| OneDrive / M365 | varies | OneDrive only | check live.com storage page |
-| iCloud | varies | iCloud Drive + Photos + Mail + Backups | check System Settings → Storage |
-| Mac SSD | varies | all local apps | check System Settings → Storage |
+- **Confirm the primary backup drive is current before deleting a mirror
+  folder.**
+- Empty the recycle bin and check the version-history setting.
+- Scriptable in part; UI deletes stay with the user.
+- Cadence: quarterly.
+
+### Platform cloud storage
+
+Drive accumulation, old device backups, and photos where enabled.
+
+- Manage storage from system settings: delete old device backups, and review the
+  downloads folder resolved from `/config`.
+- Cadence: annually.
+
+### Local disk
+
+Downloads, caches, device backups and developer-tool data.
+
+- Use the system's own storage recommendations, then clear Downloads and Desktop
+  of migration artifacts and temp files.
+- List the largest cache and backup directories; the user decides each delete.
+- Cadence: monthly for Downloads and Desktop, quarterly for caches and device
+  backups.
+
+### Configured backup drive
+
+Review folders, intake backlogs and old archive content.
+
+- Spot-check a review folder before deleting it.
+- Process the intake queue into its organized destination, and check the archive
+  tree for obvious duplicates.
+- Cadence: quarterly, when the drive is mounted.
+
+## Quotas
+
+Every quota here varies by plan, so read the current figure from the service
+rather than this file. Mail, cloud drive and the photo service typically share
+one quota; secondary cloud storage, platform cloud storage and the local disk
+each have their own.

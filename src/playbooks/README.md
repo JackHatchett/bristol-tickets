@@ -1,74 +1,58 @@
-# Playbooks — Abstract Procedures
+# Playbooks
 
-## Role in the System
-Playbooks define **repeatable, provider‑agnostic procedures** that the agent can execute when performing operational tasks. They are not rules, not authority, and not global instructions. They are procedural modules that Claude loads **only when a task matches their purpose**.
+A playbook is a repeatable, provider-agnostic procedure a session loads when a
+task matches its purpose. Style contract for every file here:
+`src/templates/identity_template.md` §The governing-doc style contract. Shape:
+`src/templates/playbook_template.md`.
 
-Playbooks sit below:
-- agent_identities/ (each agent's charter — authority, mandate, guardrails)
-- protocols/ (coordination contracts with other agents or external AI)
+## What belongs here
 
-Playbooks sit above:
-- tools/ (scripts used by procedures)
-- the shared tickets.db (`data/*/tickets/tickets.db`, via `tools/ticket_tools/`), where results and structural changes are logged — never a markdown state file
+- **A procedure**: an ordered workflow a session runs end to end.
+- **Never a rule, a safety gate or a policy** — those are the agent's charter.
+- **Never user-specific content or a storage-domain definition** — those live
+  under `data/*/` and resolve through `/config`.
+- **Never provider-specific behavior.** A procedure needing Gmail, Outlook or
+  another named service calls that provider's connected MCP live.
 
-## What Belongs Here
-A playbook is:
-- a **procedure**  
-- a **repeatable workflow**  
-- a **step‑by‑step operational document**  
-- a **provider‑agnostic pattern**  
+## Where playbooks sit
 
-A playbook is not:
-- a rule  
-- a safety gate  
-- a policy  
-- a personal workflow  
-- a user‑specific configuration  
-- a storage‑domain definition  
+Below `src/agent_identities/` (authority, mandate, guardrails) and
+`src/protocols/` (coordination contracts with an external party). Above
+`src/tools/` (the scripts a procedure calls) and the shared board
+(`data/*/tickets/tickets.db`, written through `tools/ticket_tools/`).
 
-## Folder Structure
-Playbooks are organized into two tiers: **CoS-level** procedures that live at the top of this folder, and **agent-scoped** subfolders that hold the procedures belonging to a single agent.
+## Folder structure
 
-CoS-level (top-level) playbooks:
-- create_agent.md — bootstrap a brand-new agent from nothing (identity charter, playbooks/tools/protocols scaffolding, board epic)
-- migrate_legacy_agent.md — convert a legacy pre-reorg agent bundle into the current framework pattern
-- manage_tickets.md — how chief_of_staff uses the tickets DB as cross-session memory (when to read, when to update, how to treat it as the canonical queue)
-- storage_audit.md — abstract procedure for monthly storage audits / cleanup inventory
+Top-level playbooks belong to chief_of_staff:
 
-Agent-scoped subfolders (each holds the playbooks for that agent; see the agent's charter for authority):
-- career_coach/ — cover_letter, interview_prep, jd_evaluation, resume_tailoring, session_closure
-- client_services/ — operator_tasks, project_intake
-- game_designer/ — design_proposals, git_milestone_coaching, project_context, socratic_design_coaching
-- librarian/ — add_book, data_safety
-- teaching_assistant/ — content_generation, html_render, lesson_pipeline, navigator
-- writers_room/ — story_proposals, crew_dispatch, project_context, voice_distillation
+- `create_agent.md` — bootstrap a new agent from nothing.
+- `migrate_legacy_agent.md` — convert a pre-framework agent bundle.
+- `manage_tickets.md` — how any agent writes to the board.
+- `storage_audit.md` — the recurring storage cleanup inventory.
 
-## How Claude Should Use This Folder
-- Load a playbook **only** when a task explicitly matches its purpose.
-- Do not treat playbooks as global rules.
-- Do not auto‑load playbooks at session start.
-- Do not modify playbooks unless the task is explicitly “update this playbook.”
-- When a playbook references a script, use tools/ as the execution layer.
-- When a playbook produces structural changes, log them via `tools/ticket_tools/ticket_write.py` (add-task / add-issue-log) against the shared tickets.db — never a parallel markdown ledger and never a handoff note (there is no such mechanism).
+Each other folder holds one agent's own playbooks, and that agent's charter
+names them:
 
-## Cross‑Links
-- `src/agent_identities/<agent>.md` — each agent's own charter defines where that agent's durable content lives (its data root, per §2 of its charter); there is no shared routing file.
-- `config/config.local.json` (Agent Registries) — the live registry of every agent and its data paths.
-- tools/ — scripts used by playbooks.
-- `data/*/tickets/tickets.db` — ledger of executed actions and handoffs.
+- `career_coach/` — cover_letter, interview_prep, jd_evaluation,
+  resume_tailoring, session_closure
+- `client_services/` — operator_tasks, project_intake
+- `game_designer/` — design_proposals, git_milestone_coaching, project_context,
+  socratic_design_coaching
+- `librarian/` — add_book, data_safety
+- `teaching_assistant/` — content_generation, html_render, lesson_pipeline,
+  navigator
+- `writers_room/` — crew_dispatch, project_context, story_proposals,
+  voice_distillation
 
-## Human Audit Notes
-- Review this folder when changing workflows or adding new procedures.
-- Ensure no user‑specific logic leaks into this folder.
-- Ensure each playbook is provider‑agnostic and references the user‑specific project when needed.
+## Using this folder
 
-## Known Open Questions
-- None at this abstraction level.
-
-## Session Bootstrap (for AI)
-- Role: Abstract procedural workflows.
-- Source of Truth: `src/playbooks/` (this repo).
-- When to Load: Only when a task matches a playbook’s purpose.
-- Allowed Operations: Read/write within this folder; structural changes elsewhere follow each agent's own charter guardrails.
-- Do Not: Invent new rules or provider‑specific logic; those belong in the relevant agent's own data root or a connected MCP (e.g. Gmail).
-- Routing: If a task requires provider‑specific behavior, use the provider's connected MCP directly, or the owning agent's data root as defined in its charter — there is no shared routing file.
+- **Load a playbook only when the task matches its purpose**, never at session
+  start and never as a standing rule.
+- **Call a script in `src/tools/` rather than restating what it does.** Tools
+  are the execution layer; a playbook names the command line.
+- **Editing a playbook is chief_of_staff's** — `src/app.md` §Content is yours;
+  behavior is chief_of_staff's. A change another agent wants is a card assigned
+  to chief_of_staff.
+- **The live registry of every agent and its data paths is the `agents` block
+  of `config/config.local.json`.** There is no routing file: an agent's own
+  charter names where its durable content lives.
