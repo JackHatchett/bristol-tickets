@@ -27,6 +27,7 @@ bristol/
 │   ├── schema_guard.py  on-launch non-destructive migration
 │   ├── card_delegate.py CardDelegate — per-card QPainter rendering
 │   ├── links.py         LinkBar — a ticket's links to tickets and addresses
+│   ├── attachments.py   a ticket's attached images
 │   ├── record_dialog.py UnifiedRecordDialog — create/edit modal
 │   ├── kanban_column.py KanbanColumn — a populated column + its queries
 │   ├── setup_wizard.py  first-run setup: folders, board, config, pointer
@@ -42,9 +43,8 @@ bristol/
 └── BUILD_APP.md         how to build a double-clickable macOS .app (py2app)
 ```
 
-The UI was refactored from a single 1069-line `main_window.py` into
-the six `ui/` modules above so each file is small enough for a focused edit or
-an external consultant to ingest in one pass. The split is behaviour-preserving.
+Each `ui/` module stays small enough for a focused edit, or for an external
+consultant to ingest in one pass.
 
 ## How it finds the database (`app.py`)
 
@@ -108,8 +108,8 @@ one button rather than two permanent rows. Removing a link asks first.
   inspector at that ticket. They are stored as a single symmetric row
   (`task_link`, normalized to `task_id` = the lower id), so a link is
   bidirectional by construction: it shows on both tickets, and one delete clears
-  it from both. Two mirrored rows were rejected because they can half-delete
-  into a one-way link.
+  it from both.
+  // A mirrored pair of rows can half-delete into a one-way link.
 - **Address links** hold a web URL, a `zotero://` citation, an `obsidian://`
   note, or a filesystem path, with an optional caption. Clicking hands the
   string to the OS: a scheme routes to whichever app registered it, and a bare
@@ -119,10 +119,9 @@ one button rather than two permanent rows. Removing a link asks first.
 Links may be added while a ticket is still being *created*: they buffer in the
 widget (shown as "on save") and are written once the INSERT yields an id.
 
-Links exist because a ticket Description is confined to its Build/Fix template,
-which left provenance with nowhere to go. The rule that puts it here rather than
-in the description body is agent behaviour and lives outside this tool —
-`src/playbooks/_shared/manage_tickets.md` (§Description discipline).
+A ticket Description is confined to its Build or Fix template, so provenance
+lives in a link. That rule is agent behaviour and sits outside this tool:
+`src/playbooks/_shared/manage_tickets.md` §Description discipline.
 
 ## Clear Done writes a report
 
@@ -170,10 +169,10 @@ Qt's `offscreen` platform, catching errors `py_compile` can't (bad imports,
 signal/slot mismatches, widget construction that throws). It is **not** a visual
 check — how things look still needs a real display (the packaged Mac app).
 
-## Human audit notes
+## Invariants
 
-- `app.py` and all `ui/` modules must stay free of hardcoded user-specific
-  paths and personal data.
-- `schema.sql` is a generated snapshot; regenerate it if the shared DB schema
-  changes (see the header comment in that file).
-- Keep this tool mechanism-only — no agent behaviour embedded here.
+- **Keep `app.py` and every `ui/` module free of a user-specific path or any
+  personal data.**
+- **Regenerate `schema.sql` when the shared schema changes**, by the method its
+  own header states.
+- **Embed no agent behaviour here.** This tool opens a database and shows it.

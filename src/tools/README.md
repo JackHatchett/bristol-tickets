@@ -20,8 +20,8 @@ before running anything in it.
   schema. Any agent, every session.
 - **`config_tools/`** — read a config field, resolve a declared data location.
   Any agent, before touching a path outside the repo.
-- **`file_management/`** — read-only inspection of folders, photos and
-  duplicates, plus a safe move. When a task is about files on disk.
+- **`file_management/`** — inspection of folders and photos, deduplication,
+  renaming, and a verified move. When a task is about files on disk.
 - **`document_tools/`** — PDF-to-Markdown, recipe normalization. When a document
   has to change format.
 - **`personal_db/`** — the personal-tracking SQLite database and its xlsx

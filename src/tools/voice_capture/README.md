@@ -1,15 +1,15 @@
-# voice_capture
+# Voice Capture
 
-A single-purpose tool: a fixed 100-question interview prompt
-(`voice_capture_interview.md`) that produces a full voice-profile document for
-whatever the user is being interviewed as (career_coach's cover letters and
-recruiter emails, but the interview itself is domain-agnostic).
+Input is the user, answering. Operation is `voice_capture_interview.md`, a fixed
+100-question interview. Output is a `VOICE PROFILE` document holding how they
+think and write.
 
-Dormant by default. Runs only on an explicit request for a fresh capture or a
-recalibration — never at session start, never opportunistically. The output
-(a `VOICE PROFILE` markdown document) is personal content and belongs in the
-user's own instance data, never under `src/`.
+- **Run it only on an explicit request for a capture or a recalibration** —
+  never at session start, never opportunistically.
+- **Write the profile into the user's own instance data**, never under `src/`.
+- **The interview is domain-agnostic.** Whatever the user is interviewed as is
+  what the profile covers.
 
-Once produced, the resulting voice-profile file is what `cover_letter.md`
-reads in full, once per session, at the moment of first composition — see
-that playbook's "Voice" section for how it's actually consumed.
+`tools/writing_tools/voice_capture.md` is the other method: sample-first, for
+sentence-level craft the person cannot articulate.
+`playbooks/career_coach/cover_letter.md` §Voice owns how a profile is consumed.

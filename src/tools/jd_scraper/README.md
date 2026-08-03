@@ -1,75 +1,68 @@
-# jd_scraper: the JD-acquisition pipeline
+# JD Scraper
 
-**Optional.** `career_coach` works fully without any of this — the user pastes
-a job description into the session and every playbook runs. This folder is for
-users who want the incoming half automated, and it asks for real setup: a Gmail
-account receiving job alerts, Google API credentials (`credentials.example.json`
-is the shape), a settings file (`settings.example.json`), the OS keychain for
-secrets, and a cron entry (`setup_cron.sh`). Skip the folder and nothing else
-breaks.
+Getting job-description text from a job alert into a triage-ready file.
 
-Everything under this folder handles getting job-description text from a job
-alert into a triage-ready file. It has two halves: a local pipeline (this
-folder's scripts, run outside Cowork on the user's own machine) and an
-in-session technique (the LinkedIn recipe below, run by the coach inside a
-Cowork session via the Chrome extension). Together they implement a tiered
-acquisition strategy: match each source to the cheapest method that actually
-works for it, and never build a fragile universal scraper.
+**Optional.** `career_coach` runs every playbook off a pasted job description.
+This folder automates the incoming half and asks for real setup: a mail account
+receiving job alerts, Google API credentials (`credentials.example.json` is the
+shape), a settings file (`settings.example.json`), the OS keychain, and a
+schedule (`setup_cron.sh`). Skipping it breaks nothing else.
 
-## Why tiered acquisition, not one scraper
+Examples below use `$CAREER_COACH_DIR` for this agent's data root, resolved
+per instance through config.
 
-Full JD text is only required at the cover-letter stage; triage runs fine off
-a snippet. Sources fight scraping in different ways (JS rendering, bot walls,
-login walls), so one scraper trying to beat every wall is the wrong shape.
-Route each posting by source to the cheapest method that works for it instead:
+## Tiers
 
-- **Tier 0 — email harvest** (`gmail_harvest.py`, free, robust): parses the
-  user's job-alert emails into `applications/pipeline/job_feed.json`. Yields company, title,
-  location, canonical link, and usually a JD snippet. Most triage verdicts
-  don't need the full JD text — a snippet plus the user's context files is
-  enough.
-- **Tier 1 — local scrape for SSR/ATS-friendly hosts** (`jd_scraper.py`, via
-  Playwright, headless, scheduled): works well for Greenhouse (server-rendered,
-  full JD text with zero JS), and for Lever/Workday/Ashby with a real browser
-  context. ZipRecruiter, Indeed, and FlexJobs need the persistent login profile
-  (`config/browser_profile/`) to get past bot walls reliably; native
-  ZipRecruiter-hosted postings are Cloudflare-blocked even then and fall
-  through to Tier 3.
-- **Tier 2 — Chrome extension same-origin fetch (LinkedIn; in-session, coach
-  handles it)**: LinkedIn is excluded from the local scraper (`skip_hosts` in
-  settings). Its own guest API, called from inside a logged-in LinkedIn tab via
-  the Chrome extension's JavaScript tool, returns the full JD body even though
-  the extension's own page-read tools only see a stripped shell. See "The
-  LinkedIn recipe" below for the exact technique. This is the one narrow,
-  site-specific technique in the whole pipeline — reserved for LinkedIn because
-  no other route reaches it.
-- **Tier 2b — vision fallback** (universal, in-session): if a source resists
-  every scripted approach, the page is still rendered somewhere a human can
-  see it. A screenshot read by the coach is a site-agnostic last resort before
-  falling to manual paste.
-- **Tier 3 — manual paste** (the reliable floor, not a failure mode): for
-  bot-hostile sources and any Tier 1/2 miss, the user pastes the JD directly.
-  Because cover letters are capped at a small number per run and triage
-  doesn't need full text, this floor is cheap and fully reliable — it's a
-  deliberate design choice, not something to keep trying to engineer away.
+Full JD text is needed only at the cover-letter stage; a triage verdict runs off
+a snippet. Sources resist scraping differently — JS rendering, bot walls, login
+walls — so each posting routes by source to the cheapest method that reaches it.
 
-A sandboxed environment with an allowlisted network (like a Cowork bash
-sandbox) cannot run a scraper against arbitrary job sites — there is no route
-out to those hosts from inside it. Any acquisition method that needs real
-network access to a job board must run either on the user's own machine
-(Tier 0/1, this folder) or inside a tool that already executes in the user's
-real, logged-in browser (Tier 2/2b).
+- **Tier 0, email harvest** — `gmail_harvest.py` parses job-alert mail into
+  `applications/pipeline/job_feed.json`: company, title, location, canonical
+  link and usually a snippet.
+- **Tier 1, local scrape** — `jd_scraper.py` drives headless Playwright against
+  the `playwright_hosts` in settings. Greenhouse is server-rendered and yields
+  full text with no JS; Lever, Workday and Ashby need a real browser context.
+  ZipRecruiter, Indeed and FlexJobs need the persistent login profile at
+  `config/browser_profile/`, and a native ZipRecruiter-hosted posting falls
+  through to tier 3 even then.
+- **Tier 2, same-origin fetch in the browser** — the LinkedIn recipe below,
+  run in-session. LinkedIn sits in `skip_hosts` and never reaches tier 1.
+- **Tier 2b, vision fallback** — a screenshot of the rendered page, read
+  in-session. Site-agnostic, and the last resort before a paste.
+- **Tier 3, manual paste** — the floor. Cover letters are capped per run and
+  triage needs no full text, so this is cheap and fully reliable.
 
-## The LinkedIn recipe (Tier 2)
+- **Never run a scraper from a network-allowlisted sandbox.** There is no route
+  out to a job board from inside one; acquisition runs on the user's own machine
+  or inside their real logged-in browser.
+- **Take one screenshot as a diagnostic read, never as a retry loop.** Read it
+  once, decide bot wall, login wall or real page, and route a wall straight to
+  manual paste. Retrying against a bot check gets an address flagged.
 
-Requires: LinkedIn open and logged in in the user's real Chrome, approved for
-the Chrome extension, and the extension's JavaScript-execution tool (not the
-page-read/navigate tools, which time out on LinkedIn's continuously-polling
-search UI).
+## Scripts
 
-1. Get the job ID. From a search/detail URL it's the `currentJobId` query
-   parameter; from a `/jobs/view/{id}/` URL it's the path segment.
-2. Run this via the Chrome extension's JavaScript tool on the LinkedIn tab:
+| Script | Tier | Responsibility |
+|---|---|---|
+| `gmail_harvest.py` | 0 | Gmail API to `applications/pipeline/job_feed.json` |
+| `jd_scraper.py` | 1 | Playwright to JD text files |
+| `daily_pipeline.py` | — | the orchestrator, and the only thing a schedule calls |
+| `keyring_utils.py`, `migrate_to_keyring.py` | — | secrets in the OS keychain, never in plaintext config |
+| `setup_cron.sh` | — | installs the cron entry, reading `CAREER_COACH_DIR` from the environment |
+
+## The LinkedIn recipe
+
+Needs LinkedIn open and logged in in the user's own Chrome, approved for the
+Chrome extension, and the extension's JavaScript tool.
+
+- **Go straight to the JavaScript tool.** The navigate, read-page and screenshot
+  tools time out on LinkedIn.
+  // Those tools wait for a load-settled signal LinkedIn's single-page app never
+  // emits cleanly.
+
+1. **Take the job ID** — the `currentJobId` query parameter on a search or
+   detail URL, or the path segment of a `/jobs/view/{id}/` URL.
+2. **Run this on the LinkedIn tab:**
 
    ```js
    (async () => {
@@ -85,189 +78,51 @@ search UI).
    })()
    ```
 
-3. This returns the full JD text (header carries title/company/location, body
-   is the posting). The guest markup's class names vary, so `body.innerText`
-   with whitespace collapsed is the reliable extraction, not a specific
-   selector.
+3. **Take `body.innerText` with whitespace collapsed**, never a specific
+   selector. The guest markup's class names vary. The header carries title,
+   company and location; the body is the posting.
 
-Do not use the extension's navigate/read-page/screenshot tools on LinkedIn
-search or job pages first — they wait for a load-settled signal LinkedIn's
-single-page app never emits cleanly, and will time out. Go straight to the
-JavaScript tool once the tab is open. If this guest endpoint ever stops
-working, the logged-in app's own internal API endpoints are an alternate
-source — read one live from the browser's network activity rather than
-hardcoding a path, since those internal paths change over time.
+Where the guest endpoint stops working, read a live internal endpoint out of the
+browser's network activity rather than hardcoding one — those paths change.
 
-## What each script does
+## Setup
 
-| Script | Tier | Responsibility |
-|---|---|---|
-| `gmail_harvest.py` | 0 | Gmail API -> `applications/pipeline/job_feed.json` |
-| `jd_scraper.py` | 1 | Playwright -> JD text files for Lever/Workday/Ashby/Greenhouse/ZipRecruiter/Indeed/FlexJobs |
-| `daily_pipeline.py` | — | Orchestrator; the only thing cron needs to call |
-| `keyring_utils.py` / `migrate_to_keyring.py` | — | Secrets in the OS keychain, never in plaintext config |
-
-LinkedIn JDs are handled entirely by the Tier 2 in-session recipe above, never
-by this local pipeline. Examples below use `$CAREER_COACH_DIR` for this
-agent's provisioned tools/data root — set it per-instance (resolved via
-config); don't hardcode an absolute path here.
-
----
-
-## Step 1: Python dependencies
+**Dependencies.**
 
 ```bash
-pip3 install \
-  google-auth \
-  google-auth-oauthlib \
-  google-auth-httplib2 \
-  google-api-python-client \
-  playwright \
-  requests
-```
-
-Then install Playwright's Chromium browser (one-time, ~150 MB):
-
-```bash
+pip3 install google-auth google-auth-oauthlib google-auth-httplib2 \
+             google-api-python-client playwright requests
 playwright install chromium
 ```
 
----
+**Gmail credentials.** In the Google Cloud console, create or reuse a project,
+enable the Gmail API, and create an OAuth client ID of type Desktop app. Save
+the downloaded JSON to `$CAREER_COACH_DIR/config/gmail_credentials.json`. On the
+consent screen set user type External, add the account as a test user, and add
+the `https://www.googleapis.com/auth/gmail.readonly` scope.
 
-## Step 2: Gmail API credentials (one-time setup)
+**First run.** `python3 tools/gmail_harvest.py` from `$CAREER_COACH_DIR` opens a
+browser to approve access once, then writes `config/gmail_token.json` and
+refreshes it automatically.
 
-This step is manual. It takes about 10 minutes.
+**Alert filtering.** The search query lives in `config/settings.json`. Labelling
+job-alert mail and adding `label:<name>` to the query cuts the noise.
 
-1. Go to https://console.cloud.google.com and create a project (or reuse one).
-2. Enable the Gmail API: APIs and Services > Enable APIs > search "Gmail API" > Enable.
-3. Create OAuth credentials:
-   - APIs and Services > Credentials > Create Credentials > OAuth client ID
-   - Application type: Desktop app
-   - Download the JSON and save it to:
-     `$CAREER_COACH_DIR/config/gmail_credentials.json`
-4. Configure the OAuth consent screen if prompted:
-   - User type: External
-   - Add your Gmail address as a test user
-   - Scopes: add `https://www.googleapis.com/auth/gmail.readonly`
+**Scheduling.** A cron entry or a launchd job calls `daily_pipeline.py` daily,
+ahead of any morning briefing, logging into
+`applications/pipeline/logs/`. `setup_cron.sh` installs the cron form.
 
-### First run (browser OAuth dance)
-
-Run the script once manually from Terminal. It will open a browser window for you
-to approve Gmail access. After approval, a token is saved to
-`config/gmail_token.json` and future runs are non-interactive.
-
-```bash
-cd "$CAREER_COACH_DIR"
-python3 tools/gmail_harvest.py
-```
-
-The token auto-refreshes. You should only need to do the browser step once unless
-you revoke access in Google Account settings.
-
----
-
-## Step 3: Gmail label / alert setup
-
-The script searches Gmail using the query in `config/settings.json`. You can tune
-it there without touching the Python.
-
-Recommended: create a Gmail filter that labels job-alert emails with a label like
-`job_alerts` and update the query to include `label:job_alerts`. This reduces noise.
-
----
-
-## Step 4: Scheduling
-
-### Option A: cron (simplest)
-
-Open your crontab:
-
-```bash
-crontab -e
-```
-
-Add this line (adjust the Python path if needed; `which python3` shows yours):
-
-```
-0 6 * * * /usr/local/bin/python3 $CAREER_COACH_DIR/tools/daily_pipeline.py >> $CAREER_COACH_DIR/applications/pipeline/logs/cron_output.log 2>&1
-```
-
-This runs at 6:00 AM daily, ahead of any morning job-search briefing.
-
-### Option B: launchd (macOS native, more reliable)
-
-Create a plist at `~/Library/LaunchAgents/com.<user>.career-coach-pipeline.plist`
-(substitute the instance's actual reverse-DNS label and `$CAREER_COACH_DIR`):
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.<user>.career-coach-pipeline</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/usr/local/bin/python3</string>
-        <string>$CAREER_COACH_DIR/tools/daily_pipeline.py</string>
-    </array>
-    <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>6</integer>
-        <key>Minute</key>
-        <integer>0</integer>
-    </dict>
-    <key>StandardOutPath</key>
-    <string>$CAREER_COACH_DIR/applications/pipeline/logs/launchd_output.log</string>
-    <key>StandardErrorPath</key>
-    <string>$CAREER_COACH_DIR/applications/pipeline/logs/launchd_error.log</string>
-    <key>RunAtLoad</key>
-    <false/>
-</dict>
-</plist>
-```
-
-Load it:
-
-```bash
-launchctl load ~/Library/LaunchAgents/com.<user>.career-coach-pipeline.plist
-```
-
-Or run `setup_cron.sh` (Option A, scripted) with `CAREER_COACH_DIR` set in the
-environment.
-
----
-
-## Step 5: Test run
-
-```bash
-cd "$CAREER_COACH_DIR"
-python3 tools/daily_pipeline.py
-```
-
-Check `applications/pipeline/job_feed.json` and
-`applications/pipeline/logs/pipeline.log` for output.
-
----
+**Test.** `python3 tools/daily_pipeline.py`, then read
+`applications/pipeline/job_feed.json` and `applications/pipeline/logs/pipeline.log`.
 
 ## Troubleshooting
 
-**"No module named google.auth"**: run the pip install step again.
-
-**"No module named playwright"**: run `pip3 install playwright` and `playwright install chromium`.
-
-**Gmail auth browser window doesn't open**: ensure the terminal has display access.
-Try running from a regular Terminal window (not inside iTerm pane with restricted permissions).
-
-**Playwright scrapes very short text (~300 chars)**: the page is likely client-rendered
-and JavaScript-heavy. The job will be marked `fetch_failed`. Add the host to
-`skip_hosts` in `settings.json` if it consistently fails; it falls to manual paste.
-
-**cron job doesn't run**: macOS requires granting Full Disk Access to cron.
-Go to System Settings > Privacy and Security > Full Disk Access, add `/usr/sbin/cron`.
-
-**A previously reliable scrape suddenly returns a bot wall or empty shell**: treat one
-screenshot as a diagnostic read, not a retry loop — take it, read it once, decide
-(bot wall / login wall / real page), and route to manual paste immediately if it's a
-wall. Don't loop or retry against a bot check; that's what gets an IP flagged.
+- **`No module named google.auth` or `playwright`** — the dependency step did
+  not complete. Re-run it, and `playwright install chromium` with it.
+- **The OAuth browser window never opens** — the terminal has no display
+  access. Run it from a plain terminal window.
+- **A scrape returns a few hundred characters** — the page is client-rendered
+  and the job is marked `fetch_failed`. Add the host to `skip_hosts` where it
+  fails consistently; it falls to manual paste.
+- **A scheduled run never fires** — macOS withholds Full Disk Access from
+  `/usr/sbin/cron` until it is granted in System Settings.
