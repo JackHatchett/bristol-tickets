@@ -57,11 +57,17 @@ Both scripts implement the selection rule in `src/app.md` Phase 3 and are
 authoritative over any prose restatement of it.
 
 ### create_tickets.py
-Provisions a new tickets database under `data/<instance>/tickets/` with the full
-schema the viewer expects, seeded with an initial epic and default tasks. Errors
-if the target already exists. Writes no config and assumes no external path
-source. This provisions a brand-new *instance*; giving an existing instance's
-agent a presence on the board is `add-epic`, not this script.
+`python3 create_tickets.py --instance <name>` provisions an empty tickets
+database under `data/<instance>/tickets/` with the full schema the viewer
+expects, and errors if the target already exists. It writes no config and
+assumes no external path source. This provisions a brand-new *instance*; giving
+an existing instance's agent a presence on the board is `add-epic`, not this
+script.
+
+- **A new board is created empty.** A seeded epic or sample task is invented
+  content — `src/templates/identity_template.md` §Data locations.
+- **`provision()` and `locate_or_provision()` live here too**, and are what
+  every other ticket tool calls when it finds no database at all.
 
 ### ticket_write.py
 The safe write helper — `add-epic`, `add-task`, `update-task`,
