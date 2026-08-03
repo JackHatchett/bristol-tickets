@@ -114,10 +114,11 @@ Stage 4 has no key — it is always the deterministic renderer and validator.
   naming per-stage engines for this session only. It is read-only and never
   writes config, so offline runs are unaffected. This mirrors `src/app.md`'s
   `agent_override` over `active_agent`.
-- **Ask the user who writes today once the plan is complete** — this agent or
-  the configured external engine. Their answer sets the session override for
-  stage 2. For an external engine, emit the hand-off prompt and the file list,
-  both derived from the plan.
+- **Write every stage here unless config or a session override routes one
+  elsewhere.** `stages.materials` and `stages.lint` are the whole answer; there
+  is no per-lesson question about who writes. Where one names an external
+  engine, emit the hand-off prompt and the file list, both derived from the
+  plan, per `protocols/teaching_assistant/copilot_bridge.md`.
 
 ## Cross-links
 
