@@ -3,13 +3,9 @@
 The analytic report Bristol writes to the user's Markdown notebook every time
 the board's **Clear Done** button sweeps finished cards into the Archive.
 
-## Why Clear Done
-
-A Kanban board has no sprints, so it has no natural period boundary — which is
-why most personal boards never produce delivery analytics at all. Clear Done is
-the closest thing this board has: a batch of finished work leaving together, at
-a moment the user deliberately chose. Treating it as the close of a period gets
-the reporting cadence for free, and ties it to an action the user already takes.
+A Kanban board has no sprints and so no natural period boundary. Clear Done is
+the closest thing this board has — a batch of finished work leaving together, at
+a moment the user chose — so it is where the reporting cadence comes from.
 
 ## What it produces
 
@@ -55,24 +51,30 @@ mean is just one stalled card away from being a lie.
 
 ## Where reports go
 
-Resolved in `paths.py`, in order:
+Resolved in `paths.py`, on the order
+`src/tools/config_tools/instance_pointer.py` states:
 
-1. `BRISTOL_REPORTS_DIR` environment variable
-2. `bristol/bristol_reports.local` — a git-ignored one-line absolute path,
-   bundled into the built `.app` (which cannot see the repo's `config/`)
-3. `config.local.json` → `markdown_notebook.reports_dir`
+1. `BRISTOL_REPORTS_DIR` — an explicit override, for testing.
+2. The per-machine instance pointer, whose `config_path` names the config file
+   even when Bristol runs as a relocated `.app` that cannot see the repo.
+3. `bristol/bristol_reports.local` — a git-ignored one-line absolute path,
+   bundled into older `.app` builds.
+4. `markdown_notebook.reports_dir` in the `config.local.json` found by walking
+   up the source tree.
 
-If none resolve, no report is written and nothing fails. That is the rule
-throughout: the archive sweep has already committed before the report runs, so
-a missing notebook costs a report, never a board action.
+Nothing resolving means no report and no failure. The archive sweep commits
+before the report runs, so a missing notebook costs a report, never a board
+action.
 
 ## Running it by hand
 
 ```bash
-python3 src/tools/bristol/reports/generate.py --stdout        # preview the Done column
-python3 src/tools/bristol/reports/generate.py --last-batch    # re-report the last sweep
-python3 src/tools/bristol/reports/generate.py --ids 117,118   # specific cards
-python3 src/tools/bristol/reports/generate.py --out-dir /tmp  # write elsewhere
+python3 generate.py --stdout         # preview the Done column, write nothing
+python3 generate.py --last-batch     # re-report the last sweep
+python3 generate.py --ids 117,118    # specific cards
+python3 generate.py --out-dir /tmp   # write elsewhere
+python3 generate.py --db /path/to/tickets.db
+python3 generate.py --no-index       # skip the index rebuild
 ```
 
 ## Module layout
@@ -84,23 +86,19 @@ python3 src/tools/bristol/reports/generate.py --out-dir /tmp  # write elsewhere
 | `render.py` | That dict → Markdown. No DB, no computation. |
 | `generate.py` | Orchestration, period boundaries, CLI. |
 
-The split keeps each piece independently testable and lets the note be
-restyled without touching a calculation.
+Each piece is independently testable, and the note restyles without touching a
+calculation.
 
-## Design notes
+## Rules
 
-**The summary is rules-based, not generated.** It runs behind a Qt button with
-no network, it must produce identical words for identical numbers, and a
-summary that can hallucinate is worse than none.
-
-**Charts are block characters.** They render in preview, in source mode, on
-mobile, in a git diff, and in whatever reads Markdown in ten years.
-
-**Period boundaries live in the artefacts.** A period runs from the previous
-report's `period_end`, read back out of its frontmatter. Nothing is stored
-anywhere else — the repo's standing rule is that `tickets.db` is the only place
-state lives, and a report is an artefact, not state. Delete the folder and the
-next report starts a fresh series.
-
-**Findings name a number and an action.** A finding with neither is decoration.
-Thresholds live at the top of `metrics.py` and in `_signals`.
+- **Write the summary from rules, never generate it.** It runs behind a Qt
+  button with no network and must produce identical words for identical
+  numbers.
+- **Draw charts in block characters.** They render in preview, in source, on a
+  phone, and in a diff.
+- **Take a period's start from the previous report's `period_end`**, read out of
+  its frontmatter. A report is an artefact, not state — `src/app.md` §The board
+  is the only channel — so nothing about the series is stored elsewhere, and
+  deleting the folder starts a fresh one.
+- **Give every finding a number and an action.** Thresholds live at the top of
+  `metrics.py` and in `_signals`.

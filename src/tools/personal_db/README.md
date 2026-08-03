@@ -1,97 +1,138 @@
-# personal_db tools
+# Personal Database
 
-Unified personal-tracking database: one SQLite `personal.db` with per-domain
-tables (job applications, future health/…), each rendering an xlsx snapshot.
-For a domain held here, the DB is source of truth and the xlsx is a generated
-view. See `DESIGN.md` for the full rationale.
+One SQLite `personal.db` holding the personal-tracking domains that have no
+better home, each rendering an xlsx snapshot. For a domain stored here the
+database is the source of truth and the xlsx is a generated view.
 
-**Not every domain lives here.** Books live in Zotero: this DB has no
-books tables, and `render_snapshot.py --domain books` reads
-`src/tools/zotero/zotero_export.py` instead. The `domains` registry says which
-source a domain uses.
+- **A domain with a real application behind it lives in that application.**
+  Books live in Zotero, so this database holds no books tables and
+  `render_snapshot.py --domain books` reads `tools/zotero/zotero_export.py`
+  instead. A parallel copy here would be a second source of truth that drifts.
+- **The `domains` registry says which source a domain uses.** Registering a
+  domain is one row in it.
+- **The xlsx is a readable view and a mistake-finding aid, never the backup.**
 
-## Invariants (shared with tools/zotero and tools/ticket_tools)
+## Invariants
 
-1. **No personal data in `/src`.** Paths resolve from env
-   (`config/config.local.json` → `personal_db` block); never hardcoded.
-2. **One instance DB**, discovered as `data/*/personal/db/personal.db` when env
-   is unset.
-3. **stdlib `sqlite3` only** (no CLI subprocess); `openpyxl` only for render.
-4. **Write safety:** all writers use `PRAGMA journal_mode=MEMORY` via
-   `db_common.connect()`. Do **not** open the mounted DB with a default-journal
-   `sqlite3.connect` for writes.
-   // A default-journal write over the mount can leave a hot rollback journal
-   // that wedges the DB.
+Shared with `tools/zotero/` and `tools/ticket_tools/`.
 
-## Environment (set from config `personal_db`)
+- **No personal path in `/src`.** Every path resolves from the environment
+  variables the `personal_db` block of config sets.
+- **One database per instance**, discovered as `data/*/personal/db/personal.db`
+  when the environment is unset.
+- **Use stdlib `sqlite3` only**, never a CLI subprocess. `openpyxl` is for the
+  render and nothing else. No ORM.
+- **Open every write through `db_common.connect()`**, which sets
+  `PRAGMA journal_mode=MEMORY`.
+  // A default-journal write over the mount can leave a hot rollback journal
+  // that wedges the database.
 
-| Var | Meaning | Default |
+## Environment
+
+| Variable | Meaning | Default |
 |---|---|---|
-| `PERSONAL_DB_DIR` | data root (contains `db/`) | canonical `data/*/personal` |
-| `PERSONAL_DB_FILENAME` | db filename | `personal.db` |
-| `PERSONAL_SNAPSHOT_BASE` | base dir for the per-domain snapshot folders | `<root>/../system/logs` |
+| `PERSONAL_DB_DIR` | data root, containing `db/` | first `data/*/personal` |
+| `PERSONAL_DB_FILENAME` | database filename | `personal.db` |
+| `PERSONAL_SNAPSHOT_BASE` | base for the per-domain snapshot folders | `<root>/../system/logs` |
 
-Snapshots are written to `<PERSONAL_SNAPSHOT_BASE>/<subdir>/<file>` — books →
-`library_snapshots/library.xlsx`, applications →
-`applications_snapshots/applications.xlsx`.
+A snapshot lands at `<PERSONAL_SNAPSHOT_BASE>/<subdir>/<file>`: applications at
+`applications_snapshots/applications.xlsx`, books at
+`library_snapshots/library.xlsx`.
 
-## The library's dated history (books only)
+## Files
 
-Three different things live in `library_snapshots/`, and the difference matters:
+```
+src/tools/personal_db/
+  schema.sql          multi-domain DDL: meta, domains registry, per-domain tables and views
+  db_common.py        path discovery, connect() with write safety, with_writeback()
+  build_db.py         create or patch the DB from schema.sql; seed meta and the registry
+  render_snapshot.py  the renderer: applications from this DB, books from Zotero
+  personal_write.py   the write CLI
+  snapshot_archive.py the dated series and its retention policy
 
-| | What it is | Lifecycle |
-|---|---|---|
-| `library.xlsx` | the live view | overwritten every render, never dated |
-| `archive/library_YYYY-MM-DD.xlsx` | the retained series | one per day max, pruned by policy |
-| `checkpoints/*.xlsx` | pinned moments | never pruned, never auto-created |
+data/<instance>/personal/db/personal.db
+data/<instance>/system/logs/<domain>_snapshots/
+```
 
-`snapshot_archive.py` owns the series. Retention is grandfather-father-son —
-7 daily, 5 weekly, 12 monthly, then one per year forever — the same shape
-restic/borg `forget` use. `render_snapshot.py` calls it after every books
-render; `--no-archive` renders the live view only.
+## Schema
 
-**These dated files are wanted, and are not the backup churn the charter
-forbids.** They are a longitudinal record of the collection, kept deliberately
-under a policy and requested by the user. Time Machine is still the backup and
-still covers this folder; it just cannot answer what the collection looked like
-in a given past year, because it drops its oldest copies when the disk fills. Do
-not delete `archive/` or `checkpoints/` as tidy-up.
-
-`checkpoints/` holds pinned pre-policy snapshots. They pre-date the retention
-policy, cannot be regenerated, and are exempt from it.
-
-Nothing schedules the render. A user who wants a daily snapshot points a cron
-entry or a launchd plist of their own at `render_snapshot.py` and logs to
-`LOG_ROOT/`; run by hand it works the same.
+- **`meta(key, value)`** — `schema_version`, `created_at`, `updated_at`.
+- **`domains(name, display_name, source, primary_table, snapshot_file,
+  stats_view, active, sort_order, notes)`** — what the renderer iterates.
+  `source` is `personal_db` or `zotero`; `stats_view` is NULL when the source is
+  not this database.
+- **`applications`** — columns mirroring `data/*/career/SCHEMA.md`, indexed on
+  company, status and year, with a `v_application_stats` view.
+- **`books`** — a registry row with `source='zotero'` and no tables. Its metrics
+  are computed in `tools/zotero/zotero_export.py` and, in the xlsx, as live
+  Excel formulas over the sheet, so they follow the data.
 
 ## Commands
 
 ```bash
 export PERSONAL_DB_DIR=.../data/<instance>/personal
 
-# create / patch the DB (idempotent)
-python3 src/tools/personal_db/build_db.py
+python3 build_db.py                              # create or patch, idempotent
+python3 render_snapshot.py --domain all          # or applications | books
+python3 render_snapshot.py --domain books --no-archive
 
-# render snapshots (books reads Zotero, applications reads this DB)
-python3 src/tools/personal_db/render_snapshot.py --domain all   # or applications | books
+python3 personal_write.py add-application --company X --role Y --status Applied
+python3 personal_write.py update-application --id 42 --status Interviewing
+python3 personal_write.py find-company --company Acme
+python3 personal_write.py render --domain all
 
-# the dated series: dry-run the retention policy, then enforce it
-python3 src/tools/personal_db/snapshot_archive.py --dir <...>/library_snapshots --stem library
-python3 src/tools/personal_db/snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
-
-# write CLI
-python3 src/tools/personal_db/personal_write.py add-application --company X --role Y --status Applied
-python3 src/tools/personal_db/personal_write.py update-application --id 42 --status Interviewing
-python3 src/tools/personal_db/personal_write.py find-company --company Spotify   # "have I applied?"
+python3 snapshot_archive.py --dir <...>/library_snapshots --stem library
+python3 snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
 ```
 
-Mutating write subcommands auto-re-render the affected snapshot (pass
-`--no-render` to skip).
+`add-application` and `update-application` take the full column set as flags —
+`--company`, `--role`, `--fit-notes`, `--fit-verdict`, `--gaps`, `--location`,
+`--ats`, `--date-evaluated`, `--cover-letter`, `--status`, `--contact`,
+`--referral`, `--jd-link`, `--year` — and re-render the affected snapshot unless
+given `--no-render`. `find-company --company X` answers whether an application
+already exists.
+
+## The dated series
+
+Three different artifacts live in a snapshot folder:
+
+| | What it is | Lifecycle |
+|---|---|---|
+| `<stem>.xlsx` | the live view | overwritten every render, never dated |
+| `archive/<stem>_YYYY-MM-DD.xlsx` | the retained series | one per day at most, pruned by policy |
+| `checkpoints/*.xlsx` | pinned moments | never pruned, never auto-created |
+
+- **`snapshot_archive.py` owns the series.** `--dir` plus `--stem` names it, or
+  `--archive <live file>` derives both. Without `--apply` it prints the plan and
+  deletes nothing; `--json` prints it machine-readable.
+- **Retention is grandfather-father-son** — `--keep-daily 7`, `--keep-weekly 5`,
+  `--keep-monthly 12`, `--keep-yearly 0` for unlimited. A file satisfying any
+  rule is kept.
+- **`render_snapshot.py` archives after every books render** unless given
+  `--no-archive`.
+- **Never delete `archive/` or `checkpoints/` as tidy-up.** They are a
+  longitudinal record kept under a policy, not the duplicate files
+  `src/app.md` §What a file may say forbids. `checkpoints/` holds moments that
+  cannot be regenerated at all.
+- **Nothing schedules a render.** A cron entry or launchd job pointed at
+  `render_snapshot.py` gets a daily one; by hand it works the same.
 
 ## Adding a domain
 
-Edit `schema.sql` (tables + optional `v_<domain>_stats`), add it to
-`build_db.py`'s `DOMAINS` with `source='personal_db'`, add a `SPECS` entry in
-`render_snapshot.py`, and (if writable) subcommands in `personal_write.py`.
-A domain whose data lives elsewhere gets a `source` of its own and a row
-provider in `render_snapshot.py`, as books does. See `DESIGN.md` §4.
+1. Add its tables and optional `v_<domain>_stats` view to `schema.sql`.
+2. Add it to `build_db.py`'s `DOMAINS` with `source='personal_db'`.
+3. Add a spec to `render_snapshot.py`'s `SPECS`.
+4. Add subcommands to `personal_write.py` where it takes writes.
+
+A domain whose data lives elsewhere takes a `source` of its own and a row
+provider in `render_snapshot.py`, as books does. Existing domains, tables and
+agents are untouched either way.
+
+## Agents
+
+- **`career_coach`** reads and writes applications here. `find-company` gives a
+  new session that company's prior rows rather than the whole history.
+- **`librarian`** owns books, which live in Zotero, and regenerates the library
+  snapshot with `render_snapshot.py --domain books`. That path copies
+  `zotero.sqlite` first, so it runs with Zotero open; every writer under
+  `tools/zotero/` refuses to run until Zotero quits.

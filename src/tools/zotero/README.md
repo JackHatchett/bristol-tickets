@@ -116,5 +116,27 @@ Behaviour worth knowing:
   names it.
 - **Re-running is safe.** An existing collection is reused and only missing
   entries are added, so a payload can be corrected and replayed.
-- `--dry-run` opens the database read-only and reports reuse/create counts, so
-  you can tune a payload with Zotero still open.
+- `--dry-run` opens the database read-only and reports reuse and create counts,
+  so a payload can be tuned with Zotero still open.
+
+## build_reading_list_notes.py
+
+Turns each reading-list collection into a Markdown checklist note in the
+notebook's inbox, so a list is worked through without opening Zotero. Every line
+carries the title, the author and a `zotero://` link to that item.
+
+```
+python3 build_reading_list_notes.py [--dry-run] [--out-dir PATH]
+```
+
+- **A reading list is any collection holding at least one book**, minus the read
+  set and the ownership view. That rule keeps clipping collections out without
+  naming any.
+- **A book already read is ticked when its line is first written.** After that
+  the note is the user's: a re-run preserves every tick and untick.
+- **A re-run only appends lines new to the list**, and deletes only a line whose
+  item has left the collection.
+
+The notes directory resolves from `READING_LIST_NOTES_DIR`, then
+`markdown_notebook.notes_dir` and the inbox below it; `--out-dir` overrides
+both.

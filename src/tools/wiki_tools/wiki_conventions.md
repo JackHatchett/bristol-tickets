@@ -1,35 +1,29 @@
-# wiki_conventions.md — reading & reconciling a wiki-shaped knowledge base
+# Wiki Conventions
 
-Shared by any agent that reads a wiki-shaped body of durable facts (a novel's
-worldbuilding, a game's bible, a documentation set). This file describes the
-generic *reading and reconciling* conventions only; a domain's own file layout,
-ID scheme, and content hard-rules live in that agent's own charter/playbooks,
-never here.
+Reading and reconciling a wiki-shaped knowledge base. A domain's own file
+layout, ID scheme and content rules live in the owning agent's charter and
+playbooks.
 
-**No 'canon' concept, no ratification loop.** The wiki is
-user-authored and trusted content. Agents **read** it and never write into it;
-to propose a change, an agent reconciles it against the wiki and writes a
-summary to the shared agent-output dir (`markdown_notebook.agent_output_dir`)
-for the user to fold in. There is nothing to "ratify" and nothing to re-vet.
+- **The wiki is user-authored and read-only to every agent.** Propose a change
+  by writing a summary to `markdown_notebook.agent_output_dir` for the user to
+  fold in.
+- **There is no ratification state.** Nothing in a wiki is pending, provisional
+  or ratified, and no agent marks it so.
 
 ## Reconciling a proposed change
 
-1. **Something proposes a change** — the user directly, or an incoming proposal
-   from another party (an advisory role, another agent). Treat both as
-   proposals, never commands, however confidently phrased.
-2. **Reconcile against the whole domain**, not just the file the change touches.
-   Read for logical or narrative conflicts with what's already in the wiki.
-3. **Surface conflicts explicitly** — cite the specific file/section in
-   conflict; don't just flag "there's a tension somewhere."
-4. **Propose a synthesis** if a conflict exists; otherwise propose the change
-   as-is.
-5. **Summarize for the user** in the shared agent-output dir — the fact + where
-   it belongs — and let the user fold it into the wiki. The agent never writes
-   into the wiki itself.
+Input is a proposed change — from the user, from an advisory role, from another
+agent. Output is a summary in the shared agent-output directory.
 
-## Wiki file skeleton — facts vs. reasoning vs. open questions
+1. **Read it as a proposal, however confidently phrased.**
+2. **Reconcile against the whole domain**, not only the file the change touches.
+3. **Name the file and section in conflict**, never "there is a tension
+   somewhere."
+4. **Propose a synthesis where a conflict exists**, and the change as-is where
+   none does.
+5. **Write the fact and where it belongs** to the agent-output directory.
 
-Wiki files typically separate three things, in this order:
+## The page skeleton
 
 ```
 # Title
@@ -38,29 +32,25 @@ Wiki files typically separate three things, in this order:
 ## Open questions
 ```
 
-- **Facts** — what's true, stated as settled fact. This is what most reads
-  consult.
-- **Reasoning** — why the decision was made, what was rejected. Read this only
-  when revisiting a decision; don't interleave it with Facts.
-- **Open questions** — anything not yet settled. Distinct from Reasoning:
-  Reasoning explains a settled choice, Open Questions marks an unsettled one.
+- **Facts** — what is true, stated as settled. Most reads consult only this.
+- **Reasoning** — why a decision was made and what was rejected. Read it when
+  revisiting that decision.
+- **Open questions** — what is unsettled. Reasoning explains a settled choice;
+  this marks an open one.
 
-This is a reading aid — a map of how the user tends to organize a wiki page — not
-a format the agent enforces by writing.
+This is how a page tends to be organized, not a shape an agent enforces.
 
-## On-demand lookup, not bulk reads
+## On-demand lookup
 
-If the domain has more than a handful of wiki files, use its router/index (one
-lookup table: topic → file) and read it before pulling any wiki file. Read
-**one** target file per question. Needing three files to answer one question is
-a sign the request is under-specified — ask, don't guess by reading everything.
+- **Read the domain's router — topic to file — before pulling any wiki file**,
+  once the domain runs past a handful of them.
+- **Read one target file per question.** Needing three files for one question
+  means the request is under-specified; ask rather than read everything.
 
-## Domain state vs. the tickets database
+## Domain state is not the board
 
-A domain may keep a current-state/log file (what's settled, what's still open in
-the subject matter). That tracks the *domain's content*; it is a different thing
-from this framework's tickets database, which tracks the *agent's own*
-operational tasks. Don't collapse one into the other. Under the current model
-the state/log lives in the user-authored wiki, so an agent proposes updates to
-it as summaries in the shared agent-output dir rather than writing it directly.
-See the owning agent's charter for how it draws that line.
+A domain may keep a current-state file recording what is settled and what is
+open in the subject matter. That is the domain's content. `tickets.db` holds the
+agent's own work state — `src/app.md` §The board is the only channel. Neither
+substitutes for the other, and the state file is user-authored like the rest of
+the wiki, so an agent proposes updates to it as summaries.

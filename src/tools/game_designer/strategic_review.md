@@ -1,37 +1,26 @@
-# strategic_review.md — game_designer tool
+# Strategic Review
 
-A fixed briefing template for a periodic external strategic-health pass on
-a game project — a different kind of collaborator than the Gemini Gem
-(`protocols/game_designer/gemini_gem_bridge.md`, an ongoing creative
-co-writer). This is a one-off "bring in an outside CTO" consultation: on
-request only, not a routine per-session tool, and not itself a coordination
-protocol since there's no ongoing back-and-forth contract to maintain
-between sessions. It is deliberately **not** a specialization of
-`protocols/_shared/external_ai_bridge.md` (which governs recurring external-AI
-contracts) — the archetype's "review and file the return" step still applies
-in spirit (see "After the review comes back" below), but a single advisory
-pass needs no memory model, sync discipline, or return schema, so it stays a
-tool rather than a bridge protocol.
+Input is a game project's current state and design material. Operation is a
+single outside advisory pass, run in an external service. Output is a set of
+findings, each handled as a proposal.
 
-## When to use
-The user asks for a strategic gut-check on the project — phase-exit
-readiness, technical-architecture risk, or blind spots neither the user nor
-this agent has caught. Not for routine design or build work.
+- **Run it on a request for a strategic gut-check** — phase-exit readiness,
+  architecture risk, blind spots. Never for routine design or build work.
+- **Hand the advisor everything in one pass**: the filled-in brief below, the
+  project's own state file with its most recent changelog entries, and whichever
+  worldbuilding and design files bear on the review's focus. Read the project's
+  actual filenames rather than assuming any.
+- **Route every finding back as a proposal** — through
+  `playbooks/game_designer/design_proposals.md` where it touches design content,
+  or as a card (`tools/ticket_tools/ticket_write.py add-task`) where it is a
+  process or architecture action. A confident review is still a proposal.
 
-## What to hand the external advisor
-Three things, uploaded or pasted together so the advisor has full context
-in one pass:
-1. **The brief** — this file's opening prompt (below), filled in for the
-   current project.
-2. **Current project state** — the project's own state file plus a short
-   pull from its session-brief/changelog's most recent entries.
-3. **The design overview** — whichever worldbuilding (notebook) and repo
-   design files are most relevant to the
-   review's focus (usually identity/premise, world/mechanics, and current
-   narrative/art state) — read the project's own file names rather than
-   assuming any.
+`protocols/_shared/external_ai_bridge.md` governs a recurring external-AI
+contract; a single pass carries no memory model, sync discipline or return
+schema, so it needs none of it.
 
-## The opening prompt (fill in the bracketed fields)
+## The brief
+
 ```
 You are being brought in as an outside strategic advisor on an indie game
 project called [PROJECT TITLE] — [one-line genre/tone description].
@@ -40,11 +29,10 @@ Who's on this team:
 - [User]: creative lead and final decision-maker. [Coding-experience level].
 - You (strategic advisor): big-picture review only — you commission
   findings, you don't execute changes yourself.
-- [game_designer / the Architect]: runs sessions with the user day to day,
-  translates strategy into concrete steps, has been running this project
-  since it started.
-- [Any code-execution collaborator, e.g. GitHub Copilot]: [status — active
-  or not yet].
+- [game_designer]: runs sessions with the user day to day, translates
+  strategy into concrete steps, has been running this project since it
+  started.
+- [Any code-execution collaborator]: [status — active or not yet].
 
 What we want from this review:
 1. Phase-exit assessment: are we actually ready to call the current phase
@@ -68,11 +56,3 @@ Operating rules for this review:
 - Anything you propose is a proposal, not a decision — nothing changes
   until the user and game_designer review it together.
 ```
-
-## After the review comes back
-Treat every finding as a proposal, same as any other incoming suggestion —
-route it through `playbooks/game_designer/design_proposals.md` if it
-touches design content, or a plain ticket
-(`tools/ticket_tools/ticket_write.py add-task`) if it's a process/
-architecture action item. Never apply a structural recommendation directly
-just because the advisor's review sounded confident.

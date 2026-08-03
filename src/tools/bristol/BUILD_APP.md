@@ -120,6 +120,3 @@ python3 setup.py py2app
   `"dist/Bristol.app/Contents/MacOS/Bristol"`. Most often it's a wrong path
   in the instance pointer (`python3 ../config_tools/instance_pointer.py` prints
   it), or a missing Qt plugin (reinstall PySide6 and rebuild clean).
-- **Prefer no build at all?** Use **Approach A** (live-source launcher) above —
-  a Dock icon that runs the repo source with no build step. The frozen bundle
-  is only worth it when you want a portable, self-contained artifact.
