@@ -13,7 +13,7 @@ style contract in `src/templates/identity_template.md`.
   (`data/*/tickets/tickets.db`). The instance folder is the `*`.
 - **Resolve out-of-repo resources and per-agent env vars from `drives.*`,
   `markdown_notebook.*`, `important_paths.*`, `projects.*` and `agents.*.env`**
-  (model: `docs/SETUP.md` §Configuration).
+  (model: `docs/configuration.md`).
 - **Resolve every declared location through
   `src/tools/config_tools/data_paths.py`** (contract: that folder's README). One
   that does not exist yet is a normal first state, not a failure.
