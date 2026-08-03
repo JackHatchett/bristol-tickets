@@ -44,7 +44,7 @@ output carries one status:
 | `PROPOSAL` | a new idea from the Gem; needs the user's acceptance | Gem proposes |
 | `APPROVED_PENDING` | the user said yes offline, and it is not documented or filed yet | Gem, recording the user's yes |
 | `OPEN_Q` | a known open question, unresolved | either |
-| `SIMILARITY_FLAG` | may echo an existing work; needs the anti-plagiarism check | Gem |
+| `SIMILARITY_FLAG` | may echo an existing work; needs the originality scan | Gem |
 
 **Nothing is settled until the user accepts it**, after which it routes per
 `design_proposals.md` and any resolved blocker is closed on the board epic.
@@ -108,7 +108,7 @@ Two JSON file types move through each project's `handoffs/requests/` and
   "asset_todo": [{ "asset_id": "...", "tool_chain": ["..."], "status": "PROPOSAL" }],
   "proposed_this_session": ["flat list of every PROPOSAL / APPROVED_PENDING item"],
   "still_open": ["OPEN_Q items touched but not resolved"],
-  "similarity_flags": ["any SIMILARITY_FLAG items needing the anti-plagiarism check"],
+  "similarity_flags": ["any SIMILARITY_FLAG items needing the originality scan"],
   "questions_for_game_designer": ["decisions that need a human/game_designer call"]
 }
 ```
@@ -134,10 +134,10 @@ Two JSON file types move through each project's `handoffs/requests/` and
 
 ## Anti-plagiarism is part of this contract
 
-**The Gem runs `tools/game_designer/anti_plagiarism_checklist.md` on everything
-it proposes**, tagging anything uncertain `SIMILARITY_FLAG` rather than shipping
-a near-copy. **`game_designer` runs the same checklist again before anything is
-accepted**; the Gem's own check is not a substitute.
+**The Gem runs `src/tools/_shared/originality_scan.md` over everything it
+proposes**, tagging any reported passage `SIMILARITY_FLAG` rather than shipping
+a near-copy. **`game_designer` runs the same scan again before anything is
+accepted**; the Gem's own run is not a substitute.
 
 ## Cross-links
 

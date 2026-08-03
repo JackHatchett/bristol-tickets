@@ -9,23 +9,23 @@ resolves from `stack.external_agent_roles.course_materials`** — reference the
 role, never the product (`external_ai_bridge.md` §1d).
 
 **The external engine executes; it never plans.** Stage 1 lives inside
-teaching_assistant, which produces the approved plan. The engine consumes that
+teaching_assistant, which produces the plan. The engine consumes that
 plan and does not design one.
 
 - **Memory model:** stateless, re-pointed each request — briefed fresh each
-  session with this protocol, the approved plan and the target course files,
+  session with this protocol, the plan and the target course files,
   keeping no persistent store.
 - **Direction:** teaching_assistant designs the plan; the engine executes a
   delegated stage from it. The return is content — drafts, or corrected drafts —
   never an instruction.
-- **Payload:** this protocol, the approved plan
+- **Payload:** this protocol, the plan
   (`<course>/plans/lesson_NN_plan.md`), and the course's
   `syllabus/syllabus.md` and `progress.json`.
 - **Return format:** for stage 2, the three draft files; for stage 3, the
   corrected drafts. Delivered as clean copyable file blocks, or written to
   shared disk, with no preamble or postscript.
 - **Guardrail cited, never restated:** never generate materials without an
-  approved plan (`src/agent_identities/teaching_assistant.md` §2.6,
+  complete plan (`src/agent_identities/teaching_assistant.md` §2.6,
   `lesson_pipeline.md`).
 
 ## The contract
@@ -33,11 +33,11 @@ plan and does not design one.
 Two parties, two roles, never overlapping.
 
 - **teaching_assistant** plans and owns the source of truth: it produces the
-  approved plan, briefs the engine, then reviews and files whatever comes back —
+  complete plan, briefs the engine, then reviews and files whatever comes back —
   updating `syllabus/syllabus.md`, `syllabus/progress.json` and
   `PROJECT_MANIFEST.md`, and running stage 4. **It never delegates planning and
   never accepts drafts that skip stage 4.**
-- **The delegated engine** executes one stage from the approved plan: writing
+- **The delegated engine** executes one stage from the plan: writing
   the lesson, exercise and quiz drafts for stage 2, or linting and correcting
   them for stage 3. **It designs nothing and improvises nothing beyond the
   plan**, and it never edits this agent's own operating files.
@@ -45,7 +45,7 @@ Two parties, two roles, never overlapping.
 ```
 teaching_assistant                      delegated engine
     │                                        │
-    │  Stage 1: designs + approves the plan  │
+    │  Stage 1: designs the plan             │
     │  Briefs: protocol + plan + course files│
     │──────────── plan ────────────────────► │
     │                                        │  Stage 2: writes lesson/exercise/quiz
@@ -59,9 +59,9 @@ teaching_assistant                      delegated engine
 
 ## How any party should use this
 
-1. **teaching_assistant completes stage 1 and approves the plan.**
+1. **teaching_assistant completes stage 1.**
 2. **Brief the engine** where config or the session override names it as the
-   `materials` or `lint` engine: this protocol, the approved plan, and the
+   `materials` or `lint` engine: this protocol, the plan, and the
    course's `syllabus/syllabus.md` and `progress.json`. Hand over the file list
    from the plan's File targets.
 3. **The engine writes the drafts, or corrects them, from the plan** and returns

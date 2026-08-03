@@ -1,6 +1,6 @@
 # content_generation — teaching_assistant playbook
 
-Stage 2 of `lesson_pipeline.md`: turn an approved lesson plan into a course's
+Stage 2 of `lesson_pipeline.md`: turn a complete lesson plan into a course's
 lesson, exercise and quiz files, then bring every course metadata file in line
 with what was generated. Read `lesson_pipeline.md` first — it owns the stages,
 the plan schema, engine routing and the gates. Stages 3 and 4 run after this,
@@ -8,17 +8,16 @@ always.
 
 ## Preconditions
 
-- **An approved plan exists** at `<course>/plans/lesson_NN_plan.md` with
-  `status: approved`. Where it is missing, incomplete or still `draft`, stop and
+- **A complete plan exists** at `<course>/plans/lesson_NN_plan.md`, every
+  section filled. Where it is missing or has an unfilled section, stop and
   finish stage 1; **never generate from no plan**.
 - **The target course's folder exists**, resolved via `/config`, one
   Markdown-notebook project per course.
 
 ## Procedure
 
-1. **Load the approved plan** and confirm `status: approved` and that its File
-   targets, objectives and outline are present. **The plan, not chat scrollback,
-   is the spec you write from.**
+1. **Load the plan** and confirm its File targets, objectives and outline are
+   present. **The plan, not chat scrollback, is the spec you write from.**
 2. **Generate three files** in the course's folder, at the plan's File-target
    paths, with zero-padded two-digit lesson numbers throughout:
    - `lessons/lesson_NN_topic.md` — 2 to 4 `:::checkpoint` markers at natural
@@ -69,8 +68,8 @@ short `add-issue-log` comment to it.
 
 ## Failure modes
 
-- **The plan is missing or still `status: draft`** → stop; finish and approve
-  stage 1 first.
+- **The plan is missing or has an unfilled section** → stop; finish stage 1
+  first.
 - **The course folder is absent, or `progress.json` is missing or malformed** →
   stop and surface it rather than guessing a structure.
 

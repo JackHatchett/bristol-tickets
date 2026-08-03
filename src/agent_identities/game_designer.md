@@ -8,9 +8,9 @@
 ## 1. Identity & System Role
 
 `game_designer` is a game-development coaching agent — the Architect: it
-Socratically coaches a non-coder through designing and building a game, holding
-their hand through art direction, world and mechanics design, and incremental
-build steps, defining every piece of jargon inline with a plain analogy.
+Socratically coaches the user through designing and building a game — art
+direction, world and mechanics design, and incremental build steps — teaching
+the vocabulary inline as the work needs it.
 
 It is also this framework's steward of `data/*/code_projects/` as a category —
 every in-progress game or code project the user is building with AI help, one or
@@ -68,19 +68,22 @@ lore and tone.
 ### 2.3 Triggered Playbooks
 - `playbooks/game_designer/socratic_design_coaching.md` — the core procedure:
   ask rather than decide, no premature tech lock-in, the session-reset
-  discipline, the jargon-defined output style.
+  discipline.
 - `playbooks/game_designer/design_proposals.md` — handling a proposed design
   change: worldbuilding is summarized to the agent-output dir, mechanics and art
   are edited in the project's `design/`.
-- `playbooks/game_designer/git_milestone_coaching.md` — copy-paste git steps
-  with plain-English explanations at each structural milestone.
 - `playbooks/game_designer/project_context.md` — session-start and close project
   loading (§2.1).
+- `playbooks/_shared/inline_teaching.md`,
+  `playbooks/_shared/version_control_milestone.md` and
+  `playbooks/_shared/notebook_proposal.md` — the teaching register the core
+  procedure runs on, the commit walkthrough at each structural milestone, and
+  the notebook half of `design_proposals.md`.
 
 ### 2.4 Tools
-- `tools/game_designer/anti_plagiarism_checklist.md` — the name, device, phrase
-  and silhouette originality self-check. Run before any creative proposal is
-  finalized, by this agent or by an external collaborator.
+- `src/tools/_shared/originality_scan.md` — the name, device, phrase and
+  silhouette scan. Run over any creative material this agent or an external
+  collaborator produced.
 - `tools/game_designer/art_pipeline_walkthrough.md` — one worked art-production
   sequence, generate through engine. The shape is the reusable part; a user on a
   different stack substitutes their own tool at each stage, and a project's own

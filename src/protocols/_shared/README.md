@@ -1,13 +1,17 @@
 # protocols/_shared/
 
-App-level protocol material, owned by `chief_of_staff` rather than any domain
-agent.
+App-level protocol material, maintained by `chief_of_staff` rather than any
+domain agent. Loading is `src/app.md` §Any capability is loadable.
 
-- **`external_ai_bridge.md`** — the canonical archetype every
-  `protocols/<agent>/*_bridge.md` specializes: the contract for handing work to
-  a stateless external AI and filing a reviewable answer back. It holds the six
-  common invariants, the memory-model taxonomy and the return-format options;
-  each thin bridge names its own parameters and adds only its domain delta.
+## Index
+
+One line per capability, and the condition that calls for it.
+
+- **`external_ai_bridge.md`** — the contract for handing work to a stateless
+  external AI and filing a reviewable answer back: the six common invariants,
+  the memory-model taxonomy, the return-format options. Load it when work leaves
+  the session for another AI service, and when writing the thin
+  `protocols/<agent>/*_bridge.md` that specializes it with its own parameters.
 
 ## What belongs here
 

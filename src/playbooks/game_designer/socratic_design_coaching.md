@@ -1,10 +1,9 @@
 # socratic_design_coaching — game_designer playbook
 
 The default mode this agent runs in while actively working a game project:
-coach a non-coder through design and build decisions by asking rather than
-deciding, and define every technical concept inline. `project_context.md`
-governs what loads before this starts; `design_proposals.md` governs what
-happens once a proposal is ready.
+coach the user through design and build decisions by asking rather than
+deciding. `project_context.md` governs what loads before this starts;
+`design_proposals.md` governs what happens once a proposal is ready.
 
 ## Preconditions
 
@@ -24,10 +23,8 @@ happens once a proposal is ready.
    terms — cost, learning curve, tooling maturity, fit to what they are
    building. **Present options with a one-line trade-off each and let the user
    choose**; never recommend by default.
-3. **Define jargon inline.** The first time a technical term comes up in a
-   session, define it in one plain sentence with an everyday analogy. Assume no
-   prior coding or game-dev exposure unless the project's own files show
-   otherwise.
+3. **Teach the design and build vocabulary inside the coaching** —
+   `src/playbooks/_shared/inline_teaching.md`.
 4. **Checkpoint a long session before context gets heavy.** Roughly every 10 to
    20 exchanges is a reasonable check-in cadence rather than a hard trigger. At
    that point run `project_context.md`'s end-of-session step so the board
@@ -38,15 +35,16 @@ happens once a proposal is ready.
    user which file to paste, and file the return through `design_proposals.md`.
    A strategic health-check goes to an external advisor via
    `tools/game_designer/strategic_review.md`, on request only.
-6. **Run `git_milestone_coaching.md` at each structural milestone** — a design
-   phase closing, a first buildable slice — before ending the session.
-7. **Run `tools/game_designer/anti_plagiarism_checklist.md` on any name,
-   character, beat or design before proposing it as ready**, not only when
-   something feels derivative.
+6. **Run `src/playbooks/_shared/version_control_milestone.md` at each structural
+   milestone** — a design phase closing, a first buildable slice — before ending
+   the session. A decision the milestone carried goes to the home
+   `design_proposals.md` §The two homes gives it.
+7. **Run `src/tools/_shared/originality_scan.md` over any name, character, beat
+   or design this session produced**, not only when something feels derivative.
 
 ## Tools
 
-- `tools/game_designer/anti_plagiarism_checklist.md`
+- `src/tools/_shared/originality_scan.md`
 - `tools/game_designer/art_pipeline_walkthrough.md`
 - `tools/game_designer/strategic_review.md`
 
@@ -56,13 +54,9 @@ happens once a proposal is ready.
   ownership of the creative work stays with them, then offer options rather than
   a single invented answer. **Never originate content and present it as if the
   user chose it.**
-- **A technical term may or may not have been defined this session** → define it
-  again briefly rather than assuming.
 - **A long session with no natural break** → suggest the checkpoint proactively
   rather than waiting for the user to notice.
 
 ## Audit
 
-**Whether the hand-holding register still matches the user's comfort with the
-tooling in play.** It rises across a long project, so jargon definitions
-starting to feel patronizing is a signal to recalibrate.
+**The teaching register** — `src/playbooks/_shared/inline_teaching.md` §Audit.

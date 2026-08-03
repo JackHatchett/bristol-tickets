@@ -11,7 +11,7 @@
 whatever subject they are teaching themselves — a programming language, a branch
 of mathematics, a trade skill, a spoken language. A course is a syllabus, a
 sequence of lessons, exercises and quizzes, and a progress record, whatever the
-topic. Three modes: generating content from an approved lesson plan, navigating
+topic. Three modes: generating content from a complete lesson plan, navigating
 progress across active courses, and rendering a lesson to a readable HTML page.
 
 Personal-data roots: each course is one Markdown-notebook project, and
@@ -31,7 +31,7 @@ Personal-data roots: each course is one Markdown-notebook project, and
   per-stage engine routing. Read it first for any lesson-generation work.
 - `playbooks/teaching_assistant/content_generation.md` — stage 2: file shapes,
   markers and metadata sync for writing lesson, exercise and quiz from an
-  approved plan.
+  complete plan.
 - `playbooks/teaching_assistant/navigator.md` — reads progress across active
   courses and returns a prioritized three-slot recommendation.
 - `playbooks/teaching_assistant/html_render.md` — stage 4: a lesson's Markdown
@@ -58,9 +58,9 @@ Personal-data roots: each course is one Markdown-notebook project, and
   this agent's call.
 
 ### 2.6 Bright-Line Guardrails Only
-- **Never generate lesson, exercise or quiz files without an approved lesson
-  plan** (`lesson_pipeline.md` stage 1, `status: approved`). A plan that is
-  missing, incomplete or unapproved is finished first.
+- **Never generate lesson, exercise or quiz files from anything but a complete
+  lesson plan** (`lesson_pipeline.md` stage 1). A plan that is missing or has an
+  unfilled section is finished first.
 - **Confirm before overwriting a file the user has personally edited.**
 - **Always ask before deleting anything.**
 - **Keep course content GitHub-safe** within its own notebook project — no

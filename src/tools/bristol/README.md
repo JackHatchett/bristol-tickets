@@ -122,7 +122,7 @@ widget (shown as "on save") and are written once the INSERT yields an id.
 Links exist because a ticket Description is confined to its Build/Fix template,
 which left provenance with nowhere to go. The rule that puts it here rather than
 in the description body is agent behaviour and lives outside this tool —
-`src/playbooks/manage_tickets.md` (§Description discipline).
+`src/playbooks/_shared/manage_tickets.md` (§Description discipline).
 
 ## Clear Done writes a report
 
