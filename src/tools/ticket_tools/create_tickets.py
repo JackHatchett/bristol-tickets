@@ -5,16 +5,13 @@ create_tickets.py — provision a fully robust tickets.db identical to the UI's 
 This script:
     - Creates data/<instance>/tickets/tickets.db
     - Ensures the DB schema matches the UI's auto-migrated schema
-    - Seeds the DB with a default epic + default tasks
     - Throws an error if the DB already exists
     - Uses ONLY relative project structure under the project root
     - Contains NO personal data, NO usernames, NO environment variables
 
 It is also the home of the two functions the other ticket tools call when they
 find no database at all: `provision()` applies the schema to an empty file, and
-`locate_or_provision()` finds the one shared tickets.db or makes it. Those
-create an EMPTY board; the seeding below happens only when someone runs this
-script by hand.
+`locate_or_provision()` finds the one shared tickets.db or makes it.
 
 Usage:
     python3 create_tickets.py --instance <name>
@@ -23,7 +20,6 @@ Usage:
 import sys
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timezone
 
 sys.path.insert(
     0, str(Path(__file__).resolve().parents[1] / "config_tools")
@@ -221,9 +217,9 @@ def provision(db_path: Path) -> Path:
     """Apply SCHEMA to `db_path`, creating the file and its folder if absent.
 
     This is what the ticket tools call when they find no database: an agent on
-    a fresh clone gets an empty board rather than a missing-path error. Seeding
-    is deliberately not part of it — an empty board is the correct first state,
-    and `main()` below is the explicit command that asks for sample content.
+    a fresh clone gets an empty board rather than a missing-path error. The
+    board is created empty — a sample record is invented content, not
+    provisioning (`src/templates/identity_template.md` §Data locations).
 
     Idempotent: every statement is IF NOT EXISTS, so running it against a live
     database adds only what is missing.
@@ -328,57 +324,6 @@ def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# SEEDING
-# ---------------------------------------------------------------------------
-
-# Seed tasks land in the Backlog stage (status 'todo'); sort_order is assigned
-# sequentially below so they keep this listed order in the Backlog tab.
-DEFAULT_TASKS = [
-    ("Define agent purpose and scope", "Write a clear one-paragraph statement.", 80),
-    ("Create agent loader", "Scaffold CLAUDE.md with load order.", 70),
-    ("Create charter", "Draft identity, authority, mandate.", 60),
-    ("Set up data store", "Create state and ticket stubs.", 50),
-    ("Register agent", "Add entry to global registry.", 40),
-]
-
-
-def seed_db(conn: sqlite3.Connection, instance: str) -> None:
-    now = datetime.now(timezone.utc).isoformat()
-
-    cur = conn.execute(
-        "INSERT INTO epic (name, type, status, owner, description, next_action) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (
-            f"{instance} — initial setup",
-            "Epic (bounded)",
-            "not started",
-            instance,
-            f"Bootstrap work to get the {instance} agent operational.",
-            "Define agent purpose and scope.",
-        ),
-    )
-    epic_id = cur.lastrowid
-
-    conn.execute(
-        "INSERT INTO scope (epic_id, version, label, description) VALUES (?,?,?,?)",
-        (epic_id, "v1", "bootstrap", "Initial provisioning tasks."),
-    )
-
-    for order_idx, (title, desc, pressure) in enumerate(DEFAULT_TASKS):
-        cur2 = conn.execute(
-            "INSERT INTO task (epic_id, title, description, status, stage, sort_order, pressure) "
-            "VALUES (?,?,?,?,?,?,?)",
-            (epic_id, title, desc, "todo", "backlog", order_idx, pressure),
-        )
-        conn.execute(
-            "INSERT INTO issue_log (task_id, author, body, created_at) VALUES (?,?,?,?)",
-            (cur2.lastrowid, "system", "created by create_tickets.py", now),
-        )
-
-    conn.commit()
-
-
-# ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
 
@@ -404,7 +349,6 @@ def main() -> None:
     conn.commit()
     print("  Schema applied.")
 
-    seed_db(conn, instance)
     conn.close()
 
     print("Done. Launch agent with:")

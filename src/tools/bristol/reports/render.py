@@ -116,9 +116,9 @@ def _summary(f):
     sentences = []
 
     period = f["period_days"]
-    span = f"{period:.0f} days" if period >= 1 else "under a day"
+    span = f"over {period:.0f} days" if period >= 1 else "in under a day"
     sentences.append(
-        f"This period closed {n} card{'s' if n != 1 else ''} over {span}"
+        f"This period closed {n} card{'s' if n != 1 else ''} {span}"
         + (f", a rate of {f['throughput']['per_week']:.1f} per week"
            if f["throughput"]["per_week"] else "")
         + "."
