@@ -221,9 +221,12 @@ those same epics stay in backlog.
 **Cross-zone requests are cards, not commands.** An agent authors board tasks
 freely for itself or the user within its own zone. Anything landing in another
 agent's decision domain is an `add-task` with `--assignee` = that agent and
-`--reporter` = you — an ordinary active-board card in `todo`, where the user
-actually looks, and the `assignee` is what makes it a request rather than an
-order: that agent's card to accept, reorder, or drop. The `librarian` does not
+`--reporter` = you — an ordinary card in `todo`, and the `assignee` is what
+makes it a request rather than an order: that agent's card to accept, reorder,
+or drop. Which tab it lands in is the user's, not the agent's: `add-task` reads
+`board.cross_agent_stage` from config — `active` by default, `backlog` if the
+user prefers — whenever an assignee differs from its reporter and no `--stage`
+is given. Bristol's Settings tab is where that choice is made. The `librarian` does not
 put "delete the xyz database" in `doing` for `chief_of_staff`; it files a `todo`
 card assigned to `chief_of_staff`, reporter `librarian`. There is no separate
 suggestion store, subcommand, or status section — `reporter` and `assignee`

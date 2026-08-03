@@ -12,6 +12,8 @@ pieces it composes live in sibling modules:
     card_delegate.py CardDelegate (per-card QPainter rendering)
     record_dialog.py UnifiedRecordDialog (create/edit modal)
     kanban_column.py KanbanColumn (a populated column of cards)
+    setup_wizard.py  first-run setup, also reachable from File → Setup…
+    settings_tab.py  SettingsTab (board behaviour, stored in config.local.json)
 
 Database logic is unchanged from the pre-split v17/v18 baseline; this was a pure
 structural refactor to keep each file small enough for an external consultant
@@ -25,7 +27,7 @@ import sqlite3
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QIcon, QTextBlockFormat, QTextCursor
+from PySide6.QtGui import QAction, QFont, QIcon, QTextBlockFormat, QTextCursor
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -47,11 +49,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import config_file  # bristol-local: the one config.local.json reader/writer
+
 from .attachments import AttachmentBar
 from .links import LinkBar, remove_links_for_task
 from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
+from .settings_tab import SettingsTab
 from .theme import (
     COLUMNS,
     FLEET_AGENTS,
@@ -96,6 +101,8 @@ class MainWindow(QMainWindow):
 
         self.current_epic_id = None
 
+        self._build_menu_bar()
+
         main_splitter = QSplitter(Qt.Horizontal)
         main_splitter.setHandleWidth(10)
         self.setCentralWidget(main_splitter)
@@ -135,6 +142,7 @@ class MainWindow(QMainWindow):
         self.refresh_btn = QPushButton("Refresh")
         self.refresh_btn.clicked.connect(self._refresh_board)
 
+        outer_layout.addLayout(self._build_agent_strip())
         outer_layout.addWidget(self.tabs)
 
         search_widget = QWidget()
@@ -280,6 +288,9 @@ class MainWindow(QMainWindow):
         archive_layout.addWidget(self.archive_results)
         self._archive_tab_index = self.tabs.addTab(archive_widget, "Archive")
 
+        self.settings_tab = SettingsTab()
+        self._settings_tab_index = self.tabs.addTab(self.settings_tab, "Settings")
+
         # Untitled group box: the "Properties Inspector" caption was
         # dropped — it overlapped the border below and added nothing.
         self.inspector_panel = QGroupBox("")
@@ -419,6 +430,63 @@ class MainWindow(QMainWindow):
             self._set_backlog_read_mode()
         else:
             self._enter_backlog_edit_mode()
+
+    # ----- The active agent, always on screen -------------------------------
+
+    def _build_agent_strip(self) -> QHBoxLayout:
+        """Who the next Claude session runs as, above the tabs.
+
+        This is not a setting: it changes what the whole application means, so
+        it is visible on every tab rather than filed behind one. Selecting an
+        agent writes `active_agent` into the configuration and nothing else.
+        """
+        self.agent_combo = QComboBox()
+        slugs = config_file.agent_slugs() or [a for a in FLEET_AGENTS if a != "user"]
+        self.agent_combo.addItems(slugs)
+        active = config_file.get("active_agent")
+        if active in slugs:
+            self.agent_combo.setCurrentText(active)
+        self.agent_combo.setEnabled(bool(config_file.agent_slugs()))
+        self.agent_combo.currentTextChanged.connect(self._set_active_agent)
+
+        self.agent_status = QLabel()
+        strip = QHBoxLayout()
+        strip.addWidget(QLabel("Start next session as"))
+        strip.addWidget(self.agent_combo)
+        strip.addWidget(self.agent_status, 1)
+        return strip
+
+    def _set_active_agent(self, slug: str) -> None:
+        try:
+            config_file.update({"active_agent": slug})
+        except OSError as exc:
+            self.agent_status.setText(f"Not saved: {exc}")
+            return
+        self.agent_status.setText(f"Next session runs as {slug}")
+
+    # ----- Menu bar ---------------------------------------------------------
+
+    def _build_menu_bar(self) -> None:
+        """The window's one menu: re-running first-run setup."""
+        setup_action = QAction("Setup…", self)
+        # // Qt reads "setup" as a preferences item and moves it into the macOS
+        # // application menu unless the role is pinned.
+        setup_action.setMenuRole(QAction.NoRole)
+        setup_action.triggered.connect(self._open_setup_wizard)
+        self.menuBar().addMenu("File").addAction(setup_action)
+
+    def _open_setup_wizard(self) -> None:
+        """Run setup again, over the installation this window already has open."""
+        from .setup_wizard import run_setup
+
+        db_path = run_setup(self)
+        if db_path is None:
+            return
+        self.settings_tab.reload()
+        QMessageBox.information(
+            self, "Setup complete",
+            f"Your installation is at {db_path}.\n\n"
+            "Bristol opens it the next time it launches.")
 
     # ----- Theming (OS light/dark, warm orange both ways) -------------------
 

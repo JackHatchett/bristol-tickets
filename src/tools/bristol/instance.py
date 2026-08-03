@@ -1,9 +1,9 @@
-"""instance.py — read the per-machine instance pointer.
+"""instance.py — the per-machine instance pointer, as Bristol sees it.
 
 Bristol is self-contained: it imports nothing from the rest of ``src/tools/``,
-so this is a local reader for the same file that
+so this is a local reader and writer for the same file that
 ``config_tools/instance_pointer.py`` owns. That module holds the canonical
-resolution order and the pointer's schema; this one only reads.
+resolution order and the pointer's schema; the two write the same four fields.
 
 GitHub-safe: contains no personal path.
 """
@@ -43,3 +43,23 @@ def get_path(key: str) -> Path | None:
     if isinstance(value, str) and value.strip():
         return Path(os.path.expanduser(value.strip()))
     return None
+
+
+def write(repo_root, data_root, instance_slug: str, config_path) -> Path:
+    """Create or replace the pointer. Returns the path written."""
+    path = pointer_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "repo_root": str(repo_root),
+                "data_root": str(data_root),
+                "instance_slug": instance_slug,
+                "config_path": str(config_path),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return path

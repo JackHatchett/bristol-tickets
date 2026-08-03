@@ -47,10 +47,12 @@ Usage:
 
         CROSS-AGENT SUGGESTION: to suggest work
         that lands in another agent's or the user's zone, add a card with
-        --assignee <that agent/user> and --reporter <you>. It lands in that
-        agent's `todo` on the board the user actually watches. The --assignee is
+        --assignee <that agent/user> and --reporter <you>. The --assignee is
         what makes it a proposal rather than a command: it is that agent's card
-        to accept, reorder, or drop.
+        to accept, reorder, or drop. Where it lands is the user's choice, held
+        in config as `board.cross_agent_stage` and edited in Bristol's Settings
+        tab: 'active' (the default — that agent's `todo` on the board the user
+        watches) or 'backlog'. An explicit --stage always wins.
 
     python3 ticket_write.py update-task --id N [--title "..."]
         [--description "..."] [--estimate S|M|L|XL] [--record-type build|fix]
@@ -324,15 +326,36 @@ def _append_order(conn: sqlite3.Connection, stage: str, status: str) -> int:
     return int(row[0]) + 1
 
 
-def _normalize_stage_status(stage, status):
+def _cross_agent_stage() -> str:
+    """Where a card one agent files for another lands, per config.
+
+    `board.cross_agent_stage` is the user's setting, edited in Bristol's
+    Settings tab. An unreadable config or an unrecognised value means the
+    default: the active Board, where the assignee sees it.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
+    try:
+        import read_config
+
+        choice = read_config.get("board.cross_agent_stage", "active")
+    except Exception:  # noqa: BLE001 — a missing or malformed config is a default, not a failure
+        return "active"
+    return choice if choice in ("active", "backlog") else "active"
+
+
+def _normalize_stage_status(stage, status, assignee=None, reporter=None):
     """Fold the legacy 'backlog' *status* into the Stage model: --status backlog
     means stage=backlog / status=todo unless an explicit --stage was given.
 
     A new card otherwise lands on the active Board, which is where a to-do is
     seen and worked; the backlog is the deliberate exception, asked for by name.
+    A card whose assignee is not its reporter is the one case the user gets to
+    redirect, through `board.cross_agent_stage`.
     """
     if (status or "").lower() == "backlog":
         return (stage or "backlog"), "todo"
+    if stage is None and assignee and reporter and assignee != reporter:
+        return _cross_agent_stage(), (status or "todo")
     return (stage or "active"), (status or "todo")
 
 
@@ -368,7 +391,8 @@ def add_task(args: argparse.Namespace) -> None:
         record_type = (args.record_type or "build").lower()
         if record_type not in ("build", "fix"):
             sys.exit("add-task: ERROR — --record-type must be 'build' or 'fix'")
-        stage, status = _normalize_stage_status(args.stage, args.status)
+        stage, status = _normalize_stage_status(
+            args.stage, args.status, args.assignee, args.reporter)
         if stage not in ("backlog", "active", "archive"):
             sys.exit("add-task: ERROR — --stage must be backlog|active|archive")
         if status not in ("todo", "doing", "done"):
