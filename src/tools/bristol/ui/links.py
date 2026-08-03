@@ -307,8 +307,8 @@ class AddLinkDialog(QDialog):
         v.addLayout(label_row)
 
         hint = QLabel(
-            "A path opens in whichever app owns that file type. For a note that "
-            "must open in Obsidian, paste its obsidian:// URL."
+            "A path opens in whichever app owns that file type. To force a "
+            "particular app, paste that app's URL scheme instead."
         )
         hint.setObjectName("metaText")
         hint.setWordWrap(True)

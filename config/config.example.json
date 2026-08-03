@@ -23,7 +23,7 @@
   },
 
   "markdown_notebook": {
-    "notes": "OPTIONAL. A Markdown notebook (e.g. an Obsidian vault) outside the repo. Agents read and write here per their charters. reports_dir is read by Bristol's report writer, which falls back to an env var, a local pointer file, then nothing.",
+    "notes": "OPTIONAL. A Markdown notebook outside the repo: a folder of Markdown notes you hand-edit in a desktop notebook app. Agents read and write here per their charters. reports_dir is read by Bristol's report writer, which falls back to an env var, a local pointer file, then nothing.",
     "notes_dir": "/path/to/notebook",
     "courses_dir": "/path/to/notebook/courses",
     "recipes_dir": "/path/to/notebook/recipes",

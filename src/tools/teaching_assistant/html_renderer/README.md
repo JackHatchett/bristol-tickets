@@ -79,14 +79,14 @@ If an exercise/quiz file uses no `:::answer` markers, any `## Answer Key` /
 
 ## Notebook-only syntax
 
-Two bits of source-Markdown syntax exist for the Obsidian notebook, not the
+Two bits of source-Markdown syntax exist for the Markdown notebook, not the
 reading page, and the renderer strips or converts them rather than leaking
 them raw into the HTML:
 
 - Standalone HTML comment lines (`<!-- ta-nav -->`, `<!-- ta-rel -->`) are
   dropped — they mark nav/related footers for the notebook, meaningless in
   standalone HTML.
-- Obsidian wiki-links `[[path|Display]]` / `[[path]]` become plain display
+- Wiki-links `[[path|Display]]` / `[[path]]` become plain display
   text (`Display`, or the last path segment) — the renderer has no notion of
   the notebook's other files, so it can't emit a working `href`.
 

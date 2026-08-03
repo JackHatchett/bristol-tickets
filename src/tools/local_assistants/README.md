@@ -1,9 +1,9 @@
 # local_assistants — shared home for external local-LLM helpers
 
 A **local assistant** is a small, offline, lower-capability LLM (an Ollama-class
-model) running inside a *host application on the user's own machine* — e.g.
-AnythingLLM's chat window, or an AI plugin embedded in the Markdown notebook
-(Obsidian) — that assists a cloud Cowork agent with bounded, cheap, offline
+model) running inside a *host application on the user's own machine* — a
+desktop LLM chat window, or an AI plugin embedded in the Markdown notebook —
+that assists a cloud Cowork agent with bounded, cheap, offline
 work. It is **not a copy of an agent**. A local model has a fraction of the
 reasoning and context budget of the cloud agents, so it can only ever be an
 *assistant* to one: it executes narrow, well-specified tasks the cloud agent
@@ -36,18 +36,18 @@ its own bridge protocol for the delta.
    do its job (e.g. append-only to one log file; write-only to one notebook
    subtree). Powers are configured at deploy time in the host app, never
    chosen by the model.
-4. **Paths resolve from `/config`, never hardcoded.** Host apps (AnythingLLM's
+4. **Paths resolve from `/config`, never hardcoded.** Host apps (desktop-LLM
    setup args, plugin config boxes) often can't expand `~` or env vars, so the
    *one* real absolute path each assistant needs is filled in by hand at
    install time on the machine — never committed to a tracked file.
 5. **Deployed copies are manual.** The source of truth lives here in `/src`;
-   the copy running inside the host app (e.g. an AnythingLLM agent skill) is a
+   the copy running inside the host app (a skill, a plugin, a prompt slot) is a
    separately-deployed copy. Change it here, then redeploy.
 
 ## Why this is its own top-level tool folder
 
-The "external local-LLM assistant" concept spans agents and host apps: it may
-run in AnythingLLM today and an Obsidian plugin tomorrow, serving the teaching
-assistant, the librarian, or a future agent. Housing it under any one agent
+The "external local-LLM assistant" concept spans agents and host apps: one
+assistant runs in a desktop chat app, another in a notebook plugin, serving the
+teaching assistant, the librarian, or a future agent. Housing it under any one agent
 would mis-signal ownership. It lives here as shared infrastructure; each
 assistant's *behavioral* contract stays with its owning agent's protocols.

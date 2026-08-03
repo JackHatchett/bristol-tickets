@@ -14,8 +14,8 @@ Two decisions worth stating:
     (see generate.py) is the payoff.
 *   Charts are drawn with block characters rather than an image or a plugin
     chart. They render in preview, in source mode, on mobile, and in a diff —
-    and they survive being read ten years from now by something that is not
-    Obsidian.
+    and they survive being read ten years from now by whatever Markdown reader
+    exists then.
 
 No DB access and no file I/O: this module takes a dict and returns a string.
 """
