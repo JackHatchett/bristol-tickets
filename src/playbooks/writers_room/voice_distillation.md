@@ -6,9 +6,7 @@ me the next exercise," "prompt me on how I write \<X\>") or by the keyword
 
 This is writers_room's application of the generic method in
 `tools/writing_tools/voice_capture.md` — read that file for the philosophy, the
-two intake paths and the distillation loop. **writers_room always plays the
-distiller half**; the Grammatizator, an external role dispatched per
-`crew_dispatch.md`, plays the scout half.
+two intake paths and the distillation loop.
 
 ## Entering voice work
 
@@ -22,32 +20,38 @@ resolved via `/config`; never hardcode that path in `/src`.
 
 1. **Choose the path**: A to fill one specific unfilled technique, B for an
    initial bulk pass over existing writing.
-2. **Dispatch the Grammatizator** per `crew_dispatch.md` — a
-   `QUARTERMASTER_TO_GRAMMATIZATOR` brief naming the mode (`BULK_CORPUS` or
-   `TARGETED_SAMPLE`), the `corpus_type`, the `provenance` and the sample
-   reference.
-3. **Receive the `GRAMMATIZATOR_TO_QUARTERMASTER` reply**, the Specimen Pack.
-   **writers_room never reads the raw source documents itself** — only the pack.
+2. **Scout the specimens.** Read the sample and pull the verbatim moves in it,
+   each with a short analysis, a `strength` and a `recurrence`. Two shapes: a
+   **bulk pass** over a body of the author's writing, returning specimens across
+   every technique plus an opportunistic lexicon — favored verbs, avoided words,
+   register lean, tics — or a **targeted pass** over one sample, often a single
+   exercise page, returning the cleanest specimen of each named technique.
+   Handing the scouting pass to a second model is an option
+   (`protocols/writers_room/second_model_bridge.md`), never a requirement.
+3. **Record the `corpus_type` and `provenance` of every specimen** as it is
+   taken. The firewall below reads both, and neither can be recovered later.
 
 ## Distilling
 
 Run the generic distillation loop from `tools/writing_tools/voice_capture.md`
-against the returned pack: write or update the technique's card, set its
-confidence threshold from `strength` and `recurrence`, update the inventory
-status, and promote the sharpest signature lines into the core profile.
+against the specimens: write or update the technique's card, set its confidence
+threshold from `strength` and `recurrence`, update the inventory status, and
+promote the sharpest signature lines into the core profile.
 
 - **Quote verbatim into the card, never from a paraphrase.**
-- **The raw Specimen Pack stays on disk as payload**; the distiller does not
-  re-read it once the card is written.
 
 ## Genre and provenance firewall
 
-Apply the firewall in `protocols/writers_room/gemini_crew_handoff.md` before
-storing anything: **an `external` intake — outside the author's own corpus —
-yields abstract method facts only, never verbatim specimens or lexicon
-entries.** The Grammatizator's reply schema enforces this, and the distillation
-step checks it too: **never promote a specimen into a card without confirming
-its `provenance`.**
+Applies to every specimen before anything is stored, whoever scouted it.
+
+- **Tag every specimen with the corpus it came from.** Voice facts are
+  genre-scoped and never blended across corpora.
+- **An `external` intake — prose outside the author's own corpus — yields
+  abstract, genre-scoped method facts only.** Never a verbatim specimen and
+  never a lexicon entry: a coinage mechanism and its rate, never the coined
+  words themselves.
+- **Never promote a specimen into a card without confirming its
+  `provenance`.**
 
 ## The growth command
 
