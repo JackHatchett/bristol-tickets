@@ -2,8 +2,8 @@
 
 Owned by `chief_of_staff`. The archetype every `protocols/<agent>/*_bridge.md`
 specializes: the contract for handing work to a stateless external AI — a Gem,
-an in-editor coding assistant, a local LLM, a briefed crew role — and getting a
-reviewable answer back.
+an in-editor coding assistant, a local LLM, a second model briefed for one
+job — and getting a reviewable answer back.
 
 ## 0. Ground truth
 
@@ -31,9 +31,8 @@ hold regardless of agent, vendor or domain:
    applications tracker, a file manifest or a voice card. **Nothing it returns
    is work state**, and the owning agent lands work state nowhere but the board.
 4. **Returns one clean, structured, self-contained block** — a fenced text
-   block, a JSON file, a schema-validated envelope, or a direct write-back on
-   shared disk. No preamble or commentary mixed in; the block must capture
-   cleanly on copy.
+   block, a JSON file, or a direct write-back on shared disk. No preamble or
+   commentary mixed in; the block must capture cleanly on copy.
 5. **The owning agent reviews and files the return.** Every proposal is
    reconciled against the whole project and ratified — by the agent, and by the
    user where the change is structural — before it lands. **Well-formed means it
@@ -49,7 +48,7 @@ A thin bridge names which one it uses; that choice drives its sync trigger.
 | Memory model | How it is briefed | Refresh trigger | Reference bridge |
 |---|---|---|---|
 | **Persistent KB, manual refresh** | Curated files uploaded once to the tool's own knowledge store; they persist across chats. | Re-upload the affected file when its source changes. | `career_coach/gemini_gem_bridge.md`, `game_designer/gemini_gem_bridge.md` |
-| **Stateless, re-pointed each request** | No persistent store; the needed files and prompt are handed in fresh every session. | None — each brief is current by construction. | `teaching_assistant/copilot_bridge.md`, `writers_room/gemini_crew_handoff.md` |
+| **Stateless, re-pointed each request** | No persistent store; the needed files and prompt are handed in fresh every session. | None — each brief is current by construction. | `teaching_assistant/copilot_bridge.md`, `writers_room/second_model_bridge.md` |
 | **Local-LLM session** | Contract lives in the runtime's system-prompt field; static reference is pinned or embedded; live files are read and written from shared disk. | Live files read fresh each session; static pins re-embedded on change. | `career_coach/local_fallback.md` |
 
 ### 1b. Return format
@@ -66,10 +65,6 @@ A thin bridge names which one it uses, in rising order of formality:
 - **JSON request and return pair** — two files moving through
   `handoffs/requests/` and `handoffs/returns/`, machine-filable, carrying an
   explicit per-field status taxonomy.
-- **Schema-validated envelope** — a JSON envelope validated against a published
-  schema before it is trusted. `writers_room`'s `handoff.schema.json` is the
-  reference example. **Reach for this only where the return has enough distinct
-  shapes that a schema earns its keep**; most bridges do not need one.
 
 ### 1c. Direction
 
