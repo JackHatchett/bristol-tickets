@@ -8,6 +8,11 @@
     "cross_agent_stage": "active"
   },
 
+  "appearance": {
+    "_notes": "How Bristol Tickets looks. Edited in its Settings tab. scheme names either a family — 'warm' or 'cool', meaning follow the OS light/dark setting within it — or one scheme outright: 'warm_light', 'warm_dark', 'cool_light', 'cool_dark'. The schemes and the design tokens they sit beside are src/tools/bristol/ui/theme.py; what each key means is src/tools/bristol/ui/README.md.",
+    "scheme": "warm"
+  },
+
   "sizing": {
     "usage_window": "one full plan allowance over its rolling window",
     "notes": "The unit a ticket's S/M/L/XL estimate is measured against — see src/app.md (Effort sizing). Describe YOUR plan's budget here in plain words; agents read this string rather than assuming any vendor's limits. The scale and its anchors live in src/app.md and do not change per instance."

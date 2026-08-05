@@ -82,6 +82,80 @@ def check_bristol() -> list[str]:
         raise SmokeFailure("fresh ImagePreviewDialog should not report deleted()")
     ok.append("ImagePreviewDialog builds (missing + real image)")
 
+    # The appearance manager, before anything paints. An incomplete scheme is a
+    # KeyError in the middle of a paint, so it is named here instead.
+    import ui.theme as theme
+
+    gaps = theme.check_schemes()
+    if gaps:
+        raise SmokeFailure("incomplete colour scheme — " + "; ".join(gaps))
+    ok.append(f"all {len(theme.SCHEMES)} colour schemes carry the same keys")
+
+    for value, _caption in theme.CHOICES:
+        for dark in (False, True):
+            name = theme.resolve_choice(value, dark)
+            if name not in theme.SCHEMES:
+                raise SmokeFailure(f"choice {value!r} resolves to no scheme")
+            theme.set_scheme(name)
+            if theme.current_scheme() != name or not theme.build_style_sheet():
+                raise SmokeFailure(f"scheme {name!r} does not become live")
+    if theme.resolve_choice("a_scheme_from_a_newer_build", False) \
+            != theme.FAMILIES[theme.DEFAULT_CHOICE][0]:
+        raise SmokeFailure("an unrecognised scheme name does not fall back")
+    theme.set_scheme(theme.resolve_choice(theme.DEFAULT_CHOICE, False))
+    ok.append("every offered choice resolves, applies and renders a stylesheet")
+
+    for scale in (theme.SPACE, theme.RADIUS, theme.TYPE):
+        if not all(isinstance(step, int) and step > 0 for step in scale.values()):
+            raise SmokeFailure("a token scale holds something that is not a size")
+    ok.append("the spacing, radius and type scales are whole sizes")
+
+    # The card painter reads tokens rather than holding literals, so a change to
+    # a scale must reach it with no edit there.
+    from ui.card_delegate import CardDelegate
+
+    delegate = CardDelegate()
+    before = (delegate.PAD, delegate.GAP, delegate.MARGIN)
+    theme.SPACE["lg"] += 5
+    try:
+        if delegate.PAD == before[0]:
+            raise SmokeFailure("the card painter does not read the spacing scale")
+    finally:
+        theme.SPACE["lg"] -= 5
+    if (delegate.PAD, delegate.GAP, delegate.MARGIN) != before:
+        raise SmokeFailure("the card painter did not follow the scale back")
+    ok.append("the card painter's geometry follows the token scales")
+
+    # Paint a card under every scheme. A palette key the painter reads and a
+    # scheme lacks surfaces here rather than on the user's board.
+    from PySide6.QtCore import QRect
+    from PySide6.QtGui import QPainter, QPixmap
+    from PySide6.QtWidgets import QStyleOptionViewItem
+
+    class _Cell:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def data(self, role):
+            from ui.theme import CARD_ROLE
+            return self._payload if role == CARD_ROLE else None
+
+    option = QStyleOptionViewItem()
+    option.rect = QRect(0, 0, 260, 140)
+    cell = _Cell({"title": "A card", "pressure": 85, "issue_id": 1,
+                  "record_type": "fix", "epic_name": "An epic",
+                  "owner": "user", "estimate": "M"})
+    for name in theme.SCHEMES:
+        theme.set_scheme(name)
+        pixmap = QPixmap(260, 140)
+        painter = QPainter(pixmap)
+        try:
+            CardDelegate(show_checkbox=True).paint(painter, option, cell)
+        finally:
+            painter.end()
+    theme.set_scheme(theme.resolve_choice(theme.DEFAULT_CHOICE, False))
+    ok.append("a card paints under every scheme")
+
     schema = TOOLS / "bristol" / "schema.sql"
     if schema.exists():
         from PySide6.QtCore import Qt
@@ -108,9 +182,13 @@ def check_bristol() -> list[str]:
         win = MainWindow(mconn)
         if hasattr(win, "handoff_note_edit"):
             raise SmokeFailure("Handoff tab still present — it is retired")
-        tab_names = {win.tabs.tabText(i) for i in range(win.tabs.count())}
+        tab_names = {b.text() for b in win._tab_buttons}
         if "Handoff" in tab_names:
             raise SmokeFailure("Handoff tab still present — it is retired")
+        if len(win._tab_buttons) != win.pages.count():
+            raise SmokeFailure("a view exists with no tab, or a tab with no view")
+        if sum(1 for b in win._tab_buttons if b.isChecked()) != 1:
+            raise SmokeFailure("exactly one view tab is selected at a time")
         if mconn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='handoff'"
         ).fetchone():
@@ -203,14 +281,14 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("Clear Done archived a card without logging the transition")
         ok.append(f"transition log records stage moves ({events} events)")
 
-        # Create-modal Stage follows the active tab.
-        win.tabs.setCurrentIndex(win._board_tab_index)
+        # Create-modal Stage follows the active view.
+        win._show_page(win._board_tab_index)
         if win._stage_for_current_tab() != "active":
             raise SmokeFailure("Create from Board should default Stage=active")
-        win.tabs.setCurrentIndex(win._archive_tab_index)
+        win._show_page(win._archive_tab_index)
         if win._stage_for_current_tab() != "archive":
             raise SmokeFailure("Create from Archive should default Stage=archive")
-        win.tabs.setCurrentIndex(0)  # Search
+        win._show_page(0)  # Search
         if win._stage_for_current_tab() != "backlog":
             raise SmokeFailure("Create from Search should default Stage=backlog")
         win._sync_backlog_bar()  # must not raise with nothing checked
@@ -569,13 +647,24 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure("Settings did not write the board setting")
                 if config_file.get("a_key_from_a_newer_build.kept") is not True:
                     raise SmokeFailure("saving Settings dropped an unrecognised key")
+                if tab.appearance.currentData() != \
+                        config_file.APPEARANCE_SCHEME_DEFAULT:
+                    raise SmokeFailure("Settings did not load the stored scheme")
+                previewed: list[str] = []
+                tab._on_appearance_changed = previewed.append
+                tab.appearance.setCurrentIndex(tab.appearance.findData("cool_dark"))
+                if previewed != ["cool_dark"]:
+                    raise SmokeFailure("picking a scheme did not apply it live")
+                tab._save()
+                if config_file.get(config_file.APPEARANCE_SCHEME) != "cool_dark":
+                    raise SmokeFailure("Settings did not write the scheme")
                 agent_win = MainWindow(mconn)
                 if agent_win.agent_combo.currentText() not in config_file.agent_slugs():
                     raise SmokeFailure("the agent control does not show a configured agent")
                 agent_win._set_active_agent("librarian")
                 if config_file.get("active_agent") != "librarian":
                     raise SmokeFailure("choosing an agent did not reach the config")
-                if agent_win.tabs.tabText(agent_win.tabs.count() - 1) != "Settings":
+                if agent_win._tab_buttons[-1].text() != "Settings":
                     raise SmokeFailure("no Settings tab alongside the board tabs")
             finally:
                 config_file.path = _orig_path

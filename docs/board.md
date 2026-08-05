@@ -46,16 +46,22 @@ Drag a card to reorder it within a column or move it across. Position matters:
 the top of To Do is what an agent picks up next, and dragging is how you decide
 that.
 
-Above the columns sit three controls, each over the column it belongs to: an
-epic filter on the left, **Refresh** in the middle, **Clear Done** on the right.
+Above the columns sits one control row holding what applies to the whole board:
+the epic filter and **Refresh**. Each column carries its own header — its name,
+how many cards are in it, and an overflow menu holding what acts on that column
+alone: creating a card in it, and, on Done, **Clear Done**.
 
 ## A card
 
 Click any card to load it into the properties inspector on the right.
 Double-click, or press **Create**, to open the full dialog.
 
-The card face shows its id, title, epic, an owner on the left of the footer and
-an effort size on the right, with a coloured stripe and pill for pressure.
+A card leads with its title, followed by the first line of its description in a
+lighter face. Everything else sits in one footer row: the id, the owner and the
+pressure reading on the left, then the effort, the record type and the epic as
+soft-tinted pills. Pressure is drawn in the same quiet treatment as the rest —
+it sorts nothing and gates nothing, so nothing on the card ramps it from green
+to red.
 
 | Field | What it holds |
 | --- | --- |
@@ -126,8 +132,8 @@ never the text.
 
 ## Clear Done
 
-**Clear Done** sweeps every card in the Done column into the Archive in one
-click, and writes a report.
+**Clear Done**, in the Done column's own menu, sweeps every card in that column
+into the Archive in one click and writes a report.
 
 Clearing Done is the only natural period boundary a board has, so it is where
 the reporting cadence comes from. The report is one Markdown note per sweep,
@@ -145,6 +151,10 @@ notebook, Clear Done simply archives.
 **Cross-agent stage** — when one agent files a card for another, where it lands:
 the Board, where the other agent will see it in its queue, or the Backlog. The
 command-line writer reads the same setting, so both surfaces agree.
+
+**Colour scheme** — a warm orange or a cool neutral appearance, each either
+following your system's light/dark setting or pinned to one of the two. The
+board redraws as you pick, so you can compare; Save is what keeps it.
 
 Settings are stored in your configuration file, the same one the setup wizard
 fills in. Saving round-trips the whole file, so a key this build does not

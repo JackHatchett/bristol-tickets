@@ -54,6 +54,28 @@ this key.
 | --- | --- | --- |
 | `cross_agent_stage` | `active` | Where a card one agent files for another lands: `active` (the Board) or `backlog`. |
 
+### `appearance`
+
+**Required. Default `warm`.** How Bristol Tickets looks. Edited in its Settings
+tab, where the choice applies as it is picked and Save writes it here.
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `scheme` | `warm` | The colour scheme, as a family or a scheme name. |
+
+A family means "follow the OS light/dark setting within it":
+
+| Value | Meaning |
+| --- | --- |
+| `warm` | The warm orange family, following the OS. |
+| `cool` | The cool neutral family, following the OS. |
+| `warm_light` / `warm_dark` | Warm orange, pinned. |
+| `cool_light` / `cool_dark` | Cool neutral, pinned. |
+
+An unrecognised value falls back to `warm`. Adding a scheme is a data change in
+`src/tools/bristol/ui/theme.py`; what each key in one means is
+`src/tools/bristol/ui/README.md`.
+
 ### `sizing`
 
 **Required.** What a card's S/M/L/XL estimate is measured against.

@@ -1,14 +1,15 @@
 """ui/kanban_column.py — one scrollable column of task cards.
 
-``KanbanColumn`` is a labelled QListWidget that renders task cards via
-``CardDelegate``. In the Kanban model it populates itself two ways:
+``KanbanColumn`` is a region of the canvas: a header carrying the column's name,
+its card count and the overflow menu holding the actions that operate on this
+column alone, over a stack of ``CardDelegate``-painted cards with no fill or
+border of its own. In the Kanban model it populates itself two ways:
 
 * BOARD columns (``status_key`` = todo|doing|done): the tasks whose
   ``stage='active'`` and whose ``status`` matches this column, in manual
   ``sort_order``. Cards drag *between* columns (which rewrites ``status`` and
   drops them at the bottom of the destination) and *within* a column (which
-  rewrites ``sort_order`` to the dropped position). Multi-select feeds the
-  toolbar's "Bulk Change" (move selected → Backlog / Archive).
+  rewrites ``sort_order`` to the dropped position).
 
 * the BACKLOG column (``is_backlog=True``): every ``stage='backlog'`` task as a
   single manually-ordered list. Cards drag to reorder (persisted); a per-card
@@ -24,20 +25,22 @@ The parent (MainWindow) is expected to expose ``_refresh_board`` and
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
+    QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QMenu,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from .card_delegate import CardDelegate
 from .record_dialog import UnifiedRecordDialog
-from .theme import CARD_ROLE, _is_checked, _utcnow
+from .theme import CARD_ROLE, LAYOUT, _is_checked, _utcnow, space
 
 
 class _DndListWidget(QListWidget):
@@ -65,18 +68,37 @@ class KanbanColumn(QWidget):
         self._main_window_ref = parent
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(4, 4, 4, 4)
-        root.setSpacing(6)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(space("md"))
 
-        header = QLabel(display_name)
-        header_font = QFont()
-        header_font.setPointSize(11)
-        header_font.setBold(True)
-        header.setFont(header_font)
-        header.setStyleSheet("padding: 2px 4px;")
-        root.addWidget(header)
+        # The header is the column: its name, how many cards are in it, and the
+        # menu holding the actions that operate on this column alone. The stack
+        # below it has no fill and no border, so the cards are the only raised
+        # surfaces on the view.
+        header = QHBoxLayout()
+        header.setContentsMargins(space("sm"), 0, 0, 0)
+        header.setSpacing(space("md"))
+
+        self.header_label = QLabel(display_name)
+        self.header_label.setObjectName("columnName")
+        header.addWidget(self.header_label)
+
+        self.count_label = QLabel("")
+        self.count_label.setObjectName("columnCount")
+        header.addWidget(self.count_label)
+        header.addStretch(1)
+
+        self.menu_btn = QPushButton("···")
+        self.menu_btn.setObjectName("columnMenu")
+        self.menu_btn.setToolTip(f"Actions for the {display_name} column")
+        self._menu = QMenu(self.menu_btn)
+        self.menu_btn.setMenu(self._menu)
+        self.menu_btn.setVisible(False)  # shown once it has something to offer
+        header.addWidget(self.menu_btn)
+        root.addLayout(header)
 
         self.list_widget = _DndListWidget(self)
+        self.list_widget.setObjectName("columnCards")
         self.list_widget.setDragEnabled(True)
         self.list_widget.setAcceptDrops(True)
         self.list_widget.setDropIndicatorShown(True)
@@ -86,18 +108,32 @@ class KanbanColumn(QWidget):
         self.list_widget.setMouseTracking(True)
         self.list_widget.setUniformItemSizes(False)
         self.list_widget.setSpacing(0)
+        # A card is sized to the viewport, so the column never scrolls sideways.
+        self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.list_widget.setItemDelegate(
             CardDelegate(self.list_widget, show_checkbox=is_backlog))
         self.list_widget.itemDoubleClicked.connect(self._edit_task_modal)
         self.list_widget.itemClicked.connect(self._inspect_task)
         root.addWidget(self.list_widget)
+        self.setMinimumWidth(LAYOUT["column_min_w"])
+
+    # ----- the column's own actions ----------------------------------------
+
+    def add_menu_action(self, label: str, callback) -> None:
+        """Offer one action from this column's overflow menu. The menu appears
+        with its first action, so a column with nothing to offer shows none."""
+        self._menu.addAction(label, callback)
+        self.menu_btn.setVisible(True)
+
+    def _set_count(self) -> None:
+        self.count_label.setText(str(self.list_widget.count()))
 
     # ----- loading ---------------------------------------------------------
 
     _SELECT = (
         "SELECT t.id, t.title, t.pressure, e.name, e.id, t.status, "
         "COALESCE(t.assignee,'user'), COALESCE(t.estimate,''), "
-        "COALESCE(t.record_type,'build') FROM task t "
+        "COALESCE(t.record_type,'build'), COALESCE(t.description,'') FROM task t "
         "LEFT JOIN epic e ON t.epic_id = e.id "
     )
 
@@ -112,6 +148,7 @@ class KanbanColumn(QWidget):
         query += " ORDER BY t.sort_order ASC, t.id ASC"
         for row in self.conn.execute(query, tuple(params)).fetchall():
             self._add_item(*row)
+        self._set_count()
 
     def load_backlog_tasks(self, epic_id: int | None):
         """BACKLOG column: every stage='backlog' task as one manual list."""
@@ -124,9 +161,10 @@ class KanbanColumn(QWidget):
         query += " ORDER BY t.sort_order ASC, t.id ASC"
         for row in self.conn.execute(query, tuple(params)).fetchall():
             self._add_item(*row)
+        self._set_count()
 
     def _add_item(self, task_id, title, pressure, epic_name, epic_id, _status,
-                  owner, estimate, record_type):
+                  owner, estimate, record_type, description):
         item = QListWidgetItem()
         item.setData(Qt.UserRole, task_id)
         item.setData(CARD_ROLE, {
@@ -137,6 +175,7 @@ class KanbanColumn(QWidget):
             "owner": owner or "user",
             "estimate": (estimate or "").upper(),
             "record_type": (record_type or "build").lower(),
+            "description": description or "",
         })
         if self.is_backlog:
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)

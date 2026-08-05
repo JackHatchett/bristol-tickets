@@ -1,9 +1,12 @@
-"""ui/main_window.py — the top-level window (v18, warm card UI).
+"""ui/main_window.py — the top-level window.
 
-This module is now just the ``MainWindow`` shell: the toolbar (create / epic
-filter / Bulk Change [Board tab only] / refresh), the tabbed views (Search,
-Backlog, Board, Archive), and the right-hand inspector panel. The Kanban
-model puts a task's tab in ``task.stage`` (backlog | active |
+This module is the ``MainWindow`` shell: one full-width header bar carrying the
+app's identity, the active-agent selector, the view tabs and Create; the views
+those tabs switch between (Search, Backlog, Board, Archive, Settings); and the
+right-hand inspector panel. The header spans the window and the splitter sits
+under it, so nothing above the board floats on an alignment of its own.
+
+The Kanban model puts a task's tab in ``task.stage`` (backlog | active |
 archive) and its manual order in ``task.sort_order``. The
 pieces it composes live in sibling modules:
 
@@ -15,9 +18,8 @@ pieces it composes live in sibling modules:
     setup_wizard.py  first-run setup, also reachable from File → Setup…
     settings_tab.py  SettingsTab (board behaviour, stored in config.local.json)
 
-Database logic is unchanged from the pre-split v17/v18 baseline; this was a pure
-structural refactor to keep each file small enough for an external consultant
-(Gemini / Copilot) to ingest and edit in one pass.
+Each file stays small enough for an external consultant to ingest and edit in
+one pass.
 """
 
 from __future__ import annotations
@@ -40,10 +42,11 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
+    QFrame,
     QMessageBox,
     QPushButton,
     QSplitter,
-    QTabWidget,
+    QStackedWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -60,9 +63,13 @@ from .settings_tab import SettingsTab
 from .theme import (
     COLUMNS,
     FLEET_AGENTS,
+    LAYOUT,
     build_style_sheet,
     is_dark_scheme,
+    resolve_choice,
     set_scheme,
+    space,
+    type_size,
     _fmt_dt,
     _get_epic_badge,
     _utcnow,
@@ -83,10 +90,10 @@ class MainWindow(QMainWindow):
         _icon_path = Path(__file__).resolve().parent.parent / "icon.png"
         if _icon_path.exists():
             self.setWindowIcon(QIcon(str(_icon_path)))
-        self.setMinimumSize(1240, 780)
+        self.setMinimumSize(LAYOUT["window_min_w"], LAYOUT["window_min_h"])
         # Open wide by default so the board and the inspector panel both
         # have room on launch.
-        self.resize(1960, 1080)
+        self.resize(LAYOUT["window_w"], LAYOUT["window_h"])
 
         # Follow the OS light/dark setting with a warm orange palette in both
         # modes, and re-theme live when the OS flips (macOS auto-appearance
@@ -103,29 +110,33 @@ class MainWindow(QMainWindow):
 
         self._build_menu_bar()
 
+        # One full-width header spans the window, and the splitter sits under
+        # it: identity, the agent selector, the view tabs and Create all read as
+        # one bar rather than three floats on three alignments.
+        shell = QWidget()
+        shell_layout = QVBoxLayout(shell)
+        shell_layout.setContentsMargins(0, 0, 0, 0)
+        shell_layout.setSpacing(0)
+        self.setCentralWidget(shell)
+
+        # The pages the header switches between. Built before the header so a
+        # tab button has something to select.
+        self.pages = QStackedWidget()
+
         main_splitter = QSplitter(Qt.Horizontal)
-        main_splitter.setHandleWidth(10)
-        self.setCentralWidget(main_splitter)
+        main_splitter.setHandleWidth(space("lg"))
 
         left_container = QWidget()
         left_container.setObjectName("leftContainer")
         outer_layout = QVBoxLayout(left_container)
-        outer_layout.setContentsMargins(14, 14, 8, 14)
-        outer_layout.setSpacing(10)
+        outer_layout.setContentsMargins(space("xl"), space("lg"),
+                                        space("lg"), space("lg"))
+        outer_layout.setSpacing(space("lg"))
         main_splitter.addWidget(left_container)
-
-        # Global navigation IS the tabs, so they sit at the very top of the page
-        #. The page-specific controls (epic filter, Refresh, Clear
-        # Done) were moved off this top strip and into the Board tab, above its
-        # columns — built below. The one genuinely global action, Create, rides in
-        # the tab bar's top-right corner: always reachable, and it reads the
-        # active tab to default the new record's Stage.
-        self.tabs = QTabWidget()
 
         self.global_create_btn = QPushButton("Create")
         self.global_create_btn.setObjectName("globalCreateBtn")
         self.global_create_btn.clicked.connect(self._open_global_create)
-        self.tabs.setCornerWidget(self.global_create_btn, Qt.TopRightCorner)
 
         # Epic filter and Refresh are constructed here but placed in the Board
         # tab's own control row (built below). The epic filter still drives every
@@ -133,48 +144,52 @@ class MainWindow(QMainWindow):
         # just lives on the Board visually. The combo carries no caption; it
         # defaults to the self-describing "All Epics".
         self.epic_filter = QComboBox()
-        # Don't let the combo auto-widen to its longest epic name; its width is
-        # pinned to the Clear Done button once that exists. The
-        # popup list still shows full names.
+        # A fixed width rather than one that grows to the longest epic name, so
+        # the control row keeps its shape however the epics are named. The popup
+        # still shows each name in full.
         self.epic_filter.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.epic_filter.setFixedWidth(LAYOUT["filter_w"])
         self.epic_filter.currentIndexChanged.connect(self._on_epic_changed)
 
         self.refresh_btn = QPushButton("Refresh")
         self.refresh_btn.clicked.connect(self._refresh_board)
 
-        outer_layout.addLayout(self._build_agent_strip())
-        outer_layout.addWidget(self.tabs)
+        shell_layout.addWidget(self._build_header())
+        shell_layout.addWidget(main_splitter, 1)
+        outer_layout.addWidget(self.pages)
 
         search_widget = QWidget()
-        search_layout = QHBoxLayout(search_widget)
+        search_layout = QVBoxLayout(search_widget)
+        search_layout.setContentsMargins(0, 0, 0, 0)
+        search_layout.setSpacing(space("lg"))
 
-        search_left = QVBoxLayout()
         search_bar_layout = QHBoxLayout()
+        search_bar_layout.setSpacing(space("md"))
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search issues, epics...")
+        self.search_input.setPlaceholderText("Search issues and epics")
         self.search_input.returnPressed.connect(self._execute_global_search)
-        search_bar_layout.addWidget(self.search_input)
+        search_bar_layout.addWidget(self.search_input, 1)
 
         search_go_btn = QPushButton("Find")
         search_go_btn.clicked.connect(self._execute_global_search)
         search_bar_layout.addWidget(search_go_btn)
-        search_left.addLayout(search_bar_layout)
 
-        self.hide_closed_checkbox = QCheckBox("Hide Closed Items")
+        self.hide_closed_checkbox = QCheckBox("Hide closed items")
         self.hide_closed_checkbox.setChecked(True)
         self.hide_closed_checkbox.stateChanged.connect(self._execute_global_search)
-        search_left.addWidget(self.hide_closed_checkbox)
+        search_bar_layout.addWidget(self.hide_closed_checkbox)
+        search_layout.addLayout(search_bar_layout)
+
+        self.search_count = QLabel("")
+        self.search_count.setObjectName("formCaption")
+        search_layout.addWidget(self.search_count)
 
         self.search_results = QListWidget()
         self.search_results.setObjectName("searchResults")
         self.search_results.itemClicked.connect(self._on_search_item_clicked)
         self.search_results.itemDoubleClicked.connect(self._on_search_item_double_clicked)
-        search_left.addWidget(self.search_results)
-
-        search_widget_container = QWidget()
-        search_widget_container.setLayout(search_left)
-        search_layout.addWidget(search_widget_container, 1)
-        self.tabs.addTab(search_widget, "Search")
+        search_layout.addWidget(self.search_results, 1)
+        self._add_page(search_widget, "Search")
 
         # BACKLOG — a single manually-ordered list (drag to reorder, saved) with
         # per-card checkboxes driving a bulk Activate / Delete bar.
@@ -215,7 +230,7 @@ class MainWindow(QMainWindow):
         backlog_bar.addWidget(self.backlog_activate_btn)
         backlog_bar.addWidget(self.backlog_delete_btn)
         backlog_outer.addLayout(backlog_bar)
-        self.tabs.addTab(backlog_widget, "Backlog")
+        self._add_page(backlog_widget, "Backlog")
 
         # The selection-dependent backlog actions (Clear, Activate, Delete) are
         # inert and confusing when nothing is checked, so they stay hidden until
@@ -228,54 +243,35 @@ class MainWindow(QMainWindow):
 
         board_widget = QWidget()
         board_outer = QVBoxLayout(board_widget)
-        board_outer.setSpacing(8)
+        board_outer.setContentsMargins(0, 0, 0, 0)
+        board_outer.setSpacing(space("lg"))
 
-        # Board control row: page-specific options, each sitting
-        # above its column — All Epics (left, above To Do), Refresh (centre,
-        # above Doing), Clear Done (right, above Done). Three equal-width cells so
-        # each control lines up over its column.
+        # One control row above the columns, holding what applies to the whole
+        # board. Anything that operates on a single column lives in that
+        # column's own overflow menu instead.
         board_controls = QHBoxLayout()
-        board_controls.setSpacing(12)
-
-        left_cell = QHBoxLayout()
-        left_cell.addWidget(self.epic_filter)
-        left_cell.addStretch()
-
-        mid_cell = QHBoxLayout()
-        mid_cell.addStretch()
-        mid_cell.addWidget(self.refresh_btn)
-        mid_cell.addStretch()
-
-        right_cell = QHBoxLayout()
-        right_cell.addStretch()
-        # "Clear Done" replaces the broken Bulk Change menu: it moves
-        # every card in the Done column to the Archive in one click — the one
-        # bulk action asked for, with no per-card selection to manage.
-        self.clear_done_btn = QPushButton("Clear Done")
-        self.clear_done_btn.setObjectName("bulkMenuBtn")
-        self.clear_done_btn.setToolTip("Move every card in the Done column to the Archive.")
-        self.clear_done_btn.clicked.connect(self._clear_done)
-        right_cell.addWidget(self.clear_done_btn)
-
-        # Pin the All Epics dropdown to the Clear Done button's width so the two
-        # controls flanking the board control row match.
-        self.epic_filter.setFixedWidth(self.clear_done_btn.sizeHint().width())
-
-        board_controls.addLayout(left_cell, 1)
-        board_controls.addLayout(mid_cell, 1)
-        board_controls.addLayout(right_cell, 1)
+        board_controls.setSpacing(space("md"))
+        board_controls.addWidget(self.epic_filter)
+        board_controls.addWidget(self.refresh_btn)
+        board_controls.addStretch(1)
         board_outer.addLayout(board_controls)
 
         board_columns = QHBoxLayout()
-        board_columns.setSpacing(12)
+        board_columns.setSpacing(space("xl"))
         self.columns = {}
         for key, name in COLUMNS:
             col = KanbanColumn(self, self.conn, key, name)
+            col.add_menu_action(
+                "New card in this column",
+                lambda _checked=False, status=key: self._create_in_column(status))
             self.columns[key] = col
             board_columns.addWidget(col)
+        # Clearing Done moves every card in that one column to the Archive, so
+        # it is the Done column's action and reaches the user from its menu.
+        self.columns["done"].add_menu_action("Clear Done", self._clear_done)
         board_outer.addLayout(board_columns)
 
-        self._board_tab_index = self.tabs.addTab(board_widget, "Board")
+        self._board_tab_index = self._add_page(board_widget, "Board")
 
         # ARCHIVE — a stripped-down line list (like Search), sorted by most
         # recently modified. Retired tickets, newest first.
@@ -286,10 +282,11 @@ class MainWindow(QMainWindow):
         self.archive_results.itemClicked.connect(self._on_archive_item_clicked)
         self.archive_results.itemDoubleClicked.connect(self._on_archive_item_double_clicked)
         archive_layout.addWidget(self.archive_results)
-        self._archive_tab_index = self.tabs.addTab(archive_widget, "Archive")
+        self._archive_tab_index = self._add_page(archive_widget, "Archive")
 
-        self.settings_tab = SettingsTab()
-        self._settings_tab_index = self.tabs.addTab(self.settings_tab, "Settings")
+        self.settings_tab = SettingsTab(
+            on_appearance_changed=self._preview_appearance)
+        self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
 
         # Untitled group box: the "Properties Inspector" caption was
         # dropped — it overlapped the border below and added nothing.
@@ -299,11 +296,11 @@ class MainWindow(QMainWindow):
         self.ins_title = QLabel("Select any entity to view profile summary...")
         self.ins_title.setWordWrap(True)
         _ins_title_font = QFont()
-        _ins_title_font.setPointSize(12)
+        _ins_title_font.setPointSize(type_size("section"))
         _ins_title_font.setBold(True)
         self.ins_title.setFont(_ins_title_font)
         self.ins_title.setObjectName("inspectorTitle")
-        self.ins_title.setStyleSheet("margin-bottom: 4px;")
+        self.ins_title.setStyleSheet(f"margin-bottom: {space('sm')}px;")
         inspector_layout.addWidget(self.ins_title)
 
         # id of the task currently shown in the inspector, so the Post button
@@ -381,7 +378,7 @@ class MainWindow(QMainWindow):
         # width.
         main_splitter.setStretchFactor(0, 1)
         main_splitter.setStretchFactor(1, 1)
-        main_splitter.setSizes([1180, 720])
+        main_splitter.setSizes([LAYOUT["split_board"], LAYOUT["split_detail"]])
         self._main_splitter = main_splitter
 
         self._load_dropdown_filters()
@@ -390,7 +387,7 @@ class MainWindow(QMainWindow):
     def _stage_for_current_tab(self) -> str:
         """Default Stage for a new record, keyed to the tab Create was pressed on: Board → active, Archive → archive, everything else
         (Search, Backlog) → backlog."""
-        idx = self.tabs.currentIndex()
+        idx = self.pages.currentIndex()
         if idx == self._board_tab_index:
             return "active"
         if idx == getattr(self, "_archive_tab_index", -1):
@@ -433,11 +430,65 @@ class MainWindow(QMainWindow):
 
     # ----- The active agent, always on screen -------------------------------
 
-    def _build_agent_strip(self) -> QHBoxLayout:
-        """Who the next Claude session runs as, above the tabs.
+    def _build_header(self) -> QWidget:
+        """The one header bar: identity and the agent selector at the left, the
+        view tabs beside them, Create at the right, everything on one vertical
+        centre line and closed by a single hairline."""
+        header = QWidget()
+        header.setObjectName("appHeader")
+        bar = QHBoxLayout(header)
+        bar.setContentsMargins(space("xl"), space("md"), space("xl"), 0)
+        bar.setSpacing(space("lg"))
+
+        identity = QLabel("Bristol Tickets")
+        identity.setObjectName("appIdentity")
+        bar.addWidget(identity, 0, Qt.AlignVCenter)
+
+        for widget in self._agent_selector():
+            bar.addWidget(widget, 0, Qt.AlignVCenter)
+
+        separator = QFrame()
+        separator.setObjectName("headerRule")
+        separator.setFrameShape(QFrame.VLine)
+        separator.setFixedWidth(1)
+        bar.addWidget(separator, 0, Qt.AlignVCenter)
+
+        self._tab_buttons: list[QPushButton] = []
+        self._tab_row = QHBoxLayout()
+        self._tab_row.setContentsMargins(0, 0, 0, 0)
+        self._tab_row.setSpacing(0)
+        bar.addLayout(self._tab_row)
+
+        bar.addStretch(1)
+        bar.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
+        return header
+
+    def _add_page(self, widget: QWidget, name: str) -> int:
+        """Add a view and its tab. The tab is a flat button in the header: hover
+        changes its state, and the selected one carries an accent underline."""
+        index = self.pages.addWidget(widget)
+
+        button = QPushButton(name)
+        button.setObjectName("viewTab")
+        button.setCheckable(True)
+        button.setCursor(Qt.PointingHandCursor)
+        button.clicked.connect(lambda _checked, i=index: self._show_page(i))
+        self._tab_row.addWidget(button)
+        self._tab_buttons.append(button)
+        if index == 0:
+            self._show_page(0)
+        return index
+
+    def _show_page(self, index: int) -> None:
+        self.pages.setCurrentIndex(index)
+        for position, button in enumerate(self._tab_buttons):
+            button.setChecked(position == index)
+
+    def _agent_selector(self) -> list[QWidget]:
+        """Who the next Claude session runs as, in the header.
 
         This is not a setting: it changes what the whole application means, so
-        it is visible on every tab rather than filed behind one. Selecting an
+        it is visible on every view rather than filed behind one. Selecting an
         agent writes `active_agent` into the configuration and nothing else.
         """
         self.agent_combo = QComboBox()
@@ -449,12 +500,16 @@ class MainWindow(QMainWindow):
         self.agent_combo.setEnabled(bool(config_file.agent_slugs()))
         self.agent_combo.currentTextChanged.connect(self._set_active_agent)
 
+        self.agent_combo.setToolTip(
+            "The agent the next Claude session starts as. Changing it writes "
+            "active_agent into the configuration and nothing else.")
+
+        caption = QLabel("Next session as")
+        caption.setObjectName("formCaption")
+
         self.agent_status = QLabel()
-        strip = QHBoxLayout()
-        strip.addWidget(QLabel("Start next session as"))
-        strip.addWidget(self.agent_combo)
-        strip.addWidget(self.agent_status, 1)
-        return strip
+        self.agent_status.setObjectName("formCaption")
+        return [caption, self.agent_combo, self.agent_status]
 
     def _set_active_agent(self, slug: str) -> None:
         try:
@@ -491,11 +546,18 @@ class MainWindow(QMainWindow):
     # ----- Theming (OS light/dark, warm orange both ways) -------------------
 
     def _apply_theme(self) -> None:
-        """Point the palette at the current OS colour scheme and (re)apply the
-        global stylesheet. Safe to call repeatedly — used at startup and on
-        every scheme change."""
+        """Point the palette at the configured scheme and (re)apply the global
+        stylesheet. Safe to call repeatedly — used at startup, on every OS
+        colour-scheme change, and when the choice is edited in Settings.
+
+        A stored family name resolves against the OS state, so 'follow the
+        system' and a pinned scheme come down the same path.
+        """
         app = QApplication.instance()
-        set_scheme(is_dark_scheme(app) if app is not None else False)
+        choice = config_file.get(config_file.APPEARANCE_SCHEME,
+                                 config_file.APPEARANCE_SCHEME_DEFAULT)
+        set_scheme(resolve_choice(
+            choice, is_dark_scheme(app) if app is not None else False))
         sheet = build_style_sheet()
         # Apply app-wide so child dialogs / message boxes inherit; fall back to
         # the window itself if there's somehow no application object.
@@ -504,11 +566,31 @@ class MainWindow(QMainWindow):
         else:
             self.setStyleSheet(sheet)
 
-    def _on_color_scheme_changed(self, *args) -> None:
-        """OS switched between light and dark: re-theme, then repaint the
-        QPainter-drawn cards (they read the live palette at paint time, so a
-        board repaint is all that's needed)."""
+    def _preview_appearance(self, choice: str) -> None:
+        """Draw the app in a scheme the Settings tab is offering, before the
+        configuration says so. Settings' Save is what makes the choice stick."""
+        app = QApplication.instance()
+        set_scheme(resolve_choice(
+            choice, is_dark_scheme(app) if app is not None else False))
+        sheet = build_style_sheet()
+        if app is not None:
+            app.setStyleSheet(sheet)
+        else:
+            self.setStyleSheet(sheet)
+        self._repaint_cards()
+
+    def refresh_appearance(self) -> None:
+        """Re-theme and repaint everything the scheme reaches.
+
+        The QPainter-drawn cards read the live palette at paint time, so a
+        viewport update is all they need; everything else is stylesheet-driven
+        and re-themes on the sheet alone.
+        """
         self._apply_theme()
+        self._repaint_cards()
+
+    def _repaint_cards(self) -> None:
+        """Update every viewport holding delegate-painted cards."""
         for col in getattr(self, "columns", {}).values():
             col.list_widget.viewport().update()
         if hasattr(self, "backlog_column"):
@@ -516,12 +598,18 @@ class MainWindow(QMainWindow):
         if hasattr(self, "archive_results"):
             self.archive_results.viewport().update()
 
-    # ----- Clear Done (; replaces the broken Bulk Change menu) ----
+    def _on_color_scheme_changed(self, *args) -> None:
+        """OS switched between light and dark. It reaches the app only while the
+        stored choice names a family; a pinned scheme resolves to itself."""
+        self.refresh_appearance()
+
+    # ----- Sweeping the Done column to the Archive -------------------------
 
     def _clear_done(self) -> None:
         """Move every card in the Done column (stage=active, status=done) to the
-        Archive, appended to the top of the modified-ordered Archive. One button,
-        no per-card selection — the only bulk action the board offers."""
+        Archive, appended to the top of the modified-ordered Archive. Reached
+        from the Done column's own menu, with no per-card selection to manage —
+        the one bulk action the board offers."""
         rows = self.conn.execute(
             "SELECT id FROM task WHERE stage='active' AND status='done'"
         ).fetchall()
@@ -538,9 +626,9 @@ class MainWindow(QMainWindow):
             return
         self._move_tasks_to_stage(ids, "archive")
         # Stamp the archival moment as closed_at — this is the timestamp that
-        # orders the Archive. "Clear Done" is the canonical close
-        # action, so it (re)sets closed_at to now for every card it sweeps, and
-        # the Archive lists newest-closed first.
+        # orders the Archive. "Clear Done" is the canonical close action, so it
+        # (re)sets closed_at to now for every card it sweeps, and the Archive
+        # lists newest-closed first.
         ts = _utcnow()
         for tid in ids:
             self.conn.execute("UPDATE task SET closed_at=? WHERE id=?", (ts, tid))
@@ -678,7 +766,8 @@ class MainWindow(QMainWindow):
         for tid, title, status, rtype, closed in rows:
             kind = "Fix" if (rtype or "build").lower() == "fix" else "Build"
             when = _fmt_dt(closed)
-            item = QListWidgetItem(f"[{when}] {kind}: {title} ({status})")
+            item = QListWidgetItem(
+                f"{kind}   #{tid}   {title}   ·   {status}   ·   {when}")
             item.setData(Qt.UserRole, (tid, "task"))
             self.archive_results.addItem(item)
 
@@ -702,6 +791,17 @@ class MainWindow(QMainWindow):
         # → backlog. The user can still change Stage in the dialog.
         dlg = UnifiedRecordDialog(self, self.conn, mode="task", initial_status="todo",
                                   initial_stage=self._stage_for_current_tab(),
+                                  epic_id=self.current_epic_id)
+        if dlg.exec() == QDialog.Accepted:
+            dlg.save_data(fallback_epic=self.current_epic_id)
+            self._load_dropdown_filters()
+            self._refresh_board()
+
+    def _create_in_column(self, status: str) -> None:
+        """Create a card that lands in one named board column — the Board's
+        per-column entry point, reached from that column's own menu."""
+        dlg = UnifiedRecordDialog(self, self.conn, mode="task",
+                                  initial_status=status, initial_stage="active",
                                   epic_id=self.current_epic_id)
         if dlg.exec() == QDialog.Accepted:
             dlg.save_data(fallback_epic=self.current_epic_id)
@@ -837,7 +937,8 @@ class MainWindow(QMainWindow):
 
             for row in self.conn.execute(task_query, (term, term)).fetchall():
                 kind = "Fix" if (row[3] or "build").lower() == "fix" else "Build"
-                item = QListWidgetItem(f"{kind}: {row[1]} ({row[2]})")
+                item = QListWidgetItem(
+                    f"{kind}   #{row[0]}   {row[1]}   ·   {row[2]}")
                 item.setData(Qt.UserRole, (row[0], "task"))
                 self.search_results.addItem(item)
 
@@ -847,11 +948,16 @@ class MainWindow(QMainWindow):
             epic_query += " ORDER BY name COLLATE NOCASE LIMIT 50"
 
             for row in self.conn.execute(epic_query, (term, term)).fetchall():
-                item = QListWidgetItem(f"Epic: {row[1]} [{row[2]}]")
+                item = QListWidgetItem(
+                    f"Epic   #{row[0]}   {row[1]}   ·   {row[2]}")
                 item.setData(Qt.UserRole, (row[0], "epic"))
                 self.search_results.addItem(item)
         except sqlite3.OperationalError:
             pass
+        found = self.search_results.count()
+        self.search_count.setText(
+            "No results" if not found
+            else f"{found} result" + ("" if found == 1 else "s"))
 
     def _on_search_item_clicked(self, item: QListWidgetItem):
         data = item.data(Qt.UserRole)
