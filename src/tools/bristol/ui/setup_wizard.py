@@ -28,7 +28,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from PySide6.QtCore import QRegularExpression, Qt
-from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtGui import QColor, QPalette, QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QCheckBox,
     QFileDialog,
@@ -46,6 +46,24 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local; see module docstring
 import instance
+
+from .theme import C, LAYOUT, space, type_size
+
+
+def page_title(text: str) -> str:
+    """A page title at the app's section size. The wizard reads its titles as
+    rich text, so the type scale reaches them the same way it reaches every
+    other heading."""
+    return f'<span style="font-size: {type_size("section")}pt;">{text}</span>'
+
+
+def page_layout(page: QWidget) -> QVBoxLayout:
+    """A wizard page's column, on the app's margins and spacing so a page reads
+    as the same application as the board behind it."""
+    layout = QVBoxLayout(page)
+    layout.setContentsMargins(space("xl"), space("lg"), space("xl"), space("lg"))
+    layout.setSpacing(space("lg"))
+    return layout
 
 SLUG_PATTERN = r"[a-z0-9][a-z0-9_-]*"
 REQUIRED_AGENT = "chief_of_staff"
@@ -162,7 +180,7 @@ class InstancePage(QWizardPage):
     def __init__(self, root: Path) -> None:
         super().__init__()
         self.root = root
-        self.setTitle("Name this installation")
+        self.setTitle(page_title("Name this installation"))
         self.setSubTitle(
             "This name labels the folder holding your board and everything you "
             "save. Lower case, no spaces."
@@ -186,7 +204,7 @@ class InstancePage(QWizardPage):
         self.folder.set_value(str(root / "data" / default_slug()))
         self.folder.field.textChanged.connect(self.completeChanged)
 
-        layout = QVBoxLayout(self)
+        layout = page_layout(self)
         layout.addWidget(QLabel("Installation name"))
         layout.addWidget(self.slug_edit)
         layout.addWidget(self.rejected_hint)
@@ -256,7 +274,7 @@ class AgentsPage(QWizardPage):
 
     def __init__(self, root: Path) -> None:
         super().__init__()
-        self.setTitle("Choose your agents")
+        self.setTitle(page_title("Choose your agents"))
         self.setSubTitle(
             "Each agent is a role with its own instructions and its own "
             "folder. You can add or remove agents later by editing your "
@@ -299,7 +317,7 @@ class AgentsPage(QWizardPage):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(holder)
-        layout = QVBoxLayout(self)
+        layout = page_layout(self)
         layout.addWidget(installed_only)
         layout.addSpacing(8)
         layout.addWidget(scroll)
@@ -317,7 +335,7 @@ class IntegrationsPage(QWizardPage):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("Link your notes and library")
+        self.setTitle(page_title("Link your notes and library"))
         self.setSubTitle("Both are optional. Leave either empty to skip it.")
 
         self.notebook = FolderRow("Choose your Markdown notebook folder", clearable=True)
@@ -329,7 +347,7 @@ class IntegrationsPage(QWizardPage):
         )
         zotero_label.setWordWrap(True)
 
-        layout = QVBoxLayout(self)
+        layout = page_layout(self)
         layout.addWidget(QLabel("Markdown notebook — a folder of notes you edit yourself"))
         layout.addWidget(self.notebook)
         layout.addSpacing(10)
@@ -344,7 +362,7 @@ class SummaryPage(QWizardPage):
     def __init__(self, wizard: "SetupWizard") -> None:
         super().__init__()
         self._wizard = wizard
-        self.setTitle("Ready to set up")
+        self.setTitle(page_title("Ready to set up"))
         self.body = QLabel()
         self.body.setWordWrap(True)
         self.body.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -356,7 +374,7 @@ class SummaryPage(QWizardPage):
         self.pointer_note.setWordWrap(True)
         self.pointer_note.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-        layout = QVBoxLayout(self)
+        layout = page_layout(self)
         layout.addWidget(self.body)
         layout.addSpacing(12)
         layout.addWidget(self.take_over)
@@ -449,8 +467,14 @@ class SetupWizard(QWizard):
         self.db_path: Path | None = None
         self.setWindowTitle("Bristol Tickets — Setup")
         self.setWizardStyle(QWizard.ModernStyle)
+        self.setTitleFormat(Qt.RichText)
+        # // The wizard's header band is painted by the style from the palette's
+        # // Base role, which no stylesheet rule reaches.
+        palette = self.palette()
+        palette.setColor(QPalette.Base, QColor(C["CANVAS"]))
+        self.setPalette(palette)
         self.setOption(QWizard.NoBackButtonOnStartPage, True)
-        self.setMinimumSize(720, 480)
+        self.setMinimumSize(LAYOUT["wizard_min_w"], LAYOUT["wizard_min_h"])
 
         self.instance_page = InstancePage(root)
         self.agents_page = AgentsPage(root)
@@ -460,6 +484,17 @@ class SetupWizard(QWizard):
         self.setPage(PAGE_AGENTS, self.agents_page)
         self.setPage(PAGE_INTEGRATIONS, self.integrations_page)
         self.setPage(PAGE_SUMMARY, self.summary_page)
+
+        # The button that carries the run forward takes the app's primary rank;
+        # the rest keep the ordinary one.
+        for role in (QWizard.NextButton, QWizard.FinishButton):
+            button = self.button(role)
+            if button is not None:
+                button.setObjectName("globalCreateBtn")
+                # // A stylesheet rule keyed to an object name only reaches a
+                # // widget that already existed if its style is re-polished.
+                button.style().unpolish(button)
+                button.style().polish(button)
 
     def accept(self) -> None:
         """Write everything, or nothing."""

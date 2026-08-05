@@ -23,7 +23,8 @@ bristol/
 ├── schema.sql           idempotent (IF NOT EXISTS) schema snapshot, auto-applied on launch
 ├── __init__.py          package marker
 ├── ui/                  the PySide6 widgets (split into small modules)
-│   ├── theme.py         palette, stylesheet, COLUMNS, CARD_ROLE, tiny helpers
+│   ├── README.md        the styling contract: scheme keys, tokens, intent
+│   ├── theme.py         schemes, design tokens, stylesheet, COLUMNS, CARD_ROLE
 │   ├── schema_guard.py  on-launch non-destructive migration
 │   ├── card_delegate.py CardDelegate — per-card QPainter rendering
 │   ├── links.py         LinkBar — a ticket's links to tickets and addresses
@@ -31,7 +32,7 @@ bristol/
 │   ├── record_dialog.py UnifiedRecordDialog — create/edit modal
 │   ├── kanban_column.py KanbanColumn — a populated column + its queries
 │   ├── setup_wizard.py  first-run setup: folders, board, config, pointer
-│   ├── settings_tab.py  SettingsTab — board behaviour, stored in config
+│   ├── settings_tab.py  SettingsTab — board behaviour and appearance, stored in config
 │   └── main_window.py   MainWindow — toolbar, tabs, filters, search, inspector
 ├── reports/             the analytic report written on Clear Done (own README)
 │   ├── paths.py         where the report goes (env → .local → config)
@@ -45,6 +46,16 @@ bristol/
 
 Each `ui/` module stays small enough for a focused edit, or for an external
 consultant to ingest in one pass.
+
+## How it looks (`ui/theme.py`)
+
+Every colour is a key in the live palette `C`, which a named scheme fills, and
+every gap, corner and font size is a step on one of three token scales. Nothing
+in the UI holds a hex value or a pixel count of its own, so a new palette is a
+data change and a density change is one edit. `ui/README.md` is the contract an
+agent styles from: what each key means, which token governs which element, and
+how to answer an instruction given as intent. The scheme in force is
+`appearance.scheme` in the configuration, picked in the Settings tab.
 
 ## How it finds the database (`app.py`)
 

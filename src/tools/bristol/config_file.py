@@ -24,6 +24,11 @@ import instance
 CROSS_AGENT_STAGE = "board.cross_agent_stage"
 CROSS_AGENT_STAGE_DEFAULT = "active"
 
+# Which colour scheme the app draws with. The value is a scheme name or a family
+# name from ``ui/theme.py``; a family means "follow the OS within it".
+APPEARANCE_SCHEME = "appearance.scheme"
+APPEARANCE_SCHEME_DEFAULT = "warm"
+
 
 def project_root() -> Path | None:
     """The cloned folder: the nearest ancestor holding ``src/app.md``.
