@@ -81,6 +81,13 @@ instance pointer. Cancel writes nothing. Replacing an existing configuration
 asks first, and **File → Setup…** re-runs the flow from a running
 Bristol Tickets.
 
+A data folder already holding `tickets/tickets.db` is adopted rather than
+created: the wizard offers it as you leave the first page, skips the two pages
+adoption needs no answers from, runs no schema against that board, leaves
+`config.local.json` as it stands, and writes only the instance pointer. The
+summary page's tick box governs the pointer in both flows, so an installation
+can be set up or adopted without taking over which one the app opens.
+
 The wizard reads `config.example.json` as data and imports nothing from the rest
 of `src/tools`, so the mechanism-only rule holds.
 

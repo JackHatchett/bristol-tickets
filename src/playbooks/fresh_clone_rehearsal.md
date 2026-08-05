@@ -25,12 +25,12 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
 
 ## Procedure
 
-1. **Back up the instance pointer, and say why.** The setup wizard overwrites
-   it, so the rehearsal would otherwise leave the user's real Bristol Tickets
-   pointing at the scratch copy. This is a user step.
+1. **Read the instance pointer and note the installation it names.** A user
+   step. The rehearsal repoints it at the scratch copy, and step 11 hands it
+   back by adopting that installation rather than restoring a copy of the file.
 
    ```bash
-   cp ~/Library/Application\ Support/BristolTickets/instance.json ~/Desktop/instance.json.backup
+   cat ~/Library/Application\ Support/BristolTickets/instance.json
    ```
 
 2. **Build the scratch copy from `HEAD`.** A session step. `git archive` emits
@@ -84,6 +84,10 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
    folder inside the scratch copy. Then confirm `config/config.local.json`
    exists, the enabled agents' folders exist, and `tickets.db` opens empty.
 
+   **Leave the summary page's startup box ticked.** Step 9 resolves the board
+   through the pointer, so a run that declines it tests the real installation
+   instead of the copy.
+
 8. **Work one card end to end in the window** — create it, close it, Clear
    Done — and confirm a report is written.
 
@@ -97,19 +101,26 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
     from step 2 and re-run. A fix made in the scratch copy is lost and proves
     nothing.
 
-11. **Restore the pointer and delete the copy.** A user step for the first, a
-    session step for the second.
+11. **Hand the pointer back by adopting the real installation, then delete the
+    copy.** The user launches Bristol Tickets from the real repository and the
+    session drives **File → Setup…**: name the installation step 1 recorded,
+    choose its data folder, adopt it, and Finish with the startup box ticked.
+    Adoption writes the pointer and nothing else. Deleting the copy is a
+    session step.
 
     ```bash
-    cp ~/Desktop/instance.json.backup ~/Library/Application\ Support/BristolTickets/instance.json
-    rm -rf ~/Downloads/bristol_rehearsal ~/Desktop/instance.json.backup
+    rm -rf ~/Downloads/bristol_rehearsal
     ```
 
 ## Failure modes
 
 - **The user's real Bristol Tickets opens the scratch board afterwards** → the
-  pointer was not restored. Step 11, or re-run `instance_pointer.py --write`
+  pointer was not handed back. Step 11, or re-run `instance_pointer.py --write`
   from the real repo.
+- **Step 11's wizard offers to create rather than adopt** → the data folder it
+  was given holds no `tickets/tickets.db`. The folder to choose is the one the
+  pointer's `data_root` and `instance_slug` name together, not `data_root`
+  alone.
 - **`TICKETS_DB` is set in the environment** → the wizard never opens, because
   the variable suppresses first-run setup. Unset it before step 6.
 - **The scratch copy resolves the real board** → it was placed inside the repo.
