@@ -483,6 +483,72 @@ def check_bristol() -> list[str]:
             ok.append("Setup wizard writes nothing until Finish, then folders, "
                       "an empty board, config and pointer")
 
+            # Adoption. The installation the run above created is now an
+            # existing one, which is exactly the state a second run meets. The
+            # properties worth guarding are that the wizard sees it, asks
+            # nothing it does not need, leaves the board and the config alone,
+            # and treats the pointer as the one thing Finish decides.
+            adopted_db = scratch_root / "data" / "tester" / "tickets" / "tickets.db"
+            seeded = sqlite3.connect(adopted_db)
+            seeded.execute("INSERT INTO task (title, status) VALUES ('adopted', 'todo')")
+            seeded.commit()
+            seeded.close()
+            config_before = (scratch_root / "config" / "config.local.json").read_bytes()
+            pointer_before = pointer.read_text()
+            pointer.write_text(json.dumps({
+                "repo_root": str(scratch_root),
+                "data_root": str(Path(scratch) / "elsewhere"),
+                "instance_slug": "other",
+                "config_path": str(scratch_root / "config" / "config.local.json"),
+            }) + "\n")
+
+            wiz.instance.pointer_path = lambda: pointer
+            try:
+                second = wiz.SetupWizard(scratch_root)
+                second.instance_page.slug_edit.setText("tester")
+                second.instance_page.folder.set_value(str(scratch_root / "data" / "tester"))
+                if not second.instance_page.adopting():
+                    raise SmokeFailure("a folder holding a board was not seen as an installation")
+                if second.instance_page.nextId() != wiz.PAGE_SUMMARY:
+                    raise SmokeFailure("adoption still asks the pages only creation needs")
+                second.summary_page.initializePage()
+                summary = second.summary_page.body.text() + \
+                    second.summary_page.pointer_note.text()
+                if "other" not in summary or "tester" not in summary:
+                    raise SmokeFailure("the summary does not name both the old and the "
+                                       "new installation")
+
+                # Leaving the pointer alone writes nothing at all.
+                second.summary_page.take_over.setChecked(False)
+                second.accept()
+                if pointer.read_text() == pointer_before:
+                    raise SmokeFailure("an unchecked pointer option still rewrote the pointer")
+                if second.db_path != adopted_db:
+                    raise SmokeFailure("adoption did not return the board it adopted")
+
+                # Taking it over writes the pointer, and only the pointer.
+                third = wiz.SetupWizard(scratch_root)
+                third.instance_page.slug_edit.setText("tester")
+                third.instance_page.folder.set_value(str(scratch_root / "data" / "tester"))
+                third.summary_page.initializePage()
+                third.accept()
+            finally:
+                wiz.instance.pointer_path = _orig_pointer
+
+            adopted = json.loads(pointer.read_text())
+            if adopted["instance_slug"] != "tester" or \
+                    Path(adopted["data_root"]) != scratch_root / "data":
+                raise SmokeFailure("adoption did not point the app at the installation")
+            if (scratch_root / "config" / "config.local.json").read_bytes() != config_before:
+                raise SmokeFailure("adoption rewrote the configuration it was told to leave")
+            kept = sqlite3.connect(adopted_db)
+            titles = [r[0] for r in kept.execute("SELECT title FROM task")]
+            kept.close()
+            if titles != ["adopted"]:
+                raise SmokeFailure("adoption ran the schema against the board it adopted")
+            ok.append("Adoption leaves the board and the config alone, and writes "
+                      "only the pointer the summary offers")
+
             # Settings and the active agent, against the config the wizard just
             # wrote. The property that matters is that both read and write that
             # one file, and that a key this build does not offer survives a save.

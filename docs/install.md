@@ -78,16 +78,34 @@ an empty board. Four pages:
    folder of notes you edit yourself — and a Zotero data folder. Leave either
    blank to skip it.
 4. **Ready to set up.** A summary of exactly what will be written, ending with
-   what Finish does. Nothing has been written before you press Finish; Cancel
-   writes nothing at all.
+   what Finish does, and a tick box deciding whether this installation becomes
+   the one Bristol Tickets opens at startup. Nothing has been written before you
+   press Finish; Cancel writes nothing at all.
 
-Finish creates the data folders each enabled agent declares, provisions
-`tickets.db` with the schema, writes `config/config.local.json` from the shipped
-template with your answers filled in, and writes an instance pointer outside the
-repo so a relocated app can still find its data.
+### Creating, or adopting what is already there
 
-**File → Setup…** re-runs the wizard from a running Bristol Tickets. Replacing
-an existing configuration asks first.
+A data folder holding no board is **created**. Finish makes the data folders
+each enabled agent declares, provisions `tickets.db` with the schema, and writes
+`config/config.local.json` from the shipped template with your answers filled
+in.
+
+A data folder that already holds `tickets/tickets.db` is **adopted**. Setup says
+so as you leave the first page and offers to take it on. Nothing inside it is
+changed: no schema runs against that board, and `config/config.local.json` is
+left as it stands. Pages 2 and 3 are skipped, because adoption needs no answer
+they collect.
+
+Either way, the last thing Finish writes is the instance pointer — a small file
+outside the repository naming the installation this machine opens, so a
+relocated app can still find its data. The summary page names the installation
+Bristol Tickets opens today and the one it opens afterwards, and the tick box on
+that page decides whether that hand-over happens. Clear it to set an
+installation up, or adopt one, without changing what the app opens; an adoption
+with it cleared writes nothing at all.
+
+**File → Setup…** re-runs the wizard from a running Bristol Tickets, and
+adopting is how you point it back at an installation you already have. Replacing
+an existing configuration asks first; adoption never reaches that question.
 
 ## 5. Point Cowork at the folder
 

@@ -6,6 +6,14 @@ database it provisions comes from ``bristol/schema.sql`` — the same generated
 snapshot ``app.py`` applies on every launch — and the configuration it writes is
 ``config/config.example.json`` with this installation's answers substituted in.
 
+A data folder that already holds ``tickets/tickets.db`` is adopted instead:
+no schema runs against that board, its configuration is left as it stands, and
+the only file written is the instance pointer.
+
+Whether it creates or adopts, the run writes the pointer only when the summary
+page says to, so an installation can be set up without taking over which one
+the app opens.
+
 Nothing reaches the disk until Finish, and Finish asks before replacing an
 existing ``config/config.local.json``. Cancel leaves the machine untouched.
 """
@@ -47,6 +55,8 @@ NOTEBOOK_TOKEN = "/path/to/notebook"
 ZOTERO_TOKEN = "/path/to/Zotero"
 HOME_TOKEN = "/path/to/your/home"
 
+PAGE_INSTANCE, PAGE_AGENTS, PAGE_INTEGRATIONS, PAGE_SUMMARY = range(4)
+
 
 # ---------------------------------------------------------------------------
 # Placement
@@ -57,6 +67,10 @@ project_root = config_file.project_root
 
 def config_local_path(root: Path) -> Path:
     return root / "config" / "config.local.json"
+
+
+def board_path(instance_dir: Path) -> Path:
+    return instance_dir / "tickets" / "tickets.db"
 
 
 def needs_setup(discovered_db: Path | None) -> bool:
@@ -209,6 +223,33 @@ class InstancePage(QWizardPage):
         slug = self.slug_edit.text().strip()
         return chosen if chosen.name == slug else chosen / slug
 
+    def adopting(self) -> bool:
+        """True when the chosen folder already holds a board."""
+        return board_path(self.instance_dir()).exists()
+
+    def nextId(self) -> int:
+        """Adoption asks nothing more than the summary; creation asks the rest."""
+        return PAGE_SUMMARY if self.adopting() else PAGE_AGENTS
+
+    def validatePage(self) -> bool:
+        """Say the folder holds an installation, and offer to adopt it."""
+        if not self.adopting():
+            return True
+        box = QMessageBox(self)
+        box.setWindowTitle("This folder already holds an installation")
+        box.setText(
+            f"{self.instance_dir()} already holds a board:\n\n"
+            f"{board_path(self.instance_dir())}\n\n"
+            "Setup can adopt it. Nothing inside it is read or changed, no "
+            "schema runs against that board, and its configuration is left as "
+            "it stands."
+        )
+        adopt = box.addButton("Adopt it", QMessageBox.AcceptRole)
+        box.addButton("Choose another folder", QMessageBox.RejectRole)
+        box.setDefaultButton(adopt)
+        box.exec()
+        return box.clickedButton() is adopt
+
 
 class AgentsPage(QWizardPage):
     """Which of the shipped agents this installation runs."""
@@ -298,40 +339,103 @@ class IntegrationsPage(QWizardPage):
 
 
 class SummaryPage(QWizardPage):
-    """What Finish will write."""
+    """What Finish will write, and which installation the app opens after it."""
 
     def __init__(self, wizard: "SetupWizard") -> None:
         super().__init__()
         self._wizard = wizard
         self.setTitle("Ready to set up")
-        self.setSubTitle("Nothing has been written yet. Finish creates the following.")
         self.body = QLabel()
         self.body.setWordWrap(True)
         self.body.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
+        self.take_over = QCheckBox("Open this installation when Bristol Tickets starts")
+        self.take_over.setChecked(True)
+        self.take_over.stateChanged.connect(self._render)
+        self.pointer_note = QLabel()
+        self.pointer_note.setWordWrap(True)
+        self.pointer_note.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.body)
+        layout.addSpacing(12)
+        layout.addWidget(self.take_over)
+        layout.addWidget(self.pointer_note)
         layout.addStretch(1)
 
     def initializePage(self) -> None:
+        self._render()
+
+    def _render(self) -> None:
         w = self._wizard
         instance_dir = w.instance_page.instance_dir()
-        notebook = w.integrations_page.notebook.value()
-        zotero = w.integrations_page.zotero.value()
-        lines = [
-            f"Data folder: {instance_dir}",
-            f"Board: {instance_dir / 'tickets' / 'tickets.db'}",
-            f"Configuration: {config_local_path(w.root)}",
-            f"Pointer, so the app still finds your data after you move it: "
-            f"{instance.pointer_path()}",
-            f"Agents: {', '.join(w.agents_page.enabled())}",
-            f"Markdown notebook: {notebook or 'skipped'}",
-            f"Zotero: {zotero or 'skipped'}",
-            "",
-            "Finish creates those folders, provisions the board, writes the "
-            "configuration and the pointer, and opens the board. Cancel writes "
-            "nothing.",
-        ]
+        slug = w.instance_page.slug_edit.text().strip()
+        taking_over = self.take_over.isChecked()
+
+        if w.instance_page.adopting():
+            self.setSubTitle(
+                "This installation already exists. Nothing in it is changed."
+            )
+            lines = [
+                f"Installation: {slug}",
+                f"Data folder: {instance_dir}",
+                f"Board: {board_path(instance_dir)} — already there, and left "
+                f"as it is",
+                f"Configuration: {config_local_path(w.root)} — left as it "
+                f"stands",
+                "",
+                "The only file Finish writes is the pointer below."
+                if taking_over else
+                "Finish writes nothing: the installation is already set up and "
+                "the pointer is being left alone.",
+            ]
+        else:
+            notebook = w.integrations_page.notebook.value()
+            zotero = w.integrations_page.zotero.value()
+            self.setSubTitle("Nothing has been written yet. Finish creates the following.")
+            lines = [
+                f"Data folder: {instance_dir}",
+                f"Board: {board_path(instance_dir)}",
+                f"Configuration: {config_local_path(w.root)}",
+                f"Agents: {', '.join(w.agents_page.enabled())}",
+                f"Markdown notebook: {notebook or 'skipped'}",
+                f"Zotero: {zotero or 'skipped'}",
+                "",
+                "Finish creates those folders, provisions the board and writes "
+                "the configuration. Cancel writes nothing.",
+            ]
         self.body.setText("\n".join(lines))
+        self.pointer_note.setText("\n".join(self._pointer_lines(slug, instance_dir,
+                                                                taking_over)))
+
+    def _pointer_lines(self, slug: str, instance_dir: Path,
+                       taking_over: bool) -> list[str]:
+        """Which installation the app opens afterwards, and which it stops opening."""
+        current = instance.read()
+        current_slug = str(current.get("instance_slug") or "").strip()
+        current_root = str(current.get("data_root") or "").strip()
+        current_name = (f"{current_slug} ({current_root})" if current_root
+                        else current_slug)
+
+        if taking_over:
+            head = (f"Bristol Tickets opens {slug} ({instance_dir}) from now on."
+                    if not current_slug else
+                    f"Bristol Tickets opens {current_name} today. After Finish "
+                    f"it opens {slug} ({instance_dir}) instead, and stops "
+                    f"opening {current_slug}.")
+            return [head, f"Written to: {instance.pointer_path()}"]
+
+        if current_slug:
+            return [
+                f"Bristol Tickets goes on opening {current_name}, and never "
+                f"opens {slug} until you run setup again and adopt it.",
+                f"Left as it is: {instance.pointer_path()}",
+            ]
+        return [
+            f"Bristol Tickets is left with no installation to open, and never "
+            f"opens {slug} until you run setup again and adopt it.",
+            f"Not written: {instance.pointer_path()}",
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -352,12 +456,31 @@ class SetupWizard(QWizard):
         self.agents_page = AgentsPage(root)
         self.integrations_page = IntegrationsPage()
         self.summary_page = SummaryPage(self)
-        for page in (self.instance_page, self.agents_page,
-                     self.integrations_page, self.summary_page):
-            self.addPage(page)
+        self.setPage(PAGE_INSTANCE, self.instance_page)
+        self.setPage(PAGE_AGENTS, self.agents_page)
+        self.setPage(PAGE_INTEGRATIONS, self.integrations_page)
+        self.setPage(PAGE_SUMMARY, self.summary_page)
 
     def accept(self) -> None:
         """Write everything, or nothing."""
+        instance_dir = self.instance_page.instance_dir()
+        slug = self.instance_page.slug_edit.text().strip()
+        write_pointer = self.summary_page.take_over.isChecked()
+
+        if self.instance_page.adopting():
+            try:
+                self.db_path = adopt_setup(
+                    root=self.root,
+                    instance_dir=instance_dir,
+                    slug=slug,
+                    write_pointer=write_pointer,
+                )
+            except SetupStepError as exc:
+                self._report(exc)
+                return
+            super().accept()
+            return
+
         config_path = config_local_path(self.root)
         if config_path.exists():
             answer = QMessageBox.question(
@@ -374,21 +497,25 @@ class SetupWizard(QWizard):
         try:
             self.db_path = apply_setup(
                 root=self.root,
-                instance_dir=self.instance_page.instance_dir(),
-                slug=self.instance_page.slug_edit.text().strip(),
+                instance_dir=instance_dir,
+                slug=slug,
                 agents=self.agents_page.enabled(),
                 notebook=self.integrations_page.notebook.value(),
                 zotero=self.integrations_page.zotero.value(),
+                write_pointer=write_pointer,
             )
         except SetupStepError as exc:
-            QMessageBox.critical(
-                self, "Setup failed",
-                f"Setup could not {exc.step}.\n\n{exc.remedy}\n\n"
-                f"Nothing was written after that point.\n\n"
-                f"Details: {exc.cause}",
-            )
+            self._report(exc)
             return
         super().accept()
+
+    def _report(self, exc: "SetupStepError") -> None:
+        QMessageBox.critical(
+            self, "Setup failed",
+            f"Setup could not {exc.step}.\n\n{exc.remedy}\n\n"
+            f"Nothing was written after that point.\n\n"
+            f"Details: {exc.cause}",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -501,8 +628,25 @@ def _step(step: str, remedy: str):
         raise SetupStepError(step, remedy, exc) from exc
 
 
+def adopt_setup(root: Path, instance_dir: Path, slug: str,
+                write_pointer: bool) -> Path:
+    """Take on an installation that already exists.
+
+    Writes the instance pointer and nothing else: no folder is created, no
+    schema runs against the adopted board, and its configuration is untouched.
+    Returns the path of the adopted board.
+    """
+    if write_pointer:
+        with _step("write the instance pointer",
+                   "Check that you can write to your user Application Support "
+                   "folder."):
+            instance.write(root, instance_dir.parent, slug,
+                           config_local_path(root))
+    return board_path(instance_dir)
+
+
 def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
-                notebook: str, zotero: str) -> Path:
+                notebook: str, zotero: str, write_pointer: bool = True) -> Path:
     """Create the folders, the database, the configuration and the pointer.
 
     Returns the path of the provisioned board.
@@ -518,7 +662,7 @@ def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
         for path in _declared_dirs(root, config, instance_dir):
             path.mkdir(parents=True, exist_ok=True)
 
-    db_path = instance_dir / "tickets" / "tickets.db"
+    db_path = board_path(instance_dir)
     with _step("provision the board",
                "A file at that path may already be open or may not be a "
                "database. Close the app holding it, or choose another data "
@@ -540,10 +684,11 @@ def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
                "Check that you can write to the config/ folder in your clone."):
         config_path = config_file.write(config, config_local_path(root))
 
-    with _step("write the instance pointer",
-               "Check that you can write to your user Application Support "
-               "folder."):
-        instance.write(root, instance_dir.parent, slug, config_path)
+    if write_pointer:
+        with _step("write the instance pointer",
+                   "Check that you can write to your user Application Support "
+                   "folder."):
+            instance.write(root, instance_dir.parent, slug, config_path)
     return db_path
 
 
