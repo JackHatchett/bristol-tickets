@@ -23,6 +23,13 @@ style contract in `src/templates/identity_template.md`.
 - **Take the active agent from `read_config.py active_agent`**, unless the
   launching instructions declare `agent_override: <slug>` — that slug wins for
   this session and never writes back to config.
+- **Resolve identity once, at session start, and never re-resolve it.**
+  `active_agent` is live and the user repoints it to launch a parallel session
+  as another agent, so a later read returns that session's agent, not yours.
+  "Continue" resumes the session you are in; it never re-runs this phase.
+- **Where a later read of `active_agent` disagrees with the identity you
+  started with, you started with the right one.** Say the disagreement out loud
+  rather than switching to it.
 - **Treat `none`, absent, or a slug with no `agents.*` key as no override.** Say
   an unrecognized slug out loud rather than guessing past it.
 - **Sign every write `cowork_` + the slug** (e.g. `cowork_career_coach`), on
@@ -30,7 +37,7 @@ style contract in `src/templates/identity_template.md`.
 - **Load your charter from `read_config.py agents.<active_agent>.identity`** —
   your identity's source of truth.
 - **chief_of_staff only: call `allow_cowork_file_delete` on any workspace path
-  before the snapshot** (`src/agent_identities/chief_of_staff.md` §2.3).
+  before the snapshot** (`src/agent_identities/chief_of_staff.md` §2.1).
 
 ## Phase 3 — State and the queue
 
@@ -59,6 +66,9 @@ for every agent:
   `assignee` makes it yours to decide on, not an order. There is no inbox.
 - **`doing` outranks every `todo`, including a blocked one.** Nothing moves a
   card down this queue: not a blocker, not a comment, not how big it looks.
+- **Pass over a card with an unmet blocker, take the next in order, and return
+  to it in place once every blocker is done.** Never work its unblocked part in
+  passing.
 - **Where a script and this list disagree, the script is the bug.**
 
 **3. Order, blockers and pressure do three different jobs; never let one do
@@ -85,9 +95,6 @@ of reasons to stop early:
 
 - **You need the user** — a decision that is theirs, a missing credential, a
   capability you have not been granted.
-- **The next card is blocked by a ticket that is not done.** Stop there, name
-  the blocker and what would clear it, hand back. No skipping to the card below,
-  no doing "the unblocked part," no deciding it no longer applies.
 - **You have hit inefficient grinding** — the same call failing repeatedly, a
   fix that keeps not fixing it, variations yielding nothing new. Stop the moment
   a competent human would be getting frustrated, and say what you tried and what

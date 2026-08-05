@@ -27,9 +27,8 @@ Say **continue** and the agent starts at the top of its queue and works down
 through every card, without asking permission between them. It stops when the
 queue is empty or when one of a short list of things happens: it needs a
 decision only you can make, it needs a credential or a permission it has not
-been granted, the next card is blocked by a card that is not Done, it is
-grinding on something that keeps failing, or the conversation is running out of
-room.
+been granted, it is grinding on something that keeps failing, or the
+conversation is running out of room.
 
 Anything else you say, it responds to. If nothing you said was actionable, it
 names the next action and asks whether to start.
@@ -44,8 +43,11 @@ Ordering is entirely the board's, and you own it by dragging cards.
   starts on its own.
 - An agent owns a card when the card is assigned to it, or when the card is
   unassigned and its epic names it as owner.
-- A blocked card is not skipped. The agent stops at it, names the blocker, and
-  hands back.
+- A card blocked by something that is not Done is passed over, and the agent
+  takes the next card in order. It comes back to the passed-over card, in the
+  same place, once every card blocking it is Done. A blocker never moves a card
+  up or down the queue, and the agent never works the unblocked half of one in
+  passing.
 
 Nothing else moves a card up or down that list — not pressure, not a comment,
 not how big the card looks. If you want something done first, drag it to the
@@ -90,3 +92,8 @@ matters: it is the routing key.
 To pin a Cowork project to a specific agent regardless of the board's setting,
 put `agent_override: <slug>` in that project's instructions. It applies to that
 project's sessions only and never writes back to your configuration.
+
+*Start next session as* means the next session. A session resolves its identity
+once, when it opens, so changing the setting to launch a second session as a
+different agent leaves the first one as the agent it started as. Both run
+against the same board.
