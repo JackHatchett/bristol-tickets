@@ -93,7 +93,7 @@ CREATE INDEX IF NOT EXISTS idx_task_link_other ON task_link (other_id);
 --
 -- The triggers live in each writing connection's TEMP schema, created with that
 -- connection's actor as a literal (see bristol/ui/schema_guard.py and
--- ticket_tools/ticket_write.py). Two readers: Bristol's Log pane, which
+-- ticket_tools/ticket_write.py). Two readers: Bristol Tickets' Log pane, which
 -- interleaves these with issue_log comments under one pair of filter
 -- checkboxes, and the reports package, which measures cycle time and work-item
 -- age from the status and stage rows.
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS task_event (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id    INTEGER NOT NULL,
     at         TEXT    NOT NULL,          -- ISO-8601 UTC, the moment of the change
-    actor      TEXT,                      -- 'user' (Bristol) or an agent write signature
+    actor      TEXT,                      -- 'user' (Bristol Tickets) or an agent write signature
     field      TEXT    NOT NULL,          -- the task column that changed
     from_value TEXT,                      -- prior value (NULL on creation, or redacted)
     to_value   TEXT    NOT NULL,          -- new value; '(changed)' for title/description

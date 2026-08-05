@@ -1,4 +1,4 @@
-"""app.py — launch the Bristol GUI.
+"""app.py — launch the Bristol Tickets GUI.
 
 The DB path follows the canonical resolution order documented in
 ``src/tools/config_tools/instance_pointer.py``: TICKETS_DB env var, then the
@@ -104,10 +104,11 @@ def main() -> None:
         )
 
     app = QApplication(sys.argv)
-    app.setApplicationName("Bristol")
-    app.setApplicationDisplayName("Bristol")
-    # Set the app-wide icon so the Dock/taskbar shows it when Bristol is
-    # launched as a script (the built .app uses setup.py's iconfile instead).
+    app.setApplicationName("Bristol Tickets")
+    app.setApplicationDisplayName("Bristol Tickets")
+    # Set the app-wide icon so the Dock/taskbar shows it when Bristol Tickets
+    # is launched as a script (the built .app uses setup.py's iconfile
+    # instead).
     icon_file = Path(__file__).resolve().parent / "icon.png"
     if icon_file.exists():
         app.setWindowIcon(QIcon(str(icon_file)))

@@ -3,7 +3,7 @@
 ## Filing an issue
 
 Open a GitHub issue. Say what you expected, what happened instead, and what you
-ran. For anything involving Bristol, the output of
+ran. For anything involving Bristol Tickets, the output of
 `bash src/tools/test_tools/run_smoke.sh bristol` is worth more than a
 description of the crash.
 
@@ -30,8 +30,8 @@ literals.
   independent programs, each readable in one pass. They are not consolidated
   into one program, and a launcher presenting several of them composes them
   rather than fusing their codebases.
-- **Bristol imports nothing else in the tree.** `src/tools/bristol/` opens, runs
-  and changes in isolation.
+- **Bristol Tickets imports nothing else in the tree.** `src/tools/bristol/`
+  opens, runs and changes in isolation.
 - **Split a file that grows past ~400 lines.**
 - **Use Python's built-in `sqlite3`, never a `sqlite3` CLI subprocess**, and
   open every write with `PRAGMA journal_mode=MEMORY`.

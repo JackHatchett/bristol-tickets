@@ -153,13 +153,13 @@ CREATE TABLE IF NOT EXISTS issue_log (
 -- holding the field, its new value, the actor and an ISO timestamp. Written by
 -- triggers in each writing connection's TEMP schema, in a fixed grammar, so no
 -- agent or person ever composes an entry. Title and description changes record
--- only that they changed. Read by Bristol's Log pane, alongside issue_log
--- comments, and by the reports package (bristol/reports/).
+-- only that they changed. Read by the Bristol Tickets Log pane, alongside
+-- issue_log comments, and by the reports package (bristol/reports/).
 CREATE TABLE IF NOT EXISTS task_event (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id    INTEGER NOT NULL,
     at         TEXT    NOT NULL,          -- ISO-8601 UTC
-    actor      TEXT,                      -- 'user' (Bristol) or an agent write signature
+    actor      TEXT,                      -- 'user' (Bristol Tickets) or an agent write signature
     field      TEXT    NOT NULL,          -- the task column that changed
     from_value TEXT,                      -- NULL = card came into being here
     to_value   TEXT    NOT NULL,
@@ -251,7 +251,7 @@ def migrate(conn: sqlite3.Connection) -> None:
     """Apply the schema changes an existing database is missing.
 
     Every step is idempotent and non-destructive to content, so this is safe to
-    run on every connection. Bristol carries its own copy in
+    run on every connection. Bristol Tickets carries its own copy in
     ui/schema_guard.py — the two clients each hold their own DB logic so
     neither package depends on the other.
     """

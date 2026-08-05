@@ -1,7 +1,7 @@
-# Bristol Reports
+# Bristol Tickets Reports
 
-The analytic report Bristol writes to the user's Markdown notebook every time
-the board's **Clear Done** button sweeps finished cards into the Archive.
+The analytic report Bristol Tickets writes to the user's Markdown notebook every
+time the board's **Clear Done** button sweeps finished cards into the Archive.
 
 A Kanban board has no sprints and so no natural period boundary. Clear Done is
 the closest thing this board has — a batch of finished work leaving together, at
@@ -56,7 +56,8 @@ Resolved in `paths.py`, on the order
 
 1. `BRISTOL_REPORTS_DIR` — an explicit override, for testing.
 2. The per-machine instance pointer, whose `config_path` names the config file
-   even when Bristol runs as a relocated `.app` that cannot see the repo.
+   even when Bristol Tickets runs as a relocated `.app` that cannot see the
+   repo.
 3. `bristol/bristol_reports.local` — a git-ignored one-line absolute path,
    bundled into older `.app` builds.
 4. `markdown_notebook.reports_dir` in the `config.local.json` found by walking

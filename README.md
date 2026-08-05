@@ -1,4 +1,4 @@
-# Bristol Tickets
+# Bristol
 
 A Kanban board on your desktop whose cards are the work you hand to Claude,
 shipped with a set of ready-made agents.
@@ -28,9 +28,9 @@ macOS and Python 3.10 or later.
    pip install -r requirements.txt
    ```
 
-4. **Run Bristol.** The first launch opens a setup wizard: it asks for an
-   instance name, where your data lives, which agents you want, and optionally a
-   Markdown notebook and a Zotero folder.
+4. **Run Bristol Tickets.** The first launch opens a setup wizard: it asks for
+   an instance name, where your data lives, which agents you want, and
+   optionally a Markdown notebook and a Zotero folder.
 
    ```bash
    python3 src/tools/bristol/app.py
@@ -60,17 +60,17 @@ repository — so upgrading never touches it.
 `make_launcher.py` writes): `git pull` and relaunch. There is nothing to
 rebuild.
 
-**Running a frozen `Bristol.app`:**
+**Running a frozen `BristolTickets.app`:**
 
 ```bash
-rm -rf ~/Applications/Bristol.app          # or wherever you installed it
+rm -rf ~/Applications/BristolTickets.app          # or wherever you installed it
 cd src/tools/bristol
 rm -rf build dist
 python3 setup.py py2app
 ```
 
-Then drag `dist/Bristol.app` back to `~/Applications`. Full detail, and the
-choice between the two, in
+Then drag `dist/BristolTickets.app` back to `~/Applications`. Full detail, and
+the choice between the two, in
 [src/tools/bristol/BUILD_APP.md](src/tools/bristol/BUILD_APP.md).
 
 ## The two surfaces
@@ -78,9 +78,9 @@ choice between the two, in
 Both act on the same database and the same configuration, and each sees the
 other's changes on its next read.
 
-- **Bristol** (`src/tools/bristol/`) — the desktop app. Read the board, create
-  and edit cards, drag them between columns, attach links and images, with no
-  agent involved.
+- **Bristol Tickets** (`src/tools/bristol/`) — the desktop app. Read the board,
+  create and edit cards, drag them between columns, attach links and images,
+  with no agent involved.
 - **The Claude session** (`src/app.md`) — Claude reads `src/app.md`, resolves
   your config, takes on one agent identity, and works the board.
 

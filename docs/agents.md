@@ -1,6 +1,6 @@
 # The agents
 
-Seven agents ship with Bristol Tickets. Each is a Markdown charter under
+Seven agents ship with Bristol. Each is a Markdown charter under
 `src/agent_identities/`, plus playbooks for the tasks it performs and, for some,
 tools it can run.
 
@@ -20,7 +20,7 @@ folders and no presence on the board.
 
 ## chief_of_staff
 
-**For** maintaining Bristol Tickets itself.
+**For** maintaining Bristol itself.
 
 It is the lead developer and operator of the system: it restructures folders,
 edits configuration, writes and fixes the tools, and keeps the file environment

@@ -22,7 +22,7 @@ computable.
 One database per installation, never one per agent. An agent is scoped by
 tagging — a card's assignee, or its epic's owner — not by storage.
 
-## Bristol, the app
+## Bristol Tickets, the app
 
 `src/tools/bristol/` is a PySide6 desktop application: a Kanban board over that
 database, described in [board.md](board.md).
@@ -72,14 +72,14 @@ still a card on the board rather than a file left where it will be found.
 
 ## How the three meet
 
-Bristol writes to the database directly. An agent writes to it through
+Bristol Tickets writes to the database directly. An agent writes to it through
 `src/tools/ticket_tools/ticket_write.py`, which self-heals an older schema the
 same way the app does. Whichever surface acts, the other sees the change on its
 next read.
 
-Neither surface is primary. You can run Bristol alone as a Kanban board and
-never open a session. You can work a session without opening Bristol. The
-database is what they agree on.
+Neither surface is primary. You can run Bristol Tickets alone as a Kanban board
+and never open a session. You can work a session without opening
+Bristol Tickets. The database is what they agree on.
 
 ## Design constraints
 
@@ -88,7 +88,7 @@ independent programs, each readable in a single pass. They are not consolidated
 into one application, and a launcher that presents several composes them rather
 than fusing them.
 
-**Bristol is self-contained.** It depends on nothing else in the tree.
+**Bristol Tickets is self-contained.** It depends on nothing else in the tree.
 
 **Legibility beats cleverness.** The repository is written to be read by people
 learning to build alongside AI. The data and configuration contract is explicit

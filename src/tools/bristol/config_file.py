@@ -1,7 +1,8 @@
-"""config_file.py — this installation's configuration, as Bristol reads it.
+"""config_file.py — this installation's configuration, as Bristol Tickets
+reads it.
 
-Bristol is self-contained: it imports nothing from the rest of ``src/tools/``,
-so this is a local reader and writer for the same ``config/config.local.json``
+Bristol Tickets is self-contained: it imports nothing from the rest of
+``src/tools/``, so this is a local reader and writer for the same ``config/config.local.json``
 that ``config_tools/read_config.py`` owns. There is one file; the setup wizard,
 the Settings tab and the agents all read and write these fields in it.
 

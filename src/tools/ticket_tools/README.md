@@ -33,8 +33,8 @@ contract for both: `src/templates/identity_template.md`.
   // user's real filesystem, can fail mid-write and leave a stuck
   // rollback-journal file that blocks all further access, reads included, until
   // it is cleared by hand. MEMORY mode writes no on-disk journal.
-- **Keep the schema in step with Bristol.** Any inline migration the viewer
-  performs is reflected in `create_tickets.py`.
+- **Keep the schema in step with Bristol Tickets.** Any inline migration the
+  viewer performs is reflected in `create_tickets.py`.
 - **These are not user-facing commands.** They are internal mechanisms for
   agents and automation.
 - **Any tool added here obeys the same invariants.**
@@ -107,11 +107,11 @@ anyone narrating it.
   carrying prose has become the narration the change log exists to replace.
 - **The append lives at the database layer**, so a drag, a Clear Done sweep, a
   record-dialog edit and a CLI call are all recorded identically.
-  // Bristol writes to tickets.db directly, so a hook inside ticket_write.py
-  // would miss every board move made by hand.
-- **Actor** is `user` from Bristol and the `--actor` write signature from the
-  CLI. Each connection installs the triggers in its own TEMP schema with its
-  actor baked in.
+  // Bristol Tickets writes to tickets.db directly, so a hook inside
+  // ticket_write.py would miss every board move made by hand.
+- **Actor** is `user` from Bristol Tickets and the `--actor` write signature
+  from the CLI. Each connection installs the triggers in its own TEMP schema
+  with its actor baked in.
   // A trigger in the main schema cannot read a temp table, so the actor cannot
   // come from a session variable at fire time.
 - **Title and description record only that they changed** (`to_value` is
@@ -128,12 +128,12 @@ anyone narrating it.
 This log loosens nothing in `src/app.md` §What a file may say: files still carry
 no history, and no agent writes a change note anywhere outside it.
 
-Two readers. Bristol's Log pane interleaves these entries with `issue_log`
-comments under a pair of filter checkboxes, both on by default. `bristol/reports/`
-measures cycle time, flow efficiency and work-item age from the `status` and
-`stage` rows — `created_at` / `updated_at` / `closed_at` alone yield only lead
-time. The log cannot be backfilled, so its metrics cover moves made after it
-existed.
+Two readers. Bristol Tickets' Log pane interleaves these entries with
+`issue_log` comments under a pair of filter checkboxes, both on by default.
+`bristol/reports/` measures cycle time, flow efficiency and work-item age from
+the `status` and `stage` rows — `created_at` / `updated_at` / `closed_at` alone
+yield only lead time. The log cannot be backfilled, so its metrics cover moves
+made after it existed.
 
 ## Board conventions
 
@@ -164,7 +164,7 @@ redirects `--status backlog` to a stage move.
 Phase 3.3 states the rule). Their storage:
 
 - **Order** is `task.sort_order`, a card's position in its column. The user sets
-  it by dragging in Bristol; an agent sets it with `set-order`.
+  it by dragging in Bristol Tickets; an agent sets it with `set-order`.
 - **A blocker** is a `blocks` link between two named cards, resolved live
   against the blocking card's status. It never moves a card in the queue —
   precedence keeps a `doing` card first even when it is waiting on a `todo` one.
@@ -232,11 +232,11 @@ makes it a request rather than an order: that agent's card to accept, reorder,
 or drop. Which tab it lands in is the user's, not the agent's: `add-task` reads
 `board.cross_agent_stage` from config — `active` by default, `backlog` if the
 user prefers — whenever an assignee differs from its reporter and no `--stage`
-is given. Bristol's Settings tab is where that choice is made. The `librarian` does not
-put "delete the xyz database" in `doing` for `chief_of_staff`; it files a `todo`
-card assigned to `chief_of_staff`, reporter `librarian`. There is no separate
-suggestion store, subcommand, or status section — `reporter` and `assignee`
-already carry it.
+is given. Bristol Tickets' Settings tab is where that choice is made. The
+`librarian` does not put "delete the xyz database" in `doing` for
+`chief_of_staff`; it files a `todo` card assigned to `chief_of_staff`, reporter
+`librarian`. There is no separate suggestion store, subcommand, or status
+section — `reporter` and `assignee` already carry it.
 
 ### Format — scannable in ~10 seconds
 
@@ -270,14 +270,15 @@ both created with `ticket_write.py link-add --task N`:
   - Re-running `link-add` on an already-linked pair **retypes** it rather than
     erroring, so changing a relation is one call.
 - **`--uri "…"` links to an address** — a web URL, a `zotero://` citation, an
-  `obsidian://` note, or a filesystem path. Bristol hands whatever is stored to
-  the OS to open, so the tool encodes no schemes, vault names or user paths. Add
-  `--label` for a caption.
+  `obsidian://` note, or a filesystem path. Bristol Tickets hands whatever is
+  stored to the OS to open, so the tool encodes no schemes, vault names or user
+  paths. Add `--label` for a caption.
 
 `link-list --task N` prints link ids and how each reads from that ticket;
-`link-remove --id L` deletes one. Bristol shows links above the Issue Log in both
-the inspector and the create/edit dialog, offering the relation from the open
-ticket's point of view, and the status scripts print them in a `LINKS` section.
+`link-remove --id L` deletes one. Bristol Tickets shows links above the Issue
+Log in both the inspector and the create/edit dialog, offering the relation from
+the open ticket's point of view, and the status scripts print them in a `LINKS`
+section.
 
 **A dependency is the one mechanism for "not yet."** There is no `blocked` flag
 and no `depends_on` column: a stored flag has to be cleared by hand and sits

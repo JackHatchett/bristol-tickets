@@ -1,15 +1,15 @@
-# Getting Bristol into your Dock
+# Getting Bristol Tickets into your Dock
 
 Two approaches, for two different needs:
 
 - **Live-source launcher (recommended while iterating).** A tiny `.app` whose
   executable is a shell script that runs the repo source directly. Edit
-  `src/tools/bristol/*.py`, relaunch, done — no build step, ever. Trade-off:
-  the running process is Python, so the macOS **menu-bar name reads "Python"**
-  (the window title and Dock icon are still Bristol). Best while the app is
+  `src/tools/bristol/*.py`, relaunch, done — no build step, ever. Trade-off: the
+  running process is Python, so the macOS **menu-bar name reads "Python"** (the
+  window title and Dock icon are still Bristol Tickets). Best while the app is
   still changing.
-- **Frozen bundle (py2app).** A self-contained, relocatable `Bristol.app` with
-  correct app identity. Portable, but you must **rebuild after every code
+- **Frozen bundle (py2app).** A self-contained, relocatable `BristolTickets.app`
+  with correct app identity. Portable, but you must **rebuild after every code
   change**. Use this once development settles and you want a standalone
   artifact.
 
@@ -25,10 +25,11 @@ version control, never committed.
 python3 src/tools/bristol/make_launcher.py
 ```
 
-That writes `~/Applications/Bristol.app` — a minimal bundle whose executable is
-a shell script that runs this repo's `app.py`. Open it once from Finder, then
-right-click its Dock tile → Options → Keep in Dock. Editing any `ui/*.py` or
-`app.py` takes effect on the next launch; there is nothing to rebuild.
+That writes `~/Applications/BristolTickets.app` — a minimal bundle whose
+executable is a shell script that runs this repo's `app.py`. Open it once from
+Finder, then right-click its Dock tile → Options → Keep in Dock. Editing any
+`ui/*.py` or `app.py` takes effect on the next launch; there is nothing to
+rebuild.
 
 Run the same command again after moving or renaming the repo folder, or after
 switching to a different Python.
@@ -52,8 +53,8 @@ The bundle holds absolute paths, so it is a per-machine artifact: it lives in
 
 ## Approach B — frozen bundle (py2app)
 
-This produces a self-contained `Bristol.app` you launch by double-clicking,
-no Terminal, correct app identity.
+This produces a self-contained `BristolTickets.app` you launch by
+double-clicking, no Terminal, correct app identity.
 
 ### One-time setup
 
@@ -80,7 +81,7 @@ notebook it writes reports into. Full resolution order:
 `src/tools/config_tools/instance_pointer.py`.
 
 (For a one-off you can still launch with `TICKETS_DB=/path/... open
-"dist/Bristol.app"` — the env var wins over everything.)
+"dist/BristolTickets.app"` — the env var wins over everything.)
 
 ### Step 2 — the icon (already included)
 
@@ -100,7 +101,7 @@ iconutil -c icns icon.iconset -o icon.icns
 python3 setup.py py2app
 ```
 
-The app appears at `dist/Bristol.app`. Double-click it, or drag it to
+The app appears at `dist/BristolTickets.app`. Double-click it, or drag it to
 `/Applications`. `build/` and `dist/` are git-ignored.
 
 ### Rebuilding
@@ -117,6 +118,7 @@ python3 setup.py py2app
 - **"App can't be opened / unidentified developer"** — right-click the app →
   Open, once, to approve it (it's unsigned).
 - **App launches then quits** — run the binary directly to see the error:
-  `"dist/Bristol.app/Contents/MacOS/Bristol"`. Most often it's a wrong path
-  in the instance pointer (`python3 ../config_tools/instance_pointer.py` prints
-  it), or a missing Qt plugin (reinstall PySide6 and rebuild clean).
+  `"dist/BristolTickets.app/Contents/MacOS/BristolTickets"`. Most often it's a
+  wrong path in the instance pointer (`python3
+  ../config_tools/instance_pointer.py` prints it), or a missing Qt plugin
+  (reinstall PySide6 and rebuild clean).

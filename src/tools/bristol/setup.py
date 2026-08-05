@@ -1,9 +1,9 @@
-"""setup.py — build a standalone macOS .app for Bristol with py2app.
+"""setup.py — build a standalone macOS .app for Bristol Tickets with py2app.
 
 Usage (see BUILD_APP.md for the full walkthrough):
 
     pip install py2app PySide6
-    python3 setup.py py2app          # → dist/Bristol.app
+    python3 setup.py py2app          # → dist/BristolTickets.app
 
 This file is GitHub-safe: it hardcodes no personal path, and it bundles none.
 The built app locates the database through the per-machine instance pointer —
@@ -33,9 +33,11 @@ OPTIONS = {
     "packages": ["ui", "reports"],
     "includes": ["sqlite3"],
     "plist": {
-        "CFBundleName": "Bristol",
-        "CFBundleDisplayName": "Bristol",
-        "CFBundleIdentifier": "local.bristol.app",
+        # CFBundleName drives the bundle directory and the executable, so it
+        # holds no space; the display name is what Finder and the menu bar show.
+        "CFBundleName": "BristolTickets",
+        "CFBundleDisplayName": "Bristol Tickets",
+        "CFBundleIdentifier": "local.bristoltickets.app",
         "CFBundleVersion": "18.0",
         "CFBundleShortVersionString": "18.0",
         "NSHighResolutionCapable": True,

@@ -2,19 +2,19 @@
 
 Four things have to be in place, in this order: a Claude subscription with
 Cowork, the Claude desktop app, this repository and its Python dependencies, and
-the first-run setup inside Bristol.
+the first-run setup inside Bristol Tickets.
 
 ## 1. A Claude subscription that includes Cowork
 
-**Bristol Tickets does not work without it.** Cowork is the Claude desktop
+**Bristol does not work without it.** Cowork is the Claude desktop
 feature that lets Claude read and write files in a folder you choose and run
 commands on your behalf. That is the entire mechanism by which an agent does
 anything: there is no server, no API key in a config file, no background
 process. The board is a board; Cowork is what makes it a queue somebody works.
 
-Without Cowork you can still install everything below and use Bristol as a
-solo Kanban app. Every reference in this manual to an agent doing something will
-simply not apply.
+Without Cowork you can still install everything below and use Bristol Tickets as
+a solo Kanban app. Every reference in this manual to an agent doing something
+will simply not apply.
 
 Check the Claude plan comparison for which subscription tiers include Cowork —
 it is not on the free tier.
@@ -60,8 +60,8 @@ cannot install, and you can skip all three until you want the tool:
 python3 src/tools/bristol/app.py
 ```
 
-With no configuration present, Bristol opens a setup wizard instead of an empty
-board. Four pages:
+With no configuration present, Bristol Tickets opens a setup wizard instead of
+an empty board. Four pages:
 
 1. **Name this installation.** An instance name — lower case, no spaces — and
    the folder its data lives in. The name becomes a directory under `data/`, and
@@ -80,8 +80,8 @@ Finish creates the data folders each enabled agent declares, provisions
 template with your answers filled in, and writes an instance pointer outside the
 repo so a relocated app can still find its data.
 
-**File → Setup…** re-runs the wizard from a running Bristol. Replacing an
-existing configuration asks first.
+**File → Setup…** re-runs the wizard from a running Bristol Tickets. Replacing
+an existing configuration asks first.
 
 ## 5. Point Cowork at the folder
 
@@ -89,7 +89,7 @@ In the Claude desktop app, open Cowork and select the `bristol_tickets` folder.
 Claude reads `src/app.md` on its own and takes it from there. [sessions.md](sessions.md)
 describes what happens next.
 
-## Getting Bristol into your Dock
+## Getting Bristol Tickets into your Dock
 
 `src/tools/bristol/BUILD_APP.md` covers two ways to get a double-clickable app:
 a small launcher that runs the repository source directly (edit and relaunch, no
@@ -98,13 +98,12 @@ portable, rebuild after each change).
 
 ## Running the board from a different location
 
-Bristol finds its database in a fixed order: the `TICKETS_DB` environment
-variable, then the instance pointer at
-`~/Library/Application Support/BristolTickets/instance.json`, then a local
-pointer file, then by walking up the source tree looking for
-`data/*/tickets/tickets.db`. Running from inside the repository needs no pointer
-at all. Write one when you build a standalone app, which is relocatable and
-cannot see the repository:
+Bristol Tickets finds its database in a fixed order: the `TICKETS_DB`
+environment variable, then the instance pointer at `~/Library/Application
+Support/BristolTickets/instance.json`, then a local pointer file, then by
+walking up the source tree looking for `data/*/tickets/tickets.db`. Running from
+inside the repository needs no pointer at all. Write one when you build a
+standalone app, which is relocatable and cannot see the repository:
 
 ```bash
 python3 src/tools/config_tools/instance_pointer.py --write   # create it
