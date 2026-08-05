@@ -11,6 +11,12 @@ which one to reach for.
   number.** `space("md")`, `radius("lg")`, `type_size("title")`.
 - **Read `C` and the token functions at paint time, not at import time.** A name
   bound once at import holds the value the app started with.
+- **Check what you changed against Bristol running on the user's machine**, with
+  whatever the runtime offers for seeing a window there. Say so and stop where it
+  offers nothing, rather than substituting a render of a different platform.
+- **Never install Qt into the session's own sandbox to look at the app.** An
+  offscreen render settles geometry at most, and draws the wrong control set,
+  fonts and pixel ratio. // The install has cost more sessions than it has saved.
 
 ## Scheme keys
 
@@ -58,9 +64,9 @@ coloured, never how far apart two things sit.
 
 `LAYOUT` sits beside the scales and holds what sizes the window rather than the
 space inside it: the window's minimum and opening size, the splitter's opening
-split, a column's minimum width, the epic filter's width and the wizard's
-minimum size. Reach for it only when the thing being sized is a window or a
-pane, never for a gap.
+split, the column and detail-pane minimum widths, the epic filter's width, and
+the minimum sizes of the wizard and the dialogs. Reach for it only when the
+thing being sized is a window or a pane, never for a gap.
 
 **Size a row from its font's metrics plus a spacing step, never from a fixed
 height.** A pill row is `QFontMetrics(font).height() + space("sm")`, so a change
@@ -88,6 +94,22 @@ answer with a hex value or a pixel count.
 
 **Where no key or token carries the intent, say so and stop.** A new key is a
 key every scheme has to gain, which is a change to `theme.py` and to this file.
+
+## Where a card is edited
+
+Two surfaces write a card, and each has its own job.
+
+- **The detail pane edits a selected card in place**: status, stage, owner,
+  epic, effort and pressure are live controls, and comments, links and image
+  attachments post from it. Every pane write goes down the same connection as
+  every other writer, so the change-log triggers record it identically.
+- **The Edit Record dialog is where a record is created** — both kinds — **and
+  where the fields that do not fit a pane are rewritten**: the title, the
+  description, the record type, the kind, the originator, an epic's type and
+  status, and deletion.
+- **The pane's width and collapsed state persist** under `appearance.detail_width`
+  and `appearance.detail_collapsed` in `config/config.local.json`, written by
+  the main window as the user moves them.
 
 ## What the board is made of
 

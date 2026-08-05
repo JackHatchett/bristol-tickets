@@ -29,6 +29,12 @@ CROSS_AGENT_STAGE_DEFAULT = "active"
 APPEARANCE_SCHEME = "appearance.scheme"
 APPEARANCE_SCHEME_DEFAULT = "warm"
 
+# Where the detail pane sits: its width in device-independent pixels, and
+# whether it is collapsed to the window edge. The main window writes these as
+# the user moves the splitter or toggles the pane, so both survive a restart.
+DETAIL_WIDTH = "appearance.detail_width"
+DETAIL_COLLAPSED = "appearance.detail_collapsed"
+
 
 def project_root() -> Path | None:
     """The cloned folder: the nearest ancestor holding ``src/app.md``.

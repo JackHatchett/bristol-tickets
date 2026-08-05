@@ -53,8 +53,14 @@ alone: creating a card in it, and, on Done, **Clear Done**.
 
 ## A card
 
-Click any card to load it into the properties inspector on the right.
-Double-click, or press **Create**, to open the full dialog.
+Click any card to load it into the detail pane on the right, where its
+placement is edited in place: status, stage, owner, epic, effort and pressure
+are live controls, and a change lands the moment it is made. The pane's
+collapse control puts it away — the columns take the reclaimed width — and the
+strip at the window's edge brings it back; its width and collapsed state
+survive a restart. Double-click a card, or press **Create**, to open the
+dialog, which is where a record is created and where its title, description
+and record type are rewritten.
 
 A card leads with its title, followed by the first line of its description in a
 lighter face. Everything else sits in one footer row: the id, the owner and the
@@ -82,11 +88,11 @@ carrying high pressure is a question worth asking.
 
 ## Links
 
-Above the log, on both the inspector and the dialog, a card shows its links, one
-per row. **Add link** offers two kinds.
+Above the log, on both the detail pane and the dialog, a card shows its links,
+one per row. **Add link** offers two kinds.
 
 **Links to other cards** render as `#153 — Title`; clicking one retargets the
-inspector at that card. A link is stored once and is bidirectional by
+detail pane at that card. A link is stored once and is bidirectional by
 construction: it appears on both cards, and removing it clears both ends. Three
 relations:
 
@@ -110,7 +116,7 @@ description.
 
 ## Images
 
-Attach an image from the comment poster in either the dialog or the inspector.
+Attach an image from either the dialog or the detail pane.
 Files are copied into an images folder beside the database and shown as inline
 thumbnails; click one to see it full size. The database stores only the
 filename, so nothing about your folder layout ends up in it. Removing an
@@ -118,17 +124,18 @@ attachment moves the file to a trash folder rather than destroying it.
 
 ## The log
 
-Every card has a log pane with two checkboxes, both on by default.
+Every card has a log — a timeline, newest first, with two checkboxes, both on
+by default.
 
-**Comments** are what you and the agents write: post a note with the box at the
-bottom of the pane. This is where findings, decisions and what is needed next
-belong.
+**Comments** are what you and the agents write: post a note with the composer
+at the foot of the pane. Each shows its author and how long ago it landed.
+This is where findings, decisions and what is needed next belong.
 
-**Changes** are written by the database itself, one row per changed field, with
-the field, its new value, who did it and when. A drag, a Clear Done sweep, a
-dialog edit and an agent's command are all recorded identically, so nobody has
-to narrate a change. Titles and descriptions record only that they changed,
-never the text.
+**Changes** are written by the database itself, one muted line per changed
+field, with the field, its new value, who did it and when. A drag, a Clear
+Done sweep, a pane edit, a dialog edit and an agent's command are all recorded
+identically, so nobody has to narrate a change. Titles and descriptions record
+only that they changed, never the text.
 
 ## Clear Done
 

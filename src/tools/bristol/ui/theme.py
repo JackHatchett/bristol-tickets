@@ -92,9 +92,14 @@ LAYOUT = {
     "split_board": 1180,   # opening width of the board side
     "split_detail": 720,   # opening width of the detail side
     "column_min_w": 260,   # a board column narrower than this is unreadable
+    "detail_min_w": 320,   # the detail pane narrower than this is unreadable
     "filter_w": 190,       # the epic filter, wide enough for a real epic name
     "wizard_min_w": 720,
     "wizard_min_h": 480,
+    "dialog_min_w": 760,        # the record dialog
+    "small_dialog_min_w": 420,  # a single-purpose modal: add link
+    "preview_min_w": 480,       # the image preview modal
+    "preview_min_h": 360,
 }
 
 # An effort code as the word a reader who does not know the codes can read.
@@ -124,19 +129,19 @@ def type_size(step: str) -> int:
 # names any that does.
 WARM_LIGHT = {
     "INK":          "#3d3325",  # primary text (warm near-black)
-    "INK_SOFT":     "#7c6f5b",  # secondary text
+    "INK_SOFT":     "#675c49",  # secondary text (6.1:1 on CANVAS)
     "CANVAS":       "#faf6ef",  # app / dialog background
     "SURFACE":      "#fffdf9",  # card / input surface
     "BORDER":       "#e7dcc6",  # hairline borders
-    "ACCENT":       "#ea580c",  # primary orange
-    "ACCENT_DK":    "#c2410c",  # deeper orange — bright accent text
+    "ACCENT":       "#c2410c",  # primary orange (4.8:1 on CANVAS, 5.2:1 under white)
+    "ACCENT_DK":    "#9a3412",  # deeper orange — bright accent text
     "ON_ACCENT":    "#ffffff",  # text and marks drawn on an accent fill
     "AMBER_BG":     "#fef3c7",  # epic pill background
-    "AMBER_TX":     "#92400e",  # epic pill text
+    "AMBER_TX":     "#7c3608",  # epic pill text (7.9:1 on its tint)
     "BUILD_BG":     "#e4eee6",  # Build record-type pill background (calm green)
-    "BUILD_TX":     "#3f6f4f",  # Build record-type pill text
+    "BUILD_TX":     "#2e5a3d",  # Build record-type pill text (6.7:1 on its tint)
     "FIX_BG":       "#fbe2db",  # Fix record-type pill background (rust)
-    "FIX_TX":       "#b23b26",  # Fix record-type pill text
+    "FIX_TX":       "#97301b",  # Fix record-type pill text (6.2:1 on its tint)
     "SEL_BG":       "#fff1e2",  # selected card fill
     "HOVER_BG":     "#fffaf2",  # hovered card fill
     "LIST_BG":      "#fbf6ee",  # kanban list / scroll area background
@@ -144,14 +149,14 @@ WARM_LIGHT = {
     "BTN_BORDER":   "#f7c99a",  # normal button border
     "BTN_HOVER":    "#ffe9d2",  # button hover fill
     "BTN_PRESSED":  "#ffddb8",  # button pressed fill
-    "CREATE_HOVER": "#f2680f",  # accent (Create) button hover fill
-    "DELETE_BG":    "#e0563b",  # delete button fill
-    "DELETE_HOVER": "#cf4a30",  # delete button hover fill
+    "CREATE_HOVER": "#a83a0b",  # accent (Create) button hover fill
+    "DELETE_BG":    "#c53a20",  # delete button fill (5.3:1 under white)
+    "DELETE_HOVER": "#b03118",  # delete button hover fill
     "MISSING":      "#d61f1f",  # required-but-empty field border (bright red)
     "DISABLED_BG":  "#f3ece0",  # unclickable button fill
     "DISABLED_TX":  "#b3a389",  # unclickable button text
     "NEUTRAL_BG":   "#f0e7d6",  # a quiet pill: effort, pressure
-    "NEUTRAL_TX":   "#6d6350",  # text on a NEUTRAL_BG pill
+    "NEUTRAL_TX":   "#574e3b",  # text on a NEUTRAL_BG pill (6.7:1 on its tint)
     "SHADOW":       "#33241c10",  # the soft drop shadow under a card
 }
 
@@ -163,7 +168,7 @@ WARM_DARK = {
     "BORDER":       "#463724",  # hairline borders
     "ACCENT":       "#f97316",  # primary orange (brighter for dark)
     "ACCENT_DK":    "#fdba74",  # light orange — bright accent text on dark
-    "ON_ACCENT":    "#ffffff",  # text and marks drawn on an accent fill
+    "ON_ACCENT":    "#201409",  # deep warm text on the bright accent (6.4:1)
     "AMBER_BG":     "#3a2a10",  # epic pill background (dark amber)
     "AMBER_TX":     "#fcd34d",  # epic pill text (bright amber)
     "BUILD_BG":     "#1e2a1e",  # Build record-type pill background (calm green)
@@ -178,8 +183,8 @@ WARM_DARK = {
     "BTN_HOVER":    "#40311f",  # button hover fill
     "BTN_PRESSED":  "#4a3826",  # button pressed fill
     "CREATE_HOVER": "#fb8b3d",  # accent (Create) button hover fill
-    "DELETE_BG":    "#b3432c",  # delete button fill
-    "DELETE_HOVER": "#c94d33",  # delete button hover fill
+    "DELETE_BG":    "#e0563b",  # delete button fill (4.8:1 under ON_ACCENT)
+    "DELETE_HOVER": "#ea6448",  # delete button hover fill
     "MISSING":      "#ff5449",  # required-but-empty field border (bright red)
     "DISABLED_BG":  "#241c14",  # unclickable button fill
     "DISABLED_TX":  "#6b5b45",  # unclickable button text
@@ -192,7 +197,7 @@ WARM_DARK = {
 # the warm family reads as paper, this one reads as a modern web tool.
 COOL_LIGHT = {
     "INK":          "#0f172a",  # primary text (near-black slate)
-    "INK_SOFT":     "#64748b",  # secondary text
+    "INK_SOFT":     "#5b6779",  # secondary text (4.9:1 on LIST_BG)
     "CANVAS":       "#f4f5f7",  # app / dialog background
     "SURFACE":      "#ffffff",  # card / input surface
     "BORDER":       "#e2e8f0",  # hairline borders
@@ -202,9 +207,9 @@ COOL_LIGHT = {
     "AMBER_BG":     "#e0e7ff",  # epic pill background (indigo tint)
     "AMBER_TX":     "#3730a3",  # epic pill text
     "BUILD_BG":     "#dcfce7",  # Build record-type pill background (green)
-    "BUILD_TX":     "#15803d",  # Build record-type pill text
+    "BUILD_TX":     "#166534",  # Build record-type pill text (6.5:1 on its tint)
     "FIX_BG":       "#fee2e2",  # Fix record-type pill background (red)
-    "FIX_TX":       "#b91c1c",  # Fix record-type pill text
+    "FIX_TX":       "#991b1b",  # Fix record-type pill text (6.8:1 on its tint)
     "SEL_BG":       "#e8f0fe",  # selected card fill
     "HOVER_BG":     "#f8fafc",  # hovered card fill
     "LIST_BG":      "#ebecf0",  # kanban list / scroll area background
@@ -231,7 +236,7 @@ COOL_DARK = {
     "BORDER":       "#2c333d",  # hairline borders
     "ACCENT":       "#3b82f6",  # primary blue (brighter for dark)
     "ACCENT_DK":    "#93c5fd",  # light blue — bright accent text on dark
-    "ON_ACCENT":    "#ffffff",  # text and marks drawn on an accent fill
+    "ON_ACCENT":    "#0f1216",  # deep slate text on the bright accent (5.1:1)
     "AMBER_BG":     "#1e1b4b",  # epic pill background (deep indigo)
     "AMBER_TX":     "#a5b4fc",  # epic pill text
     "BUILD_BG":     "#14261a",  # Build record-type pill background (green)
@@ -246,8 +251,8 @@ COOL_DARK = {
     "BTN_HOVER":    "#2b333d",  # button hover fill
     "BTN_PRESSED":  "#333c48",  # button pressed fill
     "CREATE_HOVER": "#60a5fa",  # accent (Create) button hover fill
-    "DELETE_BG":    "#b91c1c",  # delete button fill
-    "DELETE_HOVER": "#dc2626",  # delete button hover fill
+    "DELETE_BG":    "#ef4444",  # delete button fill (5.0:1 under ON_ACCENT)
+    "DELETE_HOVER": "#f87171",  # delete button hover fill
     "MISSING":      "#f87171",  # required-but-empty field border
     "DISABLED_BG":  "#1a1f26",  # unclickable button fill
     "DISABLED_TX":  "#5b6672",  # unclickable button text
@@ -498,6 +503,36 @@ QPushButton#columnMenu:hover {{
     background-color: {C['HOVER_BG']};
     color: {C['INK']};
 }}
+/* The detail pane is a sidebar surface: the one raised region right of the
+   splitter, separated from the board canvas by a hairline. */
+QWidget#detailPane {{
+    background-color: {C['SURFACE']};
+    border-left: 1px solid {C['BORDER']};
+}}
+QScrollArea#detailScroll, QScrollArea#detailScroll > QWidget > QWidget {{
+    background: transparent;
+    border: none;
+}}
+/* The hairline under a section header in the detail pane. */
+QFrame#sectionRule {{ background-color: {C['BORDER']}; border: none; }}
+/* The pane's collapse control, and the strip that brings it back: both quiet
+   glyphs that only gain a surface on hover. */
+QPushButton#paneToggle, QPushButton#paneReveal {{
+    background: transparent;
+    border: none;
+    border-radius: {r_md}px;
+    padding: {s_xs}px {s_md}px;
+    color: {C['INK_SOFT']};
+    font-weight: 700;
+}}
+QPushButton#paneToggle:hover, QPushButton#paneReveal:hover {{
+    background-color: {C['HOVER_BG']};
+    color: {C['INK']};
+}}
+QPushButton#paneReveal {{
+    border-left: 1px solid {C['BORDER']};
+    border-radius: 0px;
+}}
 /* A path the user may need to find on disk reads as a path. */
 QLabel#pathRow {{
     background-color: {C['LIST_BG']};
@@ -642,6 +677,13 @@ QPushButton#globalCreateBtn {{
     border: none;
 }}
 QPushButton#globalCreateBtn:hover {{ background-color: {C['CREATE_HOVER']}; }}
+/* The id selector outranks the generic :disabled rule, so the primary button
+   needs its own unclickable look or it would stay accent-filled while dead. */
+QPushButton#globalCreateBtn:disabled {{
+    background-color: {C['DISABLED_BG']};
+    border: 1px solid {C['BORDER']};
+    color: {C['DISABLED_TX']};
+}}
 QPushButton#deleteBtn {{
     background-color: {C['DELETE_BG']};
     color: {C['ON_ACCENT']};
@@ -723,6 +765,66 @@ def log_lines(conn, task_id: int, comments: bool = True,
     # and the newest of them should still sort to the top.
     entries.sort(key=lambda row: (row[0], row[1], row[2]), reverse=True)
     return [line for _, _, _, line in entries]
+
+
+def log_entries(conn, task_id: int, comments: bool = True,
+                changes: bool = True) -> list[dict]:
+    """One ticket's log as structured entries, newest first — what the detail
+    pane's timeline renders from. Same two sources and the same merge order as
+    ``log_lines``; each entry is a dict:
+
+    * a comment: ``{"kind": "comment", "author", "at", "body"}``
+    * a change:  ``{"kind": "change", "author", "at", "field", "value"}``
+    """
+    rows: list[tuple[str, int, int, dict]] = []
+    if comments:
+        try:
+            for row_id, author, body, ts in conn.execute(
+                "SELECT id, author, body, created_at FROM issue_log WHERE task_id=?",
+                (task_id,),
+            ).fetchall():
+                rows.append((ts or "", 0, row_id, {
+                    "kind": "comment", "author": author or "unknown",
+                    "at": ts, "body": body or ""}))
+        except Exception:  # noqa: BLE001 — a missing log must not blank the pane
+            pass
+    if changes:
+        try:
+            for row_id, at, actor, field, to_value in conn.execute(
+                "SELECT id, at, actor, field, to_value FROM task_event WHERE task_id=?",
+                (task_id,),
+            ).fetchall():
+                rows.append((at or "", 1, row_id, {
+                    "kind": "change", "author": actor or "unknown",
+                    "at": at, "field": field, "value": to_value}))
+        except Exception:  # noqa: BLE001
+            pass
+    rows.sort(key=lambda row: (row[0], row[1], row[2]), reverse=True)
+    return [entry for _, _, _, entry in rows]
+
+
+def relative_time(value: str | None) -> str:
+    """A stored ISO timestamp as the distance back it reads from now — "just
+    now", "20m ago", "3h ago", "5d ago" — falling back to the compact date once
+    it is over a month old, or for a value that does not parse."""
+    if not value:
+        return "—"
+    try:
+        then = datetime.fromisoformat(value)
+    except (ValueError, TypeError):
+        return _fmt_dt(value)
+    if then.tzinfo is None:
+        then = then.replace(tzinfo=timezone.utc)
+    seconds = (datetime.now(timezone.utc) - then).total_seconds()
+    if seconds < 60:
+        return "just now"
+    if seconds < 3600:
+        return f"{int(seconds // 60)}m ago"
+    if seconds < 86400:
+        return f"{int(seconds // 3600)}h ago"
+    if seconds < 31 * 86400:
+        return f"{int(seconds // 86400)}d ago"
+    return _fmt_dt(value)
 
 
 def _fmt_dt(value: str | None) -> str:

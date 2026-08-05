@@ -294,6 +294,32 @@ def check_bristol() -> list[str]:
         win._sync_backlog_bar()  # must not raise with nothing checked
         ok.append("Create-modal Stage follows active tab; backlog bar sync runs")
 
+        # The detail pane edits in place: a status flipped from the pane takes
+        # the same write path as a drag or a dialog save — the row moves and
+        # the change-log triggers record it. Collapse must round-trip without
+        # touching the configuration (save=False).
+        pane = win.detail_pane
+        pane.show_task(b2)
+        pane.status_combo.setCurrentText("doing")
+        moved_status = mconn.execute(
+            "SELECT status FROM task WHERE id=?", (b2,)).fetchone()[0]
+        if moved_status != "doing":
+            raise SmokeFailure("a pane status edit did not reach the database")
+        logged = mconn.execute(
+            "SELECT COUNT(*) FROM task_event WHERE task_id=? AND field='status' "
+            "AND to_value='doing'", (b2,)).fetchone()[0]
+        if not logged:
+            raise SmokeFailure("a pane edit was not recorded by the change-log triggers")
+        win._set_pane_collapsed(True, save=False)
+        if not win.detail_pane.isHidden():
+            raise SmokeFailure("collapsing did not hide the detail pane")
+        if win.pane_reveal.isHidden():
+            raise SmokeFailure("the reveal strip did not appear for a collapsed pane")
+        win._set_pane_collapsed(False, save=False)
+        if win.detail_pane.isHidden():
+            raise SmokeFailure("expanding did not bring the detail pane back")
+        ok.append("Detail pane edits write through the shared path; collapse round-trips")
+
         # Unsaved-changes guard: clean dialog is not dirty and closes
         # freely; a field edit flips it dirty.
         from ui.record_dialog import UnifiedRecordDialog
@@ -309,8 +335,8 @@ def check_bristol() -> list[str]:
 
         # Overflow guard: a tall ticket must not push the save button off the
         # screen. The body scrolls; the button row is pinned outside the scroll
-        # area, and the short fields are dealt across two columns so the body is
-        # rarely tall enough to need scrolling in the first place.
+        # area; and every field is a labelled row of the ONE form, so labels
+        # align on one column and fields on the other.
         from PySide6.QtWidgets import QScrollArea
         if not isinstance(getattr(guard_dlg, "_scroll", None), QScrollArea):
             raise SmokeFailure("record dialog body is not inside a scroll area")
@@ -319,14 +345,13 @@ def check_bristol() -> list[str]:
         if btn_parent is scrolled or (btn_parent and btn_parent.isAncestorOf(scrolled)
                                       and btn_parent is not guard_dlg):
             raise SmokeFailure("button row is inside the scroll area — it can scroll away")
-        if guard_dlg.left_form.rowCount() == 0 or guard_dlg.right_form.rowCount() == 0:
-            raise SmokeFailure("metadata fields are not split across two columns")
         for w in (guard_dlg.stage_combo, guard_dlg.status_combo, guard_dlg.owner_edit,
-                  guard_dlg.epic_combo, guard_dlg.pressure_spin):
-            if guard_dlg._row_form.get(w) is None:
-                raise SmokeFailure(f"{w!r} was not placed in a column form")
-        guard_dlg._update_visible_fields()  # must not raise across either column
-        ok.append("Record dialog scrolls, pins its buttons, splits fields in two columns")
+                  guard_dlg.epic_combo, guard_dlg.pressure_spin,
+                  guard_dlg.estimate_combo, guard_dlg.originator_edit):
+            if guard_dlg.form_layout.labelForField(w) is None:
+                raise SmokeFailure(f"{w!r} is not a labelled row of the one form")
+        guard_dlg._update_visible_fields()  # must not raise
+        ok.append("Record dialog scrolls, pins its buttons, aligns fields on one form")
 
         # Required-field guard. A titleless save used to close the dialog and
         # write nothing, silently destroying whatever Description had been typed
