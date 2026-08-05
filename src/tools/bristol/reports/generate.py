@@ -1,7 +1,7 @@
-"""generate.py — orchestration and CLI for the Bristol report.
+"""generate.py — orchestration and CLI for the Bristol Tickets report.
 
-`generate_report` is the single entry point, used identically by Bristol's
-Clear Done button, an agent session, and the CLI.
+`generate_report` is the single entry point, used identically by Bristol
+Tickets' Clear Done button, an agent session, and the CLI.
 
 PERIOD BOUNDARIES
 -----------------
@@ -72,7 +72,7 @@ class ReportResult:
 def _parse_frontmatter(text):
     """Read the leading `---` block as a flat dict, numbers coerced.
 
-    A deliberately small parser rather than a PyYAML dependency: Bristol's only
+    A deliberately small parser rather than a PyYAML dependency: the only
     third-party requirement is PySide6, and adding one so a report can read its
     own predecessor would be a poor trade. We write this frontmatter ourselves,
     so its shape is known — flat scalars plus one list of tags, which we skip.
@@ -132,8 +132,9 @@ def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True):
     """Write one report for `task_ids` and return a ReportResult.
 
     `conn`      an open sqlite3 connection to tickets.db.
-    `task_ids`  the cards this period closed. Bristol passes exactly what Clear
-                Done just swept; the CLI can pass a preview of the Done column.
+    `task_ids`  the cards this period closed. Bristol Tickets passes exactly
+                what Clear Done just swept; the CLI can pass a preview of the
+                Done column.
     `out_dir`   overrides path resolution; normally left to the config.
     """
     try:
@@ -246,7 +247,8 @@ def _select_ids(conn, args):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="bristol-report",
-        description="Write the analytic report Bristol produces on Clear Done.")
+        description=(
+            "Write the analytic report Bristol Tickets writes on Clear Done."))
     parser.add_argument("--db", default=None, help="path to tickets.db")
     parser.add_argument("--out-dir", default=None,
                         help="override the notebook folder reports are written to")

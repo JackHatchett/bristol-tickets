@@ -6,7 +6,7 @@ resolution order documented in ``src/tools/config_tools/instance_pointer.py``:
 
     1. BRISTOL_REPORTS_DIR env var    — explicit override, testing.
     2. The per-machine instance pointer, whose ``config_path`` names the
-       config file even when Bristol is running as a relocated .app that
+       config file even when Bristol Tickets runs as a relocated .app that
        cannot see the repo.
     3. bristol/bristol_reports.local  — legacy one-line absolute path,
                                         bundled into older .app builds.

@@ -1,4 +1,4 @@
-"""bristol.reports — the analytic report Bristol writes when you Clear Done.
+"""bristol.reports — the analytic report Bristol Tickets writes on Clear Done.
 
 Clearing the Done column is the board's only natural period boundary: a batch
 of finished cards leaves the board together, at a moment the user chose. This

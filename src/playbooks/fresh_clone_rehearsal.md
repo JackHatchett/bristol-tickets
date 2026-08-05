@@ -18,16 +18,16 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
 - **The user runs** anything that touches the Mac's own Python, the pointer
   file outside the mounted folders, or launches an app. A session's shell
   cannot reach `~/Library`, and computer use cannot type into a terminal.
-- **The session may drive the Bristol window by clicking** once the user has
-  launched it. Bristol is an ordinary application to computer use.
+- **The session may drive the Bristol Tickets window by clicking** once the user
+  has launched it. Bristol Tickets is an ordinary application to computer use.
 - **Put each user command in the clipboard** with `write_clipboard`, then ask
   for one paste. Never make the user retype a path.
 
 ## Procedure
 
 1. **Back up the instance pointer, and say why.** The setup wizard overwrites
-   it, so the rehearsal would otherwise leave the user's real Bristol pointing
-   at the scratch copy. This is a user step.
+   it, so the rehearsal would otherwise leave the user's real Bristol Tickets
+   pointing at the scratch copy. This is a user step.
 
    ```bash
    cp ~/Library/Application\ Support/BristolTickets/instance.json ~/Desktop/instance.json.backup
@@ -72,8 +72,8 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
    A Homebrew-managed Python refuses this; `docs/install.md` holds both ways
    round it.
 
-6. **Launch Bristol from the copy.** A user step. The session takes the window
-   from here.
+6. **Launch Bristol Tickets from the copy.** A user step. The session takes the
+   window from here.
 
    ```bash
    cd ~/Downloads/bristol_rehearsal && python3 src/tools/bristol/app.py
@@ -107,9 +107,9 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
 
 ## Failure modes
 
-- **The user's real Bristol opens the scratch board afterwards** → the pointer
-  was not restored. Step 11, or re-run `instance_pointer.py --write` from the
-  real repo.
+- **The user's real Bristol Tickets opens the scratch board afterwards** → the
+  pointer was not restored. Step 11, or re-run `instance_pointer.py --write`
+  from the real repo.
 - **`TICKETS_DB` is set in the environment** → the wizard never opens, because
   the variable suppresses first-run setup. Unset it before step 6.
 - **The scratch copy resolves the real board** → it was placed inside the repo.

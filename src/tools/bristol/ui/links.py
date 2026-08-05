@@ -236,8 +236,8 @@ def open_uri(uri: str) -> bool:
     """Hand an address to the OS. A string with a scheme goes as-is (so
     ``zotero://`` reaches Zotero and ``obsidian://`` reaches Obsidian); anything
     else is treated as a filesystem path and opened with whatever application
-    owns that file type. Bristol deliberately knows nothing about which app that
-    is."""
+    owns that file type. Bristol Tickets deliberately knows nothing about which
+    app that is."""
     url = QUrl(uri)
     if not url.scheme():
         url = QUrl.fromLocalFile(uri)

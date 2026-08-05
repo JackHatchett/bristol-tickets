@@ -50,8 +50,8 @@ Usage:
         --assignee <that agent/user> and --reporter <you>. The --assignee is
         what makes it a proposal rather than a command: it is that agent's card
         to accept, reorder, or drop. Where it lands is the user's choice, held
-        in config as `board.cross_agent_stage` and edited in Bristol's Settings
-        tab: 'active' (the default — that agent's `todo` on the board the user
+        in config as `board.cross_agent_stage` and edited in the Bristol
+        Tickets Settings tab: 'active' (the default — that agent's `todo` on the board the user
         watches) or 'backlog'. An explicit --stage always wins.
 
     python3 ticket_write.py update-task --id N [--title "..."]
@@ -152,8 +152,8 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
     # Self-healing: the mechanical change log (mirrors the viewer's
     # schema_guard). One row per changed task field — field, new value, actor,
     # ISO timestamp — appended by the triggers installed below. Read by
-    # Bristol's Log pane, alongside issue_log comments, and by the reports
-    # package, which measures cycle time from the status and stage rows.
+    # the Bristol Tickets Log pane, alongside issue_log comments, and by the
+    # reports package, which measures cycle time from the status and stage rows.
     conn.execute("""
         CREATE TABLE IF NOT EXISTS task_event (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -286,8 +286,8 @@ def install_change_log(conn: sqlite3.Connection, actor: str) -> None:
     Called from connect(), before any write. Entries are machine-written from a
     fixed grammar — no command composes one, and nothing here appends to
     task_event by hand, so a move made from the CLI is recorded identically to
-    one made by dragging a card in Bristol. task.updated_at is refreshed from
-    the newest entry rather than maintained by each writer.
+    one made by dragging a card in Bristol Tickets. task.updated_at is
+    refreshed from the newest entry rather than maintained by each writer.
     """
     conn.executescript(_change_log_sql(actor))
 
@@ -329,7 +329,7 @@ def _append_order(conn: sqlite3.Connection, stage: str, status: str) -> int:
 def _cross_agent_stage() -> str:
     """Where a card one agent files for another lands, per config.
 
-    `board.cross_agent_stage` is the user's setting, edited in Bristol's
+    `board.cross_agent_stage` is the user's setting, edited in Bristol Tickets'
     Settings tab. An unreadable config or an unrecognised value means the
     default: the active Board, where the assignee sees it.
     """
@@ -425,9 +425,9 @@ def update_task(args: argparse.Namespace) -> None:
     stage, status or sort_order.
 
     The change log is written by the same triggers that cover every other write,
-    so an edit made here is recorded identically to one typed into Bristol's
-    record dialog: title and description as '(changed)', the rest with their new
-    value.
+    so an edit made here is recorded identically to one typed into the Bristol
+    Tickets record dialog: title and description as '(changed)', the rest with
+    their new value.
     """
     conn = connect(getattr(args, "actor", None) or "agent")
     try:
@@ -543,7 +543,7 @@ def set_stage(args: argparse.Namespace) -> None:
 
 def set_order(args: argparse.Namespace) -> None:
     """Move a task to a position in its own list — the CLI equivalent of
-    dragging its card up or down a column in Bristol.
+    dragging its card up or down a column in Bristol Tickets.
 
     A list is one active-board status column (stage='active' + that status), or
     the whole backlog. `--position 1` is the top. The whole list is renumbered

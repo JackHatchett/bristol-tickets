@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""make_launcher.py — build or repair the live-source Bristol.app.
+"""make_launcher.py — build or repair the live-source BristolTickets.app.
 
 Approach A in BUILD_APP.md, as a program instead of a recipe: a minimal ``.app``
 bundle whose executable is a shell script that runs this repo's ``app.py``. Run
-it once and Bristol is in ``~/Applications``, ready to keep in the Dock; run it
-again after moving or renaming the repo and the launcher is repointed.
+it once and Bristol Tickets is in ``~/Applications``, ready to keep in the
+Dock; run it again after moving or renaming the repo and the launcher is
+repointed.
 
 The generated script resolves the repo at *launch* time from the per-machine
 instance pointer (``~/Library/Application Support/BristolTickets/instance.json``,
@@ -20,7 +21,8 @@ Usage:
     python3 src/tools/bristol/make_launcher.py            # build/repair it
     python3 src/tools/bristol/make_launcher.py --where    # print its location
 
-Bristol is self-contained: this imports nothing from the rest of ``src/tools/``.
+Bristol Tickets is self-contained: this imports nothing from the rest of
+``src/tools/``.
 """
 
 from __future__ import annotations
@@ -34,7 +36,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-APP_NAME = "Bristol"
+APP_NAME = "BristolTickets"          # bundle directory and executable: no space
+DISPLAY_NAME = "Bristol Tickets"     # what Finder and the Dock show
+RETIRED_APP_NAMES = ("Bristol",)     # bundles removed when this one is built
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]          # src/tools/bristol -> src/tools -> src -> repo
 
@@ -67,7 +71,7 @@ def find_python() -> str:
         return exe
     sys.exit(
         "make_launcher: ERROR — no Python on this machine has PySide6.\n"
-        "  Install it into the interpreter you want Bristol to use:\n"
+        "  Install it into the interpreter you want Bristol Tickets to use:\n"
         "      python3 -m pip install PySide6\n"
         "  then run this again with that same python3."
     )
@@ -93,7 +97,7 @@ if [ ! -f "$ROOT/src/tools/bristol/app.py" ]; then
   ROOT="$FALLBACK_ROOT"
 fi
 if [ ! -f "$ROOT/src/tools/bristol/app.py" ]; then
-  /usr/bin/osascript -e 'display alert "Bristol cannot find its files" message "The repo has moved. Run: python3 src/tools/bristol/make_launcher.py" as critical'
+  /usr/bin/osascript -e 'display alert "Bristol Tickets cannot find its files" message "The repo has moved. Run: python3 src/tools/bristol/make_launcher.py" as critical'
   exit 1
 fi
 exec "$PYBIN" "$ROOT/src/tools/bristol/app.py"
@@ -106,8 +110,8 @@ INFO_PLIST = f"""<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
 <dict>
   <key>CFBundleName</key><string>{APP_NAME}</string>
-  <key>CFBundleDisplayName</key><string>{APP_NAME}</string>
-  <key>CFBundleIdentifier</key><string>local.bristol.launcher</string>
+  <key>CFBundleDisplayName</key><string>{DISPLAY_NAME}</string>
+  <key>CFBundleIdentifier</key><string>local.bristoltickets.launcher</string>
   <key>CFBundleExecutable</key><string>{APP_NAME}</string>
   <key>CFBundleIconFile</key><string>icon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
@@ -119,7 +123,13 @@ INFO_PLIST = f"""<?xml version="1.0" encoding="UTF-8"?>
 
 
 def build() -> Path:
-    """Write the bundle, replacing any existing one."""
+    """Write the bundle, replacing any existing one and removing any bundle
+    built under a retired name.
+
+    // Leaving the retired bundle in place leaves two Dock tiles that both open
+    // the same board, and the stale one keeps whatever repo path it was built
+    // with.
+    """
     python_exe = find_python()
     bundle = app_path()
     macos = bundle / "Contents" / "MacOS"
@@ -127,6 +137,10 @@ def build() -> Path:
 
     if bundle.exists():
         shutil.rmtree(bundle)
+    for retired in RETIRED_APP_NAMES:
+        stale = Path.home() / "Applications" / f"{retired}.app"
+        if stale.exists():
+            shutil.rmtree(stale)
     macos.mkdir(parents=True)
     resources.mkdir(parents=True)
 

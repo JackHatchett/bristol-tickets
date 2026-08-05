@@ -1,7 +1,8 @@
 # The board
 
-Bristol is the desktop app: a Kanban board over one SQLite database. Run it with
-`python3 src/tools/bristol/app.py`, or from the Dock if you built a launcher.
+Bristol Tickets is the desktop app: a Kanban board over one SQLite database. Run
+it with `python3 src/tools/bristol/app.py`, or from the Dock if you built a
+launcher.
 
 Everything on the board is editable by hand. Nothing here requires an agent, and
 an agent working the board makes exactly the same changes you would.
@@ -92,7 +93,7 @@ relations:
 **Links to an address** hold a web URL, a `zotero://` citation, an
 `obsidian://` note, a filesystem path, or any other scheme, with an optional
 caption. Clicking hands the string to macOS, which routes it to whichever app
-owns it. Bristol itself knows nothing about the schemes.
+owns it. Bristol Tickets itself knows nothing about the schemes.
 
 Links added while a card is still being created show as "on save" and are
 written once the card exists.

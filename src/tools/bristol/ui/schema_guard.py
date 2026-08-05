@@ -182,9 +182,9 @@ def _change_log_sql(actor: str) -> str:
     """The two triggers that write the change log, with `actor` baked in.
 
     Mirrored by `_change_log_sql` in ticket_tools/ticket_write.py, following
-    this repo's convention that Bristol and the CLI writer each carry their own
-    copy of shared DB logic so neither depends on the other's package (the
-    viewer also ships as a relocatable .app).
+    this repo's convention that Bristol Tickets and the CLI writer each carry
+    their own copy of shared DB logic so neither depends on the other's package
+    (the viewer also ships as a relocatable .app).
 
     // A trigger in the main schema cannot reference a temp table, so the actor
     // cannot be read from a session variable at fire time. The triggers are

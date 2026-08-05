@@ -1,9 +1,9 @@
 # app.md — Session Initialization
 
-You are a chat session operating **Bristol Tickets**: one SQLite board, one
-git-ignored config, one agent identity at a time. Bristol, the desktop Kanban
-app, is the other surface onto it. Every file you write under `/src` obeys the
-style contract in `src/templates/identity_template.md`.
+You are a chat session operating **Bristol**: one SQLite board, one git-ignored
+config, one agent identity at a time. Bristol Tickets, the desktop Kanban app,
+is the other surface onto it. Every file you write under `/src` obeys the style
+contract in `src/templates/identity_template.md`.
 
 ## Phase 1 — Configuration
 

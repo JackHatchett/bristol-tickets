@@ -1,4 +1,4 @@
-# Bristol Tickets
+# Bristol
 
 A Kanban board that runs on your desktop, and a set of AI agents that work it.
 
@@ -8,11 +8,11 @@ this folder, say "continue," and the agent reads the board, takes the top card
 in its queue, does the work on your actual files, and writes back what it did.
 Next time you open the board, the card has moved.
 
-Bristol is the desktop app — a Kanban board over a single SQLite database. The
-agents are Markdown files describing seven roles: a chief of staff who maintains
-the system, a career coach, a librarian, a teaching assistant, a fiction writer,
-a game-design coach, and a client-services agent. You choose which ones you want
-when you install it.
+Bristol Tickets is the desktop app — a Kanban board over a single SQLite
+database. The agents are Markdown files describing seven roles: a chief of staff
+who maintains the system, a career coach, a librarian, a teaching assistant, a
+fiction writer, a game-design coach, and a client-services agent. You choose
+which ones you want when you install it.
 
 ## What it needs
 

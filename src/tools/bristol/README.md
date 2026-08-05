@@ -1,8 +1,8 @@
-# Bristol — GUI viewer for the tickets database
+# Bristol Tickets — GUI viewer for the tickets database
 
-*(Folder: `bristol/`. "Bristol" is the app's name — after Bristol board, the
-card stock US double-roll tickets are printed on; the metaphor for this
-personal + AI ticketing system, as "kanban" was for Ohno's.)*
+*(Folder: `bristol/`. The name is after Bristol board, the card stock US
+double-roll tickets are printed on; the metaphor for this personal + AI
+ticketing system, as "kanban" was for Ohno's.)*
 
 A standalone PySide6 desktop tool that opens the shared tickets SQLite database
 and displays it as a warm, card-based Kanban board with create/edit/delete, an
@@ -78,7 +78,8 @@ Finish creates the data folders each enabled agent declares, provisions
 `tickets/tickets.db` from `schema.sql`, writes `config/config.local.json` from
 `config/config.example.json` with the answers substituted in, and writes the
 instance pointer. Cancel writes nothing. Replacing an existing configuration
-asks first, and **File → Setup…** re-runs the flow from a running Bristol.
+asks first, and **File → Setup…** re-runs the flow from a running
+Bristol Tickets.
 
 The wizard reads `config.example.json` as data and imports nothing from the rest
 of `src/tools`, so the mechanism-only rule holds.
@@ -113,8 +114,9 @@ one button rather than two permanent rows. Removing a link asks first.
 - **Address links** hold a web URL, a `zotero://` citation, an `obsidian://`
   note, or a filesystem path, with an optional caption. Clicking hands the
   string to the OS: a scheme routes to whichever app registered it, and a bare
-  path opens with whatever owns that file type. Bristol therefore knows nothing
-  about schemes, vault names or user paths — the mechanism-only rule holds.
+  path opens with whatever owns that file type. Bristol Tickets therefore knows
+  nothing about schemes, vault names or user paths — the mechanism-only rule
+  holds.
 
 Links may be added while a ticket is still being *created*: they buffer in the
 widget (shown as "on save") and are written once the INSERT yields an id.
@@ -159,7 +161,7 @@ python3 app.py
 See `BUILD_APP.md`. Two options: a **live-source launcher** (a tiny `.app` that
 runs this repo source directly — no build, edit-and-relaunch; best while
 iterating), or a **frozen py2app bundle** (`python3 setup.py py2app` →
-`dist/Bristol.app`; portable but rebuild after each change).
+`dist/BristolTickets.app`; portable but rebuild after each change).
 
 ## Headless smoke test
 

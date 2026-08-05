@@ -1,4 +1,4 @@
-"""ui/main_window.py — the top-level window (Bristol v18, warm card UI).
+"""ui/main_window.py — the top-level window (v18, warm card UI).
 
 This module is now just the ``MainWindow`` shell: the toolbar (create / epic
 filter / Bulk Change [Board tab only] / refresh), the tabbed views (Search,
@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
 
         ensure_schema_up_to_date(self.conn)
 
-        self.setWindowTitle("Bristol")
+        self.setWindowTitle("Bristol Tickets")
         # App icon on the window (Dock/taskbar when launched as a script; the
         # built .app gets its icon from setup.py's iconfile). The PNG sits at the
         # package root next to app.py.
@@ -486,7 +486,7 @@ class MainWindow(QMainWindow):
         QMessageBox.information(
             self, "Setup complete",
             f"Your installation is at {db_path}.\n\n"
-            "Bristol opens it the next time it launches.")
+            "Bristol Tickets opens it the next time it launches.")
 
     # ----- Theming (OS light/dark, warm orange both ways) -------------------
 

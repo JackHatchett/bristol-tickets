@@ -527,7 +527,7 @@ def render(f, slug, previous_slug=None, source_note=None):
     sections = [
         _frontmatter(f, slug, previous_slug),
         "",
-        f'# Bristol Report — {_date(f["generated_at"])}',
+        f'# Bristol Tickets Report — {_date(f["generated_at"])}',
         "",
         header,
         "",
@@ -571,8 +571,8 @@ def render(f, slug, previous_slug=None, source_note=None):
         "",
         "---",
         "",
-        f"*Generated automatically by [[bristol_tickets_app|Bristol]]'s Clear Done, "
-        f"from the [[bristol_tickets|Bristol Tickets]] board. "
+        f"*Generated automatically by [[bristol_tickets_app|Bristol Tickets]]'s Clear Done, "
+        f"from the [[bristol_tickets|Bristol]] board. "
         f"Source: `{source_note or 'src/tools/bristol/reports/'}`. "
         f"Workspace map: [[ai_workspace_hub|AI Workspace Hub]].*",
         "",
@@ -594,11 +594,11 @@ tags:
 type: bristol-report-index
 ---
 
-# Bristol Reports
+# Bristol Tickets Reports
 
 _One report per Clear Done. Each measures the batch of cards that left the
 board, against the board's health at that moment. Written automatically; see
-[[bristol_tickets_app|Bristol]] and the [[ai_workspace_hub|AI Workspace Hub]]._
+[[bristol_tickets_app|Bristol Tickets]] and the [[ai_workspace_hub|AI Workspace Hub]]._
 
 #### Trend
 

@@ -1,4 +1,4 @@
-"""ui — the PySide6 widgets for Bristol.
+"""ui — the PySide6 widgets for Bristol Tickets.
 
 Import graph (bottom-up, no cycles):
 

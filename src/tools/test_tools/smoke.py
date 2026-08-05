@@ -174,7 +174,8 @@ def check_bristol() -> list[str]:
             if not written:
                 raise SmokeFailure("Clear Done did not write an analytic report")
             body = written[0].read_text(encoding="utf-8")
-            for required in ("# Bristol Report", "#### Executive Summary",
+            for required in ("# Bristol Tickets Report",
+                             "#### Executive Summary",
                              "#### Headline Metrics", "#### Ledger"):
                 if required not in body:
                     raise SmokeFailure(f"report is missing its {required!r} section")

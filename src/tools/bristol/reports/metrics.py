@@ -57,7 +57,7 @@ SECONDS_PER_DAY = 86400.0
 
 
 # ---------------------------------------------------------------------------
-# small numeric helpers (stdlib only — Bristol's only dependency is PySide6)
+# small numeric helpers (stdlib only — the only dependency is PySide6)
 # ---------------------------------------------------------------------------
 
 def _parse_ts(value):

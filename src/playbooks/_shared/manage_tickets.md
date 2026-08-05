@@ -47,7 +47,7 @@ Acceptance Criteria:
 ```
 
 Add a numbered line per criterion. A worked one: "Given the active agent is
-chief_of_staff and Cowork is loading Bristol Tickets, when a session loads
+chief_of_staff and Cowork is loading Bristol, when a session loads
 tickets.db, then it treats its next priorities as its own active-board tasks
 (stage='active') in precedence order."
 
@@ -172,8 +172,8 @@ correct; a card sized slowly is not.
 
 ## When to open the viewer
 
-Open Bristol when the user wants to inspect the board visually, reorganize cards
-by hand, or browse epics and scopes:
+Open Bristol Tickets when the user wants to inspect the board visually,
+reorganize cards by hand, or browse epics and scopes:
 
 ```
 python3 src/tools/bristol/app.py

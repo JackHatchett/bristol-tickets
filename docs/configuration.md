@@ -1,8 +1,8 @@
 # Configuration
 
 One file holds every choice an installation makes: `config/config.local.json`.
-The setup wizard writes it, Bristol's Settings tab edits parts of it, and you
-can edit the rest by hand. It is git-ignored and never published.
+The setup wizard writes it, Bristol Tickets' Settings tab edits parts of it, and
+you can edit the rest by hand. It is git-ignored and never published.
 
 `config/config.example.json` is the tracked template — every key the system
 expects, filled with obvious placeholders. Copy it if you are setting up by
@@ -16,9 +16,9 @@ python3 src/tools/config_tools/read_config.py important_paths.tickets_db
 ```
 
 Any dotted key works. `jq` works too — it is ordinary JSON, deliberately, so it
-stays diffable and hand-editable. Editing it in a text editor is fine; Bristol
-round-trips the whole document when it saves, so a key it does not recognise
-survives.
+stays diffable and hand-editable. Editing it in a text editor is fine;
+Bristol Tickets round-trips the whole document when it saves, so a key it
+does not recognise survives.
 
 ## Why paths live here rather than in the code
 
@@ -48,7 +48,7 @@ this key.
 
 ### `board`
 
-**Required.** How the board behaves. Edited in Bristol's Settings tab.
+**Required.** How the board behaves. Edited in Bristol Tickets' Settings tab.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
