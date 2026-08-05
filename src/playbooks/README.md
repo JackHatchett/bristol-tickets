@@ -49,8 +49,8 @@ names them:
 - `librarian/` — add_book, data_safety
 - `teaching_assistant/` — content_generation, html_render, lesson_pipeline,
   navigator
-- `writers_room/` — crew_dispatch, project_context, story_proposals,
-  voice_distillation
+- `writers_room/` — manuscript_review, project_context, prose_drafting,
+  story_proposals, voice_distillation
 
 ## Using this folder
 

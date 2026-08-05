@@ -97,9 +97,11 @@ coherent, and distils your prose voice from evidence rather than from what you
 say about it. The wiki is yours and stays yours — the agent reads it and
 proposes, and there is no approval ceremony to satisfy.
 
-Editor, proofreader and line-editor are roles it can brief an external AI into
-playing for a session through a handoff protocol, rather than separate agents.
-That crew is optional; the agent works alone without it.
+It drafts and coaches prose, and reads a finished draft back to you — a
+reader test, a critique, a scan for machine-prose tells. It does all of that
+itself. Where a read only works on fresh eyes, such as reacting to a chapter
+with none of the surrounding lore in hand, it can hand that one job to a second
+model and file what comes back.
 
 **Needs** a `data/<instance>/writing/` folder for your author voice, and a
 notebook folder if you want the story wiki there.
