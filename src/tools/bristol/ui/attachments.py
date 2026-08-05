@@ -35,6 +35,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .theme import LAYOUT, space
+
 THUMB_MAX = 160  # longest edge of an inline thumbnail, in px
 
 IMAGE_FILTER = (
@@ -177,7 +179,7 @@ class ImagePreviewDialog(QDialog):
     def __init__(self, image_path: Path, display_name: str, parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle(display_name or "Image preview")
-        self.setMinimumSize(480, 360)
+        self.setMinimumSize(LAYOUT["preview_min_w"], LAYOUT["preview_min_h"])
         self._deleted = False
 
         v = QVBoxLayout(self)
@@ -244,7 +246,7 @@ class AttachmentBar(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(3)
+        layout.setSpacing(space("sm"))
 
         self.attach_btn = QPushButton("Attach image")
         self.attach_btn.setToolTip("Attach an image file to this issue")
@@ -257,7 +259,7 @@ class AttachmentBar(QWidget):
 
         self._list_layout = QVBoxLayout()
         self._list_layout.setContentsMargins(0, 0, 0, 0)
-        self._list_layout.setSpacing(2)
+        self._list_layout.setSpacing(space("xs"))
         layout.addLayout(self._list_layout)
 
     def set_task(self, task_id: int | None) -> None:
@@ -293,7 +295,7 @@ class AttachmentBar(QWidget):
             entry = QWidget()
             col = QVBoxLayout(entry)
             col.setContentsMargins(0, 0, 0, 0)
-            col.setSpacing(3)
+            col.setSpacing(space("sm"))
 
             # Thumbnail, above the filename (clickable → enlarged modal).
             thumb = _ClickableThumb()
@@ -320,13 +322,13 @@ class AttachmentBar(QWidget):
             row = QWidget()
             rl = QHBoxLayout(row)
             rl.setContentsMargins(0, 0, 0, 0)
-            rl.setSpacing(6)
+            rl.setSpacing(space("md"))
             name = QLabel(display)
             name.setToolTip(filename)
             rl.addWidget(name, 1)
             x = QPushButton("X")
             x.setObjectName("attachRemoveBtn")
-            x.setFixedWidth(26)
+            x.setFixedWidth(space("2xl"))
             x.setToolTip("Remove attachment (moves the file to images/_trash)")
             x.clicked.connect(lambda _=False, a=att_id: self._remove(a))
             rl.addWidget(x)

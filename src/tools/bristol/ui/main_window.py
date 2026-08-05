@@ -15,6 +15,7 @@ pieces it composes live in sibling modules:
     card_delegate.py CardDelegate (per-card QPainter rendering)
     record_dialog.py UnifiedRecordDialog (create/edit modal)
     kanban_column.py KanbanColumn (a populated column of cards)
+    detail_pane.py   DetailPane (the selected card, read and edited in place)
     setup_wizard.py  first-run setup, also reachable from File → Setup…
     settings_tab.py  SettingsTab (board behaviour, stored in config.local.json)
 
@@ -28,14 +29,13 @@ import os
 import sqlite3
 from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QFont, QIcon, QTextBlockFormat, QTextCursor
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -45,17 +45,17 @@ from PySide6.QtWidgets import (
     QFrame,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QSplitter,
     QStackedWidget,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 import config_file  # bristol-local: the one config.local.json reader/writer
 
-from .attachments import AttachmentBar
-from .links import LinkBar, remove_links_for_task
+from .detail_pane import DetailPane
+from .links import remove_links_for_task
 from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
@@ -69,12 +69,13 @@ from .theme import (
     resolve_choice,
     set_scheme,
     space,
-    type_size,
     _fmt_dt,
-    _get_epic_badge,
     _utcnow,
-    log_lines,
 )
+
+# How long the splitter may keep moving before its width is written to the
+# configuration, so a drag lands as one save rather than a stream of them.
+SPLITTER_SETTLE_MS = 800
 
 class MainWindow(QMainWindow):
     def __init__(self, conn: sqlite3.Connection, initial_db: Path | None = None) -> None:
@@ -154,8 +155,26 @@ class MainWindow(QMainWindow):
         self.refresh_btn = QPushButton("Refresh")
         self.refresh_btn.clicked.connect(self._refresh_board)
 
+        # The splitter and, at the window's right edge, the strip that brings a
+        # collapsed detail pane back. The strip is outside the splitter so the
+        # columns reflow into the whole reclaimed width while the pane is away.
+        board_and_pane = QWidget()
+        body_row = QHBoxLayout(board_and_pane)
+        body_row.setContentsMargins(0, 0, 0, 0)
+        body_row.setSpacing(0)
+        body_row.addWidget(main_splitter, 1)
+        self.pane_reveal = QPushButton("❮")
+        self.pane_reveal.setObjectName("paneReveal")
+        self.pane_reveal.setToolTip("Show the detail pane")
+        self.pane_reveal.setCursor(Qt.PointingHandCursor)
+        self.pane_reveal.setFixedWidth(space("2xl"))
+        self.pane_reveal.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.pane_reveal.clicked.connect(lambda: self._set_pane_collapsed(False))
+        self.pane_reveal.setVisible(False)
+        body_row.addWidget(self.pane_reveal)
+
         shell_layout.addWidget(self._build_header())
-        shell_layout.addWidget(main_splitter, 1)
+        shell_layout.addWidget(board_and_pane, 1)
         outer_layout.addWidget(self.pages)
 
         search_widget = QWidget()
@@ -288,101 +307,44 @@ class MainWindow(QMainWindow):
             on_appearance_changed=self._preview_appearance)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
 
-        # Untitled group box: the "Properties Inspector" caption was
-        # dropped — it overlapped the border below and added nothing.
-        self.inspector_panel = QGroupBox("")
-        inspector_layout = QVBoxLayout(self.inspector_panel)
+        # The detail pane: the selected card, read and edited in place. A pane
+        # write refreshes the board; the pane's collapse control hands the
+        # splitter work back here.
+        self.detail_pane = DetailPane(
+            self.conn,
+            on_changed=self._on_pane_edit,
+            on_collapse=lambda: self._set_pane_collapsed(True))
+        main_splitter.addWidget(self.detail_pane)
 
-        self.ins_title = QLabel("Select any entity to view profile summary...")
-        self.ins_title.setWordWrap(True)
-        _ins_title_font = QFont()
-        _ins_title_font.setPointSize(type_size("section"))
-        _ins_title_font.setBold(True)
-        self.ins_title.setFont(_ins_title_font)
-        self.ins_title.setObjectName("inspectorTitle")
-        self.ins_title.setStyleSheet(f"margin-bottom: {space('sm')}px;")
-        inspector_layout.addWidget(self.ins_title)
-
-        # id of the task currently shown in the inspector, so the Post button
-        # knows what to log against; None when an epic/sprint is selected.
-        self.current_inspect_task_id = None
-
-        self._desc_header = QLabel("Description")
-        self._desc_header.setObjectName("sectionHeader")
-        inspector_layout.addWidget(self._desc_header)
-        self.ins_desc = QTextEdit()
-        self.ins_desc.setReadOnly(True)
-        inspector_layout.addWidget(self.ins_desc, 1)
-
-        # Links — a ticket's relations, sitting between the Description and the
-        # Log because a link is context for *reading* the ticket rather than a
-        # note about working it. Clicking an issue link retargets the inspector
-        # at that ticket, so a chain of related work is walkable in place.
-        self.ins_links = LinkBar(self.conn, author="user")
-        self.ins_links.on_open_issue = self._inspect_task
-        inspector_layout.addWidget(self.ins_links)
-
-        # Log — one list holding both kinds of entry, newest first: comments
-        # posted by a person or an agent, and the mechanical field changes the
-        # database triggers append. Read-only display (you post to it via the
-        # field below, you don't free-edit it like the Description), sharing the
-        # inspector space ~half-and-half.
-        self._log_header = QLabel("Log")
-        self._log_header.setObjectName("sectionHeader")
-        inspector_layout.addWidget(self._log_header)
-
-        # Two independent filters, both on by default. Checkboxes rather than a
-        # segmented control, which would force exactly one kind to be showing.
-        log_filter_row = QHBoxLayout()
-        self.log_show_comments = QCheckBox("Comments")
-        self.log_show_comments.setChecked(True)
-        self.log_show_comments.toggled.connect(self._rerender_log)
-        self.log_show_changes = QCheckBox("Changes")
-        self.log_show_changes.setChecked(True)
-        self.log_show_changes.toggled.connect(self._rerender_log)
-        log_filter_row.addWidget(self.log_show_comments)
-        log_filter_row.addWidget(self.log_show_changes)
-        log_filter_row.addStretch(1)
-        inspector_layout.addLayout(log_filter_row)
-
-        self.ins_log = QTextEdit()
-        self.ins_log.setReadOnly(True)
-        inspector_layout.addWidget(self.ins_log, 1)
-
-        post_row = QHBoxLayout()
-        self.log_input = QLineEdit()
-        self.log_input.setPlaceholderText("Post a brief progress note…")
-        self.log_input.returnPressed.connect(self._post_issue_log)
-        post_row.addWidget(self.log_input)
-        self.post_log_btn = QPushButton("Post")
-        self.post_log_btn.clicked.connect(self._post_issue_log)
-        post_row.addWidget(self.post_log_btn)
-        inspector_layout.addLayout(post_row)
-
-        # Image attachments for the selected issue.
-        self.ins_attachments = AttachmentBar(self.conn)
-        inspector_layout.addWidget(self.ins_attachments)
-
-        self._set_log_controls_enabled(False)
-
-        self.ins_meta = QLabel("")
-        self.ins_meta.setWordWrap(True)
-        self.ins_meta.setObjectName("metaText")
-        inspector_layout.addWidget(self.ins_meta)
-
-        main_splitter.addWidget(self.inspector_panel)
-        # Both panes are elastic (no max width — the user can widen the
-        # inspector as far as they like). Open with a generous inspector
-        # default so it isn't smooshed on launch; setSizes' ratio (~38% to the
-        # inspector) is preserved as the splitter scales to the real window
-        # width.
+        # Both panes are elastic (no max width — the user can widen the pane as
+        # far as they like). The pane opens at the width it last held, and
+        # collapsed if that is how it was left; both are stored in the
+        # configuration and written back as the user moves things.
         main_splitter.setStretchFactor(0, 1)
         main_splitter.setStretchFactor(1, 1)
-        main_splitter.setSizes([LAYOUT["split_board"], LAYOUT["split_detail"]])
+        self._pane_collapsed = False
+        self._detail_width = int(
+            config_file.get(config_file.DETAIL_WIDTH, LAYOUT["split_detail"])
+            or LAYOUT["split_detail"])
+        main_splitter.setSizes(
+            [LAYOUT["window_w"] - self._detail_width, self._detail_width])
         self._main_splitter = main_splitter
+
+        # Geometry saves are debounced, and held off entirely until the window
+        # finishes constructing, so building the window writes nothing.
+        self._geometry_ready = False
+        self._splitter_save_timer = QTimer(self)
+        self._splitter_save_timer.setSingleShot(True)
+        self._splitter_save_timer.setInterval(SPLITTER_SETTLE_MS)
+        self._splitter_save_timer.timeout.connect(self._save_pane_geometry)
+        main_splitter.splitterMoved.connect(self._on_splitter_moved)
+
+        if bool(config_file.get(config_file.DETAIL_COLLAPSED, False)):
+            self._set_pane_collapsed(True, save=False)
 
         self._load_dropdown_filters()
         self._refresh_board()
+        self._geometry_ready = True
 
     def _stage_for_current_tab(self) -> str:
         """Default Stage for a new record, keyed to the tab Create was pressed on: Board → active, Archive → archive, everything else
@@ -427,6 +389,61 @@ class MainWindow(QMainWindow):
             self._set_backlog_read_mode()
         else:
             self._enter_backlog_edit_mode()
+
+    # ----- The detail pane: collapse, reveal, and remembered geometry -------
+
+    def _set_pane_collapsed(self, collapsed: bool, save: bool = True) -> None:
+        """Collapse the pane to the window edge — the columns reflow into the
+        reclaimed width — or bring it back at the width it last held."""
+        if collapsed:
+            sizes = self._main_splitter.sizes()
+            if len(sizes) > 1 and sizes[1] > 0:
+                self._detail_width = sizes[1]
+            self.detail_pane.setVisible(False)
+            self.pane_reveal.setVisible(True)
+        else:
+            self.detail_pane.setVisible(True)
+            self.pane_reveal.setVisible(False)
+            total = sum(self._main_splitter.sizes()) or LAYOUT["window_w"]
+            width = max(LAYOUT["detail_min_w"],
+                        min(self._detail_width, total - LAYOUT["column_min_w"]))
+            self._main_splitter.setSizes([total - width, width])
+        self._pane_collapsed = collapsed
+        if save:
+            self._save_pane_geometry()
+
+    def _on_splitter_moved(self, *args) -> None:
+        if not self._geometry_ready or self._pane_collapsed:
+            return
+        self._splitter_save_timer.start()
+
+    def _save_pane_geometry(self) -> None:
+        """Write the pane's width and collapsed state so both survive a
+        restart. An unplaced clone has nowhere to write; the pane still works,
+        it just opens at the defaults next time."""
+        if not self._pane_collapsed:
+            sizes = self._main_splitter.sizes()
+            if len(sizes) > 1 and sizes[1] > 0:
+                self._detail_width = sizes[1]
+        try:
+            config_file.update({
+                config_file.DETAIL_WIDTH: self._detail_width,
+                config_file.DETAIL_COLLAPSED: self._pane_collapsed,
+            })
+        except OSError:
+            pass
+
+    def _on_pane_edit(self) -> None:
+        """A field changed from the pane: the board reflects it immediately."""
+        self._refresh_board()
+
+    def closeEvent(self, event):  # noqa: N802 (Qt override)
+        """Flush a splitter save still waiting on its debounce, so a drag made
+        just before quitting still survives the restart."""
+        if self._splitter_save_timer.isActive():
+            self._splitter_save_timer.stop()
+            self._save_pane_geometry()
+        super().closeEvent(event)
 
     # ----- The active agent, always on screen -------------------------------
 
@@ -578,16 +595,21 @@ class MainWindow(QMainWindow):
         else:
             self.setStyleSheet(sheet)
         self._repaint_cards()
+        if hasattr(self, "detail_pane"):
+            self.detail_pane.refresh_theme()
 
     def refresh_appearance(self) -> None:
         """Re-theme and repaint everything the scheme reaches.
 
         The QPainter-drawn cards read the live palette at paint time, so a
         viewport update is all they need; everything else is stylesheet-driven
-        and re-themes on the sheet alone.
+        and re-themes on the sheet alone — except the pane's timeline, which
+        bakes colours into its HTML and re-renders instead.
         """
         self._apply_theme()
         self._repaint_cards()
+        if hasattr(self, "detail_pane"):
+            self.detail_pane.refresh_theme()
 
     def _repaint_cards(self) -> None:
         """Update every viewport holding delegate-painted cards."""
@@ -809,113 +831,11 @@ class MainWindow(QMainWindow):
             self._refresh_board()
 
     def _update_inspector(self, record_id: int, mode: str):
-        try:
-            if mode == "task":
-                row = self.conn.execute(
-                    "SELECT t.title, t.description, t.status, t.pressure, e.name, "
-                    "COALESCE(t.assignee,'user'), COALESCE(t.reporter,'user'), COALESCE(t.estimate,''), e.id, "
-                    "t.created_at, t.updated_at, COALESCE(t.record_type,'build') "
-                    "FROM task t LEFT JOIN epic e ON t.epic_id = e.id WHERE t.id = ?", (record_id,)
-                ).fetchone()
-                if row:
-                    (title, desc, status, pressure, epic_name, owner, originator,
-                     estimate, epic_id, created_at, updated_at, record_type) = row
-                    badge = _get_epic_badge(epic_name, epic_id)
-                    rt_tag = "Fix" if (record_type or "build").lower() == "fix" else "Build"
-                    # Surface the actual issue number so it can be referenced.
-                    self.ins_title.setText(f"#{record_id} {badge}{title}")
-                    self.ins_desc.setPlainText(desc or "(No description narrative provided.)")
-
-                    self.current_inspect_task_id = record_id
-                    self._render_issue_log(record_id)
-                    self._set_log_controls_enabled(True)
-                    self.ins_attachments.set_task(record_id)
-                    self.ins_links.set_task(record_id)
-
-                    stage_row = self.conn.execute(
-                        "SELECT COALESCE(stage,'backlog') FROM task WHERE id=?", (record_id,)
-                    ).fetchone()
-                    stage_display = (stage_row[0] if stage_row else "backlog").capitalize()
-
-                    self.ins_meta.setText(
-                        f"<b>Issue #:</b> {record_id}<br>"
-                        f"<b>Record Type:</b> {rt_tag}<br>"
-                        f"<b>Stage:</b> {stage_display}<br>"
-                        f"<b>Status:</b> {status}<br>"
-                        f"<b>Effort:</b> {(estimate or 'not sized').upper()}<br>"
-                        f"<b>Owner:</b> {owner}<br>"
-                        f"<b>Originator:</b> {originator}<br>"
-                        f"<b>Created:</b> {_fmt_dt(created_at)}<br>"
-                        f"<b>Modified:</b> {_fmt_dt(updated_at)}<br>"
-                        f"<b>Epic:</b> {epic_name or 'None'}"
-                    )
-            elif mode == "epic":
-                row = self.conn.execute("SELECT name, description, type, status FROM epic WHERE id=?", (record_id,)).fetchone()
-                if row:
-                    name, desc, etype, estatus = row
-                    self.ins_title.setText(f"[Epic #{record_id}] {name}")
-                    self.ins_desc.setPlainText(desc or "(No details provided)")
-                    self._clear_issue_log()
-                    self.ins_meta.setText(f"<b>Type:</b> {etype}<br><b>Status:</b> {estatus}")
-        except sqlite3.OperationalError:
-            pass
-
-    # ----- Issue Log (inspector) -------------------------------------------
-
-    def _set_log_controls_enabled(self, enabled: bool) -> None:
-        self.log_input.setEnabled(enabled)
-        self.post_log_btn.setEnabled(enabled)
-        if not enabled:
-            self.log_input.clear()
-
-    def _inspect_task(self, task_id: int) -> None:
-        """Point the inspector at a ticket by id — how a clicked issue link
-        navigates. Board selection is left alone; this is a read-through, not a
-        move."""
-        self._update_inspector(task_id, "task")
-
-    def _clear_issue_log(self) -> None:
-        self.current_inspect_task_id = None
-        self.ins_log.setPlainText("(Select an issue to see its log.)")
-        self._set_log_controls_enabled(False)
-        if hasattr(self, "ins_attachments"):
-            self.ins_attachments.set_task(None)
-        if hasattr(self, "ins_links"):
-            self.ins_links.set_task(None)
-
-    def _rerender_log(self, _checked=None) -> None:
-        """Redraw the log for whatever the inspector is showing — how the two
-        filter checkboxes take effect."""
-        if self.current_inspect_task_id is not None:
-            self._render_issue_log(self.current_inspect_task_id)
-
-    def _render_issue_log(self, task_id: int) -> None:
-        lines = log_lines(
-            self.conn, task_id,
-            comments=self.log_show_comments.isChecked(),
-            changes=self.log_show_changes.isChecked(),
-        )
-        if not lines:
-            self.ins_log.setPlainText("(Nothing to show.)")
-            return
-        self.ins_log.setPlainText("\n".join(lines))
-
-    def _post_issue_log(self) -> None:
-        if self.current_inspect_task_id is None:
-            return
-        body = self.log_input.text().strip()
-        if not body:
-            return
-        try:
-            self.conn.execute(
-                "INSERT INTO issue_log (task_id, author, body, created_at) VALUES (?,?,?,?)",
-                (self.current_inspect_task_id, "user", body, _utcnow()),
-            )
-            self.conn.commit()
-        except sqlite3.OperationalError:
-            return
-        self.log_input.clear()
-        self._render_issue_log(self.current_inspect_task_id)
+        """Point the detail pane at whatever a view selected."""
+        if mode == "epic":
+            self.detail_pane.show_epic(record_id)
+        else:
+            self.detail_pane.show_task(record_id)
 
     def _execute_global_search(self):
         self.search_results.clear()

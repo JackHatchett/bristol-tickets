@@ -12,7 +12,8 @@ the board column). The dialog exposes both; there is no Sprint kind or Sprint
 Link. Saving re-seats a task at the bottom of its
 destination list (task.sort_order) whenever its stage or status changes.
 
-Depends only on ``_utcnow`` from theme.py.
+The detail pane edits a card's placement fields in place; what remains this
+dialog's alone is stated in ``ui/README.md``.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ import os
 import sqlite3
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -44,7 +46,15 @@ from PySide6.QtWidgets import (
 
 from .attachments import AttachmentBar
 from .links import LinkBar, remove_links_for_task
-from .theme import FLEET_AGENTS, _mono_font, _utcnow, log_lines
+from .theme import (
+    FLEET_AGENTS,
+    LAYOUT,
+    _mono_font,
+    _utcnow,
+    log_lines,
+    space,
+    type_size,
+)
 
 # ---------------------------------------------------------------------------
 # Record-type description templates
@@ -106,10 +116,7 @@ class UnifiedRecordDialog(QDialog):
         self._loaded_status = None
 
         self.setWindowTitle("Edit Record" if record_id else "Create New Record")
-        # Wider than it is tall: the short metadata fields sit in two columns
-        # (see self.left_form / self.right_form), which is what keeps a fully
-        # populated ticket from running off the bottom of the screen.
-        self.setMinimumWidth(760)
+        self.setMinimumWidth(LAYOUT["dialog_min_w"])
 
         # The dialog is a fixed frame with a SCROLLING body. Everything that can
         # grow — the form, links, log, attachments — lives inside the scroll
@@ -131,14 +138,15 @@ class UnifiedRecordDialog(QDialog):
         outer.addWidget(self._scroll, 1)
 
         self.main_layout = QVBoxLayout(body)
-        # Full-width rows: Kind, Record Type, Title, Description.
+        # One form for every field: labels align on one column, fields on the
+        # other, and a field with an Expanding policy (the title, the
+        # description) takes the dialog's width while everything else sits at
+        # the width its contents ask for.
         self.form_layout = QFormLayout()
-        # Two side-by-side columns for the short metadata fields.
-        self.left_form = QFormLayout()
-        self.right_form = QFormLayout()
-        # Which form layout owns each field widget, so _update_visible_fields
-        # can find a row's label wherever it was placed.
-        self._row_form: dict = {}
+        self.form_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.form_layout.setHorizontalSpacing(space("xl"))
+        self.form_layout.setVerticalSpacing(space("md"))
 
         self.type_combo = QComboBox()
         self.type_combo.addItems(["Task / Issue", "Epic"])
@@ -156,14 +164,22 @@ class UnifiedRecordDialog(QDialog):
         self.recordtype_label = QLabel("Record Type")
         self.form_layout.addRow(self.recordtype_label, self.recordtype_combo)
 
+        # The title takes the dialog's full field column, so a real title reads
+        # whole rather than scrolling inside a short box.
         self.title_label = QLabel("Title *")
         self.title_edit = QLineEdit()
         self.form_layout.addRow(self.title_label, self.title_edit)
 
+        # The description's height comes from the mad-lib skeleton it opens
+        # with; its face is monospace only while the text still IS that
+        # skeleton, and switches to the body face once prose replaces it.
         self.desc_edit = QTextEdit()
-        self.desc_edit.setMinimumHeight(150)
-        self.desc_edit.setMaximumHeight(220)
-        self.desc_edit.setFont(_mono_font(12))
+        mono_line = QFontMetrics(_mono_font()).lineSpacing()
+        self.desc_edit.setMinimumHeight(mono_line * 8)
+        self.desc_edit.setMaximumHeight(mono_line * 11)
+        self._desc_is_mono = True
+        self.desc_edit.setFont(_mono_font())
+        self.desc_edit.textChanged.connect(self._sync_desc_font)
         self.desc_label = QLabel("Description")
         self.form_layout.addRow(self.desc_label, self.desc_edit)
 
@@ -223,6 +239,23 @@ class UnifiedRecordDialog(QDialog):
         self.epic_status_combo = QComboBox()
         self.epic_status_combo.addItems(["not started", "in progress", "completed", "on hold"])
 
+        # Every short field sits at the width its contents ask for: a combo
+        # sizes to its longest entry, the pressure spinner to three digits, the
+        # originator to the longest agent slug. Only the title and description
+        # keep an Expanding policy and take the dialog's width.
+        metrics = QFontMetrics(self.font())
+        for combo in (self.type_combo, self.recordtype_combo, self.stage_combo,
+                      self.status_combo, self.owner_edit, self.epic_combo,
+                      self.estimate_combo, self.epic_type_combo,
+                      self.epic_status_combo):
+            combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+            combo.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        self.pressure_spin.setMaximumWidth(
+            metrics.horizontalAdvance("100") + space("2xl") * 2)
+        self.originator_edit.setMaximumWidth(
+            max(metrics.horizontalAdvance(slug) for slug in FLEET_AGENTS)
+            + space("2xl") * 2)
+
         self.task_rows = [
             ("Stage", self.stage_combo),
             ("Status", self.status_combo),
@@ -237,20 +270,9 @@ class UnifiedRecordDialog(QDialog):
             ("Epic Status", self.epic_status_combo),
         ]
 
-        # Deal the short fields alternately into two columns, so the block is
-        # about half as tall as a single stacked form. Epic rows follow the task
-        # rows into whichever column comes next; only one set is ever visible.
         self.main_layout.addLayout(self.form_layout)
-        columns = QHBoxLayout()
-        columns.setSpacing(18)
-        columns.addLayout(self.left_form, 1)
-        columns.addLayout(self.right_form, 1)
-        self.main_layout.addLayout(columns)
-
-        for i, (label, widget) in enumerate(self.task_rows + self.epic_rows):
-            target = self.left_form if i % 2 == 0 else self.right_form
-            target.addRow(label, widget)
-            self._row_form[widget] = target
+        for label, widget in self.task_rows + self.epic_rows:
+            self.form_layout.addRow(label, widget)
 
         # Links — above the Log, since a link is context for reading the ticket
         # rather than a note about working it. Unlike the Log, links may be
@@ -274,7 +296,8 @@ class UnifiedRecordDialog(QDialog):
         self.log_filter_row.addStretch(1)
         self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
-        self.log_view.setMaximumHeight(120)
+        self.log_view.setMaximumHeight(
+            QFontMetrics(self.log_view.font()).lineSpacing() * 7)
         self.log_post_row = QHBoxLayout()
         self.log_post_input = QLineEdit()
         self.log_post_input.setPlaceholderText("Post a brief progress note…")
@@ -303,6 +326,9 @@ class UnifiedRecordDialog(QDialog):
             self.button_box.addWidget(self.delete_btn)
 
         self.button_box.addStretch()
+        # Delete sits far left as the destructive action (added above when
+        # editing); Cancel and OK sit right as secondary and primary, in the
+        # same button ranks the rest of the app uses.
         standard_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         standard_buttons.accepted.connect(self.accept)
         standard_buttons.rejected.connect(self.reject)
@@ -311,10 +337,11 @@ class UnifiedRecordDialog(QDialog):
         # such a record — including a long Description the user had just typed —
         # so the button must not be pressable in the state that would lose it.
         self.ok_button = standard_buttons.button(QDialogButtonBox.Ok)
+        self.ok_button.setObjectName("globalCreateBtn")
         # Pinned OUTSIDE the scroll area — the save button stays reachable no
-        # matter how tall the body grows. This is the actual overflow fix; the
-        # two-column layout below just means you rarely have to scroll at all.
-        self.button_box.setContentsMargins(12, 6, 12, 10)
+        # matter how tall the body grows.
+        self.button_box.setContentsMargins(space("lg"), space("md"),
+                                           space("lg"), space("lg"))
         outer.addLayout(self.button_box)
 
         # Never taller than the screen it opens on. Past that the scroll area
@@ -442,6 +469,23 @@ class UnifiedRecordDialog(QDialog):
             return
         if _is_boilerplate(self.desc_edit.toPlainText()):
             self.desc_edit.setPlainText(RECORD_TEMPLATES[self._current_record_type()])
+        self._sync_desc_font()
+
+    def _sync_desc_font(self, *args) -> None:
+        """Monospace is reserved for the mad-lib skeletons and their bracketed
+        blanks; prose renders in the body face. The switch follows the text: a
+        Description that still IS a template lines its blanks up in monospace,
+        and the first edit past it moves the field to the reading face."""
+        mono = _is_boilerplate(self.desc_edit.toPlainText())
+        if mono == self._desc_is_mono:
+            return
+        self._desc_is_mono = mono
+        if mono:
+            self.desc_edit.setFont(_mono_font())
+        else:
+            body = QFont()
+            body.setPointSize(type_size("section"))
+            self.desc_edit.setFont(body)
 
     # ----- required fields ------------------------------------
 
@@ -495,8 +539,7 @@ class UnifiedRecordDialog(QDialog):
         for rows, visible in ((self.task_rows, is_task), (self.epic_rows, is_epic)):
             for _, w in rows:
                 w.setVisible(visible)
-                form = self._row_form.get(w, self.form_layout)
-                lbl = form.labelForField(w)
+                lbl = self.form_layout.labelForField(w)
                 if lbl is not None:
                     lbl.setVisible(visible)
 

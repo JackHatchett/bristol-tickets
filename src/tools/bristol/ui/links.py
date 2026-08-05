@@ -58,6 +58,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .theme import LAYOUT, space
+
 MAX_LABEL_CHARS = 72  # where a long URI is elided in the one-line row
 
 # How a ticket link opens its row. A plain relation says nothing and leads with
@@ -261,7 +263,7 @@ class AddLinkDialog(QDialog):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Add link")
-        self.setMinimumWidth(420)
+        self.setMinimumWidth(LAYOUT["small_dialog_min_w"])
 
         v = QVBoxLayout(self)
 
@@ -269,14 +271,14 @@ class AddLinkDialog(QDialog):
         self.issue_radio.setChecked(True)
         v.addWidget(self.issue_radio)
         issue_row = QHBoxLayout()
-        issue_row.addSpacing(22)
+        issue_row.addSpacing(space("2xl"))
         issue_row.addWidget(QLabel("Ticket #"))
         self.issue_input = QLineEdit()
         self.issue_input.setPlaceholderText("153")
         issue_row.addWidget(self.issue_input, 1)
         v.addLayout(issue_row)
         relation_row = QHBoxLayout()
-        relation_row.addSpacing(22)
+        relation_row.addSpacing(space("2xl"))
         relation_row.addWidget(QLabel("This ticket is"))
         # A dependency is a link with a direction, and the direction is the part
         # a user gets wrong, so the choices are phrased from this ticket's point
@@ -290,7 +292,7 @@ class AddLinkDialog(QDialog):
         self.uri_radio = QRadioButton("Link to an address")
         v.addWidget(self.uri_radio)
         uri_row = QHBoxLayout()
-        uri_row.addSpacing(22)
+        uri_row.addSpacing(space("2xl"))
         uri_row.addWidget(QLabel("Address"))
         self.uri_input = QLineEdit()
         self.uri_input.setPlaceholderText(
@@ -299,7 +301,7 @@ class AddLinkDialog(QDialog):
         uri_row.addWidget(self.uri_input, 1)
         v.addLayout(uri_row)
         label_row = QHBoxLayout()
-        label_row.addSpacing(22)
+        label_row.addSpacing(space("2xl"))
         label_row.addWidget(QLabel("Caption"))
         self.label_input = QLineEdit()
         self.label_input.setPlaceholderText("optional — shown instead of the address")
@@ -379,7 +381,7 @@ class LinkBar(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(3)
+        layout.setSpacing(space("sm"))
 
         self.header = QLabel("Links")
         self.header.setObjectName("sectionHeader")
@@ -396,7 +398,7 @@ class LinkBar(QWidget):
 
         self._list_layout = QVBoxLayout()
         self._list_layout.setContentsMargins(0, 0, 0, 0)
-        self._list_layout.setSpacing(2)
+        self._list_layout.setSpacing(space("xs"))
         layout.addLayout(self._list_layout)
 
     # ----- host API ---------------------------------------------------------
@@ -494,7 +496,7 @@ class LinkBar(QWidget):
         row = QWidget()
         rl = QHBoxLayout(row)
         rl.setContentsMargins(0, 0, 0, 0)
-        rl.setSpacing(6)
+        rl.setSpacing(space("md"))
         if on_click is None:
             body = QLabel(text)
         else:
@@ -507,7 +509,7 @@ class LinkBar(QWidget):
         rl.addWidget(body, 1)
         x = QPushButton("X")
         x.setObjectName("attachRemoveBtn")
-        x.setFixedWidth(26)
+        x.setFixedWidth(space("2xl"))
         x.setToolTip("Remove this link")
         x.clicked.connect(lambda _=False: on_remove())
         rl.addWidget(x)
