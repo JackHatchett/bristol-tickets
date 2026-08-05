@@ -18,10 +18,6 @@ One line per capability, and the condition that calls for it.
 - **Promote a contract here once a second agent genuinely reuses the same
   shape.** A single-agent contract stays with its agent and is cited from the
   archetype as an example.
-- **`writers_room/handoff.schema.json` stays with `writers_room`.** It is a
-  discriminated union over that agent's own crew directions and ID scheme, not a
-  generic envelope another agent validates against. Hoisting it here would imply
-  a universal contract that does not exist.
 
 ## How an owning agent uses this
 
