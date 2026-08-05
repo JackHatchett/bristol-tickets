@@ -63,17 +63,23 @@ python3 src/tools/bristol/app.py
 With no configuration present, Bristol Tickets opens a setup wizard instead of
 an empty board. Four pages:
 
-1. **Name this installation.** An instance name — lower case, no spaces — and
-   the folder its data lives in. The name becomes a directory under `data/`, and
-   everything personal to you lives inside it.
+1. **Name this installation.** An installation name — lower case, no spaces,
+   prefilled with your operating system's short user name — and the folder its
+   data lives in. The name becomes a directory under `data/`, and everything
+   personal to you lives inside it.
 2. **Choose your agents.** The seven shipped agents with a one-line description
-   each. Tick the ones you want; the others are never created. You can add one
-   later by hand ([configuration.md](configuration.md)).
-3. **Connect your folders.** Both optional. A Markdown notebook — any folder of
-   notes you edit yourself — and a Zotero data folder. Leave either blank to
-   skip it.
-4. **Ready to set up.** A summary of exactly what will be written. Nothing has
-   been written before you press Finish; Cancel writes nothing at all.
+   each. Tick the ones you want; the others are never created. `chief_of_staff`
+   is always installed, because it is the only agent allowed to change how any
+   of them work. Checking a box installs an agent rather than selecting it; the
+   *Start next session as* control above the board chooses which one you talk
+   to. You can add or remove agents later by editing your configuration
+   ([configuration.md](configuration.md)).
+3. **Link your notes and library.** Both optional. A Markdown notebook — any
+   folder of notes you edit yourself — and a Zotero data folder. Leave either
+   blank to skip it.
+4. **Ready to set up.** A summary of exactly what will be written, ending with
+   what Finish does. Nothing has been written before you press Finish; Cancel
+   writes nothing at all.
 
 Finish creates the data folders each enabled agent declares, provisions
 `tickets.db` with the schema, writes `config/config.local.json` from the shipped

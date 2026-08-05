@@ -1,9 +1,9 @@
 """ui/setup_wizard.py — first-run setup, so a fresh clone opens into a board.
 
-Bristol imports nothing from the rest of ``src/tools``: this module uses
-PySide6, the standard library, and the sibling ``instance`` module. The database
-it provisions comes from ``bristol/schema.sql`` — the same generated snapshot
-``app.py`` applies on every launch — and the configuration it writes is
+Bristol Tickets imports nothing from the rest of ``src/tools``: this module
+uses PySide6, the standard library, and the sibling ``instance`` module. The
+database it provisions comes from ``bristol/schema.sql`` — the same generated
+snapshot ``app.py`` applies on every launch — and the configuration it writes is
 ``config/config.example.json`` with this installation's answers substituted in.
 
 Nothing reaches the disk until Finish, and Finish asks before replacing an
@@ -12,8 +12,11 @@ existing ``config/config.local.json``. Cancel leaves the machine untouched.
 
 from __future__ import annotations
 
+import getpass
 import json
+import re
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 
 from PySide6.QtCore import QRegularExpression, Qt
@@ -37,6 +40,7 @@ import config_file  # bristol-local; see module docstring
 import instance
 
 SLUG_PATTERN = r"[a-z0-9][a-z0-9_-]*"
+REQUIRED_AGENT = "chief_of_staff"
 INSTANCE_TOKEN = "<your-instance>"
 PROJECT_TOKEN = "/path/to/project"
 NOTEBOOK_TOKEN = "/path/to/notebook"
@@ -128,40 +132,67 @@ class FolderRow(QWidget):
 # Pages
 # ---------------------------------------------------------------------------
 
+def default_slug() -> str:
+    """The operating system's short user name, reduced to the allowed shape."""
+    try:
+        raw = getpass.getuser()
+    except Exception:
+        raw = ""
+    cleaned = re.sub(r"[^a-z0-9_-]", "-", raw.lower()).strip("-")
+    return cleaned or "default"
+
+
 class InstancePage(QWizardPage):
-    """Instance name, and the folder this installation's data lives in."""
+    """The installation's name, and the folder its data lives in."""
 
     def __init__(self, root: Path) -> None:
         super().__init__()
         self.root = root
         self.setTitle("Name this installation")
         self.setSubTitle(
-            "The instance name labels your data folder. Everything Bristol and "
-            "the agents write for you lives under the folder below."
+            "This name labels the folder holding your board and everything you "
+            "save. Lower case, no spaces."
         )
 
-        self.slug_edit = QLineEdit("default")
+        self.slug_edit = QLineEdit(default_slug())
         self.slug_edit.setValidator(
             QRegularExpressionValidator(QRegularExpression(SLUG_PATTERN))
         )
         self.slug_edit.textChanged.connect(self._on_slug_changed)
+        self.slug_edit.inputRejected.connect(self._on_input_rejected)
 
-        self.folder = FolderRow("Choose where this instance's data lives")
-        self.folder.set_value(str(root / "data" / "default"))
+        self.rejected_hint = QLabel(
+            "That key is not allowed in the name. Use lower-case letters, "
+            "digits, hyphens and underscores."
+        )
+        self.rejected_hint.setWordWrap(True)
+        self.rejected_hint.setVisible(False)
+
+        self.folder = FolderRow("Choose where this installation's data lives")
+        self.folder.set_value(str(root / "data" / default_slug()))
         self.folder.field.textChanged.connect(self.completeChanged)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Instance name (lower case, no spaces)"))
+        layout.addWidget(QLabel("Installation name"))
         layout.addWidget(self.slug_edit)
+        layout.addWidget(self.rejected_hint)
         layout.addSpacing(10)
         layout.addWidget(QLabel("Data folder"))
         layout.addWidget(self.folder)
         layout.addStretch(1)
 
+    def _on_input_rejected(self) -> None:
+        """Show what the field will accept, once a key has been refused.
+
+        // A validator drops a disallowed keystroke with no signal to the
+        // typist, so the field looks unresponsive rather than strict.
+        """
+        self.rejected_hint.setVisible(True)
+
     def _on_slug_changed(self) -> None:
         """The default folder tracks the name until the user picks one."""
         if not self.folder.chosen_by_user:
-            slug = self.slug_edit.text().strip() or "default"
+            slug = self.slug_edit.text().strip() or default_slug()
             self.folder.set_value(str(self.root / "data" / slug))
         self.completeChanged.emit()
 
@@ -169,10 +200,10 @@ class InstancePage(QWizardPage):
         return bool(self.slug_edit.text().strip()) and bool(self.folder.value())
 
     def instance_dir(self) -> Path:
-        """The folder holding this instance's data.
+        """The folder holding this installation's data.
 
-        A folder already named for the instance is taken as it stands; any other
-        choice is read as the place to put the instance folder in.
+        A folder already named for the installation is taken as it stands; any
+        other choice is read as the place to put that folder in.
         """
         chosen = Path(self.folder.value()).expanduser()
         slug = self.slug_edit.text().strip()
@@ -186,33 +217,58 @@ class AgentsPage(QWizardPage):
         super().__init__()
         self.setTitle("Choose your agents")
         self.setSubTitle(
-            "Each agent is a role with its own charter and its own data folder. "
-            "Unchecked agents are left out of your configuration."
+            "Each agent is a role with its own instructions and its own "
+            "folder. You can add or remove agents later by editing your "
+            "configuration."
         )
+
+        installed_only = QLabel(
+            "Checking a box installs that agent. It does not choose which one "
+            "you talk to: that is the “Start next session as” selector above "
+            "the board, and you can change it whenever you like."
+        )
+        installed_only.setWordWrap(True)
 
         self.boxes: dict[str, QCheckBox] = {}
         holder = QWidget()
         inner = QVBoxLayout(holder)
         for slug, notes in _shipped_agents(root):
-            box = QCheckBox(f"{slug} — {notes}" if notes else slug)
+            box = QCheckBox(slug)
             box.setChecked(True)
-            box.setToolTip(notes)
             box.stateChanged.connect(self.completeChanged)
             self.boxes[slug] = box
             inner.addWidget(box)
+            if notes:
+                caption = QLabel(notes)
+                caption.setWordWrap(True)
+                caption.setIndent(22)
+                inner.addWidget(caption)
+            if slug == REQUIRED_AGENT:
+                box.setEnabled(False)
+                required = QLabel(
+                    "Always installed: it is the only agent allowed to change "
+                    "how any of them work."
+                )
+                required.setWordWrap(True)
+                required.setIndent(22)
+                inner.addWidget(required)
+            inner.addSpacing(6)
         inner.addStretch(1)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(holder)
         layout = QVBoxLayout(self)
+        layout.addWidget(installed_only)
+        layout.addSpacing(8)
         layout.addWidget(scroll)
 
     def isComplete(self) -> bool:
         return any(box.isChecked() for box in self.boxes.values())
 
     def enabled(self) -> list[str]:
-        return [slug for slug, box in self.boxes.items() if box.isChecked()]
+        return [slug for slug, box in self.boxes.items()
+                if box.isChecked() or slug == REQUIRED_AGENT]
 
 
 class IntegrationsPage(QWizardPage):
@@ -220,17 +276,23 @@ class IntegrationsPage(QWizardPage):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("Connect your folders")
+        self.setTitle("Link your notes and library")
         self.setSubTitle("Both are optional. Leave either empty to skip it.")
 
         self.notebook = FolderRow("Choose your Markdown notebook folder", clearable=True)
         self.zotero = FolderRow("Choose your Zotero data folder", clearable=True)
 
+        zotero_label = QLabel(
+            "Zotero data folder — your reference library. Skip this if you do "
+            "not use Zotero."
+        )
+        zotero_label.setWordWrap(True)
+
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("Markdown notebook — a folder of notes you edit yourself"))
         layout.addWidget(self.notebook)
         layout.addSpacing(10)
-        layout.addWidget(QLabel("Zotero data folder — the reference library the librarian reads"))
+        layout.addWidget(zotero_label)
         layout.addWidget(self.zotero)
         layout.addStretch(1)
 
@@ -253,17 +315,22 @@ class SummaryPage(QWizardPage):
     def initializePage(self) -> None:
         w = self._wizard
         instance_dir = w.instance_page.instance_dir()
+        notebook = w.integrations_page.notebook.value()
+        zotero = w.integrations_page.zotero.value()
         lines = [
             f"Data folder: {instance_dir}",
             f"Board: {instance_dir / 'tickets' / 'tickets.db'}",
             f"Configuration: {config_local_path(w.root)}",
-            f"Pointer: {instance.pointer_path()}",
+            f"Pointer, so the app still finds your data after you move it: "
+            f"{instance.pointer_path()}",
             f"Agents: {', '.join(w.agents_page.enabled())}",
+            f"Markdown notebook: {notebook or 'skipped'}",
+            f"Zotero: {zotero or 'skipped'}",
+            "",
+            "Finish creates those folders, provisions the board, writes the "
+            "configuration and the pointer, and opens the board. Cancel writes "
+            "nothing.",
         ]
-        notebook = w.integrations_page.notebook.value()
-        zotero = w.integrations_page.zotero.value()
-        lines.append(f"Markdown notebook: {notebook or 'skipped'}")
-        lines.append(f"Zotero: {zotero or 'skipped'}")
         self.body.setText("\n".join(lines))
 
 
@@ -313,8 +380,13 @@ class SetupWizard(QWizard):
                 notebook=self.integrations_page.notebook.value(),
                 zotero=self.integrations_page.zotero.value(),
             )
-        except (OSError, sqlite3.Error, json.JSONDecodeError) as exc:
-            QMessageBox.critical(self, "Setup failed", f"{exc.__class__.__name__}: {exc}")
+        except SetupStepError as exc:
+            QMessageBox.critical(
+                self, "Setup failed",
+                f"Setup could not {exc.step}.\n\n{exc.remedy}\n\n"
+                f"Nothing was written after that point.\n\n"
+                f"Details: {exc.cause}",
+            )
             return
         super().accept()
 
@@ -410,35 +482,68 @@ def _declared_dirs(root: Path, config: dict, instance_dir: Path) -> list[Path]:
     return dirs
 
 
+class SetupStepError(Exception):
+    """A setup step that failed, with what the reader can do about it."""
+
+    def __init__(self, step: str, remedy: str, cause: Exception) -> None:
+        super().__init__(str(cause))
+        self.step = step
+        self.remedy = remedy
+        self.cause = cause
+
+
+@contextmanager
+def _step(step: str, remedy: str):
+    """Run one setup step, naming it if it fails."""
+    try:
+        yield
+    except (OSError, sqlite3.Error, json.JSONDecodeError) as exc:
+        raise SetupStepError(step, remedy, exc) from exc
+
+
 def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
                 notebook: str, zotero: str) -> Path:
     """Create the folders, the database, the configuration and the pointer.
 
     Returns the path of the provisioned board.
     """
-    config = build_config(root, instance_dir, slug, agents, notebook, zotero)
+    with _step("read the shipped configuration template",
+               "Check that config/config.example.json is present in your clone "
+               "and is valid JSON."):
+        config = build_config(root, instance_dir, slug, agents, notebook,
+                              zotero)
 
-    for path in _declared_dirs(root, config, instance_dir):
-        path.mkdir(parents=True, exist_ok=True)
+    with _step("create your data folders",
+               "Choose a data folder you can write to, then run setup again."):
+        for path in _declared_dirs(root, config, instance_dir):
+            path.mkdir(parents=True, exist_ok=True)
 
     db_path = instance_dir / "tickets" / "tickets.db"
-    schema = (Path(__file__).resolve().parent.parent / "schema.sql").read_text(
-        encoding="utf-8"
-    )
-    conn = sqlite3.connect(str(db_path), timeout=10)
-    try:
-        conn.execute("PRAGMA busy_timeout=5000")
-        # // A mounted-folder bridge has wedged a database whose rollback journal
-        # // was written to disk; MEMORY keeps the journal off the mount.
-        conn.execute("PRAGMA journal_mode=MEMORY")
-        conn.executescript(schema)
-        conn.commit()
-    finally:
-        conn.close()
+    with _step("provision the board",
+               "A file at that path may already be open or may not be a "
+               "database. Close the app holding it, or choose another data "
+               "folder."):
+        schema_file = Path(__file__).resolve().parent.parent / "schema.sql"
+        schema = schema_file.read_text(encoding="utf-8")
+        conn = sqlite3.connect(str(db_path), timeout=10)
+        try:
+            conn.execute("PRAGMA busy_timeout=5000")
+            # // A mounted-folder bridge has wedged a database whose rollback
+            # // journal was written to disk; MEMORY keeps it off the mount.
+            conn.execute("PRAGMA journal_mode=MEMORY")
+            conn.executescript(schema)
+            conn.commit()
+        finally:
+            conn.close()
 
-    config_path = config_file.write(config, config_local_path(root))
+    with _step("write your configuration",
+               "Check that you can write to the config/ folder in your clone."):
+        config_path = config_file.write(config, config_local_path(root))
 
-    instance.write(root, instance_dir.parent, slug, config_path)
+    with _step("write the instance pointer",
+               "Check that you can write to your user Application Support "
+               "folder."):
+        instance.write(root, instance_dir.parent, slug, config_path)
     return db_path
 
 
@@ -449,8 +554,8 @@ def run_setup(parent=None) -> Path | None:
         QMessageBox.critical(
             parent,
             "Bristol Tickets — Setup",
-            "Setup needs the Bristol Tickets folder you cloned, and cannot find "
-            "it from here. Launch Bristol from inside that folder.",
+            "Setup needs the repository folder you cloned, and cannot find it "
+            "from here. Launch Bristol Tickets from inside that folder.",
         )
         return None
     wizard = SetupWizard(root, parent)
