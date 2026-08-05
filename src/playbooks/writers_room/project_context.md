@@ -16,8 +16,9 @@ happens first.
 3. **Read that project's content-rules file** — its `AGENTS.md` or equivalent —
    before authoring or judging any content in it. Read it the first time content
    work begins in a session rather than only at session start. **Content rules
-   bind every crew role working on that project**, external roles briefed
-   through `protocols/writers_room/gemini_crew_handoff.md` included.
+   bind every piece of work on that project**, including anything handed to a
+   second model, which receives them in its brief
+   (`protocols/writers_room/second_model_bridge.md`).
 4. **Never bulk-read wiki files at session start.** On-demand lookup only. The
    wiki is user-authored and read-only to this agent (`writers_room.md` §2.6);
    there is no canon concept and nothing to re-vet.

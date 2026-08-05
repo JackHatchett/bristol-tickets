@@ -1,9 +1,9 @@
 # story_proposals — writers_room playbook
 
-Triggered when a story or world change is proposed, by the user directly or as
-an incoming Handoff Envelope from an external crew role
-(`protocols/writers_room/gemini_crew_handoff.md`). The notebook half of it runs
-on `src/playbooks/_shared/notebook_proposal.md`.
+Triggered when a story or world change is proposed — by the user, by a session's
+own reasoning in `prose_drafting.md`, or by a flag raised in
+`manuscript_review.md`. The notebook half of it runs on
+`src/playbooks/_shared/notebook_proposal.md`.
 
 ## The two homes
 
