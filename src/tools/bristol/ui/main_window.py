@@ -64,6 +64,7 @@ from .theme import (
     COLUMNS,
     FLEET_AGENTS,
     LAYOUT,
+    apply_scheme,
     build_style_sheet,
     is_dark_scheme,
     resolve_choice,
@@ -573,15 +574,11 @@ class MainWindow(QMainWindow):
         app = QApplication.instance()
         choice = config_file.get(config_file.APPEARANCE_SCHEME,
                                  config_file.APPEARANCE_SCHEME_DEFAULT)
-        set_scheme(resolve_choice(
-            choice, is_dark_scheme(app) if app is not None else False))
-        sheet = build_style_sheet()
-        # Apply app-wide so child dialogs / message boxes inherit; fall back to
-        # the window itself if there's somehow no application object.
-        if app is not None:
-            app.setStyleSheet(sheet)
-        else:
-            self.setStyleSheet(sheet)
+        # Applied app-wide so child dialogs and message boxes inherit; fall back
+        # to the window itself if there's somehow no application object.
+        apply_scheme(app, choice)
+        if app is None:
+            self.setStyleSheet(build_style_sheet())
 
     def _preview_appearance(self, choice: str) -> None:
         """Draw the app in a scheme the Settings tab is offering, before the

@@ -329,6 +329,18 @@ def set_scheme(name: str) -> None:
     C.update(scheme)
 
 
+def apply_scheme(app, choice: str | None) -> None:
+    """Resolve ``choice`` against the OS state, make it live, and style ``app``.
+
+    Every window the application opens is styled by this one call, so it runs
+    before the first window is built rather than inside any of them.
+    """
+    set_scheme(resolve_choice(
+        choice, is_dark_scheme(app) if app is not None else False))
+    if app is not None:
+        app.setStyleSheet(build_style_sheet())
+
+
 def current_scheme() -> str:
     """The scheme name ``C`` currently holds."""
     return _current_scheme

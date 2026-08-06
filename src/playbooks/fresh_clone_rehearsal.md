@@ -94,12 +94,16 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
    folder inside the scratch copy. Then confirm `config/config.local.json`
    exists, the enabled agents' folders exist, and `tickets.db` opens empty.
 
+   **Give the notebook page a folder inside the scratch copy too.** An unset
+   notebook resolves to no reports directory, and the report step then passes
+   by writing nothing.
+
    **Leave the summary page's startup box ticked.** Step 10 resolves the board
    through the pointer, so a run that declines it tests the real installation
    instead of the copy.
 
 9. **Work one card end to end in the window** — create it, close it, Clear
-   Done — and confirm a report is written.
+   Done — and confirm the report landed in that notebook folder.
 
 10. **Run one session against the copy.** A user step: add
    `~/Downloads/bristol_rehearsal` as a folder in Cowork, open a new
