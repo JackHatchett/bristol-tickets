@@ -571,10 +571,12 @@ def render(f, slug, previous_slug=None, source_note=None):
         "",
         "---",
         "",
-        f"*Generated automatically by [[bristol_tickets_app|Bristol Tickets]]'s Clear Done, "
-        f"from the [[bristol_tickets|Bristol]] board. "
-        f"Source: `{source_note or 'src/tools/bristol/reports/'}`. "
-        f"Workspace map: [[ai_workspace_hub|AI Workspace Hub]].*",
+        # // A wiki-link resolves only against a note the reader's own notebook
+        # // holds, so the only ones written here are to notes this package
+        # // writes itself.
+        f"*Generated automatically by Bristol Tickets' Clear Done, from the "
+        f"board it swept. "
+        f"Source: `{source_note or 'src/tools/bristol/reports/'}`.*",
         "",
     ]
     return "\n".join(sections)
@@ -597,8 +599,8 @@ type: bristol-report-index
 # Bristol Tickets Reports
 
 _One report per Clear Done. Each measures the batch of cards that left the
-board, against the board's health at that moment. Written automatically; see
-[[bristol_tickets_app|Bristol Tickets]] and the [[ai_workspace_hub|AI Workspace Hub]]._
+board, against the board's health at that moment. Written automatically by
+Bristol Tickets._
 
 #### Trend
 
