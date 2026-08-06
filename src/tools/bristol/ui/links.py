@@ -60,7 +60,8 @@ from PySide6.QtWidgets import (
 
 from .theme import LAYOUT, space
 
-MAX_LABEL_CHARS = 72  # where a long URI is elided in the one-line row
+MAX_LABEL_CHARS = 72  # where a long URI is shortened in a confirm message;
+                      # on-screen rows elide at the width they are given instead
 
 # How a ticket link opens its row. A plain relation says nothing and leads with
 # the ticket number; a dependency has to say which way it runs before anything
@@ -248,6 +249,36 @@ def open_uri(uri: str) -> bool:
 
 def _elide(text: str) -> str:
     return text if len(text) <= MAX_LABEL_CHARS else text[: MAX_LABEL_CHARS - 1] + "…"
+
+
+class _ElideLabel(QLabel):
+    """A one-line row that elides its text at the width it is given, so a long
+    reference ends in an ellipsis at the pane edge instead of clipping."""
+
+    def __init__(self, text: str, parent=None) -> None:
+        super().__init__(parent)
+        self._full = text
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+
+    def resizeEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        super().resizeEvent(event)
+        self.setText(self.fontMetrics().elidedText(
+            self._full, Qt.ElideRight, self.width()))
+
+
+class _ElideButton(QPushButton):
+    """The clickable counterpart of ``_ElideLabel``: same elision, same width
+    contract, styled as a link row."""
+
+    def __init__(self, text: str, parent=None) -> None:
+        super().__init__(parent)
+        self._full = text
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+
+    def resizeEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        super().resizeEvent(event)
+        self.setText(self.fontMetrics().elidedText(
+            self._full, Qt.ElideRight, self.width()))
 
 
 # ---------------------------------------------------------------------------
@@ -498,9 +529,10 @@ class LinkBar(QWidget):
         rl.setContentsMargins(0, 0, 0, 0)
         rl.setSpacing(space("md"))
         if on_click is None:
-            body = QLabel(text)
+            body = _ElideLabel(text)
+            body.setObjectName("linkRowText")
         else:
-            body = QPushButton(text)
+            body = _ElideButton(text)
             body.setObjectName("linkRow")
             body.setFlat(True)
             body.setCursor(Qt.PointingHandCursor)
@@ -522,7 +554,7 @@ class LinkBar(QWidget):
             if link["kind"] == "issue":
                 other = link["other_id"]
                 prefix = _ROW_PREFIX.get(link["relation"], "")
-                text = f"{prefix}#{other} — {_elide(link['other_title'])}"
+                text = f"{prefix}#{other} — {link['other_title']}"
                 click = None
                 if callable(self.on_open_issue):
                     click = (lambda o=other: self.on_open_issue(o))
@@ -532,7 +564,7 @@ class LinkBar(QWidget):
                 ))
             else:
                 uri = link["uri"] or ""
-                text = _elide(link["label"] or uri)
+                text = link["label"] or uri
                 self._list_layout.addWidget(self._row(
                     text, uri, (lambda u=uri: open_uri(u)),
                     (lambda i=link["id"], d=_elide(link["label"] or uri):
@@ -541,7 +573,7 @@ class LinkBar(QWidget):
 
         for idx, (kind, other_id, uri, label, relation) in enumerate(self._pending):
             text = (f"{_ROW_PREFIX.get(relation, '')}#{other_id} (on save)"
-                    if kind == "issue" else f"{_elide(label or uri)} (on save)")
+                    if kind == "issue" else f"{label or uri} (on save)")
             desc = f"#{other_id}" if kind == "issue" else _elide(label or uri)
             self._list_layout.addWidget(self._row(
                 text, "Written when this ticket is saved", None,

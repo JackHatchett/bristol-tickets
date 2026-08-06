@@ -20,9 +20,17 @@ bash run_smoke.sh bristol         # one or more named targets
   present; on Linux without them it installs PySide6 and extracts the GL/EGL
   libraries Qt needs into a cache under `TMPDIR`, without root.
 - **`smoke.py`** — the per-target checks, registered in `TARGETS` (`bristol`,
-  `test_control`). Add a target by writing a `check_*` function returning a list
-  of failure strings and registering it. Each target runs in its own subprocess.
+  `test_control`, `governing_docs`, `published_files`). Add a target by writing a `check_*` function
+  returning a list of failure strings and registering it. Each target runs in its
+  own subprocess.
   // Every GUI ships a top-level `ui` package, and two of them cannot coexist in
   // one interpreter.
+- **`governing_docs` asserts what a reader cannot count**: the resident core
+  against its word cap, stated in `src/templates/identity_template.md`'s style
+  contract. It touches no GUI, so it runs without Qt.
+- **`published_files` asserts the machinery carries no installation**: this
+  git-identity's name and email, the home path declared at `drives.local_home`,
+  and any `/Users/<name>` literal are absent from every tracked file except
+  `LICENSE`, which exists to name a person. It touches no GUI either.
 - **`qt_headless.py`** — the GUI-agnostic helpers: `offscreen_app()` and
   `tool_on_path(tool_name)`.

@@ -8,8 +8,9 @@ record a pane edit exactly as they record a dialog edit or a board drag. The
 fields nobody edits — issue number, record type, originator, created,
 modified — render as an aligned key/value grid under Attributes.
 
-The pane reads Title, Description, Links, Log, Attributes top to bottom, each
-under a section header and hairline. The description is sized to its content
+The pane reads Title, Description, Links, Attachments, Log, Attributes top to
+bottom — the description under a formCaption like the controls above it, the
+rest each under a section header and hairline. The description is sized to its content
 within a bound; the log is a timeline distinguishing comments from
 machine-written change events; the comment composer is pinned to the pane's
 foot at full width. The header carries the collapse control — the host window
@@ -45,7 +46,7 @@ from PySide6.QtWidgets import (
 
 from .attachments import AttachmentBar
 from .links import LinkBar
-from .record_dialog import STAGES
+from .record_dialog import STAGES, section_widget
 from .theme import (
     C,
     EFFORT_WORDS,
@@ -173,18 +174,23 @@ class DetailPane(QWidget):
         self._scroll.setWidget(body)
         root.addWidget(self._scroll, 1)
 
-        self._body_layout.addWidget(self._section("Description"))
+        desc_caption = QLabel("Description")
+        desc_caption.setObjectName("formCaption")
+        self._body_layout.addWidget(desc_caption)
         self.desc = QTextEdit()
         self.desc.setReadOnly(True)
         self.desc.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._body_layout.addWidget(self.desc)
 
-        self._links_header = self._section("Links")
+        self._links_header = section_widget("Links")
         self._body_layout.addWidget(self._links_header)
         self.links = LinkBar(self.conn, author="user")
         self.links.header.setVisible(False)  # the section header above stands in
         self.links.on_open_issue = self.show_task
         self._body_layout.addWidget(self.links)
+        # Attachments are their own section, not a tail on Links.
+        self._attach_header = section_widget("Attachments")
+        self._body_layout.addWidget(self._attach_header)
         self.attachments = AttachmentBar(self.conn)
         self._body_layout.addWidget(self.attachments)
         # Controls of equal rank share a width, a height and an edge: the two
@@ -194,7 +200,7 @@ class DetailPane(QWidget):
         self.links.add_btn.setFixedWidth(shared)
         self.attachments.attach_btn.setFixedWidth(shared)
 
-        self._log_header = self._section("Log")
+        self._log_header = section_widget("Log")
         self._body_layout.addWidget(self._log_header)
         filter_row = QHBoxLayout()
         filter_row.setSpacing(space("lg"))
@@ -214,7 +220,7 @@ class DetailPane(QWidget):
             QFontMetrics(self.log_view.font()).lineSpacing() * 8)
         self._body_layout.addWidget(self.log_view, 1)
 
-        self._body_layout.addWidget(self._section("Attributes"))
+        self._body_layout.addWidget(section_widget("Attributes"))
         self._attr_grid = QGridLayout()
         self._attr_grid.setContentsMargins(0, 0, 0, 0)
         self._attr_grid.setHorizontalSpacing(space("xl"))
@@ -236,24 +242,6 @@ class DetailPane(QWidget):
         self.clear()
 
     # ----- small builders ---------------------------------------------------
-
-    @staticmethod
-    def _section(name: str) -> QWidget:
-        """A section header and its hairline, the one treatment every pane
-        section sits under."""
-        box = QWidget()
-        column = QVBoxLayout(box)
-        column.setContentsMargins(0, space("md"), 0, 0)
-        column.setSpacing(space("xs"))
-        label = QLabel(name)
-        label.setObjectName("sectionHeader")
-        rule = QFrame()
-        rule.setObjectName("sectionRule")
-        rule.setFrameShape(QFrame.HLine)
-        rule.setFixedHeight(1)
-        column.addWidget(label)
-        column.addWidget(rule)
-        return box
 
     def _set_attributes(self, pairs: list[tuple[str, str]]) -> None:
         """Rebuild the key/value grid: keys aligned in one muted column, values
@@ -315,6 +303,7 @@ class DetailPane(QWidget):
         self.attachments.set_task(None)
         self.attachments.setVisible(False)
         self._links_header.setVisible(False)
+        self._attach_header.setVisible(False)
         self.log_view.setPlainText("(Select an issue to see its log.)")
         self._set_attributes([])
         self._set_composer_enabled(False)
@@ -369,6 +358,7 @@ class DetailPane(QWidget):
         self._links_header.setVisible(True)
         self.links.setVisible(True)
         self.links.set_task(task_id)
+        self._attach_header.setVisible(True)
         self.attachments.setVisible(True)
         self.attachments.set_task(task_id)
 

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sqlite3
 import sys
@@ -335,9 +336,9 @@ def check_bristol() -> list[str]:
 
         # Overflow guard: a tall ticket must not push the save button off the
         # screen. The body scrolls; the button row is pinned outside the scroll
-        # area; and every field is a labelled row of the ONE form, so labels
-        # align on one column and fields on the other.
-        from PySide6.QtWidgets import QScrollArea
+        # area; and every field is a formCaption above its control in a
+        # sectioned grid — the design system's vocabulary, never a QFormLayout.
+        from PySide6.QtWidgets import QFormLayout, QLabel, QScrollArea
         if not isinstance(getattr(guard_dlg, "_scroll", None), QScrollArea):
             raise SmokeFailure("record dialog body is not inside a scroll area")
         scrolled = guard_dlg._scroll.widget()
@@ -345,13 +346,23 @@ def check_bristol() -> list[str]:
         if btn_parent is scrolled or (btn_parent and btn_parent.isAncestorOf(scrolled)
                                       and btn_parent is not guard_dlg):
             raise SmokeFailure("button row is inside the scroll area — it can scroll away")
+        if guard_dlg.findChildren(QFormLayout):
+            raise SmokeFailure("record dialog lays out fields in a QFormLayout")
         for w in (guard_dlg.stage_combo, guard_dlg.status_combo, guard_dlg.owner_edit,
                   guard_dlg.epic_combo, guard_dlg.pressure_spin,
-                  guard_dlg.estimate_combo, guard_dlg.originator_edit):
-            if guard_dlg.form_layout.labelForField(w) is None:
-                raise SmokeFailure(f"{w!r} is not a labelled row of the one form")
+                  guard_dlg.estimate_combo, guard_dlg.originator_edit,
+                  guard_dlg.title_edit, guard_dlg.desc_edit):
+            cell = w.parentWidget()
+            if not any(lbl.objectName() == "formCaption"
+                       for lbl in cell.findChildren(QLabel)):
+                raise SmokeFailure(f"{w!r} has no formCaption above it")
+        headers = {lbl.text() for lbl in guard_dlg.findChildren(QLabel)
+                   if lbl.objectName() == "sectionHeader"}
+        for name in ("Record", "Placement", "Links", "Log", "Attachments"):
+            if name not in headers:
+                raise SmokeFailure(f"record dialog is missing the {name} section header")
         guard_dlg._update_visible_fields()  # must not raise
-        ok.append("Record dialog scrolls, pins its buttons, aligns fields on one form")
+        ok.append("Record dialog scrolls, pins its buttons, captions fields in sections")
 
         # Required-field guard. A titleless save used to close the dialog and
         # write nothing, silently destroying whatever Description had been typed
@@ -717,9 +728,86 @@ def check_test_control() -> list[str]:
     return ok
 
 
+RESIDENT_CORE_CAP = 1500
+
+
+def check_governing_docs() -> list[str]:
+    ok: list[str] = []
+    root = Path(__file__).resolve().parents[3]
+
+    core = root / "src" / "app.md"
+    words = len(core.read_text().split())
+    if words > RESIDENT_CORE_CAP:
+        raise SmokeFailure(
+            f"src/app.md is {words} words, over the {RESIDENT_CORE_CAP}-word cap by "
+            f"{words - RESIDENT_CORE_CAP}. Move a rule to the file that owns it "
+            f"(src/templates/identity_template.md, the style contract)."
+        )
+    ok.append(f"resident core is {words} words, within the {RESIDENT_CORE_CAP} cap")
+    return ok
+
+
+def _tracked_files(root: Path) -> list[Path]:
+    out = subprocess.run(
+        ["git", "-C", str(root), "ls-files"], capture_output=True, text=True, check=True
+    ).stdout.split("\n")
+    return [root / n for n in out if n.strip()]
+
+
+# The one tracked file whose whole job is to name a person.
+ATTRIBUTION_FILE = "LICENSE"
+
+
+def check_published_files() -> list[str]:
+    ok: list[str] = []
+    root = Path(__file__).resolve().parents[3]
+
+    def git_cfg(key: str) -> str:
+        return subprocess.run(
+            ["git", "-C", str(root), "config", key], capture_output=True, text=True
+        ).stdout.strip()
+
+    reader = root / "src" / "tools" / "config_tools" / "read_config.py"
+    declared = subprocess.run(
+        [sys.executable, str(reader), "--expanduser", "drives.local_home.path"],
+        capture_output=True, text=True,
+    ).stdout.strip()
+    home = Path(declared or "~").expanduser()
+    needles = {s for s in (git_cfg("user.name"), git_cfg("user.email"),
+                           str(home), home.name) if len(s) > 2}
+
+    hits: list[str] = []
+    for path in _tracked_files(root):
+        if path.name == ATTRIBUTION_FILE or not path.exists():
+            continue
+        try:
+            text = path.read_text(errors="ignore")
+        except (OSError, UnicodeDecodeError):
+            continue
+        rel = path.relative_to(root)
+        for needle in needles:
+            if needle.lower() in text.lower():
+                hits.append(f"{rel}: {needle}")
+        for m in re.finditer(r"/Users/[A-Za-z0-9._-]+", text):
+            hits.append(f"{rel}: {m.group(0)}")
+
+    if hits:
+        raise SmokeFailure(
+            "tracked files carry this installation's identity, which belongs in "
+            "the git-ignored /config:\n  " + "\n  ".join(sorted(set(hits))[:20])
+        )
+    ok.append(
+        f"{len(needles)} identity strings and every absolute home path are absent "
+        f"from tracked files outside {ATTRIBUTION_FILE}"
+    )
+    return ok
+
+
 TARGETS = {
     "bristol": check_bristol,
     "test_control": check_test_control,
+    "governing_docs": check_governing_docs,
+    "published_files": check_published_files,
 }
 
 
