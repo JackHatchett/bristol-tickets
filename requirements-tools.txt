@@ -1,0 +1,32 @@
+# Bristol — the optional toolkit
+#
+# Dependencies for the tools under src/tools/ that the board does not need.
+# The board itself runs on requirements.txt alone.
+#
+# Install:
+#   pip install -r requirements-tools.txt
+#   (macOS with a Homebrew-managed Python may need --break-system-packages)
+#
+# Three of these need a step pip cannot perform. docs/install.md §3 lists them
+# in a table; the short version:
+#   - playwright needs a one-time browser download: `playwright install chromium`
+#   - ocrmypdf needs Tesseract and Ghostscript, via Homebrew
+#   - src/tools/document_tools/pdf_to_markdown.py shells out to `pdftotext`
+#     (Homebrew package: poppler), which is not a pip package at all
+
+# --- src/tools/file_management/ (photo dedupe/rename pipeline) ---
+Pillow
+pillow-heif
+reverse_geocoder
+
+# --- src/tools/jd_scraper/ (job-description acquisition pipeline) ---
+requests
+playwright
+keyring
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+
+# --- src/tools/document_tools/pdf_to_markdown.py (OCR step) ---
+ocrmypdf

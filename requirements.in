@@ -1,7 +1,9 @@
-# Top‑level dependencies for my app
+# Top-level dependencies for Bristol, board and toolkit together.
+# The split a reader installs from is requirements.txt (the board) and
+# requirements-tools.txt (everything else).
+PySide6
 requests
 playwright
-PySide6
 Pillow
 pillow-heif
 reverse_geocoder
