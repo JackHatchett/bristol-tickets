@@ -8,6 +8,8 @@ session pointed at this folder, say "continue," and the agent reads the board,
 takes the top card in its queue, does the work on your real files, and writes
 back what it did. Next time you open the board, the card has moved.
 
+![The Bristol Tickets board: To Do, Doing and Done columns beside a detail pane holding one card's status, description, links and log.](media/board.png)
+
 ## Before you install
 
 **A Claude subscription that includes Cowork, and the Claude desktop app.**
