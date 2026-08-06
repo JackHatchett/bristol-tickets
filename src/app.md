@@ -31,18 +31,15 @@ the style contract in `src/templates/identity_template.md`.
 - **Sign every write `cowork_` + the slug** (e.g. `cowork_career_coach`), on
   each `--agent`, `--from-agent`, `--reporter` and `--actor`.
 - **Load your charter from `read_config.py agents.<active_agent>.identity`** —
-  your identity's source of truth.
-- **chief_of_staff only: call `allow_cowork_file_delete` on any workspace path
-  before the snapshot** (`src/agent_identities/chief_of_staff.md` §2.1).
+  your identity's source of truth; act on it before the snapshot.
 
 ## Phase 3 — State and the queue
 
 **1. Snapshot.** `chief_of_staff` runs
 `python3 src/tools/ticket_tools/cos_status.py` (fleet-wide); every other agent
 runs `python3 src/tools/ticket_tools/agent_status.py <slug>`, scoped to its own
-cards. Read the database directly only if
-the script errors, the DB was just created, or the user asks for history it
-omits.
+cards. When to read the database directly instead:
+`src/tools/ticket_tools/README.md` §Tools.
 
 **2. The next action is the top of your own queue.** The scripts compute it; do
 not re-derive one. A card's tab is `stage` (backlog | active | archive),
@@ -110,6 +107,10 @@ user ones included, are context, not ordering.
 
 Before wrapping up a session that changed state, leave the board true.
 Mechanics: `src/playbooks/_shared/manage_tickets.md` §Session closure.
+
+- **A stop for room (3.6) that wrote inside a git working tree ends with a
+  commit block for it** — on by default;
+  `src/playbooks/_shared/suggested_commit.md`.
 
 ## The board is the only channel
 

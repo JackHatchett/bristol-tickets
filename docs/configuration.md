@@ -54,6 +54,18 @@ this key.
 | --- | --- | --- |
 | `cross_agent_stage` | `active` | Where a card one agent files for another lands: `active` (the Board) or `backlog`. |
 
+### `session`
+
+**Required.** How an agent session closes. Edited in Bristol Tickets' Settings
+tab.
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `suggested_commit` | `true` | `true` or `false`. When a session halts because the conversation is running out of room and it wrote files inside a git working tree, it ends with a copy-paste commit block for them. |
+
+The value is read at the moment the offer would fire, so a change takes effect
+on the next session that stops that way.
+
 ### `appearance`
 
 **Required. Default `warm`.** How Bristol Tickets looks. Edited in its Settings

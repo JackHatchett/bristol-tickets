@@ -8,6 +8,11 @@
     "cross_agent_stage": "active"
   },
 
+  "session": {
+    "_notes": "How an agent session closes. Edited in Bristol Tickets' Settings tab. suggested_commit: when a session halts because the conversation is running out of room and it wrote files inside a git working tree, it ends with a copy-paste commit block for them. Read at the moment the offer would fire — src/playbooks/_shared/suggested_commit.md.",
+    "suggested_commit": true
+  },
+
   "appearance": {
     "_notes": "How Bristol Tickets looks. Edited in its Settings tab. scheme names either a family — 'warm' or 'cool', meaning follow the OS light/dark setting within it — or one scheme outright: 'warm_light', 'warm_dark', 'cool_light', 'cool_dark'. The schemes and the design tokens they sit beside are src/tools/bristol/ui/theme.py; what each key means is src/tools/bristol/ui/README.md.",
     "scheme": "warm"

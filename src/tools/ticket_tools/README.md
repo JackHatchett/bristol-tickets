@@ -54,7 +54,9 @@ cards. It shares the `owned_by`, active-stage and precedence logic with
 `cos_status.py`; the two stay in lockstep.
 
 Both scripts implement the selection rule in `src/app.md` Phase 3 and are
-authoritative over any prose restatement of it.
+authoritative over any prose restatement of it. **Read the database directly
+only where one of them errors, the database was just created, or the user asks
+for history the snapshot omits.**
 
 ### create_tickets.py
 `python3 create_tickets.py --instance <name>` provisions an empty tickets

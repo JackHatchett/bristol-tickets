@@ -33,6 +33,11 @@ conversation is running out of room.
 Anything else you say, it responds to. If nothing you said was actionable, it
 names the next action and asks whether to start.
 
+When it stops because the conversation is running out of room, and it wrote
+files inside a git repository, the last thing in its message is a block you can
+paste into a terminal to commit that work. It never runs the commit itself. Turn
+this off in Settings → **When a session stops for room**.
+
 ## How the agent decides what is next
 
 Ordering is entirely the board's, and you own it by dragging cards.
