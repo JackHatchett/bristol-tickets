@@ -38,7 +38,7 @@ macOS and Python 3.10 or later.
    file, `requirements-tools.txt`.
 
    ```bash
-   git clone <this-repo> bristol_tickets
+   git clone https://github.com/JackHatchett/bristol-tickets.git bristol_tickets
    cd bristol_tickets
    pip install -r requirements.txt
    ```
