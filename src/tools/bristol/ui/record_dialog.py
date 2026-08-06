@@ -34,7 +34,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMessageBox,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -45,6 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from .attachments import AttachmentBar
+from .dialogs import confirm
 from .links import LinkBar, remove_links_for_task
 from .theme import (
     FLEET_AGENTS,
@@ -225,8 +225,9 @@ class UnifiedRecordDialog(QDialog):
         if record_id is None:
             # A new task opens on the stage of the tab Create was pressed on
             # (main_window._stage_for_current_tab), appended to the bottom of
-            # that list on save.
-            self.stage_combo.setCurrentText(initial_stage or "backlog")
+            # that list on save. With no tab to key off, it lands on the board,
+            # the same default ``ticket_write.py add-task`` carries.
+            self.stage_combo.setCurrentText(initial_stage or "active")
             self._select_owner("user")
             active_agent = os.environ.get("AGENT_NAME", "user")
             self.originator_edit.setText(active_agent)
@@ -488,16 +489,10 @@ class UnifiedRecordDialog(QDialog):
         default so a stray keypress doesn't throw work away."""
         if not self._is_dirty():
             return True
-        box = QMessageBox(self)
-        box.setIcon(QMessageBox.Warning)
-        box.setWindowTitle("Unsaved changes")
-        box.setText("You have unsaved changes.")
-        close_btn = box.addButton("Close", QMessageBox.DestructiveRole)
-        cancel_btn = box.addButton("Cancel", QMessageBox.RejectRole)
-        box.setDefaultButton(cancel_btn)
-        box.setEscapeButton(cancel_btn)
-        box.exec()
-        return box.clickedButton() is close_btn
+        return confirm(
+            self, "Unsaved changes",
+            "You have unsaved changes. Closing throws them away.",
+            "Close without saving", "Keep editing", destructive=True)
 
     def accept(self):
         """Belt and braces: OK is already disabled while a required field is
@@ -709,8 +704,10 @@ class UnifiedRecordDialog(QDialog):
         self._render_log()
 
     def _handle_delete(self):
-        reply = QMessageBox.question(self, "Confirm Delete", f"Permanently delete this {self.mode}?", QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
+        if confirm(self, f"Delete this {self.mode}",
+                   f"Permanently delete this {self.mode}? This cannot be "
+                   f"undone.",
+                   "Delete", destructive=True):
             if self.mode == "task":
                 self.conn.execute("DELETE FROM issue_log WHERE task_id=?", (self.record_id,))
                 self.conn.execute("DELETE FROM task_event WHERE task_id=?", (self.record_id,))

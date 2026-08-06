@@ -6,6 +6,11 @@ database it provisions comes from ``bristol/schema.sql`` — the same generated
 snapshot ``app.py`` applies on every launch — and the configuration it writes is
 ``config/config.example.json`` with this installation's answers substituted in.
 
+The first page opens on the installation this machine already has — the one
+``config/config.local.json`` declares, and failing that the one the instance
+pointer names. Only a machine with neither opens on the operating system's user
+name.
+
 A data folder that already holds ``tickets/tickets.db`` is adopted instead:
 no schema runs against that board, its configuration is left as it stands, and
 the only file written is the instance pointer.
@@ -35,7 +40,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
@@ -47,6 +51,7 @@ from PySide6.QtWidgets import (
 import config_file  # bristol-local; see module docstring
 import instance
 
+from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
 from .theme import C, LAYOUT, space, type_size
 
 
@@ -137,10 +142,10 @@ class FolderRow(QWidget):
         self.field.setPlaceholderText("(none)")
         self.caption = caption
         self.chosen_by_user = False
-        choose = QPushButton("Choose…")
-        choose.clicked.connect(self._choose)
+        choose_btn = QPushButton("Choose…")
+        choose_btn.clicked.connect(self._choose)
         row.addWidget(self.field, 1)
-        row.addWidget(choose)
+        row.addWidget(choose_btn)
         if clearable:
             clear = QPushButton("Clear")
             clear.clicked.connect(lambda: self.field.setText(""))
@@ -174,6 +179,43 @@ def default_slug() -> str:
     return cleaned or "default"
 
 
+def configured_instance_dir(root: Path) -> Path | None:
+    """The installation folder ``config.local.json`` declares, or None.
+
+    ``important_paths.tickets_db`` names the board, so its grandparent is the
+    installation folder. A relative declaration is read against the clone.
+    """
+    declared = config_file.get("important_paths.tickets_db")
+    if not isinstance(declared, str) or not declared.strip():
+        return None
+    board = Path(declared.strip()).expanduser()
+    if not board.is_absolute():
+        board = root / board
+    parents = board.parents
+    return parents[1] if len(parents) > 1 else None
+
+
+def pointed_instance_dir() -> Path | None:
+    """The installation folder the instance pointer names, or None."""
+    pointer = instance.read()
+    slug = str(pointer.get("instance_slug") or "").strip()
+    data_root = str(pointer.get("data_root") or "").strip()
+    if not slug or not data_root:
+        return None
+    return Path(data_root).expanduser() / slug
+
+
+def existing_installation(root: Path) -> tuple[Path | None, Path | None]:
+    """The installation this machine is already set up with, from both sources.
+
+    Returns what the configuration declares and what the pointer names, either
+    of which may be absent. The configuration is the installation; the pointer
+    only says which one the app opens, so a caller that needs one value takes
+    the configured one first.
+    """
+    return configured_instance_dir(root), pointed_instance_dir()
+
+
 class InstancePage(QWizardPage):
     """The installation's name, and the folder its data lives in."""
 
@@ -186,7 +228,14 @@ class InstancePage(QWizardPage):
             "save. Lower case, no spaces."
         )
 
-        self.slug_edit = QLineEdit(default_slug())
+        configured, pointed = existing_installation(root)
+        existing = configured or pointed
+        # The folder a name change moves the installation within: the parent of
+        # whatever is already set up, and otherwise the clone's own data folder.
+        self.base = existing.parent if existing is not None else root / "data"
+        opening_slug = existing.name if existing is not None else default_slug()
+
+        self.slug_edit = QLineEdit(opening_slug)
         self.slug_edit.setValidator(
             QRegularExpressionValidator(QRegularExpression(SLUG_PATTERN))
         )
@@ -200,8 +249,12 @@ class InstancePage(QWizardPage):
         self.rejected_hint.setWordWrap(True)
         self.rejected_hint.setVisible(False)
 
+        self.disagreement = QLabel(self._disagreement_text(configured, pointed))
+        self.disagreement.setWordWrap(True)
+        self.disagreement.setVisible(bool(self.disagreement.text()))
+
         self.folder = FolderRow("Choose where this installation's data lives")
-        self.folder.set_value(str(root / "data" / default_slug()))
+        self.folder.set_value(str(self.base / opening_slug))
         self.folder.field.textChanged.connect(self.completeChanged)
 
         layout = page_layout(self)
@@ -211,7 +264,20 @@ class InstancePage(QWizardPage):
         layout.addSpacing(10)
         layout.addWidget(QLabel("Data folder"))
         layout.addWidget(self.folder)
+        layout.addWidget(self.disagreement)
         layout.addStretch(1)
+
+    @staticmethod
+    def _disagreement_text(configured: Path | None, pointed: Path | None) -> str:
+        """What to say when the configuration and the pointer name different
+        installations. Empty when they agree or when either is absent."""
+        if configured is None or pointed is None or configured == pointed:
+            return ""
+        return (
+            f"Your configuration names {configured} and the app is currently "
+            f"opening {pointed}. The configured one is filled in above; choose "
+            f"the other here if it is the one you meant."
+        )
 
     def _on_input_rejected(self) -> None:
         """Show what the field will accept, once a key has been refused.
@@ -225,7 +291,7 @@ class InstancePage(QWizardPage):
         """The default folder tracks the name until the user picks one."""
         if not self.folder.chosen_by_user:
             slug = self.slug_edit.text().strip() or default_slug()
-            self.folder.set_value(str(self.root / "data" / slug))
+            self.folder.set_value(str(self.base / slug))
         self.completeChanged.emit()
 
     def isComplete(self) -> bool:
@@ -253,20 +319,17 @@ class InstancePage(QWizardPage):
         """Say the folder holds an installation, and offer to adopt it."""
         if not self.adopting():
             return True
-        box = QMessageBox(self)
-        box.setWindowTitle("This folder already holds an installation")
-        box.setText(
+        return bool(choose(
+            self, "This folder already holds an installation",
             f"{self.instance_dir()} already holds a board:\n\n"
             f"{board_path(self.instance_dir())}\n\n"
             "Setup can adopt it. Nothing inside it is read or changed, no "
             "schema runs against that board, and its configuration is left as "
-            "it stands."
-        )
-        adopt = box.addButton("Adopt it", QMessageBox.AcceptRole)
-        box.addButton("Choose another folder", QMessageBox.RejectRole)
-        box.setDefaultButton(adopt)
-        box.exec()
-        return box.clickedButton() is adopt
+            "it stands.",
+            [("Choose another folder", ORDINARY, False),
+             ("Adopt it", PRIMARY, True)],
+            default_index=1,
+        ))
 
 
 class AgentsPage(QWizardPage):
@@ -428,30 +491,47 @@ class SummaryPage(QWizardPage):
 
     def _pointer_lines(self, slug: str, instance_dir: Path,
                        taking_over: bool) -> list[str]:
-        """Which installation the app opens afterwards, and which it stops opening."""
-        current = instance.read()
-        current_slug = str(current.get("instance_slug") or "").strip()
-        current_root = str(current.get("data_root") or "").strip()
-        current_name = (f"{current_slug} ({current_root})" if current_root
+        """Which installation the app opens afterwards, and which it stops opening.
+
+        Both sides are named as an installation folder, the same shape the
+        pointer's ``data_root`` and ``instance_slug`` resolve to together, so
+        the reader compares two paths of one kind.
+        """
+        current_slug = str(instance.read().get("instance_slug") or "").strip()
+        current_dir = pointed_instance_dir()
+        current_name = (f"{current_slug} ({current_dir})" if current_dir
                         else current_slug)
+        same = current_dir is not None and current_dir == instance_dir
 
         if taking_over:
-            head = (f"Bristol Tickets opens {slug} ({instance_dir}) from now on."
-                    if not current_slug else
-                    f"Bristol Tickets opens {current_name} today. After Finish "
-                    f"it opens {slug} ({instance_dir}) instead, and stops "
-                    f"opening {current_slug}.")
+            if same:
+                head = (f"Bristol Tickets already opens {current_name}, and "
+                        f"goes on opening it.")
+            elif not current_slug:
+                head = f"Bristol Tickets opens {slug} ({instance_dir}) from now on."
+            else:
+                head = (f"Bristol Tickets opens {current_name} today. After "
+                        f"Finish it opens {slug} ({instance_dir}) instead, and "
+                        f"stops opening {current_name}.")
             return [head, f"Written to: {instance.pointer_path()}"]
 
+        if same:
+            return [
+                f"Bristol Tickets goes on opening {current_name}, which is this "
+                f"installation.",
+                f"Left as it is: {instance.pointer_path()}",
+            ]
         if current_slug:
             return [
                 f"Bristol Tickets goes on opening {current_name}, and never "
-                f"opens {slug} until you run setup again and adopt it.",
+                f"opens {slug} ({instance_dir}) until you run setup again and "
+                f"adopt it.",
                 f"Left as it is: {instance.pointer_path()}",
             ]
         return [
             f"Bristol Tickets is left with no installation to open, and never "
-            f"opens {slug} until you run setup again and adopt it.",
+            f"opens {slug} ({instance_dir}) until you run setup again and adopt "
+            f"it.",
             f"Not written: {instance.pointer_path()}",
         ]
 
@@ -518,15 +598,12 @@ class SetupWizard(QWizard):
 
         config_path = config_local_path(self.root)
         if config_path.exists():
-            answer = QMessageBox.question(
-                self,
-                "Replace your configuration?",
+            if not confirm(
+                self, "Replace your configuration",
                 f"{config_path} already exists.\n\n"
-                "Finishing setup replaces it with your answers.",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
-            )
-            if answer != QMessageBox.Yes:
+                f"Finishing setup replaces it with your answers.",
+                "Replace it", destructive=True,
+            ):
                 return
 
         try:
@@ -545,7 +622,7 @@ class SetupWizard(QWizard):
         super().accept()
 
     def _report(self, exc: "SetupStepError") -> None:
-        QMessageBox.critical(
+        notify(
             self, "Setup failed",
             f"Setup could not {exc.step}.\n\n{exc.remedy}\n\n"
             f"Nothing was written after that point.\n\n"
@@ -731,7 +808,7 @@ def run_setup(parent=None) -> Path | None:
     """Show the wizard. Returns the provisioned board, or None if cancelled."""
     root = project_root()
     if root is None:
-        QMessageBox.critical(
+        notify(
             parent,
             "Bristol Tickets — Setup",
             "Setup needs the repository folder you cloned, and cannot find it "

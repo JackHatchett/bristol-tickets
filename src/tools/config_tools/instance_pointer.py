@@ -31,6 +31,10 @@ Its shape::
       "config_path":   "/absolute/path/to/the/clone/config/config.local.json"
     }
 
+``data_root`` is the folder the installations sit in, never one installation's
+own folder: the board is ``data_root/instance_slug/tickets/tickets.db``, and
+every writer of this file writes that shape.
+
 Every field is optional to a reader: a caller asks for the one it needs and
 falls through to the next step when it is absent. A malformed or unreadable
 file resolves to nothing rather than raising — a bad pointer must never stop
@@ -105,6 +109,30 @@ def _default_repo_root() -> Path:
     raise SystemExit("no project root above this file (no ancestor holds src/app.md)")
 
 
+def _default_data_root(root: Path) -> Path:
+    """The folder this clone's installations sit in.
+
+    ``important_paths.tickets_db`` names the board, so its board and instance
+    folders strip back to the data root. A clone with no configuration, or one
+    whose board sits under the clone, resolves to ``<root>/data``. Read here
+    rather than through ``read_config``, which imports this module.
+    """
+    try:
+        config = json.loads(
+            (root / "config" / "config.local.json").read_text(encoding="utf-8")
+        )
+        declared = config["important_paths"]["tickets_db"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        return root / "data"
+    if not isinstance(declared, str) or not declared.strip():
+        return root / "data"
+    board = Path(os.path.expanduser(declared.strip()))
+    if not board.is_absolute():
+        board = root / board
+    parents = board.parents
+    return parents[2] if len(parents) > 2 else root / "data"
+
+
 def _main(argv: list[str]) -> int:
     """Print the pointer, or write one for the clone this file lives in."""
     if "--write" not in argv:
@@ -114,7 +142,7 @@ def _main(argv: list[str]) -> int:
         return 0
 
     root = _default_repo_root()
-    data_root = root / "data"
+    data_root = _default_data_root(root)
     slugs = [d.parent.name for d in sorted(data_root.glob("*/tickets")) if d.is_dir()]
     if "--instance" in argv:
         slug = argv[argv.index("--instance") + 1]
@@ -122,8 +150,8 @@ def _main(argv: list[str]) -> int:
         slug = slugs[0]
     else:
         raise SystemExit(
-            "instance_pointer: pass --instance <slug>; found "
-            + (", ".join(slugs) or "no data/*/tickets/ folder")
+            f"instance_pointer: pass --instance <slug>; under {data_root} found "
+            + (", ".join(slugs) or "no <instance>/tickets/ folder")
         )
     written = write(root, data_root, slug, root / "config" / "config.local.json")
     print(f"wrote {written}")

@@ -3,7 +3,8 @@
 Bristol Tickets is self-contained: it imports nothing from the rest of
 ``src/tools/``, so this is a local reader and writer for the same file that
 ``config_tools/instance_pointer.py`` owns. That module holds the canonical
-resolution order and the pointer's schema; the two write the same four fields.
+resolution order, the pointer's schema and the shape of ``data_root``; the two
+write the same four fields.
 
 GitHub-safe: contains no personal path.
 """

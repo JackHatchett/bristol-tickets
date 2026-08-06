@@ -16,6 +16,7 @@ pieces it composes live in sibling modules:
     record_dialog.py UnifiedRecordDialog (create/edit modal)
     kanban_column.py KanbanColumn (a populated column of cards)
     detail_pane.py   DetailPane (the selected card, read and edited in place)
+    dialogs.py       confirm(), choose(), notify() — every modal question
     setup_wizard.py  first-run setup, also reachable from File → Setup…
     settings_tab.py  SettingsTab (board behaviour, stored in config.local.json)
 
@@ -43,7 +44,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMainWindow,
     QFrame,
-    QMessageBox,
     QPushButton,
     QSizePolicy,
     QSplitter,
@@ -55,6 +55,7 @@ from PySide6.QtWidgets import (
 import config_file  # bristol-local: the one config.local.json reader/writer
 
 from .detail_pane import DetailPane
+from .dialogs import confirm, notify
 from .links import remove_links_for_task
 from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
@@ -250,7 +251,7 @@ class MainWindow(QMainWindow):
         backlog_bar.addWidget(self.backlog_activate_btn)
         backlog_bar.addWidget(self.backlog_delete_btn)
         backlog_outer.addLayout(backlog_bar)
-        self._add_page(backlog_widget, "Backlog")
+        self._backlog_tab_index = self._add_page(backlog_widget, "Backlog")
 
         # The selection-dependent backlog actions (Clear, Activate, Delete) are
         # inert and confusing when nothing is checked, so they stay hidden until
@@ -348,14 +349,18 @@ class MainWindow(QMainWindow):
         self._geometry_ready = True
 
     def _stage_for_current_tab(self) -> str:
-        """Default Stage for a new record, keyed to the tab Create was pressed on: Board → active, Archive → archive, everything else
-        (Search, Backlog) → backlog."""
+        """Default Stage for a new record, keyed to the tab Create was pressed
+        on: Backlog → backlog, Archive → archive, everything else → active.
+
+        A card lands on the Board unless the tab it was created from is one of
+        the other two, which is the same default ``ticket_write.py add-task``
+        carries."""
         idx = self.pages.currentIndex()
-        if idx == self._board_tab_index:
-            return "active"
+        if idx == getattr(self, "_backlog_tab_index", -1):
+            return "backlog"
         if idx == getattr(self, "_archive_tab_index", -1):
             return "archive"
-        return "backlog"
+        return "active"
 
     def _sync_backlog_bar(self, *args) -> None:
         """Show the selection-dependent backlog actions only when editing AND
@@ -556,10 +561,9 @@ class MainWindow(QMainWindow):
         if db_path is None:
             return
         self.settings_tab.reload()
-        QMessageBox.information(
-            self, "Setup complete",
-            f"Your installation is at {db_path}.\n\n"
-            "Bristol Tickets opens it the next time it launches.")
+        notify(self, "Setup complete",
+               f"Your installation is at {db_path}.\n\n"
+               f"Bristol Tickets opens it the next time it launches.")
 
     # ----- Theming (OS light/dark, warm orange both ways) -------------------
 
@@ -634,14 +638,11 @@ class MainWindow(QMainWindow):
         ).fetchall()
         ids = [r[0] for r in rows]
         if not ids:
-            QMessageBox.information(self, "Nothing to clear",
-                                    "The Done column is empty.")
+            notify(self, "Nothing to clear", "The Done column is empty.")
             return
-        reply = QMessageBox.question(
-            self, "Clear Done",
-            f"Move {len(ids)} done card(s) to the Archive?",
-            QMessageBox.Yes | QMessageBox.No)
-        if reply != QMessageBox.Yes:
+        if not confirm(self, "Clear Done",
+                       f"Move {len(ids)} done card(s) to the Archive?",
+                       "Move to Archive"):
             return
         self._move_tasks_to_stage(ids, "archive")
         # Stamp the archival moment as closed_at — this is the timestamp that
@@ -688,10 +689,9 @@ class MainWindow(QMainWindow):
         result = generate_report_safe(self.conn, ids)
         if result.ok or result.skipped:
             return
-        QMessageBox.warning(
-            self, "Report not written",
-            f"The cards were archived successfully, but the analytic report "
-            f"could not be written.\n\n{result.error}")
+        notify(self, "Report not written",
+               f"The cards were archived successfully, but the analytic report "
+               f"could not be written.\n\n{result.error}")
 
     def _move_tasks_to_stage(self, ids: list[int], stage: str) -> None:
         """Set each task's stage, appended to the bottom of the destination list
@@ -732,8 +732,8 @@ class MainWindow(QMainWindow):
         relative backlog order and append to the bottom of their status column."""
         ids = self.backlog_column.checked_ids()
         if not ids:
-            QMessageBox.information(self, "Nothing checked",
-                                    "Tick one or more backlog cards first.")
+            notify(self, "Nothing checked",
+                   "Tick one or more backlog cards first.")
             return
         self._move_tasks_to_stage(ids, "active")
         self._refresh_board()
@@ -741,14 +741,13 @@ class MainWindow(QMainWindow):
     def _bulk_delete_backlog(self) -> None:
         ids = self.backlog_column.checked_ids()
         if not ids:
-            QMessageBox.information(self, "Nothing checked",
-                                    "Tick one or more backlog cards first.")
+            notify(self, "Nothing checked",
+                   "Tick one or more backlog cards first.")
             return
-        reply = QMessageBox.question(
-            self, "Confirm delete",
-            f"Permanently delete {len(ids)} backlog card(s)?",
-            QMessageBox.Yes | QMessageBox.No)
-        if reply != QMessageBox.Yes:
+        if not confirm(self, "Delete backlog cards",
+                       f"Permanently delete {len(ids)} backlog card(s)? This "
+                       f"cannot be undone.",
+                       "Delete", destructive=True):
             return
         for tid in ids:
             self.conn.execute("DELETE FROM issue_log WHERE task_id=?", (tid,))
@@ -806,8 +805,8 @@ class MainWindow(QMainWindow):
 
     def _open_global_create(self):
         # A new task's default Stage follows the tab Create was pressed on
-        #: Board → active, Archive → archive, Search/Backlog
-        # → backlog. The user can still change Stage in the dialog.
+        # (_stage_for_current_tab). The user can still change Stage in the
+        # dialog.
         dlg = UnifiedRecordDialog(self, self.conn, mode="task", initial_status="todo",
                                   initial_stage=self._stage_for_current_tab(),
                                   epic_id=self.current_epic_id)

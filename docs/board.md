@@ -74,7 +74,7 @@ to red.
 | **Title** | Required. One outcome per card. |
 | **Record Type** | Build or Fix. Picking one pre-fills the description with that skeleton: a Build is a story plus acceptance criteria, a Fix is expected versus observed. |
 | **Description** | The body. Yours to write however you like. |
-| **Stage** | Backlog, active or archive — the tab. |
+| **Stage** | Backlog, active or archive — the tab. A new card opens on the stage of the tab you pressed Create on, and on active from anywhere else, so the backlog is somewhere you choose rather than somewhere cards land. |
 | **Status** | To Do, Doing or Done — the column. |
 | **Owner** | Who the card belongs to: `user` or an agent slug. An agent works only its own cards. |
 | **Originator** | Who raised it. |
