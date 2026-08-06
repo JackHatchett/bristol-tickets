@@ -705,6 +705,13 @@ QSpinBox::down-button {{ subcontrol-position: bottom right; }}
 QLabel {{ color: {C['INK']}; background: transparent; }}
 QLabel#inspectorTitle {{ color: {C['ACCENT']}; }}
 QLabel#sectionHeader {{ color: {C['INK_SOFT']}; font-weight: 600; }}
+/* The one thing a confirmation or a notice says first: the largest text in a
+   modal that carries no icon, since the words are all it has. */
+QLabel#dialogHeading {{
+    color: {C['INK']};
+    font-size: {type_size('section')}pt;
+    font-weight: 700;
+}}
 QLabel#metaText {{ color: {C['INK_SOFT']}; }}
 /* A link row is a quiet reference, not a headline: left-aligned accent text
    at body scale and normal weight, underlined on hover so it is obviously

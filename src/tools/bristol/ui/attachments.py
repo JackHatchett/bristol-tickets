@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -35,6 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .dialogs import confirm, notify
 from .theme import LAYOUT, space
 
 THUMB_MAX = 160  # longest edge of an inline thumbnail, in px
@@ -216,14 +216,11 @@ class ImagePreviewDialog(QDialog):
         return self._deleted
 
     def _confirm_delete(self) -> None:
-        if (
-            QMessageBox.question(
-                self,
-                "Delete image?",
-                "Remove this attachment? The file moves to images/_trash "
-                "(recoverable), and the link is dropped.",
-            )
-            == QMessageBox.Yes
+        if confirm(
+            self, "Delete image",
+            "Remove this attachment? The file moves to images/_trash "
+            "(recoverable), and the link is dropped.",
+            "Remove", destructive=True,
         ):
             self._deleted = True
             self.accept()
@@ -276,7 +273,7 @@ class AttachmentBar(QWidget):
         if not path:
             return
         if add_attachment(self.conn, self.task_id, path) is None:
-            QMessageBox.warning(self, "Attach failed", "Could not attach that file.")
+            notify(self, "Attach failed", "Could not attach that file.")
         self._refresh()
 
     def _clear_list(self) -> None:

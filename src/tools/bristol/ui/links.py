@@ -50,7 +50,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMessageBox,
     QPushButton,
     QRadioButton,
     QSizePolicy,
@@ -58,6 +57,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .dialogs import confirm, notify
 from .theme import LAYOUT, space
 
 MAX_LABEL_CHARS = 72  # where a long URI is shortened in a confirm message;
@@ -471,45 +471,45 @@ class LinkBar(QWidget):
 
         if kind == "issue":
             if issue_id is None:
-                QMessageBox.warning(self, "Add link",
-                                    "A ticket link needs a ticket number.")
+                notify(self, "Add link",
+                       "A ticket link needs a ticket number.")
                 return
             if self.task_id is None:
                 if issue_id == 0 or self.conn.execute(
                         "SELECT 1 FROM task WHERE id=?", (issue_id,)).fetchone() is None:
-                    QMessageBox.warning(self, "Add link", f"There is no ticket #{issue_id}.")
+                    notify(self, "Add link", f"There is no ticket #{issue_id}.")
                     return
                 self._pending.append(("issue", issue_id, "", "", relation))
             else:
                 problem = add_issue_link(self.conn, self.task_id, issue_id,
                                          self.author, relation)
                 if problem:
-                    QMessageBox.warning(self, "Add link", problem)
+                    notify(self, "Add link", problem)
                     return
         else:
             if not uri:
-                QMessageBox.warning(self, "Add link", "Enter an address to link.")
+                notify(self, "Add link", "Enter an address to link.")
                 return
             if self.task_id is None:
                 self._pending.append(("uri", None, uri, label, "related"))
             else:
                 problem = add_uri_link(self.conn, self.task_id, uri, label, self.author)
                 if problem:
-                    QMessageBox.warning(self, "Add link", problem)
+                    notify(self, "Add link", problem)
                     return
         self._refresh()
 
     def _confirm_remove(self, link_id: int, description: str) -> None:
-        if QMessageBox.question(
-            self, "Delete link?", f"Remove the link to {description}?"
-        ) == QMessageBox.Yes:
+        if confirm(self, "Delete link",
+                   f"Remove the link to {description}?",
+                   "Remove", destructive=True):
             remove_link(self.conn, link_id)
             self._refresh()
 
     def _confirm_remove_pending(self, index: int, description: str) -> None:
-        if QMessageBox.question(
-            self, "Delete link?", f"Remove the link to {description}?"
-        ) == QMessageBox.Yes:
+        if confirm(self, "Delete link",
+                   f"Remove the link to {description}?",
+                   "Remove", destructive=True):
             if 0 <= index < len(self._pending):
                 self._pending.pop(index)
             self._refresh()

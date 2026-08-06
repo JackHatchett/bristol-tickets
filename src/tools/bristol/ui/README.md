@@ -111,6 +111,18 @@ Two surfaces write a card, and each has its own job.
   and `appearance.detail_collapsed` in `config/config.local.json`, written by
   the main window as the user moves them.
 
+## Where a question is asked
+
+- **Ask a yes/no question with `dialogs.confirm()`, a question with other
+  answers with `dialogs.choose()`, and state something unanswerable with
+  `dialogs.notify()`.** Never a `QMessageBox`: the platform's box arrives with
+  its own glyph, its own button ranks and its own palette.
+- **Give the action a label that names it** — "Delete", "Move to Archive" —
+  rather than Yes, and pass `destructive=True` where it cannot be undone, which
+  is what puts it at the `DELETE_BG` rank.
+- **The way out is always the ordinary rank and always the default**, so Enter,
+  Esc and the title-bar close all land on it.
+
 ## What the board is made of
 
 - **The canvas is flat and the cards are the only raised surfaces.** A column is

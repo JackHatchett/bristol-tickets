@@ -111,6 +111,24 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("a token scale holds something that is not a size")
     ok.append("the spacing, radius and type scales are whole sizes")
 
+    # Every question and every notice comes from ui/dialogs.py, so none of them
+    # arrives as the platform's own box with its glyph and its button ranks.
+    import ui.dialogs as dialogs
+
+    strays = sorted(
+        source.name for source in Path(ui.__path__[0]).glob("*.py")
+        if "QMessageBox" in source.read_text(encoding="utf-8")
+    )
+    if strays:
+        raise SmokeFailure("QMessageBox reached " + ", ".join(strays)
+                           + " — confirmations come from ui/dialogs.py")
+    box = dialogs.Modal(None, "Title", "Body",
+                        [("Cancel", dialogs.ORDINARY, False),
+                         ("Delete", dialogs.DESTRUCTIVE, True)])
+    if box.choice() is not False:
+        raise SmokeFailure("a closed confirmation does not land on the way out")
+    ok.append("every confirmation and notice comes from ui/dialogs.py")
+
     # The card painter reads tokens rather than holding literals, so a change to
     # a scale must reach it with no edit there.
     from ui.card_delegate import CardDelegate
@@ -232,11 +250,13 @@ def check_bristol() -> list[str]:
         # test would write a bogus report into the user's actual notebook —
         # a smoke check must not leave anything behind outside its sandbox.
         import os as _os
-        from PySide6.QtWidgets import QMessageBox
+        import ui.main_window as mw
         mconn.execute("UPDATE task SET status='done' WHERE id=?", (b1,))
         mconn.commit()
-        _orig_q = QMessageBox.question
-        QMessageBox.question = staticmethod(lambda *a, **k: QMessageBox.Yes)
+        # The confirmation is a modal, so the answer is stubbed at the name the
+        # window calls rather than left to block an offscreen run.
+        _orig_confirm = mw.confirm
+        mw.confirm = lambda *a, **k: True
         _prior_reports_dir = _os.environ.get("BRISTOL_REPORTS_DIR")
         with tempfile.TemporaryDirectory() as reports_tmp:
             _os.environ["BRISTOL_REPORTS_DIR"] = reports_tmp
@@ -244,7 +264,7 @@ def check_bristol() -> list[str]:
                 win._refresh_board()
                 win._clear_done()
             finally:
-                QMessageBox.question = _orig_q
+                mw.confirm = _orig_confirm
                 if _prior_reports_dir is None:
                     _os.environ.pop("BRISTOL_REPORTS_DIR", None)
                 else:
@@ -282,18 +302,29 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("Clear Done archived a card without logging the transition")
         ok.append(f"transition log records stage moves ({events} events)")
 
-        # Create-modal Stage follows the active view.
+        # Create-modal Stage follows the active view, and lands on the board
+        # from anywhere that is neither the Backlog nor the Archive — the same
+        # default ticket_write.py add-task carries.
         win._show_page(win._board_tab_index)
         if win._stage_for_current_tab() != "active":
             raise SmokeFailure("Create from Board should default Stage=active")
         win._show_page(win._archive_tab_index)
         if win._stage_for_current_tab() != "archive":
             raise SmokeFailure("Create from Archive should default Stage=archive")
-        win._show_page(0)  # Search
+        win._show_page(win._backlog_tab_index)
         if win._stage_for_current_tab() != "backlog":
-            raise SmokeFailure("Create from Search should default Stage=backlog")
+            raise SmokeFailure("Create from Backlog should default Stage=backlog")
+        win._show_page(0)  # Search
+        if win._stage_for_current_tab() != "active":
+            raise SmokeFailure("Create away from the Backlog and Archive tabs "
+                               "should default Stage=active")
+        from ui.record_dialog import UnifiedRecordDialog as _RecordDialog
+        if _RecordDialog(win, mconn, mode="task").stage_combo.currentText() \
+                != "active":
+            raise SmokeFailure("the Create dialog defaults a card to somewhere "
+                               "other than the board")
         win._sync_backlog_bar()  # must not raise with nothing checked
-        ok.append("Create-modal Stage follows active tab; backlog bar sync runs")
+        ok.append("Create-modal Stage follows active tab, and defaults to the board")
 
         # The detail pane edits in place: a status flipped from the pane takes
         # the same write path as a drag or a dialog save — the row moves and
@@ -553,11 +584,24 @@ def check_bristol() -> list[str]:
             # The whole flow, driven through the wizard's own pages: a scratch
             # clone with no pointer and no config is exactly the fresh-install
             # state, and Finish is the only thing that writes.
+            import config_file
+
             pointer = Path(scratch) / "instance.json"
+            written_config = scratch_root / "config" / "config.local.json"
             _orig_pointer = wiz.instance.pointer_path
+            _orig_config_path = config_file.path
             wiz.instance.pointer_path = lambda: pointer
+            config_file.path = lambda: written_config
             try:
                 wizard = wiz.SetupWizard(scratch_root)
+                # A machine with no configuration and no pointer opens on the
+                # operating system's user name, which is the first-run default.
+                if wizard.instance_page.slug_edit.text() != wiz.default_slug():
+                    raise SmokeFailure("a first run did not open on the default name")
+                if wizard.instance_page.folder.value() != \
+                        str(scratch_root / "data" / wiz.default_slug()):
+                    raise SmokeFailure("a first run did not open on the clone's "
+                                       "own data folder")
                 wizard.instance_page.slug_edit.setText("tester")
                 if wizard.instance_page.instance_dir() != scratch_root / "data" / "tester":
                     raise SmokeFailure("the data folder did not follow the instance name")
@@ -574,6 +618,7 @@ def check_bristol() -> list[str]:
                 db = wizard.db_path
             finally:
                 wiz.instance.pointer_path = _orig_pointer
+                config_file.path = _orig_config_path
             if db is None or not db.exists():
                 raise SmokeFailure("setup did not provision a board")
             fresh = sqlite3.connect(db)
@@ -617,8 +662,23 @@ def check_bristol() -> list[str]:
             }) + "\n")
 
             wiz.instance.pointer_path = lambda: pointer
+            config_file.path = lambda: written_config
             try:
                 second = wiz.SetupWizard(scratch_root)
+                # Setup opens on the installation the configuration declares,
+                # not on the operating system's user name and not on the
+                # installation the pointer happens to be aimed at.
+                if second.instance_page.slug_edit.text() != "tester":
+                    raise SmokeFailure("setup did not open on the configured "
+                                       "installation")
+                if second.instance_page.folder.value() != \
+                        str(scratch_root / "data" / "tester"):
+                    raise SmokeFailure("setup did not open on the configured "
+                                       "installation's folder")
+                if "other" not in second.instance_page.disagreement.text():
+                    raise SmokeFailure("a configuration and a pointer naming "
+                                       "different installations were reconciled "
+                                       "silently")
                 second.instance_page.slug_edit.setText("tester")
                 second.instance_page.folder.set_value(str(scratch_root / "data" / "tester"))
                 if not second.instance_page.adopting():
@@ -631,6 +691,29 @@ def check_bristol() -> list[str]:
                 if "other" not in summary or "tester" not in summary:
                     raise SmokeFailure("the summary does not name both the old and the "
                                        "new installation")
+                # Both sides are named as an installation folder, so the reader
+                # compares two paths of one kind rather than a data root
+                # against a folder beneath one.
+                if str(Path(scratch) / "elsewhere" / "other") not in summary:
+                    raise SmokeFailure("the summary names the old installation by "
+                                       "its data root, not by its own folder")
+
+                # Adopting the installation the app already opens must not say
+                # it stops opening it.
+                third_pointer = json.loads(pointer.read_text())
+                pointer.write_text(json.dumps({
+                    **third_pointer,
+                    "data_root": str(scratch_root / "data"),
+                    "instance_slug": "tester",
+                }) + "\n")
+                same = wiz.SetupWizard(scratch_root)
+                same.instance_page.slug_edit.setText("tester")
+                same.instance_page.folder.set_value(str(scratch_root / "data" / "tester"))
+                same.summary_page.initializePage()
+                if "stops opening" in same.summary_page.pointer_note.text():
+                    raise SmokeFailure("the summary says it stops opening the "
+                                       "installation it is about to open")
+                pointer.write_text(json.dumps(third_pointer) + "\n")
 
                 # Leaving the pointer alone writes nothing at all.
                 second.summary_page.take_over.setChecked(False)
@@ -648,6 +731,7 @@ def check_bristol() -> list[str]:
                 third.accept()
             finally:
                 wiz.instance.pointer_path = _orig_pointer
+                config_file.path = _orig_config_path
 
             adopted = json.loads(pointer.read_text())
             if adopted["instance_slug"] != "tester" or \
@@ -666,10 +750,8 @@ def check_bristol() -> list[str]:
             # Settings and the active agent, against the config the wizard just
             # wrote. The property that matters is that both read and write that
             # one file, and that a key this build does not offer survives a save.
-            import config_file
             from ui.settings_tab import SettingsTab
 
-            written_config = scratch_root / "config" / "config.local.json"
             _orig_path = config_file.path
             config_file.path = lambda: written_config
             try:
