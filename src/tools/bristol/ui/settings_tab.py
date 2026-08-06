@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFormLayout,
     QHBoxLayout,
@@ -51,6 +52,10 @@ class SettingsTab(QWidget):
         for value, caption in CROSS_AGENT_CHOICES:
             self.cross_agent.addItem(caption, value)
 
+        self.suggested_commit = QCheckBox(
+            "Suggest a commit for the files it wrote"
+        )
+
         self.appearance = QComboBox()
         for value, caption in APPEARANCE_CHOICES:
             self.appearance.addItem(caption, value)
@@ -63,6 +68,7 @@ class SettingsTab(QWidget):
         form.setHorizontalSpacing(space("xl"))
         form.setVerticalSpacing(space("lg"))
         form.addRow("A card one agent files for another goes to", self.cross_agent)
+        form.addRow("When a session stops for room", self.suggested_commit)
         form.addRow("Colour scheme", self.appearance)
 
         self.save_btn = QPushButton("Save")
@@ -111,6 +117,9 @@ class SettingsTab(QWidget):
         )
         index = self.cross_agent.findData(stored)
         self.cross_agent.setCurrentIndex(index if index >= 0 else 0)
+        self.suggested_commit.setChecked(bool(config_file.get(
+            config_file.SUGGESTED_COMMIT, config_file.SUGGESTED_COMMIT_DEFAULT
+        )))
         scheme = config_file.get(
             config_file.APPEARANCE_SCHEME, config_file.APPEARANCE_SCHEME_DEFAULT
         )
@@ -129,6 +138,7 @@ class SettingsTab(QWidget):
         try:
             written = config_file.update({
                 config_file.CROSS_AGENT_STAGE: self.cross_agent.currentData(),
+                config_file.SUGGESTED_COMMIT: self.suggested_commit.isChecked(),
                 config_file.APPEARANCE_SCHEME: self.appearance.currentData(),
             })
         except OSError as exc:

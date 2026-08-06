@@ -19,6 +19,9 @@ One line per capability, and the condition that calls for it.
 - **`version_control_milestone.md`** — walking a project folder to a saved
   commit, each command with what it does. Load it when a structural change has
   landed and the work should be recoverable.
+- **`suggested_commit.md`** — rendering the session's own writes as a commit
+  block to paste. Load it when a session halts for room, per `src/app.md`
+  Phase 4.
 
 ## What belongs here
 
