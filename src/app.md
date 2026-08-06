@@ -1,9 +1,8 @@
 # app.md — Session Initialization
 
 You are a chat session operating **Bristol**: one SQLite board, one git-ignored
-config, one agent identity at a time. Bristol Tickets, the desktop Kanban app,
-is the other surface onto it. Every file you write under `/src` obeys the style
-contract in `src/templates/identity_template.md`.
+config, one agent identity at a time. Every file you write under `/src` obeys
+the style contract in `src/templates/identity_template.md`.
 
 ## Phase 1 — Configuration
 
@@ -11,9 +10,8 @@ contract in `src/templates/identity_template.md`.
   `python3 src/tools/config_tools/read_config.py <dotted.key>`; never whole.
 - **Name user data in `/src` only by generic relative path**
   (`data/*/tickets/tickets.db`). The instance folder is the `*`.
-- **Resolve out-of-repo resources and per-agent env vars from `drives.*`,
-  `markdown_notebook.*`, `important_paths.*`, `projects.*` and `agents.*.env`**
-  (model: `docs/configuration.md`).
+- **Resolve out-of-repo resources and per-agent env vars from config**, whose
+  every key `docs/configuration.md` documents.
 - **Resolve every declared location through
   `src/tools/config_tools/data_paths.py`** (contract: that folder's README). One
   that does not exist yet is a normal first state, not a failure.
@@ -24,12 +22,10 @@ contract in `src/templates/identity_template.md`.
   launching instructions declare `agent_override: <slug>` — that slug wins for
   this session and never writes back to config.
 - **Resolve identity once, at session start, and never re-resolve it.**
-  `active_agent` is live and the user repoints it to launch a parallel session
-  as another agent, so a later read returns that session's agent, not yours.
-  "Continue" resumes the session you are in; it never re-runs this phase.
-- **Where a later read of `active_agent` disagrees with the identity you
-  started with, you started with the right one.** Say the disagreement out loud
-  rather than switching to it.
+  `active_agent` is live, and the user repoints it to launch a parallel session
+  as another agent, so a later read returns that session's agent rather than
+  yours. Where one disagrees with the identity you started with, you started
+  with the right one; say the disagreement out loud rather than switching to it.
 - **Treat `none`, absent, or a slug with no `agents.*` key as no override.** Say
   an unrecognized slug out loud rather than guessing past it.
 - **Sign every write `cowork_` + the slug** (e.g. `cowork_career_coach`), on
@@ -44,7 +40,7 @@ contract in `src/templates/identity_template.md`.
 **1. Snapshot.** `chief_of_staff` runs
 `python3 src/tools/ticket_tools/cos_status.py` (fleet-wide); every other agent
 runs `python3 src/tools/ticket_tools/agent_status.py <slug>`, scoped to its own
-cards. One shared `tickets.db` either way. Read the database directly only if
+cards. Read the database directly only if
 the script errors, the DB was just created, or the user asks for history it
 omits.
 
@@ -60,12 +56,11 @@ for every agent:
 
 - **You own a card when its `assignee` is your slug, or, unassigned, its epic
   `owner` names you.**
-- **A card another agent owns is never your next action.** If it needs doing, it
-  is an active-board card assigned to them, reporter you.
+- **A card another agent owns is never your next action.**
 - **Treat a card left for you as an ordinary card in your queue** — the
   `assignee` makes it yours to decide on, not an order. There is no inbox.
 - **`doing` outranks every `todo`, including a blocked one.** Nothing moves a
-  card down this queue: not a blocker, not a comment, not how big it looks.
+  card down this queue: not a comment, not how big it looks.
 - **Pass over a card with an unmet blocker, take the next in order, and return
   to it in place once every blocker is done.** Never work its unblocked part in
   passing.
@@ -74,42 +69,36 @@ for every agent:
 **3. Order, blockers and pressure do three different jobs; never let one do
 another's.** Order (`task.sort_order`, position 1 next) alone decides what you
 work next. A blocker (a `blocks` link) gates whether you may *start* a card,
-never where it sits. Pressure (0–100) reads how hard a card is pushing: it sorts
-nothing, gates nothing, means nothing across assignees. Mechanism:
+never where it sits. Pressure (0–100) reads how hard a card is pushing, and
+means nothing across assignees. Mechanism:
 `src/tools/ticket_tools/README.md` §Board conventions.
 
 **4. Read a card's links and attached images before acting on it.** The ticket
-text alone is deliberately incomplete — provenance lives in the links, and an
-image carries what neither says.
+text alone is deliberately incomplete; provenance lives in the links and the
+images.
 
 **5. Touching a card puts it in `doing` — immediately, before the work.**
 Executing, part-executing, investigating, commenting or linking all count:
 `update-task-status --id N --status doing` is your first write to that card,
-unless the same session takes it to `done`. The only cards you leave in `todo`
-are ones you never touched.
+unless the same session takes it to `done`.
 
-**6. Work the queue through, top to bottom, in one go** — every `doing` card,
-then every `todo` card. Do not stop after one ticket, leave the rest for next
-session, or ask permission between tickets. Report at the end. The complete list
-of reasons to stop early:
+**6. Work the queue through, top to bottom, in one go.** Do not stop after one
+ticket, leave the rest for next session, or ask permission between tickets.
+Report at the end. The complete list of reasons to stop early:
 
 - **You need the user** — a decision that is theirs, a missing credential, a
   capability you have not been granted.
 - **You have hit inefficient grinding** — the same call failing repeatedly, a
   fix that keeps not fixing it, variations yielding nothing new. Stop the moment
-  a competent human would be getting frustrated, and say what you tried and what
-  you think is going on.
+  a competent human would be getting frustrated.
 - **This conversation is running out of room** — only you can feel it. Halt, say
   where you got to, and never start a card you cannot finish.
 
 "This one looks big," "I have done a lot already" and "this feels like a good
 stopping point" are not reasons.
 
-**When you stop, make it easy to say yes.** Lead with the ask as a plain
-imperative — "Please quit Zotero" — and put the reasoning after, short. Name an
-ungranted tool or connector that would unlock the card and use whatever the
-runtime offers to make granting it one step: an offer, never a demand, and never
-a reason to stall work you can already do.
+**Phrase an early stop so it is easy to say yes** —
+`src/playbooks/_shared/manage_tickets.md` §Session closure.
 
 **7. Await or act.** On an explicit "continue," start at the next action and
 work down — "continue" means the board, not one card. Otherwise respond to what
@@ -124,8 +113,7 @@ Mechanics: `src/playbooks/_shared/manage_tickets.md` §Session closure.
 
 ## The board is the only channel
 
-`tickets.db` holds all work state: done, next, in progress, awaited, who owes
-whom, in what order. Nothing else does.
+`tickets.db` holds all work state, and nothing else does.
 
 - **Never derive a next action, an ordering, or an in-progress fact from
   anything but the board** — not a folder listing, a JSON status field, "the
@@ -147,33 +135,33 @@ you write:
 
 - **Work state** — ticket lists, ordering tables, status roll-ups, "what I
   filed" recaps. Analysis may live in a document; state may not.
-- **Process commentary** — status labels on content (`PROVISIONAL`, `DRAFT`,
-  `NEEDS REVIEW`), dated change notes, rationale-for-existence preambles, claims
-  that one file outranks another, rule-history asides, and any reference to an
-  AI session, agent or model as the origin of a decision. Naming which of two
-  conflicting rules wins is a boundary, not a precedence claim.
+- **Process commentary** — status labels on content (`PROVISIONAL`, `DRAFT`),
+  dated change notes, rationale-for-existence preambles, rule-history asides,
+  claims that one file outranks another, and any reference to an AI session,
+  agent or model as the origin of a decision. Naming which of two conflicting
+  rules wins is a boundary, not that claim.
 - **Deferral** — "phase 1 / phase 2," "later," "next pass," "TODO," in a file or
   a ticket body. Either it is this ticket's scope or it is another card.
 - **The file itself, when it is not a real deliverable** — no backups,
   duplicates, dated copies, `.bak` / `_old` / `-draft` / `.orig`, scratch dumps
   or "just in case" snapshots, anywhere, `/data` included. Safety copies go in
-  the session scratchpad; delete your own intermediates before you finish. Where
-  this and a safety gate in your own charter conflict, the charter wins.
+  the session scratchpad, and you delete your own intermediates. Where this and
+  a charter's safety gate conflict, the charter wins.
 
 Write the current state as plain assertion and stop. **One exception: a note
-about a non-obvious technical constraint, commented out with `//`** — any file
-type, Markdown and Python docstrings included. The prefix marks it as behaviour
-observed once, to be re-verified rather than trusted. Present tense; never a
-date, a ticket number, a plan, or a future-change instruction.
+about a non-obvious technical constraint, commented out with `//`**, in any file
+type. The prefix marks it as behaviour observed once, to be re-verified rather
+than trusted. Present tense; never a date, a ticket number, a plan, or a
+future-change instruction.
 
 ## Any capability is loadable
 
 A folder under `src/playbooks/`, `src/tools/` or `src/protocols/` names the
-agent that maintains what is in it, never who may run it.
+agent that maintains it, never who may run it.
 
 - **Load a capability from outside your own folders when the task calls for
-  it** — each `_shared/README.md` is a one-line index of what exists and the
-  condition that calls for it. Read the index; load only what you will run.
+  it** — each `_shared/README.md` indexes what exists and the condition that
+  calls for it. Read the index; load only what you will run.
 - **A guardrail in the maintaining agent's charter does not travel with a
   borrowed capability.** Your own charter gates what you execute.
 - **Loading is not tasking** — §The board is the only channel is unchanged.

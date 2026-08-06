@@ -21,9 +21,11 @@ HERE = Path(__file__).resolve().parent
 APP = ["app.py"]
 
 # Files copied into the bundle's Resources. schema.sql must ship so a fresh DB
-# can be provisioned. Nothing else: the relocated app finds the database and
-# the notebook through the instance pointer, which lives outside the bundle.
-DATA_FILES = [f for f in ("schema.sql",) if (HERE / f).exists()]
+# can be provisioned. ACKNOWLEDGEMENTS.md must ship because a distributed bundle
+# carries compiled LGPL libraries inside it, and their terms travel with them.
+# Nothing else: the relocated app finds the database and the notebook through
+# the instance pointer, which lives outside the bundle.
+DATA_FILES = [f for f in ("schema.sql", "ACKNOWLEDGEMENTS.md") if (HERE / f).exists()]
 
 OPTIONS = {
     "argv_emulation": False,

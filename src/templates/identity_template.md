@@ -136,6 +136,10 @@ Eight rules:
   without opening a file is stated there and the reference documents point back
   to it. A rule that only bites once you are already reading the mechanism is
   owned by the mechanism's own file.
+- **Keep the resident core at or under 1,500 words**, and buy room by moving a
+  rule to the file that owns it rather than by shortening sentences. The cap is
+  what forces the ownership question on every addition; `smoke.py`'s
+  `governing_docs` target reports the overshoot.
 - **One rule per bullet, imperative mood.** Never two rules sharing a bullet,
   and never a rule buried mid-paragraph where it reads as commentary. The
   bullet's first clause is the rule; whatever follows is its boundary.
