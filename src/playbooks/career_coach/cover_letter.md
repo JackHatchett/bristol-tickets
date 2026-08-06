@@ -162,8 +162,9 @@ the process; those numbers live there and are not copied here.
   meant. Let it land and stop.
 
 1. **Opening in the chosen approach.** Specific, honest, non-generic, grounded
-   in the user's own work or a concrete contrast. The first sentence names the
-   company and what the user has done that fits the role.
+   in the user's own work or a concrete contrast. It leads with work the user
+   has done and carries the target job title within its first two sentences;
+   the spec's composition rule 1 governs where the company's name goes.
 2. **Strongest alignment**, told briefly with context and outcome. For Senior
    and above, this paragraph or the next operates at decision altitude.
 3. **Second alignment, or the honest gap** named directly and pivoted to

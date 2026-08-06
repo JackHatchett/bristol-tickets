@@ -134,6 +134,16 @@ Three separate acts, all cheap:
   0–100, your honest gestalt of urgency, impact and how alive the thing feels.
   Say so in the card's comment if the number is surprising.
 
+**8. Make an early stop easy to say yes to.** A session that halts for one of
+the reasons in `src/app.md` Phase 3.6 ends on an ask, and the ask is the first
+thing in the message:
+
+- **Lead with a plain imperative** — "Please quit Zotero" — and put the
+  reasoning after it, short.
+- **Name the ungranted tool or connector that would unlock the card, and use
+  whatever the runtime offers to make granting it one step.** An offer, never a
+  demand, and never a reason to stall work you can already do.
+
 ## Effort sizing — what S/M/L/XL measure
 
 A card's `estimate` answers one question: **how much of a full usage budget
