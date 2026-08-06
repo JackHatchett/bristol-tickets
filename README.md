@@ -20,7 +20,9 @@ macOS and Python 3.10 or later.
 1. **Get Cowork.** Check the Claude plan comparison; it is not on the free tier.
 2. **Install the Claude desktop app** and sign in. Cowork is a mode inside it,
    not in the browser.
-3. **Clone this repository and install its dependencies.**
+3. **Clone this repository and install its dependencies.** The board needs
+   PySide6 and nothing else; the optional toolkit under `src/tools/` has its own
+   file, `requirements-tools.txt`.
 
    ```bash
    git clone <this-repo> bristol_tickets
@@ -107,3 +109,10 @@ Start at [docs/index.md](docs/index.md).
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Bristol Tickets is drawn with Qt for Python (PySide6), under the LGPLv3. Running
+from source installs it onto your own machine and nothing further attaches. A
+distributed `BristolTickets.app` carries a compiled copy inside the bundle, so
+the build ships
+[ACKNOWLEDGEMENTS.md](src/tools/bristol/ACKNOWLEDGEMENTS.md) in its Resources,
+naming the licence and how a recipient replaces the bundled libraries.

@@ -45,8 +45,16 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-That covers the board and the agents. Three optional tools need something pip
-cannot install, and you can skip all three until you want the tool:
+That is PySide6, and it covers the board and the agents. Everything else under
+`src/tools/` is a toolkit the agents reach for — photo processing,
+job-description scraping, OCR — and none of it is needed to run the board.
+Install it when you want one of those tools:
+
+```bash
+pip install -r requirements-tools.txt
+```
+
+Three of those tools then need a step pip cannot perform:
 
 | Tool | Extra step |
 | --- | --- |
