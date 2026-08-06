@@ -25,19 +25,27 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
 
 ## Procedure
 
-1. **Read the instance pointer and note the four values it holds.** A user step.
-   They are what the last step adopts, so the rehearsal cannot start without
-   them.
+1. **Note the four values the last step adopts.** A user step. The rehearsal
+   cannot start without them.
 
    ```bash
    cat ~/Library/Application\ Support/BristolTickets/instance.json
    ```
 
-2. **Remove the pointer, so the machine is in a stranger's state.** A user step.
-   The pointer is per-machine and beats relative discovery, so a copy launched
-   beside it resolves the real installation, the wizard never opens, and every
-   step after this one tests the wrong board. The last step writes a new pointer
-   by adoption; nothing is kept to restore.
+   **An absent pointer is a normal state here, not a stop.** Take the four
+   values from the real repository instead: `repo_root` is the clone,
+   `config_path` is its `config/config.local.json`, and `data_root` and
+   `instance_slug` are what that file's `important_paths.tickets_db` resolves
+   back to — the folder holding the installations, and the one installation's
+   folder beneath it. `instance_pointer.py` (no arguments) prints the pointer;
+   `--write` reconstructs it from exactly those values.
+
+2. **Remove the pointer, so the machine is in a stranger's state.** A user step,
+   skipped where step 1 found none. The pointer is per-machine and beats
+   relative discovery, so a copy launched beside it resolves the real
+   installation, the wizard never opens, and every step after this one tests the
+   wrong board. The last step writes a new pointer by adoption; nothing is kept
+   to restore.
 
    ```bash
    rm ~/Library/Application\ Support/BristolTickets/instance.json
