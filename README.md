@@ -1,14 +1,25 @@
 # Bristol
 
-A Kanban board on your desktop whose cards are the work you hand to Claude,
-shipped with a set of ready-made agents.
+A Kanban board you share with AI agents, managing their work with tickets. Specifically Anthropic's Claude, though other edge LLMs with local write permission can probably figure it out, and refactor it for themselves.
 
 You keep your work on a board of cards: to-do, doing, done. Open a Claude
 session pointed at this folder, say "continue," and the agent reads the board,
 takes the top card in its queue, does the work on your real files, and writes
 back what it did. Next time you open the board, the card has moved.
 
+Bristol ships with some readymade agents, and you can ask the default agent to change them, make new ones, absorb agents you've already built.
+
+You don't talk to your agents in the board - that stays in your Claude app, though Claude will within your configured project begin to address you and work with you differently, with new powers.
+
 ![The Bristol Tickets board: To Do, Doing and Done columns beside a detail pane holding one card's status, description, links and log.](media/board.png)
+
+## About me (optional)
+
+Howdy. I'm Jack Hatchett, a career Product Manager with hobbies. I made a Mac Claude Cowork project create this tool as a dashboard to help visualize my progress across multiple Claude projects in a familiar card layout, but it's grown into what I think is a unique personal productivity tool.
+
+There are many other apps in this space, but this one's free (plus AI costs), and where those chase scale, I'm chasing coherence on a personal scale. AI app design is usually about designing data sets and optimizing standard, procedural queries - this was designed to organize one individual's infinitely varied tasks into a personal procedural framework. If that doesn't make any sense, don't worry: the chatbot assures me it's the single greatest idea anyone's ever had.
+
+Etymology: Bristol board is a type of heavy paper, named after the guy who invented it, and it's what those red double-roll tickets that everyone in the US has used for a raffle or coat check at some point is printed on. We haven't all used enterprise product management tools for decades, but perhaps those tickets are a shared experience? Bristol is also the name of a town in PA that's personally meaningful to me.
 
 ## Before you install
 
