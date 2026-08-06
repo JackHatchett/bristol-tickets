@@ -113,6 +113,13 @@ def main() -> None:
     if icon_file.exists():
         app.setWindowIcon(QIcon(str(icon_file)))
 
+    # Style the application before the first window exists, so a run that
+    # opens the wizard draws it in the same scheme as the board.
+    import config_file
+    from ui.theme import apply_scheme
+    apply_scheme(app, config_file.get(config_file.APPEARANCE_SCHEME,
+                                      config_file.APPEARANCE_SCHEME_DEFAULT))
+
     db_path = _discover_db()
     if not os.environ.get("TICKETS_DB") and needs_setup(db_path):
         db_path = run_setup()
