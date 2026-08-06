@@ -363,10 +363,11 @@ def is_dark_scheme(app) -> bool:
         return False
 
 
-def chevron_image(colour: str) -> str | None:
-    """A downward chevron in the given colour, as a cached image file the
-    stylesheet can point a combo box's arrow at. Returns None when nothing can
-    be written, in which case the arrow rule is left out.
+def chevron_image(colour: str, direction: str = "down") -> str | None:
+    """A chevron in the given colour and direction (``down`` or ``up``), as a
+    cached image file the stylesheet can point a combo box's or spin box's
+    arrow at. Returns None when nothing can be written, in which case the
+    arrow rule is left out.
 
     // Qt stops drawing the style's own drop-down arrow as soon as the combo is
     // styled at all, and a stylesheet has no way to draw a triangle: a
@@ -377,7 +378,7 @@ def chevron_image(colour: str) -> str | None:
         from PySide6.QtGui import QPainter, QPen, QPixmap
 
         folder = Path(QDir.tempPath()) / "bristol_tickets_ui"
-        target = folder / f"chevron_{colour.lstrip('#')}.png"
+        target = folder / f"chevron_{direction}_{colour.lstrip('#')}.png"
         if target.exists():
             return str(target)
         folder.mkdir(parents=True, exist_ok=True)
@@ -393,12 +394,51 @@ def chevron_image(colour: str) -> str | None:
             pen.setJoinStyle(Qt.RoundJoin)
             painter.setPen(pen)
             inset = 1
-            painter.drawLine(inset, inset, width // 2, height - inset)
-            painter.drawLine(width // 2, height - inset, width - inset, inset)
+            if direction == "up":
+                painter.drawLine(inset, height - inset, width // 2, inset)
+                painter.drawLine(width // 2, inset, width - inset, height - inset)
+            else:
+                painter.drawLine(inset, inset, width // 2, height - inset)
+                painter.drawLine(width // 2, height - inset, width - inset, inset)
         finally:
             painter.end()
         return str(target) if pixmap.save(str(target)) else None
     except Exception:  # noqa: BLE001 — an arrow is never worth failing a paint
+        return None
+
+
+def check_image(colour: str) -> str | None:
+    """A check mark in the given colour, as a cached image file the stylesheet
+    points a checked checkbox indicator at. Returns None when nothing can be
+    written, in which case the checked state is a plain accent fill."""
+    try:
+        from PySide6.QtCore import QDir
+        from PySide6.QtGui import QPainter, QPen, QPixmap
+
+        folder = Path(QDir.tempPath()) / "bristol_tickets_ui"
+        target = folder / f"check_{colour.lstrip('#')}.png"
+        if target.exists():
+            return str(target)
+        folder.mkdir(parents=True, exist_ok=True)
+
+        side = space("md")
+        pixmap = QPixmap(side, side)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        try:
+            painter.setRenderHint(QPainter.Antialiasing, True)
+            pen = QPen(QColor(colour), 1.6)
+            pen.setCapStyle(Qt.RoundCap)
+            pen.setJoinStyle(Qt.RoundJoin)
+            painter.setPen(pen)
+            inset = 1
+            elbow = side * 2 // 5
+            painter.drawLine(inset, side * 3 // 5, elbow, side - inset)
+            painter.drawLine(elbow, side - inset, side - inset, inset)
+        finally:
+            painter.end()
+        return str(target) if pixmap.save(str(target)) else None
+    except Exception:  # noqa: BLE001 — a tick is never worth failing a paint
         return None
 
 
@@ -407,9 +447,18 @@ def build_style_sheet() -> str:
     scales, so a scheme swap and a token change both reach every styled widget."""
     r_sm, r_md, r_lg = radius("sm"), radius("md"), radius("lg")
     chevron = chevron_image(C["INK_SOFT"])
+    chevron_up = chevron_image(C["INK_SOFT"], "up")
+    check = check_image(C["ON_ACCENT"])
     arrow_rule = (f"QComboBox::down-arrow {{ image: url({chevron}); "
                   f"width: {space('lg')}px; height: {space('md')}px; }}"
                   if chevron else "")
+    spin_arrow_rule = (
+        f"QSpinBox::up-arrow {{ image: url({chevron_up}); "
+        f"width: {space('lg')}px; height: {space('md')}px; }}\n"
+        f"QSpinBox::down-arrow {{ image: url({chevron}); "
+        f"width: {space('lg')}px; height: {space('md')}px; }}"
+        if chevron and chevron_up else "")
+    check_rule = f"image: url({check});" if check else ""
     s_xs, s_sm, s_md, s_lg, s_xl, s_2xl = (space("xs"), space("sm"), space("md"),
                                            space("lg"), space("xl"), space("2xl"))
     return f"""
@@ -612,6 +661,9 @@ QLineEdit[fieldMissing="true"]:focus, QTextEdit[fieldMissing="true"]:focus {{
     border: 2px solid {C['MISSING']};
 }}
 QLabel[fieldMissing="true"] {{ color: {C['MISSING']}; font-weight: 600; }}
+/* The id selector outranks the attribute rule above, so a formCaption needs
+   its own missing state or it would stay muted over an empty required field. */
+QLabel#formCaption[fieldMissing="true"] {{ color: {C['MISSING']}; font-weight: 600; }}
 QComboBox QAbstractItemView {{
     background-color: {C['SURFACE']};
     color: {C['INK']};
@@ -627,21 +679,55 @@ QComboBox::drop-down {{
     subcontrol-position: center right;
 }}
 {arrow_rule}
+/* The spin box steps with the same chevrons every picker carries, drawn
+   inside the field rather than as the platform's clipped marks. */
+QSpinBox::up-button, QSpinBox::down-button {{
+    subcontrol-origin: padding;
+    width: {s_2xl}px;
+    border: none;
+    background: transparent;
+}}
+QSpinBox::up-button {{ subcontrol-position: top right; }}
+QSpinBox::down-button {{ subcontrol-position: bottom right; }}
+{spin_arrow_rule}
 QLabel {{ color: {C['INK']}; background: transparent; }}
 QLabel#inspectorTitle {{ color: {C['ACCENT']}; }}
 QLabel#sectionHeader {{ color: {C['INK_SOFT']}; font-weight: 600; }}
 QLabel#metaText {{ color: {C['INK_SOFT']}; }}
-/* A link row reads as text, not a control: full width, left-aligned, accented,
-   underlined on hover so it is obviously clickable. */
+/* A link row is a quiet reference, not a headline: left-aligned accent text
+   at body scale and normal weight, underlined on hover so it is obviously
+   clickable — it must never out-weigh the section header above it. */
 QPushButton#linkRow {{
     background: transparent;
     border: none;
     padding: {s_xs}px 0px;
     text-align: left;
     color: {C['ACCENT']};
+    font-size: {type_size('body')}pt;
+    font-weight: 400;
 }}
 QPushButton#linkRow:hover {{ color: {C['ACCENT_DK']}; text-decoration: underline; }}
+/* The ✕ that removes a link or attachment: the ordinary button face, minus
+   the wide padding that would clip the mark inside its narrow fixed square. */
+QPushButton#attachRemoveBtn {{ padding: {s_xs}px 0px; }}
+/* A link row that is not clickable (a pending link on an unsaved ticket). */
+QLabel#linkRowText {{ color: {C['INK_SOFT']}; font-size: {type_size('body')}pt; }}
 QCheckBox {{ color: {C['INK']}; background: transparent; }}
+/* The checkbox is the scheme's own control: a surface with a hairline, an
+   accent fill when checked — never the platform's indicator. */
+QCheckBox::indicator {{
+    width: {s_lg}px;
+    height: {s_lg}px;
+    border: 1px solid {C['BORDER']};
+    border-radius: {r_sm}px;
+    background-color: {C['SURFACE']};
+}}
+QCheckBox::indicator:hover {{ border-color: {C['ACCENT']}; }}
+QCheckBox::indicator:checked {{
+    background-color: {C['ACCENT']};
+    border-color: {C['ACCENT']};
+    {check_rule}
+}}
 QMenu {{
     background-color: {C['SURFACE']};
     color: {C['INK']};

@@ -29,8 +29,8 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
-    QFormLayout,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -88,6 +88,40 @@ RECORD_TEMPLATES = {"build": BUILD_TEMPLATE, "fix": FIX_TEMPLATE}
 STAGES = ["backlog", "active", "archive"]
 
 
+def section_widget(name: str) -> QWidget:
+    """A section header over its hairline — the one treatment every grouped
+    surface opens with, in this dialog and the detail pane alike."""
+    box = QWidget()
+    column = QVBoxLayout(box)
+    column.setContentsMargins(0, space("md"), 0, 0)
+    column.setSpacing(space("xs"))
+    label = QLabel(name)
+    label.setObjectName("sectionHeader")
+    rule = QFrame()
+    rule.setObjectName("sectionRule")
+    rule.setFrameShape(QFrame.HLine)
+    rule.setFixedHeight(1)
+    column.addWidget(label)
+    column.addWidget(rule)
+    return box
+
+
+def _captioned(caption: QLabel, widget, stretch: bool = False) -> QWidget:
+    """A formCaption above its control — the field treatment the detail pane
+    established. ``stretch`` lets a full-width field take its whole row."""
+    box = QWidget()
+    column = QVBoxLayout(box)
+    column.setContentsMargins(0, 0, 0, 0)
+    column.setSpacing(space("xs"))
+    caption.setObjectName("formCaption")
+    column.addWidget(caption)
+    if stretch:
+        column.addWidget(widget)
+    else:
+        column.addWidget(widget, 0, Qt.AlignLeft)
+    return box
+
+
 def _is_boilerplate(text: str | None) -> bool:
     """True when the Description is safe to (re)fill with a template: it is
     empty, or it still exactly equals one of the templates (i.e. the user has
@@ -138,23 +172,15 @@ class UnifiedRecordDialog(QDialog):
         outer.addWidget(self._scroll, 1)
 
         self.main_layout = QVBoxLayout(body)
-        # One form for every field: labels align on one column, fields on the
-        # other, and a field with an Expanding policy (the title, the
-        # description) takes the dialog's width while everything else sits at
-        # the width its contents ask for.
-        self.form_layout = QFormLayout()
-        self.form_layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-        self.form_layout.setHorizontalSpacing(space("xl"))
-        self.form_layout.setVerticalSpacing(space("md"))
+        self.main_layout.setContentsMargins(space("xl"), space("lg"),
+                                            space("xl"), space("lg"))
+        self.main_layout.setSpacing(space("md"))
 
         self.type_combo = QComboBox()
         self.type_combo.addItems(["Task / Issue", "Epic"])
         self.type_combo.setCurrentIndex(1 if mode == "epic" else 0)
         if record_id is not None:
             self.type_combo.setEnabled(False)
-        # The entity picker is "Kind"; the Build/Fix picker below is "Record Type".
-        self.form_layout.addRow("Kind", self.type_combo)
 
         # Record Type: Build vs Fix — drives which description template
         # pre-populates below. Task-only; hidden for epics.
@@ -162,13 +188,11 @@ class UnifiedRecordDialog(QDialog):
         self.recordtype_combo.addItem("Build", "build")
         self.recordtype_combo.addItem("Fix", "fix")
         self.recordtype_label = QLabel("Record Type")
-        self.form_layout.addRow(self.recordtype_label, self.recordtype_combo)
 
-        # The title takes the dialog's full field column, so a real title reads
+        # The title takes the dialog's full width, so a real title reads
         # whole rather than scrolling inside a short box.
         self.title_label = QLabel("Title *")
         self.title_edit = QLineEdit()
-        self.form_layout.addRow(self.title_label, self.title_edit)
 
         # The description's height comes from the mad-lib skeleton it opens
         # with; its face is monospace only while the text still IS that
@@ -181,7 +205,6 @@ class UnifiedRecordDialog(QDialog):
         self.desc_edit.setFont(_mono_font())
         self.desc_edit.textChanged.connect(self._sync_desc_font)
         self.desc_label = QLabel("Description")
-        self.form_layout.addRow(self.desc_label, self.desc_edit)
 
         # Stage (backlog | active | archive) — which tab the task lives in;
         # orthogonal to Status.
@@ -256,35 +279,82 @@ class UnifiedRecordDialog(QDialog):
             max(metrics.horizontalAdvance(slug) for slug in FLEET_AGENTS)
             + space("2xl") * 2)
 
-        self.task_rows = [
-            ("Stage", self.stage_combo),
+        # Every group opens with a section header over a hairline, and every
+        # field is a formCaption above its control, two to a row — the same
+        # vocabulary the detail pane established. The entity picker is "Kind";
+        # the Build/Fix picker is "Record Type".
+        self.main_layout.addWidget(section_widget("Record"))
+        record_grid = QGridLayout()
+        record_grid.setContentsMargins(0, 0, 0, 0)
+        record_grid.setHorizontalSpacing(space("lg"))
+        record_grid.setVerticalSpacing(space("sm"))
+        record_grid.addWidget(_captioned(QLabel("Kind"), self.type_combo), 0, 0)
+        self._recordtype_cell = _captioned(self.recordtype_label,
+                                           self.recordtype_combo)
+        record_grid.addWidget(self._recordtype_cell, 0, 1)
+        record_grid.addWidget(
+            _captioned(self.title_label, self.title_edit, stretch=True),
+            1, 0, 1, 2)
+        record_grid.addWidget(
+            _captioned(self.desc_label, self.desc_edit, stretch=True),
+            2, 0, 1, 2)
+        record_grid.setColumnStretch(0, 1)
+        record_grid.setColumnStretch(1, 1)
+        self.main_layout.addLayout(record_grid)
+
+        self._placement_section = section_widget("Placement")
+        self.main_layout.addWidget(self._placement_section)
+        self._placement_host = QWidget()
+        placement_grid = QGridLayout(self._placement_host)
+        placement_grid.setContentsMargins(0, 0, 0, 0)
+        placement_grid.setHorizontalSpacing(space("lg"))
+        placement_grid.setVerticalSpacing(space("sm"))
+        for position, (caption, widget) in enumerate((
             ("Status", self.status_combo),
+            ("Stage", self.stage_combo),
             ("Owner", self.owner_edit),
             ("Originator", self.originator_edit),
             ("Epic Link", self.epic_combo),
-            ("Pressure (0-100)", self.pressure_spin),
             ("Effort", self.estimate_combo),
-        ]
-        self.epic_rows = [
-            ("Epic Type", self.epic_type_combo),
-            ("Epic Status", self.epic_status_combo),
-        ]
+            ("Pressure (0-100)", self.pressure_spin),
+        )):
+            row, column = divmod(position, 2)
+            placement_grid.addWidget(_captioned(QLabel(caption), widget),
+                                     row, column)
+        placement_grid.setColumnStretch(0, 1)
+        placement_grid.setColumnStretch(1, 1)
+        self.main_layout.addWidget(self._placement_host)
 
-        self.main_layout.addLayout(self.form_layout)
-        for label, widget in self.task_rows + self.epic_rows:
-            self.form_layout.addRow(label, widget)
+        self._epic_section = section_widget("Epic")
+        self.main_layout.addWidget(self._epic_section)
+        self._epic_host = QWidget()
+        epic_grid = QGridLayout(self._epic_host)
+        epic_grid.setContentsMargins(0, 0, 0, 0)
+        epic_grid.setHorizontalSpacing(space("lg"))
+        epic_grid.setVerticalSpacing(space("sm"))
+        epic_grid.addWidget(
+            _captioned(QLabel("Epic Type"), self.epic_type_combo), 0, 0)
+        epic_grid.addWidget(
+            _captioned(QLabel("Epic Status"), self.epic_status_combo), 0, 1)
+        epic_grid.setColumnStretch(0, 1)
+        epic_grid.setColumnStretch(1, 1)
+        self.main_layout.addWidget(self._epic_host)
 
         # Links — above the Log, since a link is context for reading the ticket
         # rather than a note about working it. Unlike the Log, links may be
         # entered while the ticket is still being *created*: they buffer in the
         # widget and save_data flushes them once the INSERT yields an id.
+        self._links_section = section_widget("Links")
+        self.main_layout.addWidget(self._links_section)
         self.links = LinkBar(self.conn, allow_pending=True, author="user")
+        self.links.header.setVisible(False)  # the section header above stands in
         self.main_layout.addWidget(self.links)
 
         # Log section — comments and mechanical field changes in one list,
         # newest first. Only meaningful when editing an existing task.
-        self.log_label = QLabel("Log")
+        self._log_section = section_widget("Log")
         self.log_filter_row = QHBoxLayout()
+        self.log_filter_row.setSpacing(space("lg"))
         self.log_show_comments = QCheckBox("Comments")
         self.log_show_comments.setChecked(True)
         self.log_show_comments.toggled.connect(self._render_log)
@@ -307,16 +377,21 @@ class UnifiedRecordDialog(QDialog):
         self.log_post_btn.clicked.connect(self._post_log_entry)
         self.log_post_row.addWidget(self.log_post_input)
         self.log_post_row.addWidget(self.log_post_btn)
-        self.main_layout.addWidget(self.log_label)
+        self.main_layout.addWidget(self._log_section)
         self.main_layout.addLayout(self.log_filter_row)
         self.main_layout.addWidget(self.log_view)
         self.main_layout.addLayout(self.log_post_row)
+        self._attach_section = section_widget("Attachments")
+        self.main_layout.addWidget(self._attach_section)
         self.attachments = AttachmentBar(self.conn)
         self.main_layout.addWidget(self.attachments)
-        self._log_widgets = [self.log_label, self.log_show_comments,
+        # Leftover vertical space collects below the last section, so hiding a
+        # section (the Epic kind) never opens gaps between the ones that remain.
+        self.main_layout.addStretch(1)
+        self._log_widgets = [self._log_section, self.log_show_comments,
                              self.log_show_changes, self.log_view,
                              self.log_post_input, self.log_post_btn,
-                             self.attachments]
+                             self._attach_section, self.attachments]
 
         self.button_box = QHBoxLayout()
         if record_id is not None:
@@ -531,17 +606,13 @@ class UnifiedRecordDialog(QDialog):
 
         self.title_label.setText("Epic Name *" if is_epic else "Task Title *")
 
-        self.recordtype_combo.setVisible(is_task)
-        self.recordtype_label.setVisible(is_task)
-        self.desc_edit.setVisible(True)
-        self.desc_label.setVisible(True)
-
-        for rows, visible in ((self.task_rows, is_task), (self.epic_rows, is_epic)):
-            for _, w in rows:
-                w.setVisible(visible)
-                lbl = self.form_layout.labelForField(w)
-                if lbl is not None:
-                    lbl.setVisible(visible)
+        # A cell hides its caption and control together; a section hides its
+        # header, hairline and grid together.
+        self._recordtype_cell.setVisible(is_task)
+        self._placement_section.setVisible(is_task)
+        self._placement_host.setVisible(is_task)
+        self._epic_section.setVisible(is_epic)
+        self._epic_host.setVisible(is_epic)
 
         show_log = is_task and self.record_id is not None
         for w in getattr(self, "_log_widgets", []):
@@ -549,6 +620,7 @@ class UnifiedRecordDialog(QDialog):
         # Links show for any task, saved or not — that is the whole point of the
         # pending buffer. Epics have no links.
         if hasattr(self, "links"):
+            self._links_section.setVisible(is_task)
             self.links.setVisible(is_task)
 
         # The required field's LABEL changes with the kind ("Task Title *" vs
