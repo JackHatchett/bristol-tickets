@@ -40,8 +40,8 @@ OPTIONS = {
         "CFBundleName": "BristolTickets",
         "CFBundleDisplayName": "Bristol Tickets",
         "CFBundleIdentifier": "local.bristoltickets.app",
-        "CFBundleVersion": "18.0",
-        "CFBundleShortVersionString": "18.0",
+        "CFBundleVersion": "1.0.0",
+        "CFBundleShortVersionString": "1.0.0",
         "NSHighResolutionCapable": True,
         # Not a background agent — show in Dock with a normal window.
         "LSUIElement": False,
