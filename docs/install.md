@@ -62,7 +62,7 @@ Requires **macOS**. Other platforms have not been run.
 Bristol Tickets is not signed with an Apple developer certificate, so the first
 time you open it macOS says:
 
-> **"Bristol Tickets" Not Opened.** Apple could not verify "Bristol Tickets" is
+> **"BristolTickets" Not Opened.** Apple could not verify "BristolTickets" is
 > free of malware that may harm your Mac or compromise your privacy.
 
 That is macOS reporting that nobody has paid Apple to vouch for this app — not
@@ -70,7 +70,7 @@ that anything was found in it. To open it anyway:
 
 1. Click **Done** on that message.
 2. Open **System Settings → Privacy & Security** and scroll to the Security
-   section. It says *"Bristol Tickets" was blocked to protect your Mac.*
+   section. It says *"BristolTickets" was blocked to protect your Mac.*
 3. Click **Open Anyway**, and confirm with your password or Touch ID.
 
 You do this once. Every launch after it is an ordinary double-click.
