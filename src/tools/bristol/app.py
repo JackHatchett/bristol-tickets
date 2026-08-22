@@ -1,5 +1,9 @@
 """app.py — launch the Bristol Tickets GUI.
 
+A built ``.app`` carries the project tree inside it (``payload.py``). Launch
+brings an installation this app is newer than up to date before opening it,
+touching only the published files — never ``config/`` or ``data/``.
+
 The DB path follows the canonical resolution order documented in
 ``src/tools/config_tools/instance_pointer.py``: TICKETS_DB env var, then the
 per-machine instance pointer, then the legacy ``tickets_db.local`` file, then
@@ -17,21 +21,26 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import instance  # noqa: E402  (bristol-local; see module docstring)
+import payload  # noqa: E402  (bristol-local; the tree a built app carries)
 
 
 
-def _project_root() -> Path:
-    """The project root: the nearest ancestor holding src/app.md.
+def _project_root() -> Path | None:
+    """The project root: the nearest ancestor holding src/app.md, else the one
+    the instance pointer names, else None.
 
     Located by marker rather than by folder name, so the install works whatever
-    the user named the folder they cloned into.
+    the user named their folder. A built ``.app`` sits above no such folder, so
+    the pointer is what it has; a first run of a downloaded app has neither, and
+    setup is what supplies one.
     """
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor holds src/app.md)"
-    )
+    pointed = instance.get_path("repo_root")
+    if pointed is not None and (pointed / "src" / "app.md").is_file():
+        return pointed
+    return None
 
 
 def _discover_db() -> Path | None:
@@ -69,8 +78,11 @@ def _discover_db() -> Path | None:
         if text:
             return Path(os.path.expanduser(text))
 
-    # 4. Relative discovery — works when run in-place from the repo.
-    data_dir = _project_root() / "data"
+    # 4. Relative discovery — works when run in-place from the project folder.
+    root = _project_root()
+    if root is None:
+        return None
+    data_dir = root / "data"
     if data_dir.exists():
         matches = sorted(data_dir.glob("*/tickets/tickets.db"))
         if matches:
@@ -79,10 +91,13 @@ def _discover_db() -> Path | None:
     return None
 
 
-def _fallback_db_path() -> Path:
+def _fallback_db_path() -> Path | None:
     """Where a board goes for an installation that is configured but empty."""
+    root = _project_root()
+    if root is None:
+        return None
     user_slug = os.environ.get("AGENT_INSTANCE_SLUG", "default_user")
-    return _project_root() / "data" / user_slug / "tickets" / "tickets.db"
+    return root / "data" / user_slug / "tickets" / "tickets.db"
 
 
 def main() -> None:
@@ -120,6 +135,14 @@ def main() -> None:
     apply_scheme(app, config_file.get(config_file.APPEARANCE_SCHEME,
                                       config_file.APPEARANCE_SCHEME_DEFAULT))
 
+    # An app newer than the installation it opens updates it first, so a user
+    # who downloads a release gets the machinery that release ships with. Only
+    # the published files move; the board and the configuration are not among
+    # them.
+    installed = _project_root()
+    if installed is not None:
+        payload.refresh(installed)
+
     db_path = _discover_db()
     if not os.environ.get("TICKETS_DB") and needs_setup(db_path):
         db_path = run_setup()
@@ -127,6 +150,12 @@ def main() -> None:
             return
     elif db_path is None:
         db_path = _fallback_db_path()
+        if db_path is None:
+            sys.exit(
+                "app: no installation to open, and no project folder to make "
+                "one in. Launch Bristol Tickets from inside your Bristol "
+                "folder."
+            )
 
     # Ensure the target directory structure exists before attempting connection
     db_path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,21 +1,23 @@
 # Bristol
 
-A Kanban board you share with AI agents, managing their work with tickets. Specifically Anthropic's Claude, though other edge LLMs with local write permission can probably figure it out, and refactor it for themselves.
+A Kanban board you share with AI agents, managing their work with tickets. It
+runs under any AI application that can read and write a folder on your machine
+and run commands in it.
 
-You keep your work on a board of cards: to-do, doing, done. Open a Claude
+You keep your work on a board of cards: to-do, doing, done. Open an agent
 session pointed at this folder, say "continue," and the agent reads the board,
 takes the top card in its queue, does the work on your real files, and writes
 back what it did. Next time you open the board, the card has moved.
 
 Bristol ships with some readymade agents, and you can ask the default agent to change them, make new ones, absorb agents you've already built.
 
-You don't talk to your agents in the board - that stays in your Claude app, though Claude will within your configured project begin to address you and work with you differently, with new powers.
+You don't talk to your agents in the board - that stays in your AI app, though within your configured project it will begin to address you and work with you differently, with new powers.
 
 ![The Bristol Tickets board: To Do, Doing and Done columns beside a detail pane holding one card's status, description, links and log.](media/board.png)
 
 ## About me (optional)
 
-Howdy. I'm Jack Hatchett, a career Product Manager with hobbies. I made a Mac Claude Cowork project create this tool as a dashboard to help visualize my progress across multiple Claude projects in a familiar card layout, but it's grown into what I think is a unique personal productivity tool.
+Howdy. I'm Jack Hatchett, a career Product Manager with hobbies. I had an AI agent build this tool as a dashboard to help visualize my progress across multiple projects in a familiar card layout, but it's grown into what I think is a unique personal productivity tool.
 
 There are many other apps in this space, but this one's free (plus AI costs), and where those chase scale, I'm chasing coherence on a personal scale. AI app design is usually about designing data sets and optimizing standard, procedural queries - this was designed to organize one individual's infinitely varied tasks into a personal procedural framework. If that doesn't make any sense, don't worry: the chatbot assures me it's the single greatest idea anyone's ever had.
 
@@ -23,70 +25,75 @@ Etymology: Bristol board is a type of heavy paper, named after the guy who inven
 
 ## Before you install
 
-**A Claude subscription that includes Cowork, and the Claude desktop app.**
-Cowork is what lets Claude read and write files in a folder you choose. Without
-it there is no agent — you get a working Kanban board and nothing else. Also
-macOS and Python 3.10 or later.
+**macOS, and an agent host** — an AI application that loads per-project
+instructions, reads and writes a folder you choose, and runs commands in it.
+That is what lets an agent do anything here; without one you get a working
+Kanban board and nothing else.
+
+Bristol names no vendor in any file it runs on, and ships an entry file for each
+host so it finds its way in on its own. It has been run on Cowork, a mode in the
+Claude desktop app; any host meeting those three requirements should work.
+
+The downloaded app brings its own Python. Running from source wants 3.10 or
+later.
 
 ## Install
 
-1. **Get Cowork.** Check the Claude plan comparison; it is not on the free tier.
-2. **Install the Claude desktop app** and sign in. Cowork is a mode inside it,
-   not in the browser.
-3. **Clone this repository and install its dependencies.** The board needs
-   PySide6 and nothing else; the optional toolkit under `src/tools/` has its own
-   file, `requirements-tools.txt`.
+1. **Download** `BristolTickets-<version>.zip` from
+   [the releases page](https://github.com/JackHatchett/bristol-tickets/releases),
+   unzip it, and drag Bristol Tickets to your Applications folder.
+2. **Open it.** The app is unsigned, so macOS blocks the first launch: click
+   Done, then **System Settings → Privacy & Security → Open Anyway**. Once,
+   ever. [install.md](docs/install.md) has the exact wording.
+3. **Answer setup.** It asks where Bristol should live (`~/Bristol` by
+   default), what to call this installation, which agents you want, and
+   optionally a notebook and a Zotero folder. Finish writes the whole system
+   into that folder and opens the board on it.
+4. **Point your agent host at that folder.** Most read `AGENTS.md` or
+   `CLAUDE.md` there on their own; setup shows the line to paste for one that
+   takes typed project instructions instead.
 
-   ```bash
-   git clone https://github.com/JackHatchett/bristol-tickets.git bristol_tickets
-   cd bristol_tickets
-   pip install -r requirements.txt
-   ```
+Updating is downloading the newer app and opening it. It refreshes the
+machinery and leaves your board, your settings and your files alone.
 
-4. **Run Bristol Tickets.** The first launch opens a setup wizard: it asks for
-   an instance name, where your data lives, which agents you want, and
-   optionally a Markdown notebook and a Zotero folder.
+### From source instead
 
-   ```bash
-   python3 src/tools/bristol/app.py
-   ```
+```bash
+git clone https://github.com/JackHatchett/bristol-tickets.git bristol_tickets
+cd bristol_tickets
+pip install -r requirements.txt
+python3 src/tools/bristol/app.py
+```
 
-5. **Point Cowork at this folder** and start a session.
-
-[docs/install.md](docs/install.md) covers the whole chain, including the three
-optional tools that need something pip cannot install.
+Same system, build step in your hands. [docs/install.md](docs/install.md)
+covers the whole chain, including the three optional tools that need something
+pip cannot install.
 
 ## Quickstart
 
 ```bash
 python3 src/tools/bristol/app.py                           # open the board
-python3 src/tools/bristol/make_launcher.py                 # put it in your Dock
+python3 src/tools/bristol/make_release.py                  # build the downloadable app
 python3 src/tools/config_tools/read_config.py active_agent # who the next session runs as
 ```
 
-Then, in Cowork with this folder selected, say `continue`.
+Then, in a session with your Bristol folder selected, say `continue`.
 
-## Rebuilding and reinstalling
+## Updating
 
-Your data lives outside the app bundle — in `data/` and `config/` in this
-repository — so upgrading never touches it.
+Your data lives beside the machinery, not inside the app, so an update never
+touches it.
+
+**Running the downloaded app:** download the newer release and open it. It
+brings `src/` and the docs in your Bristol folder up to that release and leaves
+`config/` and `data/` as they are.
 
 **Running from source** (`python3 src/tools/bristol/app.py`, or the launcher
 `make_launcher.py` writes): `git pull` and relaunch. There is nothing to
 rebuild.
 
-**Running a frozen `BristolTickets.app`:**
-
-```bash
-rm -rf ~/Applications/BristolTickets.app          # or wherever you installed it
-cd src/tools/bristol
-rm -rf build dist
-python3 setup.py py2app
-```
-
-Then drag `dist/BristolTickets.app` back to `~/Applications`. Full detail, and
-the choice between the two, in
-[src/tools/bristol/BUILD_APP.md](src/tools/bristol/BUILD_APP.md).
+**Cutting a new release:** `python3 src/tools/bristol/make_release.py`. Full
+detail in [src/tools/bristol/BUILD_APP.md](src/tools/bristol/BUILD_APP.md).
 
 ## The two surfaces
 
@@ -96,7 +103,7 @@ other's changes on its next read.
 - **Bristol Tickets** (`src/tools/bristol/`) — the desktop app. Read the board,
   create and edit cards, drag them between columns, attach links and images,
   with no agent involved.
-- **The Claude session** (`src/app.md`) — Claude reads `src/app.md`, resolves
+- **The agent session** (`src/app.md`) — the agent reads `src/app.md`, resolves
   your config, takes on one agent identity, and works the board.
 
 `src/tools/` holds the rest of the standalone utilities, each independently

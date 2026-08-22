@@ -508,7 +508,7 @@ class MainWindow(QMainWindow):
             button.setChecked(position == index)
 
     def _agent_selector(self) -> list[QWidget]:
-        """Who the next Claude session runs as, in the header.
+        """Who the next agent session runs as, in the header.
 
         This is not a setting: it changes what the whole application means, so
         it is visible on every view rather than filed behind one. Selecting an
@@ -524,7 +524,7 @@ class MainWindow(QMainWindow):
         self.agent_combo.currentTextChanged.connect(self._set_active_agent)
 
         self.agent_combo.setToolTip(
-            "The agent the next Claude session starts as. Changing it writes "
+            "The agent the next session starts as. Changing it writes "
             "active_agent into the configuration and nothing else.")
 
         caption = QLabel("Next session as")

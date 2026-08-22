@@ -134,13 +134,15 @@ def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
 
 def my_backlog(conn: sqlite3.Connection, me: str) -> list[sqlite3.Row]:
     """Backlog-stage tasks owned by me. Epic-less tasks included;
-    epic'd ones limited to active/planning epics to cut noise. Pressure desc."""
+    epic'd ones limited to unfinished epics to cut noise. Pressure desc."""
     rows = conn.execute(
         "SELECT t.id, t.title, t.status, t.pressure, t.assignee, "
         "       e.name AS epic, e.owner AS epic_owner "
         "FROM task t LEFT JOIN epic e ON t.epic_id = e.id "
         "WHERE t.stage = 'backlog' "
-        "  AND (e.id IS NULL OR e.status IN ('active','planning'))"
+        "  AND (e.id IS NULL OR e.status NOT IN (%s))"
+        % ",".join("?" * len(create_tickets.EPIC_STATUS_FINISHED)),
+        tuple(create_tickets.EPIC_STATUS_FINISHED),
     ).fetchall()
     mine = [r for r in rows if owned_by(r, me)]
     return sorted(mine, key=lambda r: (-r["pressure"], r["id"]))
@@ -309,9 +311,9 @@ def main() -> None:
     # This agent's own active epics (context)
     owner_like = f"%{me}%"
     actives = cur.execute(
-        "SELECT name FROM epic WHERE status IN ('active','planning') "
-        "AND owner LIKE ? ORDER BY id",
-        (owner_like,),
+        "SELECT name FROM epic WHERE status IN (%s) AND owner LIKE ? ORDER BY id"
+        % ",".join("?" * len(create_tickets.EPIC_STATUS_IN_FLIGHT)),
+        (*create_tickets.EPIC_STATUS_IN_FLIGHT, owner_like),
     ).fetchall()
     print(f"ACTIVE EPICS ({me}): {', '.join(e['name'] for e in actives) or '(none)'}")
 

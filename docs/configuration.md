@@ -41,7 +41,7 @@ Three folders, three rules: `src/` is published, `config/` is git-ignored,
 **Required. Default `chief_of_staff`.** The agent slug every runtime uses. Set
 it from the strip above the board rather than by hand.
 
-A Cowork project can override it for its own sessions with an
+A host that takes per-project instructions can override it for its own sessions with an
 `agent_override: <slug>` line in its instructions. The override is read-only and
 never writes back. `none`, absent, or an unrecognised slug all fall through to
 this key.

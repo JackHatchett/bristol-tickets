@@ -3,7 +3,7 @@
 ticket_write.py — safe write helper for the tickets DB.
 
 Why this exists: an ad-hoc raw sqlite3 INSERT against tickets.db
-(run from a Cowork sandbox session, over the mounted-folder bridge to the
+(run from a sandboxed session, across a file bridge to the
 user's real filesystem) can fail mid-write with a disk I/O error and leave a
 stuck rollback-journal file that then blocks ALL further access to the DB,
 including plain reads, until the journal is manually cleared. Root cause is
@@ -15,7 +15,7 @@ observed on this mount.
 Usage:
     python3 ticket_write.py add-epic --name "..." --owner "..."
         [--type "..."] [--description "..."] [--next-action "..."]
-        [--status not started|planning|active|done]
+        [--status not started|in progress|completed|on hold]
         Owner should be a single agent slug (e.g. "career_coach") for an
         epic that belongs to one agent; only use a descriptive multi-agent
         string ("librarian (execution), chief_of_staff (coordination)") for
@@ -26,7 +26,7 @@ Usage:
         [--epic-id N] [--stage backlog|active|archive] [--status todo|doing|done]
         [--pressure N] [--estimate S|M|L|XL] [--reporter "..."] [--assignee "..."]
         [--record-type build|fix]
-        (defaults: stage=active, status=todo, reporter="Claude (Cowork)",
+        (defaults: stage=active, status=todo, reporter="agent",
         record-type=build)
         A task carries TWO orthogonal fields (Kanban model):
         `stage` = which tab it lives in (backlog | active | archive), and
@@ -736,7 +736,10 @@ def main() -> None:
     pe.add_argument("--type", default=None)
     pe.add_argument("--description", default=None)
     pe.add_argument("--next-action", dest="next_action", default=None)
-    pe.add_argument("--status", default="not started")
+    pe.add_argument("--status", default="not started",
+                    choices=list(create_tickets.EPIC_STATUS_CHOICES),
+                    help="the epic's status, in the vocabulary Bristol "
+                         "Tickets writes (default: not started)")
     pe.set_defaults(func=add_epic)
 
     pt = sub.add_parser("add-task")
@@ -759,8 +762,9 @@ def main() -> None:
                           "card would take. Scale and anchors in "
                           "playbooks/_shared/manage_tickets.md (§Effort sizing); XL "
                           "means split it, not start it.")
-    pt.add_argument("--reporter", default="Claude (Cowork)",
-                     help="who/what originated this task (default: Claude (Cowork))")
+    pt.add_argument("--reporter", default="agent",
+                     help="who originated this task — an agent slug, or 'user' "
+                          "(default: agent)")
     pt.add_argument("--assignee", default=None,
                      help="agent slug (or 'user') that owns this task. Set it to "
                           "leave a cross-agent suggestion: a card assigned to "
@@ -773,7 +777,7 @@ def main() -> None:
                           "playbooks/_shared/manage_tickets.md §Record types: Build vs Fix).")
     pt.add_argument("--actor", default=None,
                      help="who is making this change, for the change log "
-                          "(your write signature, e.g. cowork_chief_of_staff). "
+                          "(your agent slug, e.g. chief_of_staff). "
                           "Defaults to --reporter.")
     pt.set_defaults(func=add_task)
 
@@ -799,7 +803,7 @@ def main() -> None:
                       help="move the card to another epic")
     pct.add_argument("--actor", default=None,
                       help="who is making this change, for the change log "
-                           "(your write signature, e.g. cowork_chief_of_staff). "
+                           "(your agent slug, e.g. chief_of_staff). "
                            "Recorded against every field this call changes.")
     pct.set_defaults(func=update_task)
 
@@ -816,7 +820,7 @@ def main() -> None:
                      help="optionally set the task's assignee (an agent slug)")
     pu.add_argument("--actor", default=None,
                      help="who is making this change, for the change log "
-                          "(your write signature, e.g. cowork_chief_of_staff). "
+                          "(your agent slug, e.g. chief_of_staff). "
                           "Recorded against every field this call changes.")
     pu.set_defaults(func=update_task_status)
 
@@ -826,7 +830,7 @@ def main() -> None:
                       help="destination tab; task is appended to the bottom of its order")
     psg.add_argument("--actor", default=None,
                       help="who is making this change, for the change log "
-                           "(your write signature, e.g. cowork_chief_of_staff). "
+                           "(your agent slug, e.g. chief_of_staff). "
                            "Recorded against every field this call changes.")
     psg.set_defaults(func=set_stage)
 
@@ -839,7 +843,7 @@ def main() -> None:
                            "agent's queue — pressure does not.")
     pso.add_argument("--actor", default=None,
                       help="who is making this change, for the change log "
-                           "(your write signature, e.g. cowork_chief_of_staff).")
+                           "(your agent slug, e.g. chief_of_staff).")
     pso.set_defaults(func=set_order)
 
     pil = sub.add_parser("add-issue-log")

@@ -40,7 +40,7 @@ with the computation, the formatting and the path resolution in separate files.
 
 ## The agent files
 
-`src/app.md` is what a Claude session reads first. It describes the boot
+`src/app.md` is what a session reads first. It describes the boot
 sequence: resolve configuration, take on one agent identity, read the board,
 work the queue. It is the only document resident in every session, so it holds
 the rules an agent must have without opening another file.

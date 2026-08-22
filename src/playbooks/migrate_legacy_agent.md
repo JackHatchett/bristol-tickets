@@ -31,7 +31,8 @@ answer is specific to how that bundle was carried forward.
 
 ### Step 1 — Read the whole bundle before writing anything
 
-Read every loader or instruction file (however named — `CLAUDE.md`,
+Read every loader or instruction file (however named — `AGENTS.md`,
+`CLAUDE.md`,
 `README.md`, a `_bootstrap` or `_agent_instructions` file, anything under a
 `charter/` folder), every playbook, prompt and tool script, and the config.
 Convert nothing until you know what the agent does and with what toolset.

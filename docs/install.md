@@ -1,72 +1,95 @@
 # Install
 
-Four things have to be in place, in this order: a Claude subscription with
-Cowork, the Claude desktop app, this repository and its Python dependencies, and
-the first-run setup inside Bristol Tickets.
+Download the app, open it, and answer four pages. Then point an agent host at
+the folder it made. Everything below the first two sections is for someone who
+wants the source instead.
 
-## 1. A Claude subscription that includes Cowork
+## 1. An agent host
 
-**Bristol does not work without it.** Cowork is the Claude desktop
-feature that lets Claude read and write files in a folder you choose and run
-commands on your behalf. That is the entire mechanism by which an agent does
-anything: there is no server, no API key in a config file, no background
-process. The board is a board; Cowork is what makes it a queue somebody works.
+An **agent host** is the AI application a session runs inside. Bristol needs one
+that does three things:
 
-Without Cowork you can still install everything below and use Bristol Tickets as
-a solo Kanban app. Every reference in this manual to an agent doing something
-will simply not apply.
+- **Loads per-project instructions every session**, so `src/app.md` is read
+  without you pasting it each time.
+- **Reads and writes a folder you choose**, which is where this repository and
+  your data live.
+- **Runs `python3` in that folder**, which is how every tool here executes.
 
-Check the Claude plan comparison for which subscription tiers include Cowork —
-it is not on the free tier.
+That is the entire mechanism by which an agent does anything: there is no
+server, no API key in a config file, no background process. Bristol names no
+vendor in any file it runs on — the host is named once, in the entry file that
+host reads, and nothing else branches on it.
 
-## 2. The Claude desktop app
+**Cowork**, a mode in the Claude desktop app, is the host Bristol has been run
+on. It is not on the free tier; check the plan comparison. Any other host
+meeting the three requirements should work and has not been tried — coding
+agents that read an `AGENTS.md` are the obvious candidates.
 
-Install Claude for macOS and sign in with the subscription from step 1. Cowork
-is a mode inside that app; it does not exist in the browser version. When you
-open Cowork you will be asked to select a folder — that is where this repository
-goes, so do step 3 first if you have not already.
+Where the host cost falls, and what it costs you:
 
-## 3. This repository and its Python dependencies
-
-Requires **macOS** and **Python 3.10 or later**. Other platforms have not been
-run.
-
-```bash
-git clone https://github.com/JackHatchett/bristol-tickets.git bristol_tickets
-cd bristol_tickets
-pip install -r requirements.txt
-```
-
-On a Homebrew-managed Python, `pip` may refuse a system-wide install. Either add
-`--break-system-packages`, or create a virtual environment first:
-
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-That is PySide6, and it covers the board and the agents. Everything else under
-`src/tools/` is a toolkit the agents reach for — photo processing,
-job-description scraping, OCR — and none of it is needed to run the board.
-Install it when you want one of those tools:
-
-```bash
-pip install -r requirements-tools.txt
-```
-
-Three of those tools then need a step pip cannot perform:
-
-| Tool | Extra step |
+| The host does | Bristol without it |
 | --- | --- |
-| Job-description scraping (`src/tools/jd_scraper/`) | `playwright install chromium` |
-| PDF-to-Markdown OCR (`src/tools/document_tools/`) | `brew install tesseract ghostscript poppler` |
-| Gmail harvesting (`jd_scraper/gmail_harvest.py`) | A Google Cloud OAuth credential file — see that tool's own README |
+| Nothing — no host at all | A working solo Kanban app. Every reference in this manual to an agent doing something does not apply. |
+| Everything but per-project instructions | Works, but starting a session means typing "read src/app.md" yourself, and `agent_override` has nowhere to live. |
+
+## 2. Pointing the host at this folder
+
+Each host reads a different entry file, and this repository carries one for each
+so the host finds `src/app.md` on its own:
+
+| Entry file | Read by |
+| --- | --- |
+| `AGENTS.md` | Most coding agents and desktop AI apps |
+| `CLAUDE.md` | Claude Code |
+| pasted project instructions | Cowork — see `src/host_notes/cowork.md` for the text |
+
+Each says the same two lines: read `src/app.md`, and read the note in
+`src/host_notes/` that matches the host you are in. A host with a quirk worth
+recording gets a note there; `src/host_notes/README.md` lists them.
+
+## 3. The app
+
+Download `BristolTickets-<version>.zip` from
+[the releases page](https://github.com/JackHatchett/bristol-tickets/releases),
+unzip it, and drag **Bristol Tickets** to your Applications folder. It carries
+everything: the board, the agents, and the Python it runs on. There is nothing
+to clone and nothing to install.
+
+Requires **macOS**. Other platforms have not been run.
+
+### The first launch, and what macOS says about it
+
+Bristol Tickets is not signed with an Apple developer certificate, so the first
+time you open it macOS says:
+
+> **"Bristol Tickets" Not Opened.** Apple could not verify "Bristol Tickets" is
+> free of malware that may harm your Mac or compromise your privacy.
+
+That is macOS reporting that nobody has paid Apple to vouch for this app — not
+that anything was found in it. To open it anyway:
+
+1. Click **Done** on that message.
+2. Open **System Settings → Privacy & Security** and scroll to the Security
+   section. It says *"Bristol Tickets" was blocked to protect your Mac.*
+3. Click **Open Anyway**, and confirm with your password or Touch ID.
+
+You do this once. Every launch after it is an ordinary double-click.
 
 ## 4. First run
 
-```bash
-python3 src/tools/bristol/app.py
-```
+Opening the app for the first time runs setup.
+
+### Where Bristol lives
+
+The first thing it asks is which folder to put Bristol in — `~/Bristol` unless
+you say otherwise. That folder is the whole system: the agent files, your
+configuration, your data, your board. You will point your agent host at it, so
+somewhere you can find again is the right answer. Choosing a folder that already
+holds a Bristol installation takes that one on rather than overwriting it.
+
+A run from source skips this question: the folder is the one you cloned.
+
+### The wizard
 
 With no configuration present, Bristol Tickets opens a setup wizard instead of
 an empty board. Four pages:
@@ -88,7 +111,8 @@ an empty board. Four pages:
 4. **Ready to set up.** A summary of exactly what will be written, ending with
    what Finish does, and a tick box deciding whether this installation becomes
    the one Bristol Tickets opens at startup. Nothing has been written before you
-   press Finish; Cancel writes nothing at all.
+   press Finish, and Cancel takes back the folder this run placed — one that
+   already held something of yours is left as it stands.
 
 ### Creating, or adopting what is already there
 
@@ -115,18 +139,82 @@ with it cleared writes nothing at all.
 adopting is how you point it back at an installation you already have. Replacing
 an existing configuration asks first; adoption never reaches that question.
 
-## 5. Point Cowork at the folder
+### Connecting an agent
 
-In the Claude desktop app, open Cowork and select the `bristol_tickets` folder.
-Claude reads `src/app.md` on its own and takes it from there. [sessions.md](sessions.md)
-describes what happens next.
+The last thing setup shows is where your folder went and the line to paste into
+an agent host that takes typed project instructions, with a button to copy it. A
+host that reads `AGENTS.md` or `CLAUDE.md` needs none of that: it finds them in
+that folder on its own.
 
-## Getting Bristol Tickets into your Dock
+## Updating
 
-`src/tools/bristol/BUILD_APP.md` covers two ways to get a double-clickable app:
-a small launcher that runs the repository source directly (edit and relaunch, no
-build step), or a frozen bundle built with py2app (`python3 setup.py py2app`,
-portable, rebuild after each change).
+Download the newer release and open it. It brings the machinery in your folder
+up to that release and leaves `config/` and `data/` alone, so your board, your
+settings and everything you have written survive untouched. There is nothing to
+uninstall first.
+
+## 5. Open a session on the folder
+
+In your agent host, select your Bristol folder and start a conversation. The
+agent reads `src/app.md` on its own and takes it from there.
+[sessions.md](sessions.md) describes what happens next.
+
+---
+
+## Running from source instead
+
+Everything above is the download. The source is the same system with the build
+step in your hands: take it if you want to change Bristol, not to use it.
+
+Requires **macOS** and **Python 3.10 or later**.
+
+```bash
+git clone https://github.com/JackHatchett/bristol-tickets.git bristol_tickets
+cd bristol_tickets
+pip install -r requirements.txt
+python3 src/tools/bristol/app.py
+```
+
+That is PySide6, and it covers the board and the agents. On a Homebrew-managed
+Python, `pip` may refuse a system-wide install; either add
+`--break-system-packages`, or make a virtual environment first:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Setup runs the same way, minus the question about where Bristol lives — the
+clone is that folder.
+
+### The optional toolkit
+
+Everything else under `src/tools/` is a toolkit the agents reach for — photo
+processing, job-description scraping, OCR — and none of it is needed to run the
+board. Install it when you want one of those tools:
+
+```bash
+pip install -r requirements-tools.txt
+```
+
+Three of them then need a step pip cannot perform:
+
+| Tool | Extra step |
+| --- | --- |
+| Job-description scraping (`src/tools/jd_scraper/`) | `playwright install chromium` |
+| PDF-to-Markdown OCR (`src/tools/document_tools/`) | `brew install tesseract ghostscript poppler` |
+| Gmail harvesting (`jd_scraper/gmail_harvest.py`) | A Google Cloud OAuth credential file — see that tool's own README |
+
+### Building the release
+
+```bash
+python3 src/tools/bristol/make_release.py
+```
+
+Runs the publication checks, builds the bundle with the project tree staged
+inside it, writes the zip and its checksum, and prints the command that
+publishes them. `src/tools/bristol/BUILD_APP.md` covers what it does and the
+lighter live-source launcher for iterating.
 
 ## Running the board from a different location
 

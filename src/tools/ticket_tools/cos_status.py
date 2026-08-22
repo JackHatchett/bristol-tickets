@@ -14,7 +14,7 @@ DB discovery rule:
 
 Environment note: don't shell out to a `sqlite3` CLI binary — it is not
 guaranteed to be on PATH in every execution environment this script may run
-in (e.g. sandboxed Cowork runtimes). Python's built-in sqlite3 module (used
+in (a sandboxed runtime often carries none). Python's built-in sqlite3 module (used
 below) has no such dependency.
 
 NEXT-ACTION SEMANTICS (Kanban model):
@@ -144,14 +144,16 @@ def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
 
 def my_backlog(conn: sqlite3.Connection, me: str) -> list[sqlite3.Row]:
     """Fallback only: my Backlog-stage tasks. Epic-less tasks are
-    included; epic'd ones are limited to active/planning epics to cut noise.
+    included; epic'd ones are limited to unfinished epics to cut noise.
     Pressure desc (a planning signal, not an execution order)."""
     rows = conn.execute(
         "SELECT t.id, t.title, t.status, t.pressure, t.assignee, "
         "       e.name AS epic, e.owner AS epic_owner "
         "FROM task t LEFT JOIN epic e ON t.epic_id = e.id "
         "WHERE t.stage = 'backlog' "
-        "  AND (e.id IS NULL OR e.status IN ('active','planning'))"
+        "  AND (e.id IS NULL OR e.status NOT IN (%s))"
+        % ",".join("?" * len(create_tickets.EPIC_STATUS_FINISHED)),
+        tuple(create_tickets.EPIC_STATUS_FINISHED),
     ).fetchall()
     mine = [r for r in rows if owned_by(r, me)]
     return sorted(mine, key=lambda r: (-r["pressure"], r["id"]))
@@ -315,7 +317,9 @@ def main() -> None:
     print(f"DIRECTION — current milestone: {ms['name'] if ms else '(none set)'}")
 
     actives = cur.execute(
-        "SELECT name FROM epic WHERE status IN ('active','planning') ORDER BY id"
+        "SELECT name FROM epic WHERE status IN (%s) ORDER BY id"
+        % ",".join("?" * len(create_tickets.EPIC_STATUS_IN_FLIGHT)),
+        tuple(create_tickets.EPIC_STATUS_IN_FLIGHT),
     ).fetchall()
     print(f"ACTIVE EPICS: {', '.join(e['name'] for e in actives) or '(none)'}")
 

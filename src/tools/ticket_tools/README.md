@@ -26,13 +26,13 @@ contract for both: `src/templates/identity_template.md`.
   under `data/<agent>/tickets/`. First-glob-match discovery is safe precisely
   because exactly one `tickets.db` exists per instance.
 - **Use Python's built-in `sqlite3` module, never a `sqlite3` CLI subprocess.**
-  // The CLI binary is not present in every execution environment — sandboxed
-  // Cowork runtimes lack it. This binds ad-hoc DB inspection too.
+  // A sandboxed runtime often carries no `sqlite3` binary, and the module is
+  // always there. This binds ad-hoc DB inspection too.
 - **Open every write with `PRAGMA journal_mode=MEMORY`** (see `ticket_write.py`).
-  // A default-journal write from a sandbox session, over the bridge to the
-  // user's real filesystem, can fail mid-write and leave a stuck
-  // rollback-journal file that blocks all further access, reads included, until
-  // it is cleared by hand. MEMORY mode writes no on-disk journal.
+  // Where the database is reached across a file bridge rather than on the
+  // running machine, a default-journal write can fail mid-write and leave a
+  // stuck rollback-journal file that blocks all further access, reads included,
+  // until it is cleared by hand. MEMORY mode writes no on-disk journal.
 - **Write the database in place, never by replacing the file.** A copy
   delivered over a file bridge unlinks the old inode, and a viewer already
   holding it goes on reading the dead one.
@@ -129,7 +129,7 @@ anyone narrating it.
   move), `closed_at` (implied by `status`), `created_at`, `updated_at`.
 - **`updated_at` derives from the newest entry** rather than being maintained by
   each writer.
-- **Pass `--actor <your write signature>`** on `add-task`, `update-task-status`
+- **Pass `--actor <your agent slug>`** on `add-task`, `update-task-status`
   and `set-stage`. It is optional and analytics-only; omitting it never changes
   board state.
 
@@ -167,6 +167,14 @@ and a **status** (which board column):
 
 `backlog` is not a *status* value; it lives on the stage axis, and the CLI
 redirects `--status backlog` to a stage move.
+
+**An epic's status has one vocabulary** — `not started`, `in progress`,
+`completed`, `on hold` — the set Bristol Tickets' epic dialog writes, held as
+`create_tickets.EPIC_STATUS_CHOICES` and used by `add-epic`. The status scripts
+read it through two sets beside it: `EPIC_STATUS_IN_FLIGHT` is what they list as
+the active epics, and an epic outside `EPIC_STATUS_FINISHED` still carries its
+backlog into an agent's fallback queue. Both sets also carry the spellings
+retired versions wrote, so one long-lived database needs no second lookup.
 
 **Order, blockers and pressure are three separate mechanisms** (`src/app.md`
 Phase 3.3 states the rule). Their storage:

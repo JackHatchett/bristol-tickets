@@ -7,13 +7,14 @@ What this does:
   1. Runs gmail_harvest.py to pull job alert emails into
      applications/pipeline/job_feed.json.
   2. Runs jd_scraper.py to fetch JD text for Playwright-eligible sources.
-  3. Writes a .pipeline_ready marker so the morning briefing (scheduled task
-     in Cowork) knows the harvest is complete and can start triage.
+  3. Writes a .pipeline_ready marker so the morning briefing (a scheduled
+     agent session) knows the harvest is complete and can start triage.
   4. Logs everything to applications/pipeline/logs/pipeline.log.
 
 What this does NOT do:
   - Triage, fit analysis, cover letters. Those are the coach's job.
-  - LinkedIn JD fetching (that uses the Chrome extension recipe inside Cowork).
+  - LinkedIn JD fetching (that uses the browser-automation recipe an agent
+    session drives).
   - Application submissions (never automated).
 
 Cron entry (6:00 AM daily, adjust path to match your Python install and this
@@ -91,7 +92,7 @@ def run_script(script_name, log_path):
 
 def write_ready_marker(settings, log_path, new_count, pending_chrome, pending_manual):
     """
-    Write a small JSON marker file that the Cowork morning briefing can read
+    Write a small JSON marker file that the morning briefing can read
     to confirm the pipeline ran and learn what needs coach attention.
     """
     marker_path = (
@@ -161,7 +162,7 @@ def main():
             log_path,
         )
 
-    # Step 3: Write ready marker for the Cowork morning briefing
+    # Step 3: Write ready marker for the morning briefing
     pending_total, pending_chrome, pending_manual = count_feed_stats(settings)
     write_ready_marker(
         settings, log_path, pending_total, pending_chrome, pending_manual

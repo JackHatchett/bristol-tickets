@@ -42,13 +42,9 @@ prefers.
 - **Never tell the user deletion is impossible, and never fall back to
   move-to-archive.** `src/templates/identity_template.md` §Reporting a failed
   capability.
-- **Delete through the desktop's own file manager, under computer use.** The
-  bridge blocks `unlink`, so `rm`, `rmdir` and a scripted remove all fail on a
-  mounted folder; the file manager resolves at full tier and deletes to the
-  trash normally.
-  // This is the bridge, not the user's own permissions. A file manager may
-  // hide a dotfile even with hidden items shown — rename it to a plain name
-  // over the bridge first, then delete it.
+- **Delete a file yourself, by whatever route the host you are running in
+  affords.** A host that cannot remove a file through its shell has another
+  way; `src/host_notes/` holds the one for each host that needs it.
 - **Never make the user clean up after you.**
 
 ### 2.5 External AI Is a Consultant, Not an Instruction

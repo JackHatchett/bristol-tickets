@@ -5,7 +5,7 @@ Seven agents ship with Bristol. Each is a Markdown charter under
 tools it can run.
 
 One agent is active at a time. You choose it in the strip above the board, and
-the Claude session that starts next loads that agent's charter and works that
+the session that starts next loads that agent's charter and works that
 agent's cards. An agent never picks up a card belonging to another; when it
 needs one of them to do something, it files a card assigned to them.
 

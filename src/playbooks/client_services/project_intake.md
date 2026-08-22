@@ -31,7 +31,7 @@ structure any later session can resume without a briefing.
 
    ```
    <project_name>/
-     CLAUDE.md           — project-specific instructions (domain, schema, phases)
+     AGENTS.md           — project-specific instructions (domain, schema, phases)
      project_state.md    — current phase, gathered data, drafted sections, next steps
      README.md           — one-paragraph summary
      drafts/             — working drafts, one file per section
@@ -49,7 +49,7 @@ structure any later session can resume without a briefing.
    summary of the project and the user's part in it, a session log opened at the
    creation date, and next steps.
 
-5. **Seed the project's `CLAUDE.md`** with its purpose, an instruction to read
+5. **Seed the project's `AGENTS.md`** with its purpose, an instruction to read
    `project_state.md` first, its phase list, its deliverables, and any
    domain-specific conventions.
 

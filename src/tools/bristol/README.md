@@ -13,12 +13,19 @@ It is **mechanism-only**: no agent logic, no personal paths, no coupling to the
 larger application it lives in. Its only job is to open a tickets `.db` (located
 at runtime) and show it.
 
+A built `.app` also carries the project tree inside it, which is how Bristol
+installs from a download. That is `payload.py`, and it reads none of what it
+carries: the tree is bytes to copy, not files to interpret, so the
+mechanism-only rule holds.
+
 ## Folder layout
 
 ```
 bristol/
-├── app.py               launcher: locate DB, apply schema, open the window
+├── app.py               launcher: update the installation, locate DB, open the window
 ├── config_file.py       read/write config.local.json (unknown keys survive)
+├── payload.py           the project tree a built .app carries, installs and refreshes
+├── make_release.py      one command: checks, build, zip, checksum, publish line
 ├── icon.icns / icon.png the app icon (bundle icon + window/Dock icon)
 ├── schema.sql           idempotent (IF NOT EXISTS) schema snapshot, auto-applied on launch
 ├── __init__.py          package marker
@@ -41,7 +48,7 @@ bristol/
 │   └── generate.py      orchestration, period boundaries, CLI
 ├── README.md            this file
 ├── CONSULTANT_CONTEXT.md  hand this + the folder to an external consultant
-└── BUILD_APP.md         how to build a double-clickable macOS .app (py2app)
+└── BUILD_APP.md         building the release, and what signing would change
 ```
 
 Each `ui/` module stays small enough for a focused edit, or for an external
@@ -78,17 +85,38 @@ The order is stated once, in `src/tools/config_tools/instance_pointer.py`.
 
 No user-specific paths are hardcoded anywhere in this tool.
 
+## A download installs itself (`payload.py`)
+
+`setup.py` stages the project's published files into the bundle's
+`Resources/payload/`; `PUBLISHED_DIRS` and `PUBLISHED_FILES` name them and
+include neither `config/config.local.json` nor `data/`.
+
+- **First launch** finds no project folder around it and no pointer, so setup
+  opens by asking where Bristol should live and copies the payload there.
+- **Every later launch** compares `src/VERSION` in the bundle against the one
+  in the folder it opens, and replaces the published files when the app is
+  newer. An installation's configuration and data are not published names, so
+  neither is read.
+
+A run from source carries no payload: `bundled()` returns None and both steps
+are skipped.
+
 ## First run (`ui/setup_wizard.py`)
 
 When nothing above resolves and no `config/config.local.json` has been written,
-launch opens a setup wizard instead of an empty board. It asks for an instance
-name, the folder that instance's data lives in, which of the shipped agents to
-enable, and — optionally — a Markdown notebook and a Zotero data folder.
+launch opens a setup wizard instead of an empty board. It asks where Bristol
+lives (a download only — a clone already is that folder), an instance name, the
+folder that instance's data lives in, which of the shipped agents to enable,
+and — optionally — a Markdown notebook and a Zotero data folder.
 
 Finish creates the data folders each enabled agent declares, provisions
 `tickets/tickets.db` from `schema.sql`, writes `config/config.local.json` from
 `config/config.example.json` with the answers substituted in, and writes the
-instance pointer. Cancel writes nothing. Replacing an existing configuration
+instance pointer. Cancel writes nothing, and takes back a tree the same run
+placed — leaving a folder that already held anything as it stands.
+
+The run ends by naming where the installation went and offering the line to
+paste into an agent host that takes typed project instructions. Replacing an existing configuration
 asks first, and **File → Setup…** re-runs the flow from a running
 Bristol Tickets.
 
@@ -111,7 +139,7 @@ recognise survives untouched. The first setting is
 `board.cross_agent_stage`: where a card one agent files for another lands, the
 Board or the Backlog. `ticket_tools/ticket_write.py` reads the same key.
 
-The **active agent** is not a setting. It names who the next Claude session runs
+The **active agent** is not a setting. It names who the next agent session runs
 as, which changes what the whole application means, so it sits above the tabs on
 every screen: *Start next session as*. Choosing one writes `active_agent` into
 the configuration and nothing else.
@@ -174,12 +202,15 @@ export TICKETS_DB="/absolute/path/to/tickets.db"   # optional; else auto-discove
 python3 app.py
 ```
 
-## Get it into your Dock
+## Build
 
-See `BUILD_APP.md`. Two options: a **live-source launcher** (a tiny `.app` that
-runs this repo source directly — no build, edit-and-relaunch; best while
-iterating), or a **frozen py2app bundle** (`python3 setup.py py2app` →
-`dist/BristolTickets.app`; portable but rebuild after each change).
+```bash
+python3 make_release.py
+```
+
+Checks, bundle, zip, checksum, and the line that publishes it. `BUILD_APP.md`
+covers what it does, what signing would change, and the live-source launcher
+that runs this folder's source directly while iterating.
 
 ## Headless smoke test
 
@@ -193,6 +224,10 @@ check — how things look still needs a real display (the packaged Mac app).
 
 - **Keep `app.py` and every `ui/` module free of a user-specific path or any
   personal data.**
+- **A published name never includes an instance.** `payload.PUBLISHED_DIRS` and
+  `PUBLISHED_FILES` decide what a release carries and what an update replaces;
+  adding `config/config.local.json` or `data/` to either would ship one user's
+  installation to everyone and overwrite the next one's.
 - **Regenerate `schema.sql` when the shared schema changes**, by the method its
   own header states.
 - **Embed no agent behaviour here.** This tool opens a database and shows it.

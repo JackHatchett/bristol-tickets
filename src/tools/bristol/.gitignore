@@ -7,6 +7,7 @@ __pycache__/
 # py2app build artifacts (see setup.py)
 build/
 dist/
+.eggs/
 
 # Personal absolute DB path for the built .app — never commit (holds a user path)
 tickets_db.local
