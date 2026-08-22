@@ -1,9 +1,9 @@
 """ui/kanban_column.py — one scrollable column of task cards.
 
 ``KanbanColumn`` is a region of the canvas: a header carrying the column's name,
-its card count and the overflow menu holding the actions that operate on this
-column alone, over a stack of ``CardDelegate``-painted cards with no fill or
-border of its own. In the Kanban model it populates itself two ways:
+its card count and, where a column has one, a right-justified action button,
+over a stack of ``CardDelegate``-painted cards with no fill or border of its
+own. In the Kanban model it populates itself two ways:
 
 * BOARD columns (``status_key`` = todo|doing|done): the tasks whose
   ``stage='active'`` and whose ``status`` matches this column, in manual
@@ -32,7 +32,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QMenu,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -71,10 +70,10 @@ class KanbanColumn(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(space("md"))
 
-        # The header is the column: its name, how many cards are in it, and the
-        # menu holding the actions that operate on this column alone. The stack
-        # below it has no fill and no border, so the cards are the only raised
-        # surfaces on the view.
+        # The header is the column: its name, how many cards are in it, and,
+        # for a column that has one, a right-justified action button. The
+        # stack below it has no fill and no border, so the cards are the only
+        # raised surfaces on the view.
         header = QHBoxLayout()
         header.setContentsMargins(space("sm"), 0, 0, 0)
         header.setSpacing(space("md"))
@@ -88,13 +87,7 @@ class KanbanColumn(QWidget):
         header.addWidget(self.count_label)
         header.addStretch(1)
 
-        self.menu_btn = QPushButton("···")
-        self.menu_btn.setObjectName("columnMenu")
-        self.menu_btn.setToolTip(f"Actions for the {display_name} column")
-        self._menu = QMenu(self.menu_btn)
-        self.menu_btn.setMenu(self._menu)
-        self.menu_btn.setVisible(False)  # shown once it has something to offer
-        header.addWidget(self.menu_btn)
+        self._header = header
         root.addLayout(header)
 
         self.list_widget = _DndListWidget(self)
@@ -119,11 +112,14 @@ class KanbanColumn(QWidget):
 
     # ----- the column's own actions ----------------------------------------
 
-    def add_menu_action(self, label: str, callback) -> None:
-        """Offer one action from this column's overflow menu. The menu appears
-        with its first action, so a column with nothing to offer shows none."""
-        self._menu.addAction(label, callback)
-        self.menu_btn.setVisible(True)
+    def add_header_button(self, label: str, callback) -> QPushButton:
+        """Add a visible push button to this column's header, right-justified
+        by the stretch already placed before it, styled like any other plain
+        QPushButton (e.g. the board's Refresh button)."""
+        btn = QPushButton(label)
+        btn.clicked.connect(callback)
+        self._header.addWidget(btn)
+        return btn
 
     def _set_count(self) -> None:
         self.count_label.setText(str(self.list_widget.count()))

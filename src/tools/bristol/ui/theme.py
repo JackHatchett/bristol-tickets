@@ -551,19 +551,6 @@ QLabel#columnName {{
     font-weight: 700;
 }}
 QLabel#columnCount {{ color: {C['INK_SOFT']}; }}
-/* A column's overflow menu: a quiet glyph that only gains a surface on hover. */
-QPushButton#columnMenu {{
-    background: transparent;
-    border: none;
-    border-radius: {r_md}px;
-    padding: {s_xs}px {s_md}px;
-    color: {C['INK_SOFT']};
-    font-weight: 700;
-}}
-QPushButton#columnMenu:hover {{
-    background-color: {C['HOVER_BG']};
-    color: {C['INK']};
-}}
 /* The detail pane is a sidebar surface: the one raised region right of the
    splitter, separated from the board canvas by a hairline. */
 QWidget#detailPane {{
