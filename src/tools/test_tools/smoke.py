@@ -857,6 +857,10 @@ def check_published_files() -> list[str]:
     home = Path(declared or "~").expanduser()
     needles = {s for s in (git_cfg("user.name"), git_cfg("user.email"),
                            str(home), home.name) if len(s) > 2}
+    # A repository's own address is a published fact, and it names the account
+    # that hosts it. Clone lines are masked before the scan for that reason.
+    origin = git_cfg("remote.origin.url")
+    published = {u for u in (origin, origin.removesuffix(".git")) if len(u) > 2}
 
     hits: list[str] = []
     for path in _tracked_files(root):
@@ -866,6 +870,8 @@ def check_published_files() -> list[str]:
             text = path.read_text(errors="ignore")
         except (OSError, UnicodeDecodeError):
             continue
+        for url in published:
+            text = text.replace(url, "")
         rel = path.relative_to(root)
         for needle in needles:
             if needle.lower() in text.lower():
@@ -880,7 +886,8 @@ def check_published_files() -> list[str]:
         )
     ok.append(
         f"{len(needles)} identity strings and every absolute home path are absent "
-        f"from tracked files outside {ATTRIBUTION_FILE}"
+        f"from tracked files outside {ATTRIBUTION_FILE} and the repository's own "
+        f"clone address"
     )
     return ok
 

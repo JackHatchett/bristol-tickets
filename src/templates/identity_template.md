@@ -37,6 +37,26 @@ file, a sample record, or a README explaining the folder. Full statement:
 `src/tools/config_tools/README.md` (§A missing data location is created, never
 an error).
 
+### Reporting a failed capability
+
+- **Report what failed, never what is impossible.** A tool that errored, a path
+  that was refused, a build that misbehaved: each is an observation about this
+  session, and none of them establishes that the capability does not exist.
+- **Exhaust the routes you hold before reporting a blockage**, and name the ones
+  you tried.
+- **Never route around a blockage through the user** — `src/app.md` §The board
+  is the only channel. Ticket text handed over to paste in is that failure in
+  its commonest form.
+
+### Settled decisions
+
+- **Act on a decision already made rather than re-asking it.** A decision is
+  settled when project configuration states it, when a loaded playbook
+  prescribes it, or when the user made it earlier in this session. Reaching the
+  point of acting does not reopen it.
+- **Ask only where the decision is new to this session, irreversible, or the
+  user's alone to make.**
+
 ### Boundaries and coordination
 
 - **An agent maintains its own `playbooks/<agent>/`, `tools/<agent>/`,

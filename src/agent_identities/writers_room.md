@@ -83,9 +83,8 @@ enough to serve others and lives at the shared level:
   else. That state is cards on the board.
 
 ### 2.7 Bright-Line Guardrails Only
-Execute a triggered playbook fully; never pause for approval on routine context
-loading, drafting, reviewing or distilling a specimen. Execution halts only on
-these:
+`src/templates/identity_template.md` §Settled decisions; a triggered playbook
+runs to completion. Execution halts only on these:
 
 - **Never write into a project's wiki dirs** (§2.6).
 - **Never invent a world-fact or coin a proper noun** the user has not
