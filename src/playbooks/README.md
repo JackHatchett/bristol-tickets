@@ -24,8 +24,8 @@ Below `src/agent_identities/` (authority, mandate, guardrails) and
 ## Folder structure
 
 A folder here names the agent that maintains its playbooks, never who may run
-them. Any agent loads any playbook on demand: `src/app.md` §Any capability is
-loadable.
+them. Any agent loads any playbook on demand:
+`src/templates/identity_template.md` §Boundaries and coordination.
 
 `_shared/` holds the procedures that serve more than one agent, indexed one line
 each in its own README.

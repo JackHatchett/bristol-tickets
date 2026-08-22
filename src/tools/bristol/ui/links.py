@@ -58,6 +58,7 @@ from PySide6.QtWidgets import (
 )
 
 from .dialogs import confirm, notify
+from .growing_edit import GrowingTextEdit
 from .theme import LAYOUT, space
 
 MAX_LABEL_CHARS = 72  # where a long URI is shortened in a confirm message;
@@ -325,7 +326,7 @@ class AddLinkDialog(QDialog):
         uri_row = QHBoxLayout()
         uri_row.addSpacing(space("2xl"))
         uri_row.addWidget(QLabel("Address"))
-        self.uri_input = QLineEdit()
+        self.uri_input = GrowingTextEdit(max_lines=4)
         self.uri_input.setPlaceholderText(
             "https://…   zotero://…   obsidian://…   or a file path"
         )
@@ -334,7 +335,7 @@ class AddLinkDialog(QDialog):
         label_row = QHBoxLayout()
         label_row.addSpacing(space("2xl"))
         label_row.addWidget(QLabel("Caption"))
-        self.label_input = QLineEdit()
+        self.label_input = GrowingTextEdit(max_lines=3)
         self.label_input.setPlaceholderText("optional — shown instead of the address")
         label_row.addWidget(self.label_input, 1)
         v.addLayout(label_row)
@@ -356,7 +357,9 @@ class AddLinkDialog(QDialog):
         # Typing in one kind's field selects that kind, so the radio never
         # silently contradicts where the text went.
         self.issue_input.textEdited.connect(lambda _: self.issue_radio.setChecked(True))
-        self.uri_input.textEdited.connect(lambda _: self.uri_radio.setChecked(True))
+        self.uri_input.textChanged.connect(lambda: self.uri_radio.setChecked(True))
+        self.uri_input.submitted.connect(self.accept)
+        self.label_input.submitted.connect(self.accept)
         self._sync_enabled()
 
     def _sync_enabled(self, *args) -> None:

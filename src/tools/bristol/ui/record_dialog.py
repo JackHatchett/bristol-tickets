@@ -45,6 +45,7 @@ from PySide6.QtWidgets import (
 
 from .attachments import AttachmentBar
 from .dialogs import confirm
+from .growing_edit import GrowingTextEdit
 from .links import LinkBar, remove_links_for_task
 from .theme import (
     FLEET_AGENTS,
@@ -192,7 +193,7 @@ class UnifiedRecordDialog(QDialog):
         # The title takes the dialog's full width, so a real title reads
         # whole rather than scrolling inside a short box.
         self.title_label = QLabel("Title *")
-        self.title_edit = QLineEdit()
+        self.title_edit = GrowingTextEdit(max_lines=3)
 
         # The description's height comes from the mad-lib skeleton it opens
         # with; its face is monospace only while the text still IS that
@@ -370,14 +371,14 @@ class UnifiedRecordDialog(QDialog):
         self.log_view.setMaximumHeight(
             QFontMetrics(self.log_view.font()).lineSpacing() * 7)
         self.log_post_row = QHBoxLayout()
-        self.log_post_input = QLineEdit()
+        self.log_post_input = GrowingTextEdit(max_lines=6)
         self.log_post_input.setPlaceholderText("Post a brief progress note…")
-        self.log_post_input.returnPressed.connect(self._post_log_entry)
+        self.log_post_input.submitted.connect(self._post_log_entry)
         self.log_post_btn = QPushButton("Post")
         self.log_post_btn.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         self.log_post_btn.clicked.connect(self._post_log_entry)
         self.log_post_row.addWidget(self.log_post_input)
-        self.log_post_row.addWidget(self.log_post_btn)
+        self.log_post_row.addWidget(self.log_post_btn, 0, Qt.AlignBottom)
         self.main_layout.addWidget(self._log_section)
         self.main_layout.addLayout(self.log_filter_row)
         self.main_layout.addWidget(self.log_view)

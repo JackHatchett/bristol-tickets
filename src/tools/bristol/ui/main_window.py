@@ -530,6 +530,8 @@ class MainWindow(QMainWindow):
         caption = QLabel("Next session as")
         caption.setObjectName("formCaption")
 
+        # Only a failed write speaks here: the picker already says which agent
+        # the next session runs as, and saying it again beside it says it twice.
         self.agent_status = QLabel()
         self.agent_status.setObjectName("formCaption")
         return [caption, self.agent_combo, self.agent_status]
@@ -540,7 +542,7 @@ class MainWindow(QMainWindow):
         except OSError as exc:
             self.agent_status.setText(f"Not saved: {exc}")
             return
-        self.agent_status.setText(f"Next session runs as {slug}")
+        self.agent_status.clear()
 
     # ----- Menu bar ---------------------------------------------------------
 

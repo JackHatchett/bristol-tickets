@@ -2,8 +2,8 @@
 
 Standalone programs, each independently runnable. A folder here names the agent
 that maintains it or the function it performs — never who is allowed to run it.
-Any agent loads any of these on demand: `src/app.md` §Any capability is
-loadable. Editing one is `chief_of_staff`'s.
+Any agent loads any of these on demand: `src/templates/identity_template.md`
+§Boundaries and coordination. Editing one is `chief_of_staff`'s.
 
 Style contract for every README here:
 `src/templates/identity_template.md` §The governing-doc style contract.
