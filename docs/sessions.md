@@ -1,18 +1,18 @@
 # Sessions
 
-A session is one Claude conversation, pointed at this folder, running as one
-agent, working one board. The loop is short:
+A session is one conversation with an agent host, pointed at this folder,
+running as one agent, working one board. The loop is short:
 
 1. **Pick the agent** in the strip above the board — *Start next session as*.
-2. **Open Cowork** in the Claude desktop app with the `bristol_tickets` folder
+2. **Open a session** in your agent host with the `bristol_tickets` folder
    selected.
 3. **Say what you want.**
 4. **Watch the board.** Cards move as the work happens.
 
 ## What happens when a session starts
 
-You do not have to prompt any of this. Claude reads `src/app.md`, which tells it
-how to boot: read the configuration one key at a time, find out which agent is
+You do not have to prompt any of this. The agent reads `src/app.md`, which tells
+it how to boot: read the configuration one key at a time, find out which agent is
 active, load that agent's charter, then read the board and work out what it
 should be doing.
 
@@ -82,8 +82,8 @@ change a description, retire something — whichever surface acts, the other see
 it on its next read. **Refresh** picks up changes an agent made while the window
 was open.
 
-The rules above bind the agents, not you. Chat is how you talk to Claude and it
-does not need to be a card first: ask, think out loud, change your mind, correct
+The rules above bind the agents, not you. Chat is how you talk to your agent and
+it does not need to be a card first: ask, think out loud, change your mind, correct
 it. An agent will not tell you to file a ticket for something it could simply
 do.
 
@@ -94,9 +94,11 @@ Sessions are per agent on purpose — "do the chief_of_staff cards," then later
 playbooks rather than the whole library, which is why the assignee on a card
 matters: it is the routing key.
 
-To pin a Cowork project to a specific agent regardless of the board's setting,
-put `agent_override: <slug>` in that project's instructions. It applies to that
-project's sessions only and never writes back to your configuration.
+To pin a project to a specific agent regardless of the board's setting, put
+`agent_override: <slug>` in that project's instructions. It applies to that
+project's sessions only and never writes back to your configuration. A host that
+offers no per-project instructions cannot pin one; on that host the board's
+setting is the only answer, and reading `src/app.md` is a line you type.
 
 *Start next session as* means the next session. A session resolves its identity
 once, when it opens, so changing the setting to launch a second session as a

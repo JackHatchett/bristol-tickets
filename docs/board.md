@@ -9,7 +9,7 @@ an agent working the board makes exactly the same changes you would.
 
 ## Above the tabs: Start next session as
 
-A strip across the top of every screen names the agent your next Claude session
+A strip across the top of every screen names the agent your next session
 will run as. It sits outside the tabs because it changes what the whole
 application means — a session as the librarian and a session as the career coach
 read different files and own different work. Choosing an agent writes that one
@@ -80,7 +80,7 @@ to red.
 | **Originator** | Who raised it. |
 | **Epic** | Optional grouping. Only active epics are offered, so finished work stops collecting new cards. |
 | **Pressure** | 0–100. How hard the card is pushing — urgency, impact and live interest in one number, for a human eye. It sorts nothing and gates nothing. |
-| **Effort** | S, M, L or XL, measuring how much of a full Claude usage allowance the card would consume. S is under a tenth, M a tenth to about half, L half or more, XL more than one — an XL is a card to split rather than start. |
+| **Effort** | S, M, L or XL, measuring how much of a full usage allowance the card would consume. S is under a tenth, M a tenth to about half, L half or more, XL more than one — an XL is a card to split rather than start. |
 
 Pressure and order are deliberately separate. Order alone decides what gets
 worked next; pressure is a reading you can disagree with, and a low card

@@ -1,8 +1,13 @@
 # fresh_clone_rehearsal — chief_of_staff playbook
 
-Prove a stranger can install this repository, before anything is pushed to a
-public remote. Input is the committed tree; output is a pass or a list of
-defects fixed in the repo. `version_control_milestone.md` owns committing.
+Prove a stranger can install Bristol, before anything is pushed to a public
+remote. Input is the committed tree; output is a pass or a list of defects fixed
+in the repo. `version_control_milestone.md` owns committing.
+
+Two ways in, and a release rehearses both: **the download**, which is how a
+stranger arrives, and **the clone**, which is how a developer does.
+§The download rehearsal covers the first; the numbered procedure covers the
+second.
 
 ## Preconditions
 
@@ -23,7 +28,40 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
 - **Put each user command in the clipboard** with `write_clipboard`, then ask
   for one paste. Never make the user retype a path.
 
+## The download rehearsal
+
+The same shape as below — a stranger's machine, a scratch folder, a real
+session — against the artifact a stranger actually gets.
+
+1. **Do steps 1 and 2 below first.** The pointer beats every other resolution,
+   so a machine still holding one never opens setup.
+
+2. **Build the release.** A user step, in Terminal:
+   `python3 src/tools/bristol/make_release.py`. It fails rather than shipping a
+   bundle whose payload did not stage.
+
+3. **Unzip somewhere outside the repository and open the app.** A user step. It
+   passes the Gatekeeper gate the way `docs/install.md` §The first launch says
+   it will; a build that opens with no warning at all means it was launched
+   from a path macOS never quarantined, and the check did not happen.
+
+4. **Give the placement page a scratch folder** — `~/Downloads/bristol_download`
+   — then complete the wizard as in step 8 below. It passes when that folder
+   holds `src/`, `docs/`, the entry files, `config/config.local.json` and a
+   board, and no `data/` belonging to anyone else.
+
+5. **Check the hand-off page** names that folder and copies a line naming it.
+
+6. **Prove an update keeps the installation.** A user step: raise `src/VERSION`,
+   rebuild, and open the new app. It passes when `src/VERSION` in the scratch
+   folder rises, `config/config.local.json` is byte-identical, and the board
+   still holds the card step 9 made.
+
+7. **Then steps 9 through 12 below**, against the scratch folder.
+
 ## Procedure
+
+The clone path, for a developer.
 
 1. **Note the four values the last step adopts.** A user step. The rehearsal
    cannot start without them.
@@ -113,11 +151,11 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
 9. **Work one card end to end in the window** — create it, close it, Clear
    Done — and confirm the report landed in that notebook folder.
 
-10. **Run one session against the copy.** A user step: add
-   `~/Downloads/bristol_rehearsal` as a folder in Cowork, open a new
-   conversation there, and say `continue`. It passes when the session
-   initializes from `src/app.md`, resolves config, loads an agent, prints a
-   snapshot, and names no path belonging to the user.
+10. **Run one session against the copy.** A user step: point an agent host at
+   `~/Downloads/bristol_rehearsal`, open a new conversation there, and say
+   `continue`. It passes when the session initializes from `src/app.md`,
+   resolves config, loads an agent, prints a snapshot, and names no path
+   belonging to the user.
 
 11. **Fix every defect in the repo, never in the copy**, then rebuild the copy
     from step 3 and re-run. A fix made in the scratch copy is lost and proves
@@ -158,3 +196,4 @@ defects fixed in the repo. `version_control_milestone.md` owns committing.
   `diff -r` between a fresh `git archive` extraction and the copy returns
   nothing but the files the wizard wrote.
 - **The scratch copy exists nowhere at the end.** It is not a deliverable.
+  `~/Downloads/bristol_download` and the built `dist/` go the same way.

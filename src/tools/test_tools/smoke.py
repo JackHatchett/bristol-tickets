@@ -892,8 +892,91 @@ def check_published_files() -> list[str]:
     return ok
 
 
+def check_payload() -> list[str]:
+    """The tree a built .app carries: what it installs, what an update replaces,
+    and what an abandoned setup takes back.
+
+    No Qt and no bundle: `payload` is plain file copying, so the check builds a
+    source tree, installs it, uses it, updates it and undoes it in a temp
+    folder.
+    """
+    import tempfile
+
+    ok: list[str] = []
+    tool_on_path("bristol")
+    import payload
+
+    if any(name in payload.PUBLISHED_FILES for name in
+           ("config/config.local.json", "data")) or "data" in payload.PUBLISHED_DIRS:
+        raise SmokeFailure(
+            "a published name covers an installation's own files — a release "
+            "would ship one user's board and an update would overwrite the next "
+            "one's"
+        )
+    ok.append("no published name reaches config.local.json or data/")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source = root / "carried"
+        (source / "src").mkdir(parents=True)
+        (source / "config").mkdir()
+        (source / "docs").mkdir()
+        (source / "src" / "app.md").write_text("# app.md\n")
+        (source / "src" / "VERSION").write_text("1.0.0\n")
+        (source / "AGENTS.md").write_text("read src/app.md\n")
+        (source / "config" / "config.example.json").write_text("{}\n")
+        (source / "src" / "__pycache__").mkdir()
+        (source / "src" / "__pycache__" / "x.pyc").write_bytes(b"junk")
+
+        target = root / "Bristol"
+        payload.stage(source, target)
+        if not payload.installed_at(target) or payload.version(target) != "1.0.0":
+            raise SmokeFailure("a staged tree is not a readable installation")
+        if (target / "src" / "__pycache__").exists():
+            raise SmokeFailure("staging carried a cache folder into the install")
+        ok.append("install writes the published tree and no build leavings")
+
+        (target / "data" / "someone" / "tickets").mkdir(parents=True)
+        (target / "data" / "someone" / "tickets" / "tickets.db").write_bytes(b"BOARD")
+        (target / "config" / "config.local.json").write_text('{"active_agent":"x"}')
+
+        (source / "src" / "VERSION").write_text("1.1.0\n")
+        (source / "src" / "app.md").write_text("# app.md — newer\n")
+        payload.stage(source, target)
+        if payload.version(target) != "1.1.0":
+            raise SmokeFailure("an update did not raise the installed version")
+        if "newer" not in (target / "src" / "app.md").read_text():
+            raise SmokeFailure("an update did not replace the machinery")
+        if (target / "data" / "someone" / "tickets" / "tickets.db").read_bytes() != b"BOARD":
+            raise SmokeFailure("an update destroyed the board")
+        if (target / "config" / "config.local.json").read_text() != '{"active_agent":"x"}':
+            raise SmokeFailure("an update destroyed the configuration")
+        ok.append("update replaces the machinery and leaves the board and config")
+
+        fresh = root / "Fresh"
+        payload.stage(source, fresh)
+        payload.unstage(fresh)
+        if fresh.exists():
+            raise SmokeFailure("an abandoned setup left a folder behind")
+
+        used = root / "Used"
+        used.mkdir()
+        (used / "theirs.txt").write_text("mine")
+        payload.stage(source, used)
+        payload.unstage(used)
+        if not (used / "theirs.txt").exists() or (used / "src").exists():
+            raise SmokeFailure(
+                "undoing a placement either took the user's own file or left "
+                "the tree"
+            )
+        ok.append("an abandoned setup undoes itself without touching what was there")
+
+    return ok
+
+
 TARGETS = {
     "bristol": check_bristol,
+    "payload": check_payload,
     "test_control": check_test_control,
     "governing_docs": check_governing_docs,
     "published_files": check_published_files,

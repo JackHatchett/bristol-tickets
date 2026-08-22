@@ -2,10 +2,10 @@
 # run_smoke.sh — provision a headless Qt env (if needed) and run smoke.py.
 #
 # On a normal machine with PySide6 + a display this is basically a passthrough.
-# In the Linux Cowork sandbox it also: installs PySide6, and — because the
-# sandbox lacks the GL/EGL libs Qt needs and has no root to apt-install them —
-# fetches those .debs and extracts the .so files into a local cache pointed at
-# by LD_LIBRARY_PATH. All throwaway; the sandbox resets each session.
+# In a Linux agent sandbox it also: installs PySide6, and — because such a
+# sandbox usually lacks the GL/EGL libs Qt needs and has no root to apt-install
+# them — fetches those .debs and extracts the .so files into a local cache
+# pointed at by LD_LIBRARY_PATH. All throwaway; the sandbox resets each session.
 #
 # Usage:
 #   bash run_smoke.sh                 # all targets

@@ -47,7 +47,7 @@ Acceptance Criteria:
 ```
 
 Add a numbered line per criterion. A worked one: "Given the active agent is
-chief_of_staff and Cowork is loading Bristol, when a session loads
+chief_of_staff and a host is loading Bristol, when a session loads
 tickets.db, then it treats its next priorities as its own active-board tasks
 (stage='active') in precedence order."
 

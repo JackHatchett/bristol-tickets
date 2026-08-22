@@ -1,4 +1,10 @@
-"""ui/setup_wizard.py — first-run setup, so a fresh clone opens into a board.
+"""ui/setup_wizard.py — first-run setup, so a download or a fresh clone opens
+into a board.
+
+A downloaded ``.app`` carries the project tree inside it and has no clone to
+sit above, so setup opens by asking where Bristol should live and putting it
+there (``payload.py``). A run from source already has that folder and skips
+the question.
 
 Bristol Tickets imports nothing from the rest of ``src/tools``: this module
 uses PySide6, the standard library, and the sibling ``instance`` module. The
@@ -36,6 +42,7 @@ from PySide6.QtCore import QRegularExpression, Qt
 from PySide6.QtGui import QColor, QPalette, QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QCheckBox,
+    QDialog,
     QFileDialog,
     QHBoxLayout,
     QLabel,
@@ -50,6 +57,7 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local; see module docstring
 import instance
+import payload
 
 from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
 from .theme import C, LAYOUT, space, type_size
@@ -804,18 +812,189 @@ def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
     return db_path
 
 
+DEFAULT_HOME_FOLDER = "Bristol"
+
+
+class PlacementDialog(QDialog):
+    """Where the project tree goes, for an app that carries one.
+
+    Asked once, before the wizard, because every page after it reads the folder
+    this writes. A folder that already holds a Bristol tree is taken as it
+    stands rather than overwritten.
+    """
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Bristol Tickets — Setup")
+        self.setModal(True)
+        self.setMinimumWidth(LAYOUT["wizard_min_w"])
+        self.chosen: Path | None = None
+        # Whether this run put the tree there, so an abandoned setup can take
+        # it back off a folder that held nothing before.
+        self.placed = False
+
+        heading = QLabel("Where should Bristol live?")
+        heading.setObjectName("dialogHeading")
+        heading.setWordWrap(True)
+
+        body = QLabel(
+            "This folder holds the agents, the board and everything you save. "
+            "You will point your AI app at it, so somewhere you can find again "
+            "is the right answer — your home folder is fine."
+        )
+        body.setWordWrap(True)
+
+        self.folder = FolderRow("Choose where Bristol lives")
+        self.folder.set_value(str(Path.home() / DEFAULT_HOME_FOLDER))
+
+        cancel = QPushButton("Cancel")
+        cancel.clicked.connect(self.reject)
+        install = QPushButton("Put it here")
+        install.setObjectName(PRIMARY)
+        install.setDefault(True)
+        install.clicked.connect(self._accept)
+
+        row = QHBoxLayout()
+        row.setSpacing(space("md"))
+        row.addStretch(1)
+        row.addWidget(cancel)
+        row.addWidget(install)
+
+        column = QVBoxLayout(self)
+        column.setContentsMargins(space("xl"), space("lg"), space("xl"), space("lg"))
+        column.setSpacing(space("lg"))
+        column.addWidget(heading)
+        column.addWidget(body)
+        column.addWidget(self.folder)
+        column.addStretch(1)
+        column.addLayout(row)
+
+    def _accept(self) -> None:
+        target = Path(self.folder.value()).expanduser()
+        source = payload.bundled()
+        if source is None:
+            self.reject()
+            return
+        if payload.installed_at(target):
+            self.chosen = target
+            self.accept()
+            return
+        try:
+            payload.stage(source, target)
+            self.placed = True
+        except OSError as exc:
+            notify(self, "Setup failed",
+                   f"Bristol could not be written to {target}.\n\n"
+                   f"Choose a folder you can write to, then try again.\n\n"
+                   f"Details: {exc}")
+            return
+        self.chosen = target
+        self.accept()
+
+
+def place_project(parent=None) -> tuple[Path | None, bool]:
+    """The project folder for this run, and whether this run placed it.
+
+    Either the folder around this file, or the one the user picks for a payload
+    the app is carrying. The second value is what lets an abandoned run undo a
+    placement.
+    """
+    root = project_root()
+    if root is not None:
+        return root, False
+    if payload.bundled() is None:
+        return None, False
+    dialog = PlacementDialog(parent)
+    if dialog.exec() != QDialog.Accepted:
+        return None, False
+    return dialog.chosen, dialog.placed
+
+
+def connect_instructions(root: Path) -> str:
+    """The line a user pastes into an agent host that takes project
+    instructions, written from the folder name down the way a host that sees
+    several folders at once resolves it."""
+    return (
+        f"Read {root.name}/src/app.md, then the note in "
+        f"{root.name}/src/host_notes/ that matches the host you are running "
+        f"under.\nagent_override: none"
+    )
+
+
+class ConnectDialog(QDialog):
+    """Where the installation went, and how to point an agent at it."""
+
+    def __init__(self, root: Path, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Bristol Tickets — Setup")
+        self.setModal(True)
+        self.setMinimumWidth(LAYOUT["wizard_min_w"])
+
+        heading = QLabel("Bristol is set up")
+        heading.setObjectName("dialogHeading")
+        heading.setWordWrap(True)
+
+        body = QLabel(
+            f"Everything lives in {root}.\n\n"
+            "The board works on its own from here. To have an agent work it, "
+            "point your AI app at that folder. Most read AGENTS.md or "
+            "CLAUDE.md there on their own; one that takes typed project "
+            "instructions instead wants this:"
+        )
+        body.setWordWrap(True)
+
+        self.instructions = QLabel(connect_instructions(root))
+        self.instructions.setWordWrap(True)
+        self.instructions.setObjectName("formCaption")
+        self.instructions.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
+        self.copied = QLabel()
+        self.copied.setObjectName("formCaption")
+
+        copy_btn = QPushButton("Copy")
+        copy_btn.clicked.connect(self._copy)
+        done = QPushButton("Open the board")
+        done.setObjectName(PRIMARY)
+        done.setDefault(True)
+        done.clicked.connect(self.accept)
+
+        row = QHBoxLayout()
+        row.setSpacing(space("md"))
+        row.addWidget(copy_btn)
+        row.addWidget(self.copied)
+        row.addStretch(1)
+        row.addWidget(done)
+
+        column = QVBoxLayout(self)
+        column.setContentsMargins(space("xl"), space("lg"), space("xl"), space("lg"))
+        column.setSpacing(space("lg"))
+        column.addWidget(heading)
+        column.addWidget(body)
+        column.addWidget(self.instructions)
+        column.addStretch(1)
+        column.addLayout(row)
+
+    def _copy(self) -> None:
+        from PySide6.QtWidgets import QApplication
+        QApplication.clipboard().setText(self.instructions.text())
+        self.copied.setText("Copied.")
+
+
 def run_setup(parent=None) -> Path | None:
     """Show the wizard. Returns the provisioned board, or None if cancelled."""
-    root = project_root()
+    root, placed = place_project(parent)
     if root is None:
         notify(
             parent,
             "Bristol Tickets — Setup",
-            "Setup needs the repository folder you cloned, and cannot find it "
-            "from here. Launch Bristol Tickets from inside that folder.",
+            "Setup needs the project folder, and cannot find it from here. "
+            "Launch Bristol Tickets from inside that folder.",
         )
         return None
     wizard = SetupWizard(root, parent)
     if wizard.exec() != QWizard.Accepted:
+        if placed:
+            payload.unstage(root)
         return None
+    ConnectDialog(root, parent).exec()
     return wizard.db_path

@@ -63,6 +63,14 @@ def resolve_output_path(instance: str) -> Path:
 # SCHEMA — fully robust, matching UI auto-migrations
 # ---------------------------------------------------------------------------
 
+# An epic's status, in the one vocabulary Bristol Tickets writes. The two
+# frozensets carry the spellings retired versions wrote, so a reader classifies
+# every row in a long-lived database without a second lookup table.
+EPIC_STATUS_CHOICES = ("not started", "in progress", "completed", "on hold")
+EPIC_STATUS_FINISHED = frozenset({"completed", "done"})
+EPIC_STATUS_IN_FLIGHT = frozenset({"in progress", "active"})
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS theme (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
