@@ -6,12 +6,21 @@ not the shell your machine runs.
 
 ## Removing a file
 
-The bridge blocks `unlink` and allows `rename`, including onto a name that is
-already taken. So `rm` and `rmdir` fail on a connected folder, and `mv` does
-not: renaming every unwanted file onto one path collapses them all into a
-single file, whatever they were. Delete that one through the desktop's own file
-manager, under computer use, which resolves at full permission and moves it to
-the trash.
+The shell cannot remove a file until the session holds a delete grant: the
+bridge blocks `unlink`, so `rm` and `rmdir` fail on a connected folder. A
+session asks for that grant with the tool its host offers for it, and the ask
+comes first — before any workaround, and early enough that the user answers one
+prompt rather than several.
+
+// The tool has been named `device_request_delete_permission`. Whether a
+// session holds it is a property of that session, so look for it rather than
+// assuming either way.
+
+Two things hold when a session has no such tool. `rename` is permitted,
+including onto a name that is already taken, so renaming every unwanted file
+onto one path collapses them into a single file whatever they were. And the
+desktop's own file manager, under computer use, deletes that one file at full
+permission. That pair is the fallback, not the first move.
 
 // A file manager may hide a dotfile even with hidden items shown. Rename it to
 // a plain name over the bridge first, then delete it.
