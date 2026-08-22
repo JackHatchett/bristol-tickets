@@ -268,8 +268,8 @@ class MainWindow(QMainWindow):
         board_outer.setSpacing(space("lg"))
 
         # One control row above the columns, holding what applies to the whole
-        # board. Anything that operates on a single column lives in that
-        # column's own overflow menu instead.
+        # board. A single card in any column is created from the master
+        # Create button, not from a per-column control.
         board_controls = QHBoxLayout()
         board_controls.setSpacing(space("md"))
         board_controls.addWidget(self.epic_filter)
@@ -282,14 +282,11 @@ class MainWindow(QMainWindow):
         self.columns = {}
         for key, name in COLUMNS:
             col = KanbanColumn(self, self.conn, key, name)
-            col.add_menu_action(
-                "New card in this column",
-                lambda _checked=False, status=key: self._create_in_column(status))
             self.columns[key] = col
             board_columns.addWidget(col)
         # Clearing Done moves every card in that one column to the Archive, so
-        # it is the Done column's action and reaches the user from its menu.
-        self.columns["done"].add_menu_action("Clear Done", self._clear_done)
+        # it is the Done column's action and sits in that column's own header.
+        self.columns["done"].add_header_button("Clear Done", self._clear_done)
         board_outer.addLayout(board_columns)
 
         self._board_tab_index = self._add_page(board_widget, "Board")
@@ -821,17 +818,6 @@ class MainWindow(QMainWindow):
         # dialog.
         dlg = UnifiedRecordDialog(self, self.conn, mode="task", initial_status="todo",
                                   initial_stage=self._stage_for_current_tab(),
-                                  epic_id=self.current_epic_id)
-        if dlg.exec() == QDialog.Accepted:
-            dlg.save_data(fallback_epic=self.current_epic_id)
-            self._load_dropdown_filters()
-            self._refresh_board()
-
-    def _create_in_column(self, status: str) -> None:
-        """Create a card that lands in one named board column — the Board's
-        per-column entry point, reached from that column's own menu."""
-        dlg = UnifiedRecordDialog(self, self.conn, mode="task",
-                                  initial_status=status, initial_stage="active",
                                   epic_id=self.current_epic_id)
         if dlg.exec() == QDialog.Accepted:
             dlg.save_data(fallback_epic=self.current_epic_id)
