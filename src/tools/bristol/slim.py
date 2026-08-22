@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -97,6 +98,19 @@ def _size(path: Path) -> int:
     return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
 
 
+def reseal(bundle: Path) -> None:
+    """Sign the bundle again, ad hoc, after files have been taken out of it.
+
+    py2app signs what it wrote, and every removal afterwards leaves a signature
+    that no longer matches the bundle. macOS reads that as damaged rather than
+    as merely unsigned: a download it moves to the trash without offering the
+    Privacy and Security step an unsigned app gets. Signing again is what keeps
+    the slimmed bundle in the openable case.
+    """
+    subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(bundle)],
+                   check=True, capture_output=True)
+
+
 def slim(bundle: Path, report_only: bool = False) -> tuple[int, int]:
     """Remove what the app never loads. Returns (bytes before, bytes after)."""
     before = _size(bundle)
@@ -105,6 +119,8 @@ def slim(bundle: Path, report_only: bool = False) -> tuple[int, int]:
         freed += _size(path)
         if not report_only:
             shutil.rmtree(path) if path.is_dir() else path.unlink()
+    if not report_only:
+        reseal(bundle)
     return before, before - freed
 
 
