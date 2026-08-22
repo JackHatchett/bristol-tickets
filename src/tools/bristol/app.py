@@ -162,9 +162,9 @@ def main() -> None:
 
     conn = sqlite3.connect(db_path)
 
-    # Ensure schema is up to date if a schema file is present alongside app.py
-    schema = Path(__file__).parent / "schema.sql"
-    if schema.exists():
+    # Bring the board's schema up to date wherever the schema ships.
+    schema = payload.schema_path(Path(__file__))
+    if schema is not None:
         conn.executescript(schema.read_text())
         conn.commit()
 

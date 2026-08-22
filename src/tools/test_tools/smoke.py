@@ -1013,6 +1013,31 @@ def check_payload() -> list[str]:
             )
         ok.append("an abandoned setup undoes itself without touching what was there")
 
+    # schema.sql ships beside the code in a source tree and one folder above
+    # it in a build, and a board cannot be provisioned without it.
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source_ui = root / "bristol" / "ui"
+        source_ui.mkdir(parents=True)
+        (root / "bristol" / "schema.sql").write_text("-- schema\n")
+        found = payload.schema_path(source_ui / "setup_wizard.py")
+        if found != root / "bristol" / "schema.sql":
+            raise SmokeFailure("schema.sql is not found from a source tree")
+
+        resources = root / "App.app" / "Contents" / "Resources"
+        (resources / "lib" / "python3.13" / "ui").mkdir(parents=True)
+        (resources / "schema.sql").write_text("-- schema\n")
+        found = payload.schema_path(
+            resources / "lib" / "python3.13" / "ui" / "setup_wizard.py")
+        if found != resources / "schema.sql":
+            raise SmokeFailure("schema.sql is not found inside a built bundle")
+
+        bare = root / "bare" / "ui"
+        bare.mkdir(parents=True)
+        if payload.schema_path(bare / "setup_wizard.py") is not None:
+            raise SmokeFailure("a missing schema.sql was reported as found")
+    ok.append("schema.sql resolves from a source tree and from inside a bundle")
+
     # A bundle keeps only the Qt modules slim.py names, so a module imported
     # anywhere in the app and absent from that list ships an app that starts
     # and then cannot import it.

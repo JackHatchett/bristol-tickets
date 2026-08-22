@@ -58,6 +58,7 @@ from PySide6.QtWidgets import (
 import config_file  # bristol-local; see module docstring
 import instance
 import payload
+import payload
 
 from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
 from .theme import C, LAYOUT, space, type_size
@@ -787,7 +788,10 @@ def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
                "A file at that path may already be open or may not be a "
                "database. Close the app holding it, or choose another data "
                "folder."):
-        schema_file = Path(__file__).resolve().parent.parent / "schema.sql"
+        schema_file = payload.schema_path(Path(__file__))
+        if schema_file is None:
+            raise FileNotFoundError(
+                "schema.sql is missing, so a board cannot be provisioned")
         schema = schema_file.read_text(encoding="utf-8")
         conn = sqlite3.connect(str(db_path), timeout=10)
         try:

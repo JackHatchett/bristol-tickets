@@ -65,6 +65,23 @@ def bundled() -> Path | None:
     return None
 
 
+def schema_path(start: Path | None = None) -> Path | None:
+    """The schema a fresh board is provisioned from, or None where it is
+    absent.
+
+    Searched upward from ``start`` (this module by default), because the two
+    layouts put it at different depths.
+    // A build lands the ui package under Resources/lib/pythonX.Y/ and a data
+    // file at Resources/, so no single relative step finds both.
+    """
+    here = (start or Path(__file__)).resolve()
+    for parent in here.parents:
+        candidate = parent / "schema.sql"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def stage(source: Path, target: Path) -> Path:
     """Copy a project tree's published files into ``target``, replacing what is
     already there. Used to build a payload and to install one.
