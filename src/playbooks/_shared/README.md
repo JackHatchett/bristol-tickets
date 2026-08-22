@@ -1,7 +1,7 @@
 # playbooks/_shared/
 
 Procedures that serve more than one agent. Maintained by `chief_of_staff`;
-loading is `src/app.md` §Any capability is loadable.
+loading is `src/templates/identity_template.md` §Boundaries and coordination.
 
 ## Index
 

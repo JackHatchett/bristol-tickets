@@ -29,6 +29,12 @@ On first launch, setup asks where Bristol should live and copies the payload
 there. On every later launch, an app whose payload is newer than the folder it
 opens refreshes that folder first.
 
+`slim.py` runs at the end of the build and removes the Qt the board never
+imports — py2app copies the PySide6 package whole, and that package carries a
+browser engine, a 3D renderer and Qt's own developer tools. `MODULES`,
+`FRAMEWORKS` and `PLUGINS` at the top of that file are what a bundle keeps;
+`python3 slim.py --report <bundle.app>` says what would go without removing it.
+
 ---
 
 ## Signing

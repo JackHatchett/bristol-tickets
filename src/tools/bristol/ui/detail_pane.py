@@ -35,7 +35,6 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
     QScrollArea,
     QSpinBox,
@@ -45,6 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from .attachments import AttachmentBar
+from .growing_edit import GrowingTextEdit
 from .links import LinkBar
 from .record_dialog import STAGES, section_widget
 from .theme import (
@@ -230,13 +230,15 @@ class DetailPane(QWidget):
         # ----- the composer, pinned to the pane's foot -----------------------
         composer = QHBoxLayout()
         composer.setSpacing(space("sm"))
-        self.comment_input = QLineEdit()
+        self.comment_input = GrowingTextEdit(max_lines=6)
         self.comment_input.setPlaceholderText("Post a brief progress note…")
-        self.comment_input.returnPressed.connect(self._post_comment)
+        self.comment_input.submitted.connect(self._post_comment)
         composer.addWidget(self.comment_input, 1)
         self.post_btn = QPushButton("Post")
         self.post_btn.clicked.connect(self._post_comment)
-        composer.addWidget(self.post_btn)
+        # The composer grows upward from its foot, so the button keeps the
+        # field's bottom edge rather than floating at its middle.
+        composer.addWidget(self.post_btn, 0, Qt.AlignBottom)
         root.addLayout(composer)
 
         self.clear()

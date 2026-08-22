@@ -26,6 +26,7 @@ bristol/
 ├── config_file.py       read/write config.local.json (unknown keys survive)
 ├── payload.py           the project tree a built .app carries, installs and refreshes
 ├── make_release.py      one command: checks, build, zip, checksum, publish line
+├── slim.py              what a built bundle keeps of PySide6, and what it drops
 ├── icon.icns / icon.png the app icon (bundle icon + window/Dock icon)
 ├── schema.sql           idempotent (IF NOT EXISTS) schema snapshot, auto-applied on launch
 ├── __init__.py          package marker
@@ -38,6 +39,7 @@ bristol/
 │   ├── attachments.py   a ticket's attached images
 │   ├── record_dialog.py UnifiedRecordDialog — create/edit modal
 │   ├── kanban_column.py KanbanColumn — a populated column + its queries
+│   ├── growing_edit.py  GrowingTextEdit — the field every typing surface uses
 │   ├── setup_wizard.py  first-run setup: folders, board, config, pointer
 │   ├── settings_tab.py  SettingsTab — board behaviour and appearance, stored in config
 │   └── main_window.py   MainWindow — toolbar, tabs, filters, search, inspector

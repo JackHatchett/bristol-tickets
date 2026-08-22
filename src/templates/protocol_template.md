@@ -42,7 +42,8 @@ authority flows.}}
   `src/agent_identities/<agent>.md`. Drift between a protocol and its charter is
   the defect this rule exists to prevent.
 - **Each agent maintains its own `protocols/<agent>/` folder**, and any agent
-  may load what is in it — `src/app.md` §Any capability is loadable.
+  may load what is in it — `src/templates/identity_template.md` §Boundaries
+  and coordination.
 - **Promote a contract two or more agents would otherwise restate into an
   archetype under `protocols/_shared/`**, and make the per-agent files thin
   specializations that cite it. **Never duplicate a contract across agents**:

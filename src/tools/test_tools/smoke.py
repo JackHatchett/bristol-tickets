@@ -425,6 +425,48 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("switching kind re-enabled OK with an empty name")
         ok.append("Record dialog blocks save while a required field is empty")
 
+        # One field, everywhere a person types more than a word. A one-line
+        # field scrolls sideways and hides what came before, so the shared one
+        # wraps, grows to its ceiling and then scrolls vertically.
+        from PySide6.QtGui import QFontMetrics
+        from PySide6.QtTest import QTest
+
+        from ui.growing_edit import GrowingTextEdit
+        from ui.links import AddLinkDialog
+
+        link_dlg = AddLinkDialog(win)
+        for name, field in (("record title", req_dlg.title_edit),
+                            ("record log composer", req_dlg.log_post_input),
+                            ("detail-pane composer", win.detail_pane.comment_input),
+                            ("link address", link_dlg.uri_input),
+                            ("link caption", link_dlg.label_input)):
+            if not isinstance(field, GrowingTextEdit):
+                raise SmokeFailure(f"the {name} field is not the shared growing field")
+
+        field = GrowingTextEdit(max_lines=4)
+        field.setFixedWidth(180)
+        field.show()
+        shut = field.height()
+        field.setText("a sentence long enough to wrap several times over " * 4)
+        grown = field.height()
+        line = QFontMetrics(field.font()).lineSpacing()
+        if grown <= shut:
+            raise SmokeFailure("the shared field did not grow with its text")
+        if grown > shut + line * 4:
+            raise SmokeFailure("the shared field grew past its ceiling")
+        if field.horizontalScrollBarPolicy() != Qt.ScrollBarAlwaysOff:
+            raise SmokeFailure("the shared field can still scroll sideways")
+        posted = []
+        field.submitted.connect(lambda: posted.append(True))
+        QTest.keyClick(field, Qt.Key_Return)
+        if not posted:
+            raise SmokeFailure("Return did not post from the shared field")
+        before = field.toPlainText()
+        QTest.keyClick(field, Qt.Key_Return, Qt.ShiftModifier)
+        if field.toPlainText() == before:
+            raise SmokeFailure("Shift+Return did not open a line")
+        ok.append("every typing surface is one field that grows, wraps and posts on Return")
+
         # Links. The property worth guarding is that an issue link is ONE
         # symmetric row: it must read from both ends, refuse a duplicate offered
         # in either direction, and vanish from both tickets on a single delete.
@@ -970,6 +1012,30 @@ def check_payload() -> list[str]:
                 "the tree"
             )
         ok.append("an abandoned setup undoes itself without touching what was there")
+
+    # A bundle keeps only the Qt modules slim.py names, so a module imported
+    # anywhere in the app and absent from that list ships an app that starts
+    # and then cannot import it.
+    import re as _re
+
+    import slim
+
+    imported = set()
+    for source_file in (TOOLS / "bristol").rglob("*.py"):
+        if any(part in ("dist", "build", ".eggs", "__pycache__")
+               for part in source_file.parts):
+            continue
+        for match in _re.finditer(r"PySide6\.(Qt[A-Za-z]+)",
+                                  source_file.read_text(encoding="utf-8")):
+            imported.add(match.group(1))
+    missing = sorted(imported - set(slim.MODULES))
+    if missing:
+        raise SmokeFailure(
+            f"the app imports {', '.join(missing)}, which a slimmed bundle "
+            "does not carry — add them to slim.MODULES"
+        )
+    ok.append(f"a slimmed bundle carries every Qt module the app imports "
+              f"({len(imported)})")
 
     return ok
 

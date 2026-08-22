@@ -157,18 +157,6 @@ type. The prefix marks it as behaviour observed once, to be re-verified rather
 than trusted. Present tense; never a date, a ticket number, a plan, or a
 future-change instruction.
 
-## Any capability is loadable
-
-A folder under `src/playbooks/`, `src/tools/` or `src/protocols/` names the
-agent that maintains it, never who may run it.
-
-- **Load a capability from outside your own folders when the task calls for
-  it** — each `_shared/README.md` indexes what exists and when. Read the index;
-  load only what you will run.
-- **A guardrail in the maintaining agent's charter does not travel with a
-  borrowed capability.** Your own charter gates what you execute.
-- **Loading is not tasking** — §The board is the only channel is unchanged.
-
 ## Content is yours; behavior is chief_of_staff's
 
 Every agent except chief_of_staff may add content as ordinary execution: a fact

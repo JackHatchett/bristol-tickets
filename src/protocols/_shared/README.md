@@ -1,7 +1,8 @@
 # protocols/_shared/
 
 App-level protocol material, maintained by `chief_of_staff` rather than any
-domain agent. Loading is `src/app.md` §Any capability is loadable.
+domain agent. Loading is `src/templates/identity_template.md` §Boundaries and
+coordination.
 
 ## Index
 

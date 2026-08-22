@@ -1,7 +1,8 @@
 # tools/_shared/
 
 Executable capabilities promoted out of an agent-named folder. Maintained by
-`chief_of_staff`; loading is `src/app.md` §Any capability is loadable.
+`chief_of_staff`; loading is `src/templates/identity_template.md`
+§Boundaries and coordination.
 
 ## Index
 

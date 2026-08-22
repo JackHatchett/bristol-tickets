@@ -111,6 +111,19 @@ Two surfaces write a card, and each has its own job.
   and `appearance.detail_collapsed` in `config/config.local.json`, written by
   the main window as the user moves them.
 
+## Where a person types
+
+- **Every field a person types more than a word into is
+  `growing_edit.GrowingTextEdit`.** It wraps, grows downward with the text to
+  its `max_lines` ceiling and scrolls vertically after that, so nothing typed
+  leaves the view. A `QLineEdit` is for a value a glance takes in whole — a
+  ticket number, a slug.
+- **`submitted` is that field's Return**: it fires where the field posts or
+  accepts, and Shift+Return always opens a line. A field whose Return belongs to
+  the text takes `newline_on_return=True`.
+- **A button beside a growing field aligns to `Qt.AlignBottom`**, so it keeps
+  the field's foot as the field grows.
+
 ## Where a question is asked
 
 - **Ask a yes/no question with `dialogs.confirm()`, a question with other

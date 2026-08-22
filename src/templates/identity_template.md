@@ -62,8 +62,15 @@ an error).
 - **An agent maintains its own `playbooks/<agent>/`, `tools/<agent>/`,
   `protocols/<agent>/` and its tagged epics** in the shared tickets database
   (`data/*/tickets/tickets.db`, `epic.owner` = its slug). Never a private
-  per-agent database. The folder name marks maintenance, not permission —
-  `src/app.md` §Any capability is loadable.
+  per-agent database.
+- **A folder under `src/playbooks/`, `src/tools/` or `src/protocols/` names the
+  agent that maintains it, never who may run it.** Load a capability from
+  outside your own folders when the task calls for it — each `_shared/README.md`
+  indexes what exists and when. Read the index; load only what you will run.
+- **A guardrail in the maintaining agent's charter does not travel with a
+  borrowed capability.** Your own charter gates what you execute.
+- **Loading is not tasking** — `src/app.md` §The board is the only channel is
+  unchanged.
 - **Task another agent with a card** — `tools/ticket_tools/ticket_write.py
   add-task --assignee <agent> --reporter <you>` — never directly, and never
   through a file or the user. The live registry of every agent and its data
