@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15-intel
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install the build dependencies
+        run: python3 -m pip install --upgrade pip PySide6 py2app
+
+      - name: Name a home outside the tree
+        run: |
+          mkdir -p config
+          printf '{"drives":{"local_home":{"path":"/opt/%s"}}}\n' "$(uuidgen)" \
+            > config/config.local.json
+
+      - name: Build the release
+        run: python3 src/tools/bristol/make_release.py
+
+      - name: Read the version
+        id: version
+        run: echo "value=$(cat src/VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          cd src/tools/bristol/dist
+          gh release create "v$VERSION" \
+            "BristolTickets-$VERSION.zip" \
+            "BristolTickets-$VERSION.zip.sha256" \
+            --title "Bristol Tickets $VERSION" \
+            --notes "macOS refuses an unsigned app until it is allowed once in System Settings → Privacy & Security. docs/install.md carries the wording."
