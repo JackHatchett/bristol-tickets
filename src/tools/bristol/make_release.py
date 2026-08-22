@@ -69,6 +69,17 @@ def build(root: Path) -> Path:
             "make_release: the bundle carries no payload, so a download would "
             "install nothing. Check payload.stage against setup.py."
         )
+    seal = subprocess.run(
+        ["codesign", "--verify", "--deep", "--strict", str(app)],
+        capture_output=True, text=True)
+    if seal.returncode != 0:
+        raise SystemExit(
+            "make_release: the bundle's signature does not match its contents "
+            f"({seal.stderr.strip()}). macOS reads that as damaged and moves "
+            "the download to the trash rather than offering to open it. "
+            "Anything that changes the bundle after py2app writes it has to "
+            "sign it again — slim.reseal is what does that."
+        )
     return app
 
 
