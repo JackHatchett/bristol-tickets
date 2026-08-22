@@ -1001,12 +1001,13 @@ def run_setup(parent=None) -> Path | None:
     """Show the wizard. Returns the provisioned board, or None if cancelled."""
     root, placed = place_project(parent)
     if root is None:
-        notify(
-            parent,
-            "Bristol Tickets — Setup",
-            "Setup needs the project folder, and cannot find it from here. "
-            "Launch Bristol Tickets from inside that folder.",
-        )
+        if payload.bundled() is None:
+            notify(
+                parent,
+                "Bristol Tickets — Setup",
+                "Setup needs the project folder, and cannot find it from here. "
+                "Launch Bristol Tickets from inside that folder.",
+            )
         return None
     wizard = SetupWizard(root, parent)
     if wizard.exec() != QWizard.Accepted:
