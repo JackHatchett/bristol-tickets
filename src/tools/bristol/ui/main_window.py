@@ -60,10 +60,10 @@ from .links import remove_links_for_task
 from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
+from .settled_combo import SettledComboBox
 from .settings_tab import SettingsTab
 from .theme import (
     COLUMNS,
-    FLEET_AGENTS,
     LAYOUT,
     apply_scheme,
     build_style_sheet,
@@ -511,29 +511,39 @@ class MainWindow(QMainWindow):
         """Who the next agent session runs as, in the header.
 
         This is not a setting: it changes what the whole application means, so
-        it is visible on every view rather than filed behind one. Selecting an
-        agent writes `active_agent` into the configuration and nothing else.
+        it is visible on every view rather than filed behind one. Choosing an
+        agent writes `active_agent` into the configuration and nothing else,
+        and nothing but a choice writes it.
+
+        The list is the configured agents. Where the configuration cannot be
+        read there is no list, and the strip says that rather than offering a
+        name no session would run as.
         """
-        self.agent_combo = QComboBox()
-        slugs = config_file.agent_slugs() or [a for a in FLEET_AGENTS if a != "user"]
-        self.agent_combo.addItems(slugs)
+        self.agent_combo = SettledComboBox()
+        slugs = config_file.agent_slugs()
         active = config_file.get("active_agent")
+        if isinstance(active, str) and active and active not in slugs:
+            slugs = [active, *slugs]
+        self.agent_combo.addItems(slugs)
         if active in slugs:
             self.agent_combo.setCurrentText(active)
-        self.agent_combo.setEnabled(bool(config_file.agent_slugs()))
-        self.agent_combo.currentTextChanged.connect(self._set_active_agent)
+        self.agent_combo.setEnabled(bool(slugs))
+        self.agent_combo.picked.connect(self._set_active_agent)
 
         self.agent_combo.setToolTip(
-            "The agent the next session starts as. Changing it writes "
+            "The agent the next session starts as. Choosing one writes "
             "active_agent into the configuration and nothing else.")
 
         caption = QLabel("Next session as")
         caption.setObjectName("formCaption")
 
-        # Only a failed write speaks here: the picker already says which agent
-        # the next session runs as, and saying it again beside it says it twice.
+        # The picker already says which agent the next session runs as, so this
+        # speaks only where it cannot: a failed write, or no configuration to
+        # read the list from.
         self.agent_status = QLabel()
         self.agent_status.setObjectName("formCaption")
+        if not slugs:
+            self.agent_status.setText("No configuration found")
         return [caption, self.agent_combo, self.agent_status]
 
     def _set_active_agent(self, slug: str) -> None:

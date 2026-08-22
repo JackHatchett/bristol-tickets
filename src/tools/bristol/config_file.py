@@ -57,12 +57,20 @@ def project_root() -> Path | None:
 
 
 def path() -> Path | None:
-    """Where this installation's configuration lives, or None if unplaced."""
+    """Where this installation's configuration lives, or None if unplaced.
+
+    The instance pointer answers first, and only while it names a file that is
+    there. A pointer left behind by an installation that has since been removed
+    otherwise hides the configuration sitting beside the tree in use, and every
+    field reads as absent.
+    """
     pointed = instance.get_path("config_path")
-    if pointed is not None:
+    if pointed is not None and pointed.is_file():
         return pointed
     root = project_root()
-    return None if root is None else root / "config" / "config.local.json"
+    if root is not None:
+        return root / "config" / "config.local.json"
+    return pointed
 
 
 def read() -> dict:

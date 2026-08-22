@@ -133,6 +133,40 @@ def unstage(target: Path) -> None:
         pass
 
 
+def make_dirs(paths: list[Path], created: list[Path]) -> None:
+    """Create each folder, appending to ``created`` the ones that did not exist.
+
+    A folder already on disk is left alone and never recorded, so the undo that
+    pairs with this takes back only what the run placed.
+    """
+    for path in paths:
+        missing: list[Path] = []
+        cursor = path
+        while not cursor.exists():
+            missing.append(cursor)
+            if cursor.parent == cursor:
+                break
+            cursor = cursor.parent
+        for folder in reversed(missing):
+            folder.mkdir()
+            created.append(folder)
+
+
+def unmake(created: list[Path], placed: list[Path]) -> None:
+    """Take back what an abandoned run placed: its files, then its folders
+    deepest first. A folder holding anything else survives as it stands."""
+    for path in placed:
+        try:
+            path.unlink()
+        except OSError:
+            pass
+    for folder in sorted(created, key=lambda f: len(f.parts), reverse=True):
+        try:
+            folder.rmdir()
+        except OSError:
+            pass
+
+
 def installed_at(target: Path) -> bool:
     """True when ``target`` already holds a Bristol project tree."""
     return (target / "src" / "app.md").is_file()
