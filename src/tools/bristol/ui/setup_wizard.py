@@ -58,7 +58,6 @@ from PySide6.QtWidgets import (
 import config_file  # bristol-local; see module docstring
 import instance
 import payload
-import payload
 
 from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
 from .theme import C, LAYOUT, space, type_size
@@ -634,7 +633,7 @@ class SetupWizard(QWizard):
         notify(
             self, "Setup failed",
             f"Setup could not {exc.step}.\n\n{exc.remedy}\n\n"
-            f"Nothing was written after that point.\n\n"
+            f"Nothing this run created was left behind.\n\n"
             f"Details: {exc.cause}",
         )
 
@@ -778,41 +777,55 @@ def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
         config = build_config(root, instance_dir, slug, agents, notebook,
                               zotero)
 
-    with _step("create your data folders",
-               "Choose a data folder you can write to, then run setup again."):
-        for path in _declared_dirs(root, config, instance_dir):
-            path.mkdir(parents=True, exist_ok=True)
-
+    created: list[Path] = []
+    placed: list[Path] = []
     db_path = board_path(instance_dir)
-    with _step("provision the board",
-               "A file at that path may already be open or may not be a "
-               "database. Close the app holding it, or choose another data "
-               "folder."):
-        schema_file = payload.schema_path(Path(__file__))
-        if schema_file is None:
-            raise FileNotFoundError(
-                "schema.sql is missing, so a board cannot be provisioned")
-        schema = schema_file.read_text(encoding="utf-8")
-        conn = sqlite3.connect(str(db_path), timeout=10)
-        try:
-            conn.execute("PRAGMA busy_timeout=5000")
-            # // A mounted-folder bridge has wedged a database whose rollback
-            # // journal was written to disk; MEMORY keeps it off the mount.
-            conn.execute("PRAGMA journal_mode=MEMORY")
-            conn.executescript(schema)
-            conn.commit()
-        finally:
-            conn.close()
+    try:
+        with _step("create your data folders",
+                   "Choose a data folder you can write to, then run setup "
+                   "again."):
+            payload.make_dirs(_declared_dirs(root, config, instance_dir),
+                              created)
 
-    with _step("write your configuration",
-               "Check that you can write to the config/ folder in your clone."):
-        config_path = config_file.write(config, config_local_path(root))
-
-    if write_pointer:
-        with _step("write the instance pointer",
-                   "Check that you can write to your user Application Support "
+        with _step("provision the board",
+                   "A file at that path may already be open or may not be a "
+                   "database. Close the app holding it, or choose another data "
                    "folder."):
-            instance.write(root, instance_dir.parent, slug, config_path)
+            schema_file = payload.schema_path(Path(__file__))
+            if schema_file is None:
+                raise FileNotFoundError(
+                    "schema.sql is missing, so a board cannot be provisioned")
+            schema = schema_file.read_text(encoding="utf-8")
+            if not db_path.exists():
+                placed.append(db_path)
+            conn = sqlite3.connect(str(db_path), timeout=10)
+            try:
+                conn.execute("PRAGMA busy_timeout=5000")
+                # // A mounted-folder bridge has wedged a database whose
+                # // rollback journal was written to disk; MEMORY keeps it off
+                # // the mount.
+                conn.execute("PRAGMA journal_mode=MEMORY")
+                conn.executescript(schema)
+                conn.commit()
+            finally:
+                conn.close()
+
+        with _step("write your configuration",
+                   "Check that you can write to the config/ folder in your "
+                   "clone."):
+            target = config_local_path(root)
+            if not target.exists():
+                placed.append(target)
+            config_path = config_file.write(config, target)
+
+        if write_pointer:
+            with _step("write the instance pointer",
+                       "Check that you can write to your user Application "
+                       "Support folder."):
+                instance.write(root, instance_dir.parent, slug, config_path)
+    except SetupStepError:
+        payload.unmake(created, placed)
+        raise
     return db_path
 
 

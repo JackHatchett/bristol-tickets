@@ -821,6 +821,38 @@ def check_bristol() -> list[str]:
                 agent_win = MainWindow(mconn)
                 if agent_win.agent_combo.currentText() not in config_file.agent_slugs():
                     raise SmokeFailure("the agent control does not show a configured agent")
+                if agent_win.agent_combo.currentText() != config_file.get("active_agent"):
+                    raise SmokeFailure("the agent control opens on an agent that is not active")
+                if not agent_win.agent_combo.isEnabled():
+                    raise SmokeFailure("the agent control is not selectable")
+                if agent_win.agent_combo.count() != len(config_file.agent_slugs()):
+                    raise SmokeFailure("the agent control lists agents this installation does not configure")
+
+                # A wheel gesture and an arrow key while it holds focus leave
+                # the value and write nothing.
+                from PySide6.QtCore import QEvent, QPoint, QPointF, Qt
+                from PySide6.QtGui import QKeyEvent, QWheelEvent
+                settled = agent_win.agent_combo
+                before = settled.currentText()
+                written: list[str] = []
+                settled.picked.connect(written.append)
+                settled.wheelEvent(QWheelEvent(
+                    QPointF(0, 0), QPointF(0, 0), QPoint(0, 0), QPoint(0, -120),
+                    Qt.NoButton, Qt.NoModifier, Qt.NoScrollPhase, False))
+                settled.keyPressEvent(QKeyEvent(
+                    QEvent.KeyPress, Qt.Key_Down, Qt.NoModifier))
+                if settled.currentText() != before or written:
+                    raise SmokeFailure(
+                        "a wheel gesture or an arrow key moved the agent control")
+
+                # Loading a value is not a choice; choosing one is.
+                settled.setCurrentText("librarian")
+                if written:
+                    raise SmokeFailure("loading a value into the agent control wrote it")
+                settled.activated.emit(settled.findText("librarian"))
+                if written != ["librarian"]:
+                    raise SmokeFailure("choosing an agent did not report the choice")
+
                 agent_win._set_active_agent("librarian")
                 if config_file.get("active_agent") != "librarian":
                     raise SmokeFailure("choosing an agent did not reach the config")
@@ -1013,6 +1045,29 @@ def check_payload() -> list[str]:
             )
         ok.append("an abandoned setup undoes itself without touching what was there")
 
+    # The folders and the board a run creates are undone on the same rule the
+    # tree placement follows: only what this run put there, and never a folder
+    # something else has written into.
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        kept = root / "data" / "theirs"
+        kept.mkdir(parents=True)
+        (kept / "notes.txt").write_text("mine")
+        created: list[Path] = []
+        placed: list[Path] = []
+        payload.make_dirs([root / "data" / "mine" / "tickets", kept], created)
+        board = root / "data" / "mine" / "tickets" / "tickets.db"
+        board.write_text("")
+        placed.append(board)
+        if kept in created:
+            raise SmokeFailure("a folder that already existed was recorded as created")
+        payload.unmake(created, placed)
+        if (root / "data" / "mine").exists():
+            raise SmokeFailure("undoing a run left the folders it created")
+        if not (kept / "notes.txt").exists():
+            raise SmokeFailure("undoing a run took a folder it did not create")
+        ok.append("an abandoned run undoes the folders and board it created")
+
     # schema.sql ships beside the code in a source tree and one folder above
     # it in a build, and a board cannot be provisioned without it.
     with tempfile.TemporaryDirectory() as tmp:
@@ -1065,9 +1120,59 @@ def check_payload() -> list[str]:
     return ok
 
 
+def check_config_resolution() -> list[str]:
+    """Which configuration file the app reads.
+
+    The instance pointer outranks the tree the app runs from, so a pointer left
+    by an installation that is gone would make every configured field read as
+    absent while a good configuration sat beside the running code.
+    """
+    import tempfile
+
+    ok: list[str] = []
+    tool_on_path("bristol")
+    import config_file
+    import instance
+
+    orig_get_path = instance.get_path
+    orig_project_root = config_file.project_root
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config").mkdir()
+            live = root / "config" / "config.local.json"
+            live.write_text('{"active_agent": "chief_of_staff", '
+                            '"agents": {"chief_of_staff": {}, "librarian": {}}}')
+            config_file.project_root = lambda: root
+
+            gone = root / "removed" / "config" / "config.local.json"
+            instance.get_path = lambda key: gone if key == "config_path" else None
+            if config_file.path() != live:
+                raise SmokeFailure(
+                    "a pointer naming a config that is not there won over the "
+                    "one beside the running tree")
+            if config_file.agent_slugs() != ["chief_of_staff", "librarian"]:
+                raise SmokeFailure("the configured agents did not survive a stale pointer")
+            ok.append("a stale instance pointer does not hide the configuration in use")
+
+            other = root / "elsewhere" / "config.local.json"
+            other.parent.mkdir(parents=True)
+            other.write_text("{}")
+            instance.get_path = lambda key: other if key == "config_path" else None
+            if config_file.path() != other:
+                raise SmokeFailure("a pointer naming a real config was ignored")
+            ok.append("a pointer naming a config that exists still wins")
+    finally:
+        instance.get_path = orig_get_path
+        config_file.project_root = orig_project_root
+
+    return ok
+
+
 TARGETS = {
     "bristol": check_bristol,
     "payload": check_payload,
+    "config_resolution": check_config_resolution,
     "test_control": check_test_control,
     "governing_docs": check_governing_docs,
     "published_files": check_published_files,
