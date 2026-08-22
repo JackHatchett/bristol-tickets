@@ -18,17 +18,27 @@ the trash.
 
 ## Running git in a connected folder
 
-Git works here — staging, committing, branching — and leaves its `.lock` files
-behind, because clearing one is an `unlink`. A `.lock` left in place is what
-stops the next run: git reads it as another process holding the repository and
-refuses. Rename it away and git proceeds.
+Git works here — staging, committing, branching — and leaves a `.lock` file
+behind almost every time, because releasing one is an `unlink`. A `.lock` left
+in place is what stops the next command: git reads it as another process
+holding the repository and refuses. So clear the locks *before* each git
+command rather than after:
+
+```
+for f in $(find .git -name '*.lock'); do mv "$f" <sink>; done
+```
+
+`<sink>` is one path every leaving is renamed onto, and the file manager
+removes it once at the end.
+
+// `git status` and `git diff` take the index lock too — any command that reads
+// the index refreshes it — so a run of read-only commands leaves one as surely
+// as a commit does.
 
 Two commands are worth avoiding rather than repairing: `git gc` and `git
 maintenance`, which pack loose refs by unlinking them, and `git checkout` of a
 tracked file, which unlinks before it writes. Restore a file by writing its
 contents in place instead.
-
-// `git status` and `git diff` read without locking and are always safe.
 
 ## Reading a database
 
