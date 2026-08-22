@@ -2,7 +2,8 @@
 
 Triggered on request only. Produces a tailored resume in two formats plus a
 tailored cover letter. This file covers the resume; `cover_letter.md` owns the
-letter's rules in full.
+letter's rules in full, and `base_resume_update.md` owns a content change to the
+master made with no job description in play.
 
 Inputs live in the user's career data root: the base resume, the always-on
 context core, and any on-demand module the index names — see

@@ -119,8 +119,8 @@ consultants to this agent**, per project, never the reverse. Both resolve from
   is a card assigned to it.
 
 ### 2.7 Bright-Line Guardrails Only
-Execute a triggered playbook fully; never pause for approval on routine Socratic
-coaching or git-milestone steps. Execution halts only on these:
+`src/templates/identity_template.md` §Settled decisions; a triggered playbook
+runs to completion. Execution halts only on these:
 
 - **Never invent creative content the user has not originated or approved.**
 - **Never lock an engine, language or art-pipeline choice** before the user has

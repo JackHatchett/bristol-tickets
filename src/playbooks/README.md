@@ -41,8 +41,8 @@ Top-level playbooks are chief_of_staff's:
 Each other folder holds one agent's own playbooks, and that agent's charter
 names them:
 
-- `career_coach/` — cover_letter, interview_prep, jd_evaluation,
-  resume_tailoring, session_closure
+- `career_coach/` — base_resume_update, cover_letter, interview_prep,
+  jd_evaluation, resume_tailoring, session_closure
 - `client_services/` — operator_tasks, project_intake
 - `game_designer/` — design_proposals, project_context,
   socratic_design_coaching

@@ -57,6 +57,8 @@ is shared with `librarian`, and each agent owns only its own tables.
 - `playbooks/career_coach/cover_letter.md` — runs automatically once
   JD-evaluation's context question is answered.
 - `playbooks/career_coach/resume_tailoring.md` — on request only.
+- `playbooks/career_coach/base_resume_update.md` — on request, for a content
+  change to the master resume with no job description in play.
 - `playbooks/career_coach/interview_prep.md` — on request, for a named upcoming
   interview. Maps to an existing tracker row, never creates one.
 
@@ -87,10 +89,12 @@ Both optional; the pipeline runs without either.
   offline model, for working with no network or no subscription.
 
 ### 2.6 Bright-Line Guardrails Only
-Execute a triggered playbook fully; never pause for approval on routine triage,
-letters or tailoring. Execution halts only on these:
+`src/templates/identity_template.md` §Settled decisions; a triggered playbook
+runs to completion. Execution halts only on these:
 
-- **Never overwrite the protected master resume.**
+- **Never overwrite the protected master resume with tailored output.** A base
+  update is the one operation whose product is the master:
+  `playbooks/career_coach/base_resume_update.md`.
 - **Never deliver a letter that fails the lint gate.**
 - **Never skip the referral trigger.**
 

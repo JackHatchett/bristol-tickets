@@ -33,6 +33,12 @@ contract for both: `src/templates/identity_template.md`.
   // user's real filesystem, can fail mid-write and leave a stuck
   // rollback-journal file that blocks all further access, reads included, until
   // it is cleared by hand. MEMORY mode writes no on-disk journal.
+- **Write the database in place, never by replacing the file.** A copy
+  delivered over a file bridge unlinks the old inode, and a viewer already
+  holding it goes on reading the dead one.
+  // Refresh in Bristol Tickets re-queries that handle, so a stale board
+  // survives every refresh and reads as writes that never landed. Relaunching
+  // the viewer shows them all at once.
 - **Keep the schema in step with Bristol Tickets.** Any inline migration the
   viewer performs is reflected in `create_tickets.py`.
 - **These are not user-facing commands.** They are internal mechanisms for
