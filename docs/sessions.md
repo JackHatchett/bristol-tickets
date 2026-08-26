@@ -3,7 +3,8 @@
 A session is one conversation with an agent host, pointed at this folder,
 running as one agent, working one board. The loop is short:
 
-1. **Pick the agent** in the strip above the board — *Start next session as*.
+1. **Pick the agent** on the board's Settings tab — *The next session starts
+   as* — and Save.
 2. **Open a session** in your agent host with the `bristol_tickets` folder
    selected.
 3. **Say what you want.**
@@ -100,7 +101,7 @@ project's sessions only and never writes back to your configuration. A host that
 offers no per-project instructions cannot pin one; on that host the board's
 setting is the only answer, and reading `src/app.md` is a line you type.
 
-*Start next session as* means the next session. A session resolves its identity
-once, when it opens, so changing the setting to launch a second session as a
-different agent leaves the first one as the agent it started as. Both run
+*The next session starts as* means the next session. A session resolves its
+identity once, when it opens, so changing the setting to launch a second session
+as a different agent leaves the first one as the agent it started as. Both run
 against the same board.

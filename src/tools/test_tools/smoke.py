@@ -224,6 +224,111 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("Archive should show one archived task")
         ok.append("Board/Backlog/Archive populate by stage")
 
+        # ---- What the board is showing ------------------------------------
+        # One filter state narrows the board, the Backlog and the Archive and
+        # leaves Search alone; the control row says what it holds.
+        import ui.filter_menu as fm
+
+        mconn.execute(
+            "INSERT INTO epic (name, status) VALUES ('An epic', 'in progress')")
+        live_epic = mconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        mconn.execute(
+            "INSERT INTO epic (name, status) VALUES ('A closed epic', 'completed')")
+        theirs = _seed("theirs", "active", "todo", 1)
+        mconn.execute("UPDATE task SET assignee='librarian', epic_id=? WHERE id=?",
+                      (live_epic, theirs))
+        mconn.commit()
+        win._refresh_board()
+        if win.columns["todo"].list_widget.count() != 2:
+            raise SmokeFailure("an unfiltered board should hold every active card")
+
+        owners = [value for value, _caption in fm.assignee_options(mconn, win.filters)]
+        if owners[0] != "user" or "librarian" not in owners:
+            raise SmokeFailure("the assignee facet does not offer the board's owners")
+        offered = [value for value, _caption in fm.epic_options(mconn, win.filters)]
+        if live_epic not in offered or None not in offered:
+            raise SmokeFailure("the epic facet offers neither the epic nor the cards without one")
+        if len(offered) != 2:
+            raise SmokeFailure("the epic facet offers a finished epic")
+
+        win.filters.toggle(fm.ASSIGNEE, "librarian")
+        win._on_filters_changed()
+        if win.columns["todo"].list_widget.count() != 1:
+            raise SmokeFailure("an assignee filter did not narrow the board")
+        if win.backlog_column.list_widget.count() != 0:
+            raise SmokeFailure("an assignee filter did not reach the Backlog")
+        if win.archive_results.count() != 0:
+            raise SmokeFailure("an assignee filter did not reach the Archive")
+        if win.search_results.count() == 0:
+            raise SmokeFailure("a filter reached Search, which must find anything")
+        if win.filter_btn.text() != "Filter · 1" \
+                or win.filter_btn.property("active") != "true":
+            raise SmokeFailure("the Filter button does not carry what is set")
+        if win.filter_clear_btn.isHidden():
+            raise SmokeFailure("no Clear stands beside a filter that is set")
+        if win.chip_row.count() != 1:
+            raise SmokeFailure("a set filter is not on the control row as a chip")
+        if win.backlog_filter_note.isHidden() or win.archive_filter_note.isHidden():
+            raise SmokeFailure("a view holding cards back does not say so")
+
+        win.filters.toggle(fm.ASSIGNEE, "user")
+        win._on_filters_changed()
+        if win.columns["todo"].list_widget.count() != 2:
+            raise SmokeFailure("two options in one section should unite, not intersect")
+
+        win.filters.toggle(fm.EPIC, live_epic)
+        win._on_filters_changed()
+        if win.columns["todo"].list_widget.count() != 1:
+            raise SmokeFailure("two sections should intersect")
+        if win.filters.sole_epic() != live_epic:
+            raise SmokeFailure("one epic filter does not name a new card's epic")
+        if fm.option_count(mconn, win.filters, fm.ASSIGNEE, "user") != 0 \
+                or fm.option_count(mconn, win.filters, fm.ASSIGNEE, "librarian") != 1:
+            raise SmokeFailure("a count ignores what the other section holds")
+        win.filters.toggle(fm.EPIC, None)
+        if win.filters.sole_epic() is not None:
+            raise SmokeFailure("two epic options still named a default epic")
+        win.filters.toggle(fm.EPIC, None)
+
+        if len(fm.applied(mconn, win.filters)) != 3:
+            raise SmokeFailure("the chips do not stand for every filter set")
+        win._remove_filter(fm.EPIC, live_epic)
+        if win.filters.holds(fm.EPIC, live_epic):
+            raise SmokeFailure("removing a chip did not remove its filter")
+        win._clear_filters()
+        if win.filters.any_set() or win.chip_row.count():
+            raise SmokeFailure("Clear left a filter behind")
+        if win.filter_btn.text() != "Filter" \
+                or win.filter_btn.property("active") != "false":
+            raise SmokeFailure("the Filter button still reads as set")
+        if not win.backlog_filter_note.isHidden() \
+                or not win.archive_filter_note.isHidden():
+            raise SmokeFailure("a view still says it is holding cards back")
+
+        # The panel builds a row per option, and a click anywhere on a row is a
+        # click on its box.
+        panel = fm.FilterMenu(win, mconn, win.filters)
+        panel._build()
+        rows = {(kind, value) for kind, value, _row in panel._rows}
+        if (fm.ASSIGNEE, "librarian") not in rows or (fm.EPIC, live_epic) not in rows:
+            raise SmokeFailure("the filter panel does not build a row per option")
+        moved: list[int] = []
+        panel.changed.connect(lambda: moved.append(1))
+        row = next(r for k, v, r in panel._rows if (k, v) == (fm.ASSIGNEE, "librarian"))
+        row.mousePressEvent(None)
+        if not win.filters.holds(fm.ASSIGNEE, "librarian") or not moved:
+            raise SmokeFailure("a click on a row did not set the filter and report it")
+        panel._clear()
+        if win.filters.any_set():
+            raise SmokeFailure("Clear all left a filter behind")
+
+        win._on_filters_changed()
+        mconn.execute("DELETE FROM task WHERE id=?", (theirs,))
+        mconn.commit()
+        win._refresh_board()
+        ok.append("Filter: facets, conditional counts, union within a section, "
+                  "intersection across them, chips and Clear")
+
         win.backlog_column._reorder_within([b2], 0)
         first = mconn.execute(
             "SELECT id FROM task WHERE stage='backlog' ORDER BY sort_order").fetchone()[0]
@@ -818,49 +923,56 @@ def check_bristol() -> list[str]:
                 tab._save()
                 if config_file.get(config_file.APPEARANCE_SCHEME) != "cool_dark":
                     raise SmokeFailure("Settings did not write the scheme")
-                agent_win = MainWindow(mconn)
-                if agent_win.agent_combo.currentText() not in config_file.agent_slugs():
-                    raise SmokeFailure("the agent control does not show a configured agent")
-                if agent_win.agent_combo.currentText() != config_file.get("active_agent"):
-                    raise SmokeFailure("the agent control opens on an agent that is not active")
-                if not agent_win.agent_combo.isEnabled():
-                    raise SmokeFailure("the agent control is not selectable")
-                if agent_win.agent_combo.count() != len(config_file.agent_slugs()):
-                    raise SmokeFailure("the agent control lists agents this installation does not configure")
+                # The next-session agent is a field on this page like every
+                # other: it loads from the configuration, moves only on a
+                # deliberate choice, and reaches the file when Save is pressed.
+                picker = tab.next_agent
+                if picker.currentText() not in config_file.agent_slugs():
+                    raise SmokeFailure("the agent picker does not show a configured agent")
+                if picker.currentText() != config_file.get("active_agent"):
+                    raise SmokeFailure("the agent picker opens on an agent that is not active")
+                if not picker.isEnabled():
+                    raise SmokeFailure("the agent picker is not selectable")
+                if picker.count() != len(config_file.agent_slugs()):
+                    raise SmokeFailure("the agent picker lists agents this installation does not configure")
 
                 # A wheel gesture and an arrow key while it holds focus leave
                 # the value and write nothing.
                 from PySide6.QtCore import QEvent, QPoint, QPointF, Qt
                 from PySide6.QtGui import QKeyEvent, QWheelEvent
-                settled = agent_win.agent_combo
-                before = settled.currentText()
-                written: list[str] = []
-                settled.picked.connect(written.append)
-                settled.wheelEvent(QWheelEvent(
+                before = picker.currentText()
+                chosen: list[str] = []
+                picker.picked.connect(chosen.append)
+                picker.wheelEvent(QWheelEvent(
                     QPointF(0, 0), QPointF(0, 0), QPoint(0, 0), QPoint(0, -120),
                     Qt.NoButton, Qt.NoModifier, Qt.NoScrollPhase, False))
-                settled.keyPressEvent(QKeyEvent(
+                picker.keyPressEvent(QKeyEvent(
                     QEvent.KeyPress, Qt.Key_Down, Qt.NoModifier))
-                if settled.currentText() != before or written:
+                if picker.currentText() != before or chosen:
                     raise SmokeFailure(
-                        "a wheel gesture or an arrow key moved the agent control")
+                        "a wheel gesture or an arrow key moved the agent picker")
 
                 # Loading a value is not a choice; choosing one is.
-                settled.setCurrentText("librarian")
-                if written:
-                    raise SmokeFailure("loading a value into the agent control wrote it")
-                settled.activated.emit(settled.findText("librarian"))
-                if written != ["librarian"]:
+                picker.setCurrentText("librarian")
+                if chosen:
+                    raise SmokeFailure("loading a value into the agent picker wrote it")
+                picker.activated.emit(picker.findText("librarian"))
+                if chosen != ["librarian"]:
                     raise SmokeFailure("choosing an agent did not report the choice")
-
-                agent_win._set_active_agent("librarian")
+                if config_file.get("active_agent") == "librarian":
+                    raise SmokeFailure("the agent picker reached the config before Save")
+                tab._save()
                 if config_file.get("active_agent") != "librarian":
-                    raise SmokeFailure("choosing an agent did not reach the config")
+                    raise SmokeFailure("saving Settings did not write the chosen agent")
+
+                agent_win = MainWindow(mconn)
+                if hasattr(agent_win, "agent_combo"):
+                    raise SmokeFailure("an agent control still stands in the header")
                 if agent_win._tab_buttons[-1].text() != "Settings":
                     raise SmokeFailure("no Settings tab alongside the board tabs")
             finally:
                 config_file.path = _orig_path
-            ok.append("Settings and the agent control read and write one config file")
+            ok.append("Settings holds every choice, and one Save writes them to one file")
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok

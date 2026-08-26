@@ -1,8 +1,16 @@
-# notebook_proposal — shared playbook
+---
+name: notebook-proposal
+description: Route a fact whose home is the user's Markdown notebook.
+license: MIT
+metadata:
+  bristol.kind: playbook
+  bristol.maintainer: chief_of_staff
+---
+# notebook-proposal
 
 Handle a proposed fact whose home is the user's wiki-linked Markdown notebook,
 from the user directly or from an external collaborator's envelope. The calling
-playbook names the other homes its own content has.
+procedure names the other homes its own content has.
 
 ## The notebook is read-only
 

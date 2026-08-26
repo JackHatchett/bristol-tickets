@@ -6,6 +6,11 @@ task matches its purpose. Style contract:
 `src/templates/identity_template.md` §The governing-doc style contract. What
 belongs in the folder: `src/playbooks/README.md`.
 
+The body below is also the body of a skill. A procedure carried in the Agent
+Skills format is `src/skills/<skill-name>/SKILL.md`: the same sections under
+frontmatter, with the trigger sentence moved into `description`. The frontmatter
+and folder rules are `src/playbooks/skill_conversion.md`.
+
 ---
 
 ```markdown
@@ -42,6 +47,9 @@ when there are none.}}
 
 - **State a rule once**, in the file that owns it. A playbook cites `src/app.md`
   and the agent's charter rather than restating either.
+- **A procedure exists at one path.** A playbook converted to a skill is cited
+  at its `SKILL.md` path everywhere, and no copy survives under
+  `src/playbooks/`.
 - **Never restate the board rules.** `src/app.md` §The board is the only channel
   owns work state, cross-agent tasking and the ban on deriving a next action
   from a file. A playbook step that scans a folder, reads a JSON status field or

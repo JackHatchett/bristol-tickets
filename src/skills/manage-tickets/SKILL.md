@@ -1,10 +1,20 @@
-# manage_tickets.md — Playbook
+---
+name: manage-tickets
+description: Ticket writing, session closure and effort sizing.
+license: MIT
+compatibility: Runs inside a Bristol repository; needs python3, and PySide6 for the viewer.
+metadata:
+  bristol.kind: playbook
+  bristol.maintainer: chief_of_staff
+---
 
-How any agent uses `tickets.db` as its cross-session memory. This playbook owns
-the *procedures*: how to write a ticket body, how to close a session, how to
-size a card. The rules for reading and working the queue are `src/app.md`
-Phase 3; the storage and CLI mechanism is `src/tools/ticket_tools/README.md`.
-Style contract for all three: `src/templates/identity_template.md`.
+# manage-tickets
+
+How any agent uses `tickets.db` as its cross-session memory. This skill owns the
+*procedures*: how to write a ticket body, how to close a session, how to size a
+card. The rules for reading and working the queue are `src/app.md` Phase 3; the
+storage and CLI mechanism is `src/tools/ticket_tools/README.md`. Style contract
+for all three: `src/templates/identity_template.md`.
 
 ## When to read the board
 

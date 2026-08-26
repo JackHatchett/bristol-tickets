@@ -24,7 +24,7 @@ deciding. `project_context.md` governs what loads before this starts;
    building. **Present options with a one-line trade-off each and let the user
    choose**; never recommend by default.
 3. **Teach the design and build vocabulary inside the coaching** —
-   `src/playbooks/_shared/inline_teaching.md`.
+   `src/skills/inline-teaching/SKILL.md`.
 4. **Checkpoint a long session before context gets heavy.** Roughly every 10 to
    20 exchanges is a reasonable check-in cadence rather than a hard trigger. At
    that point run `project_context.md`'s end-of-session step so the board
@@ -35,7 +35,7 @@ deciding. `project_context.md` governs what loads before this starts;
    user which file to paste, and file the return through `design_proposals.md`.
    A strategic health-check goes to an external advisor via
    `tools/game_designer/strategic_review.md`, on request only.
-6. **Run `src/playbooks/_shared/version_control_milestone.md` at each structural
+6. **Run `src/skills/version-control-milestone/SKILL.md` at each structural
    milestone** — a design phase closing, a first buildable slice — before ending
    the session. A decision the milestone carried goes to the home
    `design_proposals.md` §The two homes gives it.
@@ -59,4 +59,4 @@ deciding. `project_context.md` governs what loads before this starts;
 
 ## Audit
 
-**The teaching register** — `src/playbooks/_shared/inline_teaching.md` §Audit.
+**The teaching register** — `src/skills/inline-teaching/SKILL.md` §Audit.

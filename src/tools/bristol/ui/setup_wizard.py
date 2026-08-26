@@ -354,8 +354,8 @@ class AgentsPage(QWizardPage):
 
         installed_only = QLabel(
             "Checking a box installs that agent. It does not choose which one "
-            "you talk to: that is the “Start next session as” selector above "
-            "the board, and you can change it whenever you like."
+            "you talk to: that is “The next session starts as” on the Settings "
+            "tab, and you can change it whenever you like."
         )
         installed_only.setWordWrap(True)
 

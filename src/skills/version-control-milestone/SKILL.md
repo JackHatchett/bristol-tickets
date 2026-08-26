@@ -1,8 +1,16 @@
-# version_control_milestone — shared playbook
+---
+name: version-control-milestone
+description: Walk a project to a saved commit at a milestone.
+license: MIT
+compatibility: Needs git available to the user in the project folder.
+metadata:
+  bristol.kind: playbook
+  bristol.maintainer: chief_of_staff
+---
+# version-control-milestone
 
-Walk a project folder to a saved, recoverable point with git, at a structural
-milestone of its build. The calling procedure decides when a milestone has been
-reached.
+Walk a project folder to a saved, recoverable point with git. The calling
+procedure decides when a milestone has been reached.
 
 ## Preconditions
 
@@ -32,7 +40,7 @@ reached.
 4. **Say that this point is recoverable, and return to the work.**
 5. **Record a decision the milestone carried in the file that owns it**, and,
    where the next session needs it, as one `add-issue-log` comment on a `doing`
-   card — `src/playbooks/_shared/manage_tickets.md`. A purely mechanical commit
+   card — `src/skills/manage-tickets/SKILL.md`. A purely mechanical commit
    needs neither.
 
 ## Failure modes

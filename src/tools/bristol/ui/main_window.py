@@ -1,16 +1,17 @@
 """ui/main_window.py — the top-level window.
 
 This module is the ``MainWindow`` shell: one full-width header bar carrying the
-app's identity, the active-agent selector, the view tabs and Create; the views
-those tabs switch between (Search, Backlog, Board, Archive, Settings); and the
-right-hand inspector panel. The header spans the window and the splitter sits
-under it, so nothing above the board floats on an alignment of its own.
+app's identity, the view tabs and Create; the views those tabs switch between
+(Search, Backlog, Board, Archive, Settings); and the right-hand inspector panel.
+The header spans the window and the splitter sits under it, so nothing above the
+board floats on an alignment of its own.
 
 The Kanban model puts a task's tab in ``task.stage`` (backlog | active |
 archive) and its manual order in ``task.sort_order``. The
 pieces it composes live in sibling modules:
 
     theme.py         palette, stylesheet, COLUMNS, CARD_ROLE, small helpers
+    filter_menu.py   FilterState and FilterMenu (what the board is showing)
     schema_guard.py  ensure_schema_up_to_date()
     card_delegate.py CardDelegate (per-card QPainter rendering)
     record_dialog.py UnifiedRecordDialog (create/edit modal)
@@ -18,7 +19,8 @@ pieces it composes live in sibling modules:
     detail_pane.py   DetailPane (the selected card, read and edited in place)
     dialogs.py       confirm(), choose(), notify() — every modal question
     setup_wizard.py  first-run setup, also reachable from File → Setup…
-    settings_tab.py  SettingsTab (board behaviour, stored in config.local.json)
+    settings_tab.py  SettingsTab (the next-session agent, board behaviour,
+                     appearance — all stored in config.local.json)
 
 Each file stays small enough for an external consultant to ingest and edit in
 one pass.
@@ -35,7 +37,6 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
-    QComboBox,
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -56,11 +57,11 @@ import config_file  # bristol-local: the one config.local.json reader/writer
 
 from .detail_pane import DetailPane
 from .dialogs import confirm, notify
+from .filter_menu import FilterMenu, FilterState, applied
 from .links import remove_links_for_task
 from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
-from .settled_combo import SettledComboBox
 from .settings_tab import SettingsTab
 from .theme import (
     COLUMNS,
@@ -78,6 +79,11 @@ from .theme import (
 # How long the splitter may keep moving before its width is written to the
 # configuration, so a drag lands as one save rather than a stream of them.
 SPLITTER_SETTLE_MS = 800
+
+# How many filter chips stand on the control row before the rest are counted.
+# Past this the row would push the board's own controls around, and the panel
+# is one click away.
+CHIPS_SHOWN = 4
 
 class MainWindow(QMainWindow):
     def __init__(self, conn: sqlite3.Connection, initial_db: Path | None = None) -> None:
@@ -109,13 +115,11 @@ class MainWindow(QMainWindow):
         if app is not None:
             app.styleHints().colorSchemeChanged.connect(self._on_color_scheme_changed)
 
-        self.current_epic_id = None
-
         self._build_menu_bar()
 
         # One full-width header spans the window, and the splitter sits under
-        # it: identity, the agent selector, the view tabs and Create all read as
-        # one bar rather than three floats on three alignments.
+        # it: identity, the view tabs and Create all read as one bar rather than
+        # three floats on three alignments.
         shell = QWidget()
         shell_layout = QVBoxLayout(shell)
         shell_layout.setContentsMargins(0, 0, 0, 0)
@@ -141,18 +145,30 @@ class MainWindow(QMainWindow):
         self.global_create_btn.setObjectName("globalCreateBtn")
         self.global_create_btn.clicked.connect(self._open_global_create)
 
-        # Epic filter and Refresh are constructed here but placed in the Board
-        # tab's own control row (built below). The epic filter still drives every
-        # view (board, backlog, archive, search) through current_epic_id — it
-        # just lives on the Board visually. The combo carries no caption; it
-        # defaults to the self-describing "All Epics".
-        self.epic_filter = QComboBox()
-        # A fixed width rather than one that grows to the longest epic name, so
-        # the control row keeps its shape however the epics are named. The popup
-        # still shows each name in full.
-        self.epic_filter.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
-        self.epic_filter.setFixedWidth(LAYOUT["filter_w"])
-        self.epic_filter.currentIndexChanged.connect(self._on_epic_changed)
+        # The board's filter. One state narrows the board, the Backlog and
+        # the Archive; the button opens the panel that sets it, and the chips
+        # beside it say what is set without opening anything. The controls are
+        # built here and placed in the Board tab's control row below.
+        self.filters = FilterState()
+
+        self.filter_btn = QPushButton("Filter")
+        self.filter_btn.setObjectName("filterBtn")
+        self.filter_btn.setToolTip(
+            "Narrow the Board, the Backlog and the Archive to an assignee, an "
+            "epic, or both.")
+        self.filter_btn.clicked.connect(self._open_filter_menu)
+        # Built on first use, against the board as it stands at that moment.
+        self.filter_menu = None
+
+        self.filter_clear_btn = QPushButton("Clear")
+        self.filter_clear_btn.setObjectName("filterClear")
+        self.filter_clear_btn.setCursor(Qt.PointingHandCursor)
+        self.filter_clear_btn.setToolTip("Remove every filter.")
+        self.filter_clear_btn.clicked.connect(self._clear_filters)
+
+        self.chip_row = QHBoxLayout()
+        self.chip_row.setContentsMargins(0, 0, 0, 0)
+        self.chip_row.setSpacing(space("sm"))
 
         self.refresh_btn = QPushButton("Refresh")
         self.refresh_btn.clicked.connect(self._refresh_board)
@@ -216,6 +232,11 @@ class MainWindow(QMainWindow):
         # per-card checkboxes driving a bulk Activate / Delete bar.
         backlog_widget = QWidget()
         backlog_outer = QVBoxLayout(backlog_widget)
+        # The board's filter narrows this list too, and the control that sets it
+        # is on the Board. A view that is holding cards back says so.
+        self.backlog_filter_note = QLabel()
+        self.backlog_filter_note.setObjectName("formCaption")
+        backlog_outer.addWidget(self.backlog_filter_note)
         self.backlog_column = KanbanColumn(self, self.conn, None, "Backlog (drag to reorder)",
                                            is_backlog=True)
         backlog_outer.addWidget(self.backlog_column)
@@ -269,12 +290,16 @@ class MainWindow(QMainWindow):
 
         # One control row above the columns, holding what applies to the whole
         # board. A single card in any column is created from the master
-        # Create button, not from a per-column control.
+        # Create button, not from a per-column control. What narrows the board
+        # reads left to right — the button, then what it is narrowed to — and
+        # Refresh sits at the far end, where a growing chip row never moves it.
         board_controls = QHBoxLayout()
         board_controls.setSpacing(space("md"))
-        board_controls.addWidget(self.epic_filter)
-        board_controls.addWidget(self.refresh_btn)
+        board_controls.addWidget(self.filter_btn)
+        board_controls.addLayout(self.chip_row)
+        board_controls.addWidget(self.filter_clear_btn)
         board_controls.addStretch(1)
+        board_controls.addWidget(self.refresh_btn)
         board_outer.addLayout(board_controls)
 
         board_columns = QHBoxLayout()
@@ -295,6 +320,9 @@ class MainWindow(QMainWindow):
         # recently modified. Retired tickets, newest first.
         archive_widget = QWidget()
         archive_layout = QVBoxLayout(archive_widget)
+        self.archive_filter_note = QLabel()
+        self.archive_filter_note.setObjectName("formCaption")
+        archive_layout.addWidget(self.archive_filter_note)
         self.archive_results = QListWidget()
         self.archive_results.setObjectName("searchResults")
         self.archive_results.itemClicked.connect(self._on_archive_item_clicked)
@@ -341,7 +369,7 @@ class MainWindow(QMainWindow):
         if bool(config_file.get(config_file.DETAIL_COLLAPSED, False)):
             self._set_pane_collapsed(True, save=False)
 
-        self._load_dropdown_filters()
+        self._sync_filter_row()
         self._refresh_board()
         self._geometry_ready = True
 
@@ -448,12 +476,80 @@ class MainWindow(QMainWindow):
             self._save_pane_geometry()
         super().closeEvent(event)
 
-    # ----- The active agent, always on screen -------------------------------
+    # ----- What the board is showing ---------------------------------------
+
+    def _open_filter_menu(self) -> None:
+        """Open the panel under its button, over the board as it now stands."""
+        if self.filter_menu is None:
+            self.filter_menu = FilterMenu(self, self.conn, self.filters)
+            self.filter_menu.changed.connect(self._on_filters_changed)
+        self.filter_menu.open_under(self.filter_btn)
+
+    def _on_filters_changed(self) -> None:
+        """A filter moved: say so on the control row, and reload the views."""
+        self._sync_filter_row()
+        self._refresh_board()
+
+    def _clear_filters(self) -> None:
+        self.filters.clear()
+        self._sync_menu()
+        self._on_filters_changed()
+
+    def _remove_filter(self, kind: str, value) -> None:
+        """The one filter a chip stands for, removed where it is read."""
+        self.filters.discard(kind, value)
+        self._sync_menu()
+        self._on_filters_changed()
+
+    def _sync_menu(self) -> None:
+        """Bring an open panel back in step with a state changed outside it."""
+        if self.filter_menu is not None and self.filter_menu.isVisible():
+            self.filter_menu.refresh()
+
+    def _sync_filter_row(self) -> None:
+        """The button's count and state, and one chip per filter that is set.
+
+        The button carries the accent while anything is set, so a board showing
+        four cards of forty never reads as a board with four cards on it.
+        """
+        count = self.filters.count()
+        self.filter_btn.setText("Filter" if not count else f"Filter · {count}")
+        self.filter_btn.setProperty("active", "true" if count else "false")
+        self.filter_btn.style().unpolish(self.filter_btn)
+        self.filter_btn.style().polish(self.filter_btn)
+        self.filter_clear_btn.setVisible(bool(count))
+
+        notice = "" if not count else (
+            f"Filtered · {count} — the Filter button on the Board sets it.")
+        for label in (self.backlog_filter_note, self.archive_filter_note):
+            label.setText(notice)
+            label.setVisible(bool(count))
+
+        while self.chip_row.count():
+            stale = self.chip_row.takeAt(0).widget()
+            if stale is not None:
+                stale.deleteLater()
+        chips = applied(self.conn, self.filters)
+        for kind, value, label in chips[:CHIPS_SHOWN]:
+            chip = QPushButton(f"{label}  ✕")
+            chip.setObjectName("filterChip")
+            chip.setCursor(Qt.PointingHandCursor)
+            chip.setToolTip("Remove this filter")
+            chip.clicked.connect(
+                lambda _checked=False, k=kind, v=value: self._remove_filter(k, v))
+            self.chip_row.addWidget(chip)
+        if len(chips) > CHIPS_SHOWN:
+            rest = QLabel(f"+{len(chips) - CHIPS_SHOWN}")
+            rest.setObjectName("formCaption")
+            rest.setToolTip("Open Filter to see the rest.")
+            self.chip_row.addWidget(rest)
+
+    # ----- The header bar ---------------------------------------------------
 
     def _build_header(self) -> QWidget:
-        """The one header bar: identity and the agent selector at the left, the
-        view tabs beside them, Create at the right, everything on one vertical
-        centre line and closed by a single hairline."""
+        """The one header bar: identity at the left, the view tabs beside it,
+        Create at the right, everything on one vertical centre line and closed
+        by a single hairline."""
         header = QWidget()
         header.setObjectName("appHeader")
         bar = QHBoxLayout(header)
@@ -463,9 +559,6 @@ class MainWindow(QMainWindow):
         identity = QLabel("Bristol Tickets")
         identity.setObjectName("appIdentity")
         bar.addWidget(identity, 0, Qt.AlignVCenter)
-
-        for widget in self._agent_selector():
-            bar.addWidget(widget, 0, Qt.AlignVCenter)
 
         separator = QFrame()
         separator.setObjectName("headerRule")
@@ -503,53 +596,6 @@ class MainWindow(QMainWindow):
         self.pages.setCurrentIndex(index)
         for position, button in enumerate(self._tab_buttons):
             button.setChecked(position == index)
-
-    def _agent_selector(self) -> list[QWidget]:
-        """Who the next agent session runs as, in the header.
-
-        This is not a setting: it changes what the whole application means, so
-        it is visible on every view rather than filed behind one. Choosing an
-        agent writes `active_agent` into the configuration and nothing else,
-        and nothing but a choice writes it.
-
-        The list is the configured agents. Where the configuration cannot be
-        read there is no list, and the strip says that rather than offering a
-        name no session would run as.
-        """
-        self.agent_combo = SettledComboBox()
-        slugs = config_file.agent_slugs()
-        active = config_file.get("active_agent")
-        if isinstance(active, str) and active and active not in slugs:
-            slugs = [active, *slugs]
-        self.agent_combo.addItems(slugs)
-        if active in slugs:
-            self.agent_combo.setCurrentText(active)
-        self.agent_combo.setEnabled(bool(slugs))
-        self.agent_combo.picked.connect(self._set_active_agent)
-
-        self.agent_combo.setToolTip(
-            "The agent the next session starts as. Choosing one writes "
-            "active_agent into the configuration and nothing else.")
-
-        caption = QLabel("Next session as")
-        caption.setObjectName("formCaption")
-
-        # The picker already says which agent the next session runs as, so this
-        # speaks only where it cannot: a failed write, or no configuration to
-        # read the list from.
-        self.agent_status = QLabel()
-        self.agent_status.setObjectName("formCaption")
-        if not slugs:
-            self.agent_status.setText("No configuration found")
-        return [caption, self.agent_combo, self.agent_status]
-
-    def _set_active_agent(self, slug: str) -> None:
-        try:
-            config_file.update({"active_agent": slug})
-        except OSError as exc:
-            self.agent_status.setText(f"Not saved: {exc}")
-            return
-        self.agent_status.clear()
 
     # ----- Menu bar ---------------------------------------------------------
 
@@ -769,22 +815,19 @@ class MainWindow(QMainWindow):
 
     # ----- Archive tab (stripped chronological list) -----------
 
-    def _load_archive(self, epic_id: int | None) -> None:
+    def _load_archive(self, filters: FilterState) -> None:
         """Fill the Archive list with stage='archive' tasks, newest-CLOSED
         first — ordered by closed_at, the timestamp Clear Done stamps on
         archival. Cards archived by some other path that never got
         a closed_at fall back to updated_at so they still sort sanely. A
         stripped one-line-per-ticket view like Search."""
         self.archive_results.clear()
+        narrow, params = filters.where("t")
         query = (
             "SELECT t.id, t.title, t.status, COALESCE(t.record_type,'build'), "
             "COALESCE(t.closed_at, t.updated_at) AS closed "
-            "FROM task t WHERE t.stage='archive'"
+            "FROM task t WHERE t.stage='archive'" + narrow
         )
-        params: list = []
-        if epic_id is not None:
-            query += " AND t.epic_id = ?"
-            params.append(epic_id)
         query += " ORDER BY closed DESC, t.id DESC"
         try:
             rows = self.conn.execute(query, tuple(params)).fetchall()
@@ -809,19 +852,18 @@ class MainWindow(QMainWindow):
             dlg = UnifiedRecordDialog(self, self.conn, mode=data[1], record_id=data[0])
             if dlg.exec() == QDialog.Accepted:
                 dlg.save_data()
-                self._load_dropdown_filters()
                 self._refresh_board()
 
     def _open_global_create(self):
         # A new task's default Stage follows the tab Create was pressed on
         # (_stage_for_current_tab). The user can still change Stage in the
         # dialog.
+        epic_id = self.filters.sole_epic()
         dlg = UnifiedRecordDialog(self, self.conn, mode="task", initial_status="todo",
                                   initial_stage=self._stage_for_current_tab(),
-                                  epic_id=self.current_epic_id)
+                                  epic_id=epic_id)
         if dlg.exec() == QDialog.Accepted:
-            dlg.save_data(fallback_epic=self.current_epic_id)
-            self._load_dropdown_filters()
+            dlg.save_data(fallback_epic=epic_id)
             self._refresh_board()
 
     def _update_inspector(self, record_id: int, mode: str):
@@ -884,42 +926,17 @@ class MainWindow(QMainWindow):
             dlg = UnifiedRecordDialog(self, self.conn, mode=data[1], record_id=data[0])
             if dlg.exec() == QDialog.Accepted:
                 dlg.save_data()
-                self._load_dropdown_filters()
                 self._refresh_board()
 
-    def _load_dropdown_filters(self):
-        self.epic_filter.blockSignals(True)
-        old_epic = self.epic_filter.currentData()
-        DONE_EPIC = ("completed", "done")
-
-        self.epic_filter.clear()
-        self.epic_filter.addItem("All Epics", None)
-        try:
-            for eid, name, estatus in self.conn.execute(
-                "SELECT id, name, status FROM epic ORDER BY id"
-            ).fetchall():
-                # Done epics are always hidden from the filter now; the
-                # "Show done epics" toggle was removed. To surface a mistakenly
-                # completed epic, reactivate it from the Search tab.
-                if (estatus or "").lower() in DONE_EPIC:
-                    continue
-                self.epic_filter.addItem(name, eid)
-        except sqlite3.OperationalError:
-            pass
-
-        idx = self.epic_filter.findData(old_epic)
-        if idx >= 0:
-            self.epic_filter.setCurrentIndex(idx)
-        self.epic_filter.blockSignals(False)
-
-    def _on_epic_changed(self):
-        self.current_epic_id = self.epic_filter.currentData()
-        self._refresh_board()
-
     def _refresh_board(self):
+        """Reload every view from the database, through the board's filter.
+
+        Search is reloaded too and takes no filter: it is the one view whose
+        job is to find a card the board is not showing.
+        """
         for col in self.columns.values():
-            col.load_board_tasks(self.current_epic_id)
-        self.backlog_column.load_backlog_tasks(self.current_epic_id)
+            col.load_board_tasks(self.filters)
+        self.backlog_column.load_backlog_tasks(self.filters)
         self._sync_backlog_bar()
-        self._load_archive(self.current_epic_id)
+        self._load_archive(self.filters)
         self._execute_global_search()

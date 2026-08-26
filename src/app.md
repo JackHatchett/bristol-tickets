@@ -97,7 +97,7 @@ Report at the end. The complete list of reasons to stop early:
 stopping point" are not reasons.
 
 **Phrase an early stop so it is easy to say yes** —
-`src/playbooks/_shared/manage_tickets.md` §Session closure.
+`src/skills/manage-tickets/SKILL.md` §Session closure.
 
 **7. Await or act.** On an explicit "continue," start at the next action and
 work down — "continue" means the board, not one card. Otherwise respond to what
@@ -108,11 +108,11 @@ user ones included, are context, not ordering.
 ## Phase 4 — Closure
 
 Before wrapping up a session that changed state, leave the board true.
-Mechanics: `src/playbooks/_shared/manage_tickets.md` §Session closure.
+Mechanics: `src/skills/manage-tickets/SKILL.md` §Session closure.
 
 - **A stop for room (3.6) that wrote inside a git working tree ends with a
   commit block for it** — on by default;
-  `src/playbooks/_shared/suggested_commit.md`.
+  `src/skills/suggested-commit/SKILL.md`.
 
 ## The board is the only channel
 

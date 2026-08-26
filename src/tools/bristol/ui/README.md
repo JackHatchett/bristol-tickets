@@ -64,9 +64,10 @@ coloured, never how far apart two things sit.
 
 `LAYOUT` sits beside the scales and holds what sizes the window rather than the
 space inside it: the window's minimum and opening size, the splitter's opening
-split, the column and detail-pane minimum widths, the epic filter's width, and
-the minimum sizes of the wizard and the dialogs. Reach for it only when the
-thing being sized is a window or a pane, never for a gap.
+split, the column and detail-pane minimum widths, the filter panel's width and
+the height its option list scrolls past, and the minimum sizes of the wizard and
+the dialogs. Reach for it only when the thing being sized is a window or a pane,
+never for a gap.
 
 **Size a row from its font's metrics plus a spacing step, never from a fixed
 height.** A pill row is `QFontMetrics(font).height() + space("sm")`, so a change
@@ -143,6 +144,14 @@ Two surfaces write a card, and each has its own job.
   border; the well behind the cards is `CANVAS`, not a container.
 - **An action that operates on one column lives in that column's menu**, and the
   control row above the columns holds only what applies to the whole board.
+- **Everything that narrows the board is one panel behind the Filter button**,
+  and what it is narrowed to stands on the control row as a chip that removes
+  itself. A second control that hides cards is a second place to look for why a
+  card is missing.
+- **A control that narrows the board is never a setting.** It changes what is on
+  screen now and is gone at the next launch; a setting changes how the app
+  behaves and is written to `config/config.local.json`. Which surface a control
+  belongs on follows from that: the Filter panel, or the Settings tab.
 - **A view tab is text on the canvas**: `HOVER_BG` under the pointer, and the
   selected one marked by weight and an `ACCENT` underline rather than a fill.
 - **A combo box carries a chevron drawn by `chevron_image()`**, cached under the

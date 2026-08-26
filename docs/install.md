@@ -102,8 +102,8 @@ an empty board. Four pages:
    each. Tick the ones you want; the others are never created. `chief_of_staff`
    is always installed, because it is the only agent allowed to change how any
    of them work. Checking a box installs an agent rather than selecting it; the
-   *Start next session as* control above the board chooses which one you talk
-   to. You can add or remove agents later by editing your configuration
+   *The next session starts as* setting on the Settings tab chooses which one
+   you talk to. You can add or remove agents later by editing your configuration
    ([configuration.md](configuration.md)).
 3. **Link your notes and library.** Both optional. A Markdown notebook — any
    folder of notes you edit yourself — and a Zotero data folder. Leave either

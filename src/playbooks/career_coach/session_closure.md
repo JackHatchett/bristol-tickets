@@ -1,7 +1,7 @@
 # session_closure — career_coach playbook
 
 What this agent does at the open and close of a session, on top of the shared
-mechanics in `src/playbooks/_shared/manage_tickets.md` §Session closure.
+mechanics in `src/skills/manage-tickets/SKILL.md` §Session closure.
 
 ## Session start echo
 
@@ -20,7 +20,7 @@ of an evaluation, letter or resume workflow.
    discovered banned phrasing. Format each as a clean, ready-to-paste block and
    name which context module or blacklist file it belongs in.
 2. **Reflect everything that changed into this agent's epic and cards**, per
-   `manage_tickets.md` §Session closure.
+   `src/skills/manage-tickets/SKILL.md` §Session closure.
 
 ## The applications tracker is a scoped exception
 
