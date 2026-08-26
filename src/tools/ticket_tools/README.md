@@ -98,8 +98,12 @@ databases, mirroring the viewer's `ensure_schema_up_to_date()`.
   and touches no board position.
 - **`update-task-status --id N --status ...`** moves a card across the Kanban
   columns, setting and clearing `closed_at` on the `done` transition. It also
-  takes `--stage`, `--pressure` and `--assignee` in the same call. A bare
-  `--status backlog` is redirected to a stage move.
+  takes `--stage`, `--pressure`, `--assignee` and `--block-reason` in the same
+  call. A bare `--status backlog` is redirected to a stage move. A call naming
+  the column a card already sits in keeps its position; only a real move re-seats
+  it at the bottom of its destination. `--block-reason none` clears the reason,
+  and so does `--status done`, which refuses an explicit reason in the same
+  call.
 - **`set-stage --id N --stage backlog|active|archive`** moves a card between
   tabs, appending it to the bottom of the destination's order. It is the CLI
   equivalent of the viewer's Board "Bulk Change" and the Backlog "Activate".
@@ -191,6 +195,16 @@ Phase 3.3 states the rule). Their storage:
   against the blocking card's status. It never moves a card in the queue —
   precedence keeps a `doing` card first even when it is waiting on a `todo` one.
   Only the user drops the link or waves a card past an unmet blocker.
+- **A block reason** is `task.block_reason`, one of `dependency`, `decision`,
+  `capability`, `transient`, or NULL for a card nothing is holding up. It says
+  what *kind* of thing is in the way and never which card: a `dependency` sends
+  the reader to the `blocks` links above, so a blocker that finishes clears the
+  display with no field to reset. The prose goes in an `add-issue-log` comment,
+  which is where the ungranted tool or the failed call gets named. `decision` and
+  `capability` are the two the status scripts list under NEEDS YOU, because no
+  agent can clear either by working. The vocabulary is
+  `create_tickets.BLOCK_REASONS`, mirrored in `bristol/ui/theme.py`. A card
+  reaching `done` has its reason cleared by every writer.
 - **Pressure** is `task.pressure`, 0–100: urgency, impact and live interest
   collapsed into one gestalt reading, written for a human eye. It is
   agent-local, so a card low in the order carrying high pressure is a question

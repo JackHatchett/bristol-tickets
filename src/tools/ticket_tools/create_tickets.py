@@ -70,6 +70,15 @@ EPIC_STATUS_CHOICES = ("not started", "in progress", "completed", "on hold")
 EPIC_STATUS_FINISHED = frozenset({"completed", "done"})
 EPIC_STATUS_IN_FLIGHT = frozenset({"in progress", "active"})
 
+# What kind of thing has stopped a card, in the one vocabulary every writer uses.
+# A dependency names no card here — the 'blocks' link does that, and the status
+# scripts resolve it live. The two that the user alone can clear are named
+# separately, because that is what the status scripts surface.
+# Mirrored in bristol/ui/record_dialog.py, which carries its own copy so the
+# viewer depends on no package outside itself.
+BLOCK_REASONS = ("dependency", "decision", "capability", "transient")
+BLOCK_REASONS_NEEDING_USER = frozenset({"decision", "capability"})
+
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS theme (
@@ -127,6 +136,7 @@ CREATE TABLE IF NOT EXISTS task (
     record_type TEXT NOT NULL DEFAULT 'build',     -- 'build' (Story + acceptance criteria) | 'fix' (Expected/Observed).
     stage       TEXT NOT NULL DEFAULT 'backlog',   -- backlog | active | archive (which tab; orthogonal to status).
     sort_order  INTEGER NOT NULL DEFAULT 0,        -- manual drag-to-reorder position; lower = higher in its list.
+    block_reason TEXT,                             -- NULL | dependency | decision | capability | transient. What kind of thing has stopped the card, never which card: a dependency resolves live from the 'blocks' links.
     FOREIGN KEY (epic_id)    REFERENCES epic  (id),
     FOREIGN KEY (scope_id)   REFERENCES scope (id)
 );
@@ -264,6 +274,7 @@ def migrate(conn: sqlite3.Connection) -> None:
     neither package depends on the other.
     """
     _ensure_link_dep_type(conn)
+    _ensure_block_reason(conn)
     _retire_blocked_columns(conn)
     conn.commit()
 
@@ -277,6 +288,21 @@ def _ensure_link_dep_type(conn: sqlite3.Connection) -> None:
         conn.execute(
             "ALTER TABLE task_link ADD COLUMN dep_type TEXT NOT NULL DEFAULT 'related'"
         )
+
+
+def _ensure_block_reason(conn: sqlite3.Connection) -> None:
+    """Add task.block_reason to a DB that predates it. A card written before the
+    column existed is not blocked, which is what NULL means, so nothing is
+    backfilled.
+
+    This is not a return of task.blocked: that column named the blocking card
+    and was retired into a link. This one names the KIND of thing in the way —
+    dependency, decision, capability, transient — and a dependency still
+    resolves live from the links.
+    """
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
+    if cols and "block_reason" not in cols:
+        conn.execute("ALTER TABLE task ADD COLUMN block_reason TEXT")
 
 
 def _retire_blocked_columns(conn: sqlite3.Connection) -> None:

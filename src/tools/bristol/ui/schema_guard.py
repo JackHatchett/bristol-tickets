@@ -52,6 +52,14 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
     if "sort_order" not in columns:
         conn.execute("ALTER TABLE task ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;")
 
+    # block_reason names what kind of thing has stopped a card — a dependency,
+    # a decision the user owns, a capability that was never granted, or
+    # something transient. It never names WHICH card: a dependency resolves live
+    # from the 'blocks' links, which is why the old task.blocked / depends_on
+    # pair was retired. NULL means nothing is blocking it.
+    if "block_reason" not in columns:
+        conn.execute("ALTER TABLE task ADD COLUMN block_reason TEXT;")
+
     _migrate_stage_from_sprints(conn)
 
     # The `handoff` table is retired. A per-agent "where things stand" note is
@@ -163,7 +171,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 # on a link now, and a link's own history is the row's presence or absence.
 CHANGE_LOG_FIELDS = (
     "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
-    "assignee", "reporter", "story_points", "record_type",
+    "assignee", "reporter", "story_points", "record_type", "block_reason",
 )
 
 # Fields logged as having changed, without their content. A change log records

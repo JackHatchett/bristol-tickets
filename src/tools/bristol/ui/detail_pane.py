@@ -47,9 +47,15 @@ from .attachments import AttachmentBar
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar
 from .record_dialog import STAGES, section_widget
+from .settled_combo import fill_words
 from .theme import (
+    BLOCK_REASON_CHOICES,
+    BLOCK_REASON_HINT,
     C,
-    EFFORT_WORDS,
+    EFFORT_CHOICES,
+    EFFORT_HINT,
+    STAGE_CHOICES,
+    STATUS_CHOICES,
     FLEET_AGENTS,
     LAYOUT,
     _fmt_dt,
@@ -116,19 +122,19 @@ class DetailPane(QWidget):
         grid.setHorizontalSpacing(space("lg"))
         grid.setVerticalSpacing(space("sm"))
 
-        self.status_combo = QComboBox()
-        self.status_combo.addItems(["todo", "doing", "done"])
-        self.stage_combo = QComboBox()
-        self.stage_combo.addItems(STAGES)
+        self.status_combo = fill_words(QComboBox(), STATUS_CHOICES)
+        self.stage_combo = fill_words(QComboBox(), STAGE_CHOICES)
         self.owner_combo = QComboBox()
         self.owner_combo.addItems(FLEET_AGENTS)
         self.epic_combo = QComboBox()
-        self.effort_combo = QComboBox()
-        self.effort_combo.addItem("not sized", "")
-        for code, word in EFFORT_WORDS.items():
-            self.effort_combo.addItem(word, code)
+        self.effort_combo = fill_words(QComboBox(), EFFORT_CHOICES,
+                                       hint=EFFORT_HINT)
         self.pressure_spin = QSpinBox()
         self.pressure_spin.setRange(0, 100)
+        # Blocked says what kind of thing has stopped the card. Which card is the
+        # Links section's job, and the prose is a comment under the Log.
+        self.block_combo = fill_words(QComboBox(), BLOCK_REASON_CHOICES,
+                                      hint=BLOCK_REASON_HINT)
 
         for position, (caption, widget) in enumerate((
             ("Status", self.status_combo),
@@ -137,6 +143,7 @@ class DetailPane(QWidget):
             ("Epic", self.epic_combo),
             ("Effort", self.effort_combo),
             ("Pressure", self.pressure_spin),
+            ("Blocked", self.block_combo),
         )):
             row, column = divmod(position, 2)
             label = QLabel(caption)
@@ -147,14 +154,17 @@ class DetailPane(QWidget):
         grid.setColumnStretch(3, 1)
         root.addWidget(self.controls)
 
-        self.status_combo.currentTextChanged.connect(
-            lambda value: self._write_placement("status", value))
-        self.stage_combo.currentTextChanged.connect(
-            lambda value: self._write_placement("stage", value))
+        self.status_combo.currentIndexChanged.connect(
+            lambda _index: self._write_placement(
+                "status", self.status_combo.currentData()))
+        self.stage_combo.currentIndexChanged.connect(
+            lambda _index: self._write_placement(
+                "stage", self.stage_combo.currentData()))
         self.owner_combo.currentTextChanged.connect(
             lambda value: self._write_field("assignee", value))
         self.epic_combo.currentIndexChanged.connect(self._write_epic)
         self.effort_combo.currentIndexChanged.connect(self._write_effort)
+        self.block_combo.currentIndexChanged.connect(self._write_block_reason)
         self._pressure_timer = QTimer(self)
         self._pressure_timer.setSingleShot(True)
         self._pressure_timer.setInterval(PRESSURE_SETTLE_MS)
@@ -325,7 +335,7 @@ class DetailPane(QWidget):
                 "COALESCE(t.assignee,'user'), COALESCE(t.reporter,'user'), "
                 "COALESCE(t.estimate,''), e.id, t.created_at, t.updated_at, "
                 "COALESCE(t.record_type,'build'), COALESCE(t.stage,'backlog'), "
-                "t.epic_id "
+                "t.epic_id, t.block_reason "
                 "FROM task t LEFT JOIN epic e ON t.epic_id = e.id WHERE t.id = ?",
                 (task_id,),
             ).fetchone()
@@ -335,7 +345,7 @@ class DetailPane(QWidget):
             return
         (title, desc, status, pressure, epic_name, owner, originator, estimate,
          joined_epic_id, created_at, updated_at, record_type, stage,
-         epic_id) = row
+         epic_id, block_reason) = row
 
         self._loading = True
         self.task_id = task_id
@@ -345,14 +355,17 @@ class DetailPane(QWidget):
         self.title.setText(f"#{task_id} {badge}{title}")
 
         self.controls.setVisible(True)
-        self.status_combo.setCurrentText(
-            status if status in ("todo", "doing", "done") else "todo")
-        self.stage_combo.setCurrentText(stage if stage in STAGES else "backlog")
+        self.status_combo.setCurrentIndex(max(self.status_combo.findData(
+            status if status in ("todo", "doing", "done") else "todo"), 0))
+        self.stage_combo.setCurrentIndex(max(self.stage_combo.findData(
+            stage if stage in STAGES else "backlog"), 0))
         self._select_owner(owner)
         self._load_epics(epic_id)
         effort_index = self.effort_combo.findData((estimate or "").upper())
         self.effort_combo.setCurrentIndex(max(effort_index, 0))
         self.pressure_spin.setValue(pressure or 0)
+        block_index = self.block_combo.findData(block_reason)
+        self.block_combo.setCurrentIndex(max(block_index, 0))
 
         self.desc.setPlainText(desc or "(No description narrative provided.)")
         self._fit_description()
@@ -474,10 +487,18 @@ class DetailPane(QWidget):
                     "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage=?",
                     (new_stage,)).fetchone()[0]
             closed_at = _utcnow() if new_status == "done" else None
-            self.conn.execute(
-                "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=? "
-                "WHERE id=?",
-                (new_status, new_stage, base + 1, closed_at, self.task_id))
+            # A finished card is not blocked; moving out of done leaves whatever
+            # reason it had, since nothing here can know it was cleared.
+            if new_status == "done":
+                self.conn.execute(
+                    "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=?, "
+                    "block_reason=NULL WHERE id=?",
+                    (new_status, new_stage, base + 1, closed_at, self.task_id))
+            else:
+                self.conn.execute(
+                    "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=? "
+                    "WHERE id=?",
+                    (new_status, new_stage, base + 1, closed_at, self.task_id))
             self.conn.commit()
         except sqlite3.OperationalError:
             return
@@ -492,6 +513,11 @@ class DetailPane(QWidget):
         if self._loading or self.task_id is None:
             return
         self._write_field("estimate", self.effort_combo.currentData() or None)
+
+    def _write_block_reason(self, *args) -> None:
+        if self._loading or self.task_id is None:
+            return
+        self._write_field("block_reason", self.block_combo.currentData())
 
     def _pressure_moved(self, *args) -> None:
         if self._loading or self.task_id is None:

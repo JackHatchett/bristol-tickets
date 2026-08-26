@@ -23,6 +23,7 @@ CLI
     python3 skills.py list
     python3 skills.py view <name>
     python3 skills.py install <repo-url> <path-in-repo> [--name NAME]
+    python3 skills.py convert <file.md> [--name NAME] [--description TEXT]
     python3 skills.py audit <name>
     python3 skills.py trust <name>
 """
@@ -43,6 +44,23 @@ import read_config  # noqa: E402
 
 QUARANTINE = ".quarantine"
 SCRIPT_SUFFIXES = {".py", ".sh", ".bash", ".zsh", ".js", ".mjs", ".ts", ".rb", ".pl", ".ps1"}
+
+# The only top-level frontmatter keys a conversion carries across. The
+# specification defines a small set (src/playbooks/skill_conversion.md
+# §Frontmatter); a foreign definition's other keys — `tools`, `model`, `color`,
+# `allowed-tools`, a client's own extensions — exist so a dispatcher can route a
+# card to a configured worker, and a Bristol session's model and tool surface
+# belong to the host it runs in. They have no reader here and are dropped rather
+# than carried as decoration.
+CONVERT_KEEPS = ("name", "description", "license")
+
+# The specification's own naming rule for a skill, which is also its directory
+# name: lowercase letters, digits and single interior hyphens, 1-64 characters.
+NAME_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789-")
+
+# A consuming client's always-loaded index truncates a description past this,
+# and what is lost is the routing signal rather than the detail.
+DESCRIPTION_ROUTING_LIMIT = 60
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +222,96 @@ def cmd_install(args) -> int:
     return 0
 
 
+def split_frontmatter(path: Path) -> tuple[dict[str, str], str]:
+    """(top-level scalar fields, body) for a markdown file with YAML frontmatter.
+
+    A file with no frontmatter yields an empty mapping and its whole text as the
+    body. Nested blocks are not parsed — their key is reported as present so a
+    conversion can say it dropped them, and their content is not carried.
+    """
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].lstrip("\ufeff").rstrip() != "---":
+        return {}, text
+    fields: dict[str, str] = {}
+    for index in range(1, len(lines)):
+        if lines[index].rstrip() == "---":
+            return fields, "".join(lines[index + 1:])
+        line = lines[index]
+        if line[:1] in {" ", "\t", "#", "\n"} or ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        fields[key.strip()] = value.strip().strip('"').strip("'")
+    return fields, ""
+
+
+def normalise_name(raw: str) -> str:
+    """A skill name from arbitrary text: lowercased, non-name characters folded
+    to hyphens, runs collapsed, ends trimmed. Returns '' when nothing survives."""
+    lowered = "".join(c if c in NAME_CHARS else "-" for c in raw.strip().lower())
+    while "--" in lowered:
+        lowered = lowered.replace("--", "-")
+    return lowered.strip("-")[:64]
+
+
+def cmd_convert(args) -> int:
+    """Write a foreign markdown definition into quarantine as a skill folder.
+
+    A subagent definition, a slash command and a prompt-pack entry are one object
+    — a markdown body under frontmatter — and the half of that frontmatter which
+    routes work has no reader in Bristol. This keeps the body and the two fields
+    that make a skill loadable, and says what it dropped.
+    """
+    source = Path(args.source).expanduser()
+    if not source.is_file():
+        print(f"{source} is not a file.", file=sys.stderr)
+        return 1
+    root = quarantine_root()
+    if root is None:
+        print("config declares no skills.install_dir; nowhere to convert into.",
+              file=sys.stderr)
+        return 1
+
+    fields, body = split_frontmatter(source)
+    description = args.description or fields.get("description", "")
+    if not description:
+        print(f"{source} carries no description, and a skill without one states "
+              f"no trigger and never routes.\n"
+              f"Supply it: python3 skills.py convert {source} --description \"...\"",
+              file=sys.stderr)
+        return 1
+
+    name = normalise_name(args.name or fields.get("name", "") or source.stem)
+    if not name:
+        print("No usable skill name; pass --name.", file=sys.stderr)
+        return 1
+    if find_skill(name, include_quarantine=True) is not None:
+        print(f"A skill named '{name}' is already present.", file=sys.stderr)
+        return 1
+
+    target = data_paths.ensure_dir(root) / name
+    target.mkdir()
+    kept = {"name": name, "description": description}
+    if fields.get("license"):
+        kept["license"] = fields["license"]
+    header = "".join(f"{k}: {v}\n" for k, v in kept.items())
+    (target / "SKILL.md").write_text(
+        f"---\n{header}---\n{body.lstrip(chr(10))}", encoding="utf-8")
+
+    dropped = [k for k in fields if k not in CONVERT_KEEPS]
+    print(f"Quarantined at {target}")
+    if dropped:
+        print(f"Dropped, no reader in Bristol: {', '.join(sorted(dropped))}")
+    if len(description) > DESCRIPTION_ROUTING_LIMIT:
+        print(f"description is {len(description)} characters; past "
+              f"{DESCRIPTION_ROUTING_LIMIT} a client's index truncates it and the "
+              f"routing signal is what is lost. Rewrite it before trusting.")
+    print(f"Not listed and not loadable until trusted:\n"
+          f"    python3 skills.py audit {name}\n"
+          f"    python3 skills.py trust {name}")
+    return 0
+
+
 def cmd_audit(args) -> int:
     root = quarantine_root()
     candidates = [d for d in _skill_dirs(root) if d.name == args.name]
@@ -256,6 +364,13 @@ def main(argv: list[str]) -> int:
     p_install.add_argument("path", help="the skill's directory inside that repository")
     p_install.add_argument("--name", help="override the installed directory name")
 
+    p_convert = sub.add_parser(
+        "convert", help="write a foreign markdown definition into quarantine as a skill")
+    p_convert.add_argument("source", help="the markdown file to convert")
+    p_convert.add_argument("--name", help="override the skill and directory name")
+    p_convert.add_argument("--description",
+                           help="the trigger, where the source states none")
+
     p_audit = sub.add_parser("audit", help="print a skill's SKILL.md and every script it carries")
     p_audit.add_argument("name")
 
@@ -265,7 +380,7 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
     return {
         "list": cmd_list, "view": cmd_view, "install": cmd_install,
-        "audit": cmd_audit, "trust": cmd_trust,
+        "convert": cmd_convert, "audit": cmd_audit, "trust": cmd_trust,
     }[args.command](args)
 
 

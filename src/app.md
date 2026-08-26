@@ -86,6 +86,9 @@ resolves. Do not stop after one ticket, leave the rest for next session, or ask
 permission between tickets. Report at the end. The complete list of reasons to
 stop early:
 
+- **The board is unreachable** — no write to `tickets.db` succeeds. Stop at
+  once: work you cannot record is work the next session cannot find. Say what
+  broke and what is unfiled; restoring the channel outranks every card.
 - **You need the user** — a decision that is theirs, a missing credential, a
   capability you have not been granted.
 - **You have hit inefficient grinding** — the same call failing repeatedly, a

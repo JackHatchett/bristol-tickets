@@ -424,7 +424,7 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("Create away from the Backlog and Archive tabs "
                                "should default Stage=active")
         from ui.record_dialog import UnifiedRecordDialog as _RecordDialog
-        if _RecordDialog(win, mconn, mode="task").stage_combo.currentText() \
+        if _RecordDialog(win, mconn, mode="task").stage_combo.currentData() \
                 != "active":
             raise SmokeFailure("the Create dialog defaults a card to somewhere "
                                "other than the board")
@@ -437,7 +437,7 @@ def check_bristol() -> list[str]:
         # touching the configuration (save=False).
         pane = win.detail_pane
         pane.show_task(b2)
-        pane.status_combo.setCurrentText("doing")
+        pane.status_combo.setCurrentIndex(pane.status_combo.findData("doing"))
         moved_status = mconn.execute(
             "SELECT status FROM task WHERE id=?", (b2,)).fetchone()[0]
         if moved_status != "doing":
@@ -456,6 +456,41 @@ def check_bristol() -> list[str]:
         if win.detail_pane.isHidden():
             raise SmokeFailure("expanding did not bring the detail pane back")
         ok.append("Detail pane edits write through the shared path; collapse round-trips")
+
+        # A typed block reason: what KIND of thing stopped the card, never which
+        # card. It writes from the pane like any other field, the change log
+        # records it, and Done clears it — a finished card is not blocked.
+        pane.show_task(b2)
+        pane.block_combo.setCurrentIndex(pane.block_combo.findData("capability"))
+        if mconn.execute("SELECT block_reason FROM task WHERE id=?",
+                         (b2,)).fetchone()[0] != "capability":
+            raise SmokeFailure("a pane block-reason edit did not reach the database")
+        if not mconn.execute(
+                "SELECT COUNT(*) FROM task_event WHERE task_id=? AND "
+                "field='block_reason' AND to_value='capability'", (b2,)).fetchone()[0]:
+            raise SmokeFailure("a block reason was not recorded by the change-log triggers")
+        pane.status_combo.setCurrentIndex(pane.status_combo.findData("done"))
+        if mconn.execute("SELECT block_reason FROM task WHERE id=?",
+                         (b2,)).fetchone()[0] is not None:
+            raise SmokeFailure("a card moved to done kept its block reason")
+        pane.status_combo.setCurrentIndex(pane.status_combo.findData("doing"))
+        # The two vocabularies are separate copies on purpose — the viewer
+        # depends on no package outside itself — so they are checked against
+        # each other rather than trusted to stay in step.
+        import importlib.util as _ilu
+        _spec = _ilu.spec_from_file_location(
+            "_ct", TOOLS / "ticket_tools" / "create_tickets.py")
+        _ct = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_ct)
+        from ui.theme import BLOCK_REASON_CHOICES
+        viewer_set = tuple(v for v, _ in BLOCK_REASON_CHOICES if v is not None)
+        if viewer_set != tuple(_ct.BLOCK_REASONS):
+            raise SmokeFailure(
+                f"block-reason vocabularies drifted: viewer {viewer_set} vs "
+                f"CLI {tuple(_ct.BLOCK_REASONS)}")
+        if not _ct.BLOCK_REASONS_NEEDING_USER <= set(_ct.BLOCK_REASONS):
+            raise SmokeFailure("a reason the status scripts surface is not in the vocabulary")
+        ok.append("Blocked: a typed reason writes from the pane, logs, clears on "
+                  "done, and both vocabularies agree")
 
         # Unsaved-changes guard: clean dialog is not dirty and closes
         # freely; a field edit flips it dirty.
@@ -907,17 +942,15 @@ def check_bristol() -> list[str]:
                 if tab.new_ticket.currentData() != "active":
                     raise SmokeFailure("Settings did not load the stored board setting")
                 tab.new_ticket.setCurrentIndex(tab.new_ticket.findData("backlog"))
-                tab._save()
                 if config_file.get(config_file.NEW_TICKET_STAGE) != "backlog":
                     raise SmokeFailure("Settings did not write the board setting")
                 if config_file.get("a_key_from_a_newer_build.kept") is not True:
-                    raise SmokeFailure("saving Settings dropped an unrecognised key")
+                    raise SmokeFailure("a Settings write dropped an unrecognised key")
                 # Work Scope: the whole queue by default, and One Ticket — the
                 # position that changes anything — reaches the file.
                 if tab.work_scope.currentData() is not True:
                     raise SmokeFailure("Work Scope did not default to the whole queue")
                 tab.work_scope.setCurrentIndex(tab.work_scope.findData(False))
-                tab._save()
                 if config_file.get(config_file.WORK_WHOLE_QUEUE) is not False:
                     raise SmokeFailure("Settings did not write the work scope")
                 if tab.appearance.currentData() != \
@@ -928,12 +961,25 @@ def check_bristol() -> list[str]:
                 tab.appearance.setCurrentIndex(tab.appearance.findData("cool_dark"))
                 if previewed != ["cool_dark"]:
                     raise SmokeFailure("picking a scheme did not apply it live")
-                tab._save()
                 if config_file.get(config_file.APPEARANCE_SCHEME) != "cool_dark":
-                    raise SmokeFailure("Settings did not write the scheme")
+                    raise SmokeFailure("picking a scheme did not write it")
+                if hasattr(tab, "save_btn"):
+                    raise SmokeFailure("a Save button still stands on Settings")
+                tab.suggested_commit.setChecked(
+                    not config_file.get(config_file.SUGGESTED_COMMIT, True))
+                if config_file.get(config_file.SUGGESTED_COMMIT) is not \
+                        tab.suggested_commit.isChecked():
+                    raise SmokeFailure("toggling the commit box did not write it")
+                # Seating a stored value is not a choice, so reload writes nothing.
+                marker = config_file.get(config_file.APPEARANCE_SCHEME)
+                config_file.update({config_file.APPEARANCE_SCHEME: "warm_light"})
+                tab.reload()
+                if config_file.get(config_file.APPEARANCE_SCHEME) != "warm_light":
+                    raise SmokeFailure("reloading Settings wrote a value back")
+                config_file.update({config_file.APPEARANCE_SCHEME: marker})
                 # The next-session agent is a field on this page like every
                 # other: it loads from the configuration, moves only on a
-                # deliberate choice, and reaches the file when Save is pressed.
+                # deliberate choice, and reaches the file on that choice.
                 picker = tab.next_agent
                 if picker.currentText() not in config_file.agent_slugs():
                     raise SmokeFailure("the agent picker does not show a configured agent")
@@ -967,11 +1013,8 @@ def check_bristol() -> list[str]:
                 picker.activated.emit(picker.findText("librarian"))
                 if chosen != ["librarian"]:
                     raise SmokeFailure("choosing an agent did not report the choice")
-                if config_file.get("active_agent") == "librarian":
-                    raise SmokeFailure("the agent picker reached the config before Save")
-                tab._save()
                 if config_file.get("active_agent") != "librarian":
-                    raise SmokeFailure("saving Settings did not write the chosen agent")
+                    raise SmokeFailure("choosing an agent did not write it")
 
                 agent_win = MainWindow(mconn)
                 if hasattr(agent_win, "agent_combo"):
@@ -980,7 +1023,8 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure("no Settings tab alongside the board tabs")
             finally:
                 config_file.path = _orig_path
-            ok.append("Settings holds every choice, and one Save writes them to one file")
+            ok.append("Settings writes each choice as it is made, and a load is "
+                      "not a choice")
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok

@@ -96,13 +96,36 @@ answer with a hex value or a pixel count.
 **Where no key or token carries the intent, say so and stop.** A new key is a
 key every scheme has to gain, which is a change to `theme.py` and to this file.
 
+## Words on screen
+
+- **A name is Title Case; a sentence is sentence case.** A tab, a section
+  heading, a field label, a picker option and a button all name something and are
+  Title Cased. A tooltip, a placeholder, a notice and a checkbox whose label is a
+  clause all say something and are not. "Hide Closed Items" names a mode; "Open
+  this installation when Bristol Tickets starts" is a sentence.
+- **A picker holds the stored value in its item data and shows a caption.** The
+  two move independently, so a vocabulary is reworded without a migration and a
+  column keeps the spelling every writer already uses. `settled_combo.fill_words`
+  loads one from `(value, caption)` pairs; `theme.py` holds the pairs.
+- **An option is a name, and its explanation is the picker's tooltip.** Effort
+  offers Small through Extra Large and hovers the budget anchors; Blocked offers
+  four names and hovers what each means. An option carrying its own explanation
+  makes every row as wide as the longest sentence in it.
+- **A caption is ours to choose; a protocol string is not** — `src/tools/README.md`
+  §A borrowed format's words, and our own. Nothing on this page is a protocol
+  string.
+
 ## Where a card is edited
 
 Two surfaces write a card, and each has its own job.
 
+- **Settings writes each choice at the moment it is made**, one key per
+  control, and carries no Save button. The status line names the row it wrote.
 - **The detail pane edits a selected card in place**: status, stage, owner,
-  epic, effort and pressure are live controls, and comments, links and image
-  attachments post from it. Every pane write goes down the same connection as
+  epic, effort, pressure and Blocked are live controls, and comments, links and
+  image attachments post from it. Blocked says what kind of thing has stopped the
+  card and never which one — that is a `blocks` link under Links — and moving a
+  card to Done clears it. Every pane write goes down the same connection as
   every other writer, so the change-log triggers record it identically.
 - **The Edit Record dialog is where a record is created** — both kinds — **and
   where the fields that do not fit a pane are rewritten**: the title, the

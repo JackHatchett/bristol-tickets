@@ -294,7 +294,7 @@ class AddLinkDialog(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Add link")
+        self.setWindowTitle("Add Link")
         self.setMinimumWidth(LAYOUT["small_dialog_min_w"])
 
         v = QVBoxLayout(self)
@@ -421,7 +421,7 @@ class LinkBar(QWidget):
         self.header.setObjectName("sectionHeader")
         layout.addWidget(self.header)
 
-        self.add_btn = QPushButton("Add link")
+        self.add_btn = QPushButton("Add Link")
         self.add_btn.setToolTip("Link this ticket to another ticket, or to an address")
         self.add_btn.clicked.connect(self._prompt)
         # Sized to its own text rather than stretched across the pane — a

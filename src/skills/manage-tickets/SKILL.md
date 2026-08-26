@@ -86,6 +86,7 @@ the skeleton back next time the record opens.
 | --- | --- |
 | Reasoning, findings, what you did, what's needed next | An `add-issue-log` comment |
 | A decision the user must make before you proceed | An `add-issue-log` comment, plus `assignee` = `user` |
+| What kind of thing stopped the card | `update-task-status --block-reason dependency\|decision\|capability\|transient` |
 | "This came from that review / that note / that page" | A link (`link-add --uri`) |
 | "This relates to ticket #153" | A link (`link-add --to-task 153`) |
 | Durable technical detail (schema notes, a working pattern) | The file that owns it — a README or playbook — then link to it |
@@ -153,6 +154,9 @@ thing in the message:
 - **Name the ungranted tool or connector that would unlock the card, and use
   whatever the runtime offers to make granting it one step.** An offer, never a
   demand, and never a reason to stall work you can already do.
+- **Set the card's block reason to what actually stopped it**, and put the tool,
+  the call or the choice in a comment beside it. A `capability` or a `decision`
+  is what puts the card under NEEDS YOU the next time anyone reads the board.
 
 ## Effort sizing — what S/M/L/XL measure
 

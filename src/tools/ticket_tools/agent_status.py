@@ -78,7 +78,8 @@ def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     LEFT JOIN keeps epic-less tasks visible."""
     return conn.execute(
         "SELECT t.id, t.title, t.status, t.pressure, t.sort_order, t.estimate, "
-        "       t.assignee, COALESCE(e.name, '(no epic)') AS epic, e.owner AS epic_owner "
+        "       t.assignee, t.block_reason, "
+        "       COALESCE(e.name, '(no epic)') AS epic, e.owner AS epic_owner "
         "FROM task t "
         "LEFT JOIN epic e ON t.epic_id = e.id "
         "WHERE t.stage = 'active'"
@@ -190,6 +191,23 @@ def print_comments(conn: sqlite3.Connection,
         print(f"{mark}#{t['id']} [{c['created_at'][:10]} {c['author']}] {body}")
 
 
+def print_needs_you(rows: list[sqlite3.Row]) -> None:
+    """The cards only the user can clear, named rather than left in the queue.
+
+    A decision block and a capability block are the two reasons no agent can
+    resolve by working: one waits on a judgement that is the user's, the other
+    on access that was never granted. A dependency waits on another card and a
+    transient failure waits on a retry, so neither is listed here.
+    """
+    held = [r for r in rows
+            if (r["block_reason"] or "") in create_tickets.BLOCK_REASONS_NEEDING_USER]
+    if not held:
+        return
+    print("\n--- NEEDS YOU (blocked on something no agent can clear) ---")
+    for r in held:
+        print(f"  #{r['id']} [{r['block_reason']}] {r['title']}")
+
+
 def fmt(r: sqlite3.Row, blockers: dict | None = None,
         position: int | None = None) -> str:
     # A blocker is named on the card so the agent sees it before it acts, and it
@@ -200,6 +218,13 @@ def fmt(r: sqlite3.Row, blockers: dict | None = None,
     flag = ""
     if held_by:
         flag = " [BLOCKED by " + ", ".join(f"#{b}" for b in held_by) + "]"
+    # The typed reason says what KIND of thing is in the way. 'dependency' names
+    # no card and prints nothing of its own: the live blocker flag above is its
+    # whole display, so a dependency whose blocker has finished disappears with
+    # the flag rather than lingering as a stale word.
+    reason = (r["block_reason"] or "").strip()
+    if reason and reason != "dependency":
+        flag += f" [BLOCKED: {reason}]"
     pos = f"{position:>2}." if position is not None else "   "
     return (f"  {pos} {r['status']:5} pr{r['pressure']:>3} {r['estimate'] or '-':>4}  "
             f"[{r['epic']}] {r['title']}{flag}")
@@ -297,6 +322,11 @@ def main() -> None:
     db_path = resolve_db_path()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    # This reader writes: migrate() below brings a database one schema behind up
+    # to date, and any write over a file bridge takes the same journal rule every
+    # other writer takes — src/tools/ticket_tools/README.md §Invariants.
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA journal_mode=MEMORY")
     # A snapshot of a database one schema behind would read blockers that are
     # not there yet, so the schema is brought current first — the same reason
     # resolve_db_path provisions a missing database instead of failing.
@@ -343,6 +373,7 @@ def main() -> None:
         else:
             print("   Your backlog is also empty — await direction.")
 
+    print_needs_you(mine_all)
     print_comments(conn, mine_all)
     print_links(conn, mine_all)
     print_attachments(conn, mine_all, db_path)

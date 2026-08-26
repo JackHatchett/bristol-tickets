@@ -215,7 +215,7 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
 # on a link now, and a link's own history is the row's presence or absence.
 CHANGE_LOG_FIELDS = (
     "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
-    "assignee", "reporter", "story_points", "record_type",
+    "assignee", "reporter", "story_points", "record_type", "block_reason",
 )
 
 # Fields logged as having changed, without their content. A change log records
@@ -307,6 +307,8 @@ def _ensure_stage_columns(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE task ADD COLUMN stage TEXT NOT NULL DEFAULT 'backlog';")
     if "sort_order" not in cols:
         conn.execute("ALTER TABLE task ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;")
+    if "block_reason" not in cols:
+        conn.execute("ALTER TABLE task ADD COLUMN block_reason TEXT;")
 
 
 def _append_order(conn: sqlite3.Connection, stage: str, status: str) -> int:
@@ -511,6 +513,10 @@ def update_task_status(args: argparse.Namespace) -> None:
             status = None  # leave the board column unchanged on a bare stage move
         if status is not None and status not in ("todo", "doing", "done"):
             sys.exit("update-task-status: ERROR — --status must be todo|doing|done")
+        if (args.block_reason not in (None, "none")
+                and (status or "").lower() == "done"):
+            sys.exit("update-task-status: ERROR — a done card cannot carry a "
+                     "block reason")
 
         row = conn.execute("SELECT stage, status FROM task WHERE id=?", (args.id,)).fetchone()
         if row is None:
@@ -530,13 +536,24 @@ def update_task_status(args: argparse.Namespace) -> None:
         if stage is not None:
             sets.append("stage = ?"); vals.append(new_stage)
         # A stage or status move re-homes the task, so re-seat it at the bottom
-        # of its (new) destination list.
-        if stage is not None or status is not None:
+        # of its (new) destination list. A call that names the column the card is
+        # already in has moved nothing and keeps its position — the same test the
+        # record dialog makes, so a queue is not silently reordered by a call
+        # that came to set pressure, an assignee or a block reason.
+        if new_stage != cur_stage or new_status != cur_status:
             sets.append("sort_order = ?"); vals.append(_append_order(conn, new_stage, new_status))
         if args.pressure is not None:
             sets.append("pressure = ?"); vals.append(args.pressure)
         if args.assignee is not None:
             sets.append("assignee = ?"); vals.append(args.assignee)
+        # A finished card is not blocked, so `done` clears the reason whether or
+        # not the call names one; an explicit --block-reason on the same call
+        # would be a contradiction and is rejected above.
+        if new_status == "done":
+            sets.append("block_reason = ?"); vals.append(None)
+        elif args.block_reason is not None:
+            sets.append("block_reason = ?")
+            vals.append(None if args.block_reason == "none" else args.block_reason)
         if sets:
             vals.append(args.id)
             conn.execute(f"UPDATE task SET {', '.join(sets)} WHERE id = ?", vals)
@@ -548,6 +565,11 @@ def update_task_status(args: argparse.Namespace) -> None:
             extras.append(f"pressure {args.pressure}")
         if args.assignee is not None:
             extras.append(f"assignee {args.assignee}")
+        if new_status == "done":
+            extras.append("block reason cleared")
+        elif args.block_reason is not None:
+            extras.append("block reason cleared" if args.block_reason == "none"
+                          else f"blocked: {args.block_reason}")
         tail = (" (" + ", ".join(extras) + ")") if extras else ""
         print(f"OK: task #{args.id} -> status {new_status}{tail}")
     finally:
@@ -873,6 +895,13 @@ def main() -> None:
                      help="optionally reset pressure in the same call")
     pu.add_argument("--assignee", default=None,
                      help="optionally set the task's assignee (an agent slug)")
+    pu.add_argument("--block-reason", dest="block_reason", default=None,
+                     choices=list(create_tickets.BLOCK_REASONS) + ["none"],
+                     help="what kind of thing has stopped the card: dependency "
+                          "(which card is the 'blocks' link's job), decision "
+                          "(the user's to make), capability (never granted) or "
+                          "transient. 'none' clears it; so does --status done. "
+                          "The prose goes in add-issue-log.")
     pu.add_argument("--actor", default=None,
                      help="who is making this change, for the change log "
                           "(your agent slug, e.g. chief_of_staff). "
