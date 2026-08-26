@@ -52,19 +52,21 @@ this key.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `cross_agent_stage` | `active` | Where a card one agent files for another lands: `active` (the Board) or `backlog`. |
+| `new_ticket_stage` | `active` | Where a new card lands when `add-task` names no `--stage`: `active` (the To Do column) or `backlog`. It governs every new card, whoever files it and whoever it is for; an explicit `--stage` always wins. |
 
 ### `session`
 
-**Required.** How an agent session closes. Edited in Bristol Tickets' Settings
+**Required.** How an agent session runs and closes. Edited in Bristol Tickets' Settings
 tab.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `suggested_commit` | `true` | `true` or `false`. When a session halts because the conversation is running out of room and it wrote files inside a git working tree, it ends with a copy-paste commit block for them. |
+| `work_whole_queue` | `true` | `true` or `false`. When a session is told to continue, `true` works its queue top to bottom and halts on room; `false` works the next action and stops there. |
+| `suggested_commit` | `true` | `true` or `false`. When a session ends having written files inside a git working tree, whatever stopped it, it ends with a copy-paste commit block for them. |
 
-The value is read at the moment the offer would fire, so a change takes effect
-on the next session that stops that way.
+Each value is read at the moment it bites — the scope when a session is told to
+continue, the commit offer as the session closes — so a change takes effect on
+the next session that reaches that point.
 
 ### `appearance`
 

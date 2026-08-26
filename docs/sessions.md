@@ -3,8 +3,8 @@
 A session is one conversation with an agent host, pointed at this folder,
 running as one agent, working one board. The loop is short:
 
-1. **Pick the agent** on the board's Settings tab — *The next session starts
-   as* — and Save.
+1. **Pick the agent** on the board's Settings tab, under **Agent Sessions** —
+   *Agent* — and Save.
 2. **Open a session** in your agent host with the `bristol_tickets` folder
    selected.
 3. **Say what you want.**
@@ -24,8 +24,10 @@ context, never as its own work.
 
 ## What "continue" means
 
-Say **continue** and the agent starts at the top of its queue and works down
-through every card, without asking permission between them. It stops when the
+Say **continue** and the agent starts at the top of its queue. How far it goes
+is Settings → **Agent Sessions** → *Work Scope*: *Whole Queue*, the default, works down
+through every card without asking permission between them; *One Ticket* works
+the next action and stops there. On *Whole Queue* it stops when the
 queue is empty or when one of a short list of things happens: it needs a
 decision only you can make, it needs a credential or a permission it has not
 been granted, it is grinding on something that keeps failing, or the
@@ -34,10 +36,10 @@ conversation is running out of room.
 Anything else you say, it responds to. If nothing you said was actionable, it
 names the next action and asks whether to start.
 
-When it stops because the conversation is running out of room, and it wrote
-files inside a git repository, the last thing in its message is a block you can
-paste into a terminal to commit that work. It never runs the commit itself. Turn
-this off in Settings → **When a session stops for room**.
+When a session ends having written files inside a git repository, whatever
+stopped it, the last thing in its message is a block you can paste into a
+terminal to commit that work. It never runs the commit itself. Turn this off in
+Settings → **Agent Sessions** → *Git Commit on Session Close*.
 
 ## How the agent decides what is next
 

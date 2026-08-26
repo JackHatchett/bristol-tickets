@@ -21,13 +21,19 @@ import instance
 
 # The board's own settings, named once so the UI, the CLI and the governing
 # docs all say the same thing.
-CROSS_AGENT_STAGE = "board.cross_agent_stage"
-CROSS_AGENT_STAGE_DEFAULT = "active"
+NEW_TICKET_STAGE = "board.new_ticket_stage"
+NEW_TICKET_STAGE_DEFAULT = "active"
 
 # Whether a session that halts for room ends with a commit block for what it
 # wrote. Read by the agent at the moment the offer would fire, never by the app.
 SUGGESTED_COMMIT = "session.suggested_commit"
 SUGGESTED_COMMIT_DEFAULT = True
+
+# How far a session runs when it is told to continue. On, it works its queue
+# down and halts on room; off, it works the next card and stops there. Read by
+# the agent at the moment the scope decision is made, never by the app.
+WORK_WHOLE_QUEUE = "session.work_whole_queue"
+WORK_WHOLE_QUEUE_DEFAULT = True
 
 # Which colour scheme the app draws with. The value is a scheme name or a family
 # name from ``ui/theme.py``; a family means "follow the OS within it".

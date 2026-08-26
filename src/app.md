@@ -81,9 +81,10 @@ Executing, investigating, commenting or linking all count:
 `update-task-status --id N --status doing` is your first write to that card,
 unless the same session takes it to `done`.
 
-**6. Work the queue through, top to bottom, in one go.** Do not stop after one
-ticket, leave the rest for next session, or ask permission between tickets.
-Report at the end. The complete list of reasons to stop early:
+**6. Work the queue through, top to bottom, in one go**, to the scope 3.7
+resolves. Do not stop after one ticket, leave the rest for next session, or ask
+permission between tickets. Report at the end. The complete list of reasons to
+stop early:
 
 - **You need the user** — a decision that is theirs, a missing credential, a
   capability you have not been granted.
@@ -100,9 +101,10 @@ stopping point" are not reasons.
 `src/skills/manage-tickets/SKILL.md` §Session closure.
 
 **7. Await or act.** On an explicit "continue," start at the next action and
-work down — "continue" means the board, not one card. Otherwise respond to what
-the user said; if nothing actionable, state the next action and ask whether to
-start it. **A comment never promotes a ticket or reroutes execution**: comments,
+work down as far as `session.work_whole_queue` allows — on, the whole queue; off,
+that one card. Read it when the scope decision is made, never at session start.
+Otherwise respond to what the user said; if nothing actionable, state the next
+action and ask whether to start it. **A comment never promotes a ticket or reroutes execution**: comments,
 user ones included, are context, not ordering.
 
 ## Phase 4 — Closure
@@ -110,8 +112,8 @@ user ones included, are context, not ordering.
 Before wrapping up a session that changed state, leave the board true.
 Mechanics: `src/skills/manage-tickets/SKILL.md` §Session closure.
 
-- **A stop for room (3.6) that wrote inside a git working tree ends with a
-  commit block for it** — on by default;
+- **A session that wrote inside a git working tree ends with a commit block for
+  it**, whatever stopped it — on by default;
   `src/skills/suggested-commit/SKILL.md`.
 
 ## The board is the only channel

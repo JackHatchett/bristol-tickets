@@ -4,17 +4,18 @@
   "active_agent": "chief_of_staff",
 
   "board": {
-    "_notes": "How the board behaves. Edited in Bristol's Settings tab. cross_agent_stage is where a card one agent files for another lands: 'active' (the Board, where the assignee sees it) or 'backlog'. Read by src/tools/ticket_tools/ticket_write.py when add-task is given an assignee other than the reporter and no explicit --stage.",
-    "cross_agent_stage": "active"
+    "_notes": "How the board behaves. Edited in Bristol Tickets' Settings tab. new_ticket_stage is where a new card lands when add-task is given no explicit --stage: 'active' (the To Do column, where it is seen and worked) or 'backlog'. Read by src/tools/ticket_tools/ticket_write.py.",
+    "new_ticket_stage": "active"
   },
 
   "session": {
-    "_notes": "How an agent session closes. Edited in Bristol Tickets' Settings tab. suggested_commit: when a session halts because the conversation is running out of room and it wrote files inside a git working tree, it ends with a copy-paste commit block for them. Read at the moment the offer would fire — src/skills/suggested-commit/SKILL.md.",
+    "_notes": "How an agent session runs and closes. Edited in Bristol Tickets' Settings tab. work_whole_queue: how far a session goes when told to continue — true works its queue top to bottom and halts on room, false works the next action and stops there. Read when the scope decision is made — src/app.md Phase 3.7. suggested_commit: when a session ends having written files inside a git working tree, whatever stopped it, it ends with a copy-paste commit block for them. Read as the session closes — src/skills/suggested-commit/SKILL.md.",
+    "work_whole_queue": true,
     "suggested_commit": true
   },
 
   "appearance": {
-    "_notes": "How Bristol Tickets looks. Edited in its Settings tab. scheme names either a family — 'warm' or 'cool', meaning follow the OS light/dark setting within it — or one scheme outright: 'warm_light', 'warm_dark', 'cool_light', 'cool_dark'. The schemes and the design tokens they sit beside are src/tools/bristol/ui/theme.py; what each key means is src/tools/bristol/ui/README.md.",
+    "_notes": "How Bristol Tickets looks. Edited in its Settings tab. scheme names either a family — 'warm' or 'cool', meaning follow the OS light/dark setting within it — or one scheme outright: 'warm_light', 'warm_dark', 'cool_light', 'cool_dark'. The Settings tab shows the families as Pumpkin and Frosty; the stored value is unchanged by that. The schemes and the design tokens they sit beside are src/tools/bristol/ui/theme.py; what each key means is src/tools/bristol/ui/README.md.",
     "scheme": "warm"
   },
 

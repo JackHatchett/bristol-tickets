@@ -284,14 +284,16 @@ REFERENCE_SCHEME = "warm_light"
 DEFAULT_CHOICE = "warm"
 
 # What the Settings tab offers, in the order it offers it. The value is what is
-# stored; the caption is what is read.
+# stored and names the palette; the caption is what this product calls it. The
+# two are deliberately separate — a family can be renamed on screen without
+# migrating a stored choice.
 CHOICES: list[tuple[str, str]] = [
-    ("warm", "Warm — follow the system"),
-    ("cool", "Cool — follow the system"),
-    ("warm_light", "Warm light"),
-    ("warm_dark", "Warm dark"),
-    ("cool_light", "Cool light"),
-    ("cool_dark", "Cool dark"),
+    ("warm_light", "Pumpkin Light"),
+    ("warm_dark", "Pumpkin Dark"),
+    ("warm", "Pumpkin System"),
+    ("cool_light", "Frosty Light"),
+    ("cool_dark", "Frosty Dark"),
+    ("cool", "Frosty System"),
 ]
 
 # The single live palette every consumer reads from. Starts at the reference
