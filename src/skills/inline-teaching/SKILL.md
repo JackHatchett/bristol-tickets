@@ -1,8 +1,15 @@
-# inline_teaching — shared playbook
+---
+name: inline-teaching
+description: Teach inside live coaching, at the user's own level.
+license: MIT
+metadata:
+  bristol.kind: playbook
+  bristol.maintainer: chief_of_staff
+---
+# inline-teaching
 
-Interweave instruction into coaching at the level the user has demonstrated.
-Runs inside any coaching procedure, on any subject the user is learning, rather
-than as a session of its own.
+Interweave instruction into coaching at the level the user has demonstrated. It
+runs inside a coaching procedure rather than as a session of its own.
 
 ## Preconditions
 

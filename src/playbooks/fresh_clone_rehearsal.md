@@ -2,7 +2,7 @@
 
 Prove a stranger can install Bristol, before anything is pushed to a public
 remote. Input is the committed tree; output is a pass or a list of defects fixed
-in the repo. `version_control_milestone.md` owns committing.
+in the repo. `src/skills/version-control-milestone/SKILL.md` owns committing.
 
 Two ways in, and a release rehearses both: **the download**, which is how a
 stranger arrives, and **the clone**, which is how a developer does.

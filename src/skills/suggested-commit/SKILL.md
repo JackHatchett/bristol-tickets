@@ -1,7 +1,15 @@
-# suggested_commit — shared playbook
+---
+name: suggested-commit
+description: Turn a halting session's writes into a commit to paste.
+license: MIT
+compatibility: Needs git available to the user; the procedure runs no git command.
+metadata:
+  bristol.kind: playbook
+  bristol.maintainer: chief_of_staff
+---
+# suggested-commit
 
-Turn the files a session wrote into a commit the user can paste unedited, at the
-moment the session halts for room.
+Turn the files a session wrote into a commit the user can paste unedited.
 
 ## Input
 
@@ -36,6 +44,7 @@ moment the session halts for room.
 
 ## Boundary
 
-`version_control_milestone.md` is the coached procedure: a user learning git,
-each command annotated, at a structural milestone the calling procedure names.
-This one is mechanical, fires on a room stop, and annotates nothing.
+`src/skills/version-control-milestone/SKILL.md` is the coached procedure: a
+user learning git, each command annotated, at a structural milestone the calling
+procedure names. This one is mechanical, fires on a room stop, and annotates
+nothing.

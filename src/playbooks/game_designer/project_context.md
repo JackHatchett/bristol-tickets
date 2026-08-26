@@ -59,7 +59,7 @@ session:
 3. **Close a task the session's decision resolved** —
    `ticket_write.py update-task-status --id N --status done` — rather than
    leaving it to go stale in the queue.
-4. **Run `src/playbooks/_shared/version_control_milestone.md` before ending**
+4. **Run `src/skills/version-control-milestone/SKILL.md` before ending**
    where the session reached a structural milestone.
 
 **Never create a project-local state or tracking bundle for a new project.** The

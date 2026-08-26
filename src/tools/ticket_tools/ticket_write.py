@@ -41,7 +41,7 @@ Usage:
         agent so `agent_status.py <slug>` picks it up. A ticket is a *build* (a
         thing to build — its --description is a Story + Given/When/Then
         acceptance criteria) or a *fix* (a broken thing — its --description is
-        Expected/Observed). Follow the format in playbooks/_shared/manage_tickets.md
+        Expected/Observed). Follow the format in src/skills/manage-tickets/SKILL.md
         (§Record types); the viewer shows the same skeletons when you create in
         the GUI.
 
@@ -63,7 +63,7 @@ Usage:
         log through the same triggers as any other write — title and
         description as '(changed)', the rest with their new value.
         Write --title and --description to the record type's shape (see
-        playbooks/_shared/manage_tickets.md §Record types: Build vs Fix); editing a
+        src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix); editing a
         ticket body is an ordinary board write, not a reason to reach for SQL.
 
     python3 ticket_write.py add-issue-log --task N --author <slug|user>
@@ -760,7 +760,7 @@ def main() -> None:
     pt.add_argument("--estimate", default=None,
                      help="S|M|L|XL — how much of a full usage budget this "
                           "card would take. Scale and anchors in "
-                          "playbooks/_shared/manage_tickets.md (§Effort sizing); XL "
+                          "src/skills/manage-tickets/SKILL.md (§Effort sizing); XL "
                           "means split it, not start it.")
     pt.add_argument("--reporter", default="agent",
                      help="who originated this task — an agent slug, or 'user' "
@@ -774,7 +774,7 @@ def main() -> None:
                      help="'build' (a thing to build — Story + acceptance criteria) "
                           "or 'fix' (a broken thing — Expected/Observed). Default build. "
                           "Write --description in that record type's format (see "
-                          "playbooks/_shared/manage_tickets.md §Record types: Build vs Fix).")
+                          "src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix).")
     pt.add_argument("--actor", default=None,
                      help="who is making this change, for the change log "
                           "(your agent slug, e.g. chief_of_staff). "
@@ -788,11 +788,11 @@ def main() -> None:
                       help="replace the card's description. Write it to the "
                            "record type's skeleton — Story + Acceptance Criteria "
                            "for a build, Expected + Observed for a fix (see "
-                           "playbooks/_shared/manage_tickets.md §Record types: Build vs Fix).")
+                           "src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix).")
     pct.add_argument("--estimate", default=None,
                       help="S|M|L|XL — how much of a full usage budget this card "
                            "would take. Scale and anchors in "
-                           "playbooks/_shared/manage_tickets.md (§Effort sizing).")
+                           "src/skills/manage-tickets/SKILL.md (§Effort sizing).")
     pct.add_argument("--record-type", dest="record_type", default=None,
                       choices=["build", "fix"],
                       help="retype the card: 'build' (a thing to build) or "

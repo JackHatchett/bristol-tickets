@@ -4,7 +4,7 @@ Seven agents ship with Bristol. Each is a Markdown charter under
 `src/agent_identities/`, plus playbooks for the tasks it performs and, for some,
 tools it can run.
 
-One agent is active at a time. You choose it in the strip above the board, and
+One agent is active at a time. You choose it on the board's Settings tab, and
 the session that starts next loads that agent's charter and works that
 agent's cards. An agent never picks up a card belonging to another; when it
 needs one of them to do something, it files a card assigned to them.

@@ -15,6 +15,10 @@ own. In the Kanban model it populates itself two ways:
   single manually-ordered list. Cards drag to reorder (persisted); a per-card
   checkbox drives the bulk Activate / Delete bar beneath it.
 
+Both loaders take the board's ``FilterState`` and append its fragment to their
+own query, so what a column holds and what the Backlog holds are narrowed by
+the one control (``filter_menu.py``).
+
 Sprints are gone, so there is no active-sprint filtering and no archive column
 here (the Archive tab is a plain chronological list built in main_window).
 
@@ -133,27 +137,24 @@ class KanbanColumn(QWidget):
         "LEFT JOIN epic e ON t.epic_id = e.id "
     )
 
-    def load_board_tasks(self, epic_id: int | None):
-        """BOARD column: stage='active' tasks in this status column, manual order."""
+    def load_board_tasks(self, filters):
+        """BOARD column: stage='active' tasks in this status column, manual order,
+        narrowed by the board's filter."""
         self.list_widget.clear()
-        query = self._SELECT + "WHERE t.stage='active' AND t.status = ?"
-        params = [self.status_key]
-        if epic_id is not None:
-            query += " AND t.epic_id = ?"
-            params.append(epic_id)
+        narrow, narrow_params = filters.where("t")
+        query = self._SELECT + "WHERE t.stage='active' AND t.status = ?" + narrow
+        params = [self.status_key, *narrow_params]
         query += " ORDER BY t.sort_order ASC, t.id ASC"
         for row in self.conn.execute(query, tuple(params)).fetchall():
             self._add_item(*row)
         self._set_count()
 
-    def load_backlog_tasks(self, epic_id: int | None):
-        """BACKLOG column: every stage='backlog' task as one manual list."""
+    def load_backlog_tasks(self, filters):
+        """BACKLOG column: every stage='backlog' task as one manual list,
+        narrowed by the board's filter."""
         self.list_widget.clear()
-        query = self._SELECT + "WHERE t.stage='backlog'"
-        params = []
-        if epic_id is not None:
-            query += " AND t.epic_id = ?"
-            params.append(epic_id)
+        narrow, params = filters.where("t")
+        query = self._SELECT + "WHERE t.stage='backlog'" + narrow
         query += " ORDER BY t.sort_order ASC, t.id ASC"
         for row in self.conn.execute(query, tuple(params)).fetchall():
             self._add_item(*row)

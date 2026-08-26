@@ -93,7 +93,8 @@ LAYOUT = {
     "split_detail": 720,   # opening width of the detail side
     "column_min_w": 260,   # a board column narrower than this is unreadable
     "detail_min_w": 320,   # the detail pane narrower than this is unreadable
-    "filter_w": 190,       # the epic filter, wide enough for a real epic name
+    "filter_menu_w": 300,      # the filter panel, wide enough for an epic name
+    "filter_menu_max_h": 420,  # its option list, before it scrolls
     "wizard_min_w": 720,
     "wizard_min_h": 480,
     "dialog_min_w": 760,        # the record dialog
@@ -592,6 +593,67 @@ QLabel#pathRow {{
     font-size: {type_size('body')}pt;
 }}
 QLabel#formCaption {{ color: {C['INK_SOFT']}; }}
+/* The filter panel: one raised surface under the Filter button, holding a
+   section per facet and one row per option. A row is a whole click target, so
+   it takes the pointer fill a card does. */
+QFrame#filterMenu {{
+    background-color: {C['SURFACE']};
+    border: 1px solid {C['BORDER']};
+    border-radius: {r_lg}px;
+}}
+QLabel#filterTitle {{
+    color: {C['INK']};
+    font-size: {type_size('section')}pt;
+    font-weight: 700;
+}}
+QLabel#facetHeading {{
+    color: {C['INK_SOFT']};
+    font-size: {type_size('caption')}pt;
+    font-weight: 700;
+}}
+QWidget#facetRow {{ border-radius: {r_md}px; }}
+QWidget#facetRow:hover {{ background-color: {C['HOVER_BG']}; }}
+QLabel#facetCount {{ color: {C['INK_SOFT']}; }}
+QScrollArea#filterScroll, QScrollArea#filterScroll > QWidget > QWidget {{
+    background: transparent;
+    border: none;
+}}
+/* A text action inside a panel or a control row: no surface of its own. */
+QPushButton#filterClear {{
+    background: transparent;
+    border: none;
+    padding: {s_xs}px {s_md}px;
+    color: {C['ACCENT']};
+    font-weight: 600;
+}}
+QPushButton#filterClear:hover {{
+    color: {C['ACCENT_DK']};
+    text-decoration: underline;
+}}
+QPushButton#filterClear:disabled {{
+    color: {C['DISABLED_TX']};
+    text-decoration: none;
+}}
+/* The Filter button takes the accent while it is holding something back, so a
+   narrowed board never reads as an empty one. */
+QPushButton#filterBtn[active="true"] {{
+    background-color: {C['SEL_BG']};
+    border: 1px solid {C['ACCENT']};
+    color: {C['ACCENT_DK']};
+}}
+/* One applied filter, removable where it is read. */
+QPushButton#filterChip {{
+    background-color: {C['NEUTRAL_BG']};
+    color: {C['NEUTRAL_TX']};
+    border: none;
+    border-radius: {radius('pill')}px;
+    padding: {s_sm}px {s_lg}px;
+    font-weight: 600;
+}}
+QPushButton#filterChip:hover {{
+    background-color: {C['SEL_BG']};
+    color: {C['ACCENT_DK']};
+}}
 /* A scroll bar is chrome: a slim handle on an empty groove, so a column that
    overflows does not gain a heavy black rail down its edge. */
 QScrollBar:vertical {{

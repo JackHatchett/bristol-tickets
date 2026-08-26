@@ -7,14 +7,6 @@ launcher.
 Everything on the board is editable by hand. Nothing here requires an agent, and
 an agent working the board makes exactly the same changes you would.
 
-## Above the tabs: Start next session as
-
-A strip across the top of every screen names the agent your next session
-will run as. It sits outside the tabs because it changes what the whole
-application means — a session as the librarian and a session as the career coach
-read different files and own different work. Choosing an agent writes that one
-choice to your configuration and nothing else.
-
 ## The three tabs
 
 A card's **stage** decides which tab it lives in. Stage is independent of the
@@ -29,8 +21,10 @@ cards onto the Board) or **Delete**.
 
 **Archive** — retired cards, most recently changed first, as a plain list.
 
-**Search** finds cards and epics by text and shows the matches as a list.
-**Settings** holds choices about how the board behaves.
+**Search** finds cards and epics by text and shows the matches as a list. It
+takes no filter: it is the one view whose job is to find a card the board is not
+showing. **Settings** holds every choice this installation makes, the agent your
+next session runs as included.
 
 ## The three columns
 
@@ -47,9 +41,30 @@ the top of To Do is what an agent picks up next, and dragging is how you decide
 that.
 
 Above the columns sits one control row holding what applies to the whole board:
-the epic filter and **Refresh**. Each column carries its own header — its name,
-how many cards are in it, and an overflow menu holding what acts on that column
-alone: creating a card in it, and, on Done, **Clear Done**.
+**Filter**, whatever it is currently set to, and **Refresh** at the far end.
+Each column carries its own header — its name, how many cards are in it, and an
+overflow menu holding what acts on that column alone: creating a card in it,
+and, on Done, **Clear Done**.
+
+## Filter
+
+**Filter** opens a panel of two facets. **Assignee** lists every owner the board
+holds, `user` first. **Epic** lists every epic in play, plus **No epic** for the
+cards carrying none. Each row is a tick box and the number of board cards it
+matches; ticking one applies it at once, and the panel stays open.
+
+Options within a facet add up and the two facets narrow each other: ticking two
+agents shows both agents' cards, and adding an epic cuts that down to their
+cards in it. A count already knows what the other facet holds, so a row reading
+0 is a row worth not clicking.
+
+What you have set shows on the control row as a chip — click its ✕ to drop that
+one — and the button carries the count and the accent, so a board showing four
+cards of forty never reads as a board with four cards on it. **Clear** drops
+everything.
+
+One filter narrows the Board, the Backlog and the Archive together. Nothing is
+stored: a fresh launch opens on the whole board.
 
 ## A card
 
@@ -154,6 +169,11 @@ notebook folder skips the report rather than failing the sweep. If you set no
 notebook, Clear Done simply archives.
 
 ## Settings
+
+**The next session starts as** — the agent your next session runs as. It is the
+one choice here that changes what the whole application means: a session as the
+librarian and a session as the career coach read different files and own
+different work. Pick the agent, then Save, as with everything else on the page.
 
 **Cross-agent stage** — when one agent files a card for another, where it lands:
 the Board, where the other agent will see it in its queue, or the Backlog. The

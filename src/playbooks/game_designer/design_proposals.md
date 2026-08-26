@@ -3,7 +3,7 @@
 Triggered when a design idea or change is proposed, by the user directly or as
 an incoming RETURN from the external Gem
 (`protocols/game_designer/gemini_gem_bridge.md`). The notebook half of it runs
-on `src/playbooks/_shared/notebook_proposal.md`.
+on `src/skills/notebook-proposal/SKILL.md`.
 
 ## The two homes
 

@@ -74,9 +74,9 @@ lore and tone.
   are edited in the project's `design/`.
 - `playbooks/game_designer/project_context.md` — session-start and close project
   loading (§2.1).
-- `playbooks/_shared/inline_teaching.md`,
-  `playbooks/_shared/version_control_milestone.md` and
-  `playbooks/_shared/notebook_proposal.md` — the teaching register the core
+- `src/skills/inline-teaching/SKILL.md`,
+  `src/skills/version-control-milestone/SKILL.md` and
+  `src/skills/notebook-proposal/SKILL.md` — the teaching register the core
   procedure runs on, the commit walkthrough at each structural milestone, and
   the notebook half of `design_proposals.md`.
 

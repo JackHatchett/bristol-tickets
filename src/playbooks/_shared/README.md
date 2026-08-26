@@ -1,27 +1,20 @@
 # playbooks/_shared/
 
-Procedures that serve more than one agent. Maintained by `chief_of_staff`;
+The procedures that serve more than one agent. Maintained by `chief_of_staff`;
 loading is `src/templates/identity_template.md` §Boundaries and coordination.
 
 ## Index
 
-One line per capability, and the condition that calls for it.
+Each of these procedures is a skill folder under `src/skills/`, and a skill's
+own `description` is its index entry. Read the set with:
 
-- **`manage_tickets.md`** — how any agent writes to the board: record types,
-  description format, effort sizing, session closure. Load it before creating,
-  editing or closing a card.
-- **`inline_teaching.md`** — calibrating the register and defining a term as the
-  work needs it. Load it inside a coaching procedure, on any subject the user is
-  learning.
-- **`notebook_proposal.md`** — routing a proposed fact into the user's
-  wiki-linked notebook without writing into it. Load it when an idea's home is
-  the notebook, whoever proposed it.
-- **`version_control_milestone.md`** — walking a project folder to a saved
-  commit, each command with what it does. Load it when a structural change has
-  landed and the work should be recoverable.
-- **`suggested_commit.md`** — rendering the session's own writes as a commit
-  block to paste. Load it when a session halts for room, per `src/app.md`
-  Phase 4.
+```
+python3 src/tools/skill_tools/skills.py list
+```
+
+`view <name>` is the on-demand load of one body —
+`src/tools/skill_tools/README.md`. Converting a file into that shape is
+`src/playbooks/skill_conversion.md`.
 
 ## What belongs here
 

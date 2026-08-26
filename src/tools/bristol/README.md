@@ -5,8 +5,8 @@ double-roll tickets are printed on; the metaphor for this personal + AI
 ticketing system, as "kanban" was for Ohno's.)*
 
 A standalone PySide6 desktop tool that opens the shared tickets SQLite database
-and displays it as a warm, card-based Kanban board with create/edit/delete, an
-epic filter, global search, and a properties inspector. Tabs are driven by
+and displays it as a warm, card-based Kanban board with create/edit/delete, a
+filter panel, global search, and a properties inspector. Tabs are driven by
 `task.stage` (Backlog | Board=active | Archive) with manual `task.sort_order`.
 
 It is **mechanism-only**: no agent logic, no personal paths, no coupling to the
@@ -33,6 +33,7 @@ bristol/
 ├── ui/                  the PySide6 widgets (split into small modules)
 │   ├── README.md        the styling contract: scheme keys, tokens, intent
 │   ├── theme.py         schemes, design tokens, stylesheet, COLUMNS, CARD_ROLE
+│   ├── filter_menu.py   FilterState + FilterMenu — what the board is showing
 │   ├── schema_guard.py  on-launch non-destructive migration
 │   ├── card_delegate.py CardDelegate — per-card QPainter rendering
 │   ├── links.py         LinkBar — a ticket's links to tickets and addresses
@@ -132,19 +133,41 @@ can be set up or adopted without taking over which one the app opens.
 The wizard reads `config.example.json` as data and imports nothing from the rest
 of `src/tools`, so the mechanism-only rule holds.
 
-## Settings, and the active agent
+## Settings
 
-The **Settings** tab holds choices about how the board behaves, read and written
-through `config_file.py` — the same file the wizard fills in, never a second
-store. A save round-trips the whole document, so a key an older build does not
-recognise survives untouched. The first setting is
-`board.cross_agent_stage`: where a card one agent files for another lands, the
-Board or the Backlog. `ticket_tools/ticket_write.py` reads the same key.
+The **Settings** tab holds every choice this installation makes, read and
+written through `config_file.py` — the same file the wizard fills in, never a
+second store. A save round-trips the whole document, so a key an older build
+does not recognise survives untouched, and one Save commits the whole page.
 
-The **active agent** is not a setting. It names who the next agent session runs
-as, which changes what the whole application means, so it sits above the tabs on
-every screen: *Start next session as*. Choosing one writes `active_agent` into
-the configuration and nothing else.
+- **The next session starts as** — `active_agent`, the agent an agent session
+  takes its identity from. The picker offers the agents this installation
+  configures, and moves only on a deliberate choice.
+- **A card one agent files for another goes to** — `board.cross_agent_stage`,
+  the Board or the Backlog. `ticket_tools/ticket_write.py` reads the same key.
+- **When a session stops for room** — `session.suggested_commit`, read by the
+  agent at the moment the offer would fire.
+- **Colour scheme** — `appearance.scheme`, applied live as it is picked so it
+  can be compared against the board it themes.
+
+## Filtering the board
+
+One **Filter** button on the Board opens a panel of facets: **Assignee**, every
+owner the board holds, and **Epic**, every epic in play plus the cards carrying
+none. Each row is a checkbox and the number of board cards it matches, and a
+click applies it at once — there is nothing to confirm on the way out.
+
+- **Options within a facet unite; facets intersect.** Two agents show side by
+  side, and an agent inside an epic narrows to the overlap.
+- **A count is conditional on the other facets**, so a row reading 0 is a row
+  worth not clicking.
+- **What is set stands on the control row** as a chip that removes itself, and
+  the button carries the same count, so a narrowed board never reads as an empty
+  one.
+- **One state narrows the Board, the Backlog and the Archive.** Search takes no
+  filter: it is the view whose job is to find a card the board is not showing.
+- **Nothing is stored.** A filter is what you are looking at now, and a fresh
+  launch shows the whole board.
 
 ## Links
 
@@ -171,7 +194,7 @@ widget (shown as "on save") and are written once the INSERT yields an id.
 
 A ticket Description is confined to its Build or Fix template, so provenance
 lives in a link. That rule is agent behaviour and sits outside this tool:
-`src/playbooks/_shared/manage_tickets.md` §Description discipline.
+`src/skills/manage-tickets/SKILL.md` §Record types: Build vs Fix.
 
 ## Clear Done writes a report
 

@@ -218,7 +218,7 @@ work.
 *Build* is a thing to build, described as a Story plus acceptance criteria; a
 *Fix* is a broken thing, described as Expected and Observed. Set it with
 `add-task --record-type fix` or in the viewer's Create dialog. The skeletons and
-their precedence rules live in `src/playbooks/_shared/manage_tickets.md`
+their precedence rules live in `src/skills/manage-tickets/SKILL.md`
 §Record types: Build vs Fix.
 
 **Keep a ticket single-outcome** — one Build or Fix per outcome, split rather

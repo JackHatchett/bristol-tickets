@@ -20,6 +20,9 @@ before running anything in it.
   schema. Any agent, every session.
 - **`config_tools/`** — read a config field, resolve a declared data location.
   Any agent, before touching a path outside the repo.
+- **`skill_tools/`** — the loader for Agent Skills: two roots, frontmatter-only
+  listing, and a quarantine a third-party skill leaves only after its code is
+  read. When a capability is packaged as a skill folder.
 - **`file_management/`** — inspection of folders and photos, deduplication,
   renaming, and a verified move. When a task is about files on disk.
 - **`document_tools/`** — PDF-to-Markdown, recipe normalization. When a document

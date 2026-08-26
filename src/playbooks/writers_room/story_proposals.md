@@ -3,7 +3,7 @@
 Triggered when a story or world change is proposed — by the user, by a session's
 own reasoning in `prose_drafting.md`, or by a flag raised in
 `manuscript_review.md`. The notebook half of it runs on
-`src/playbooks/_shared/notebook_proposal.md`.
+`src/skills/notebook-proposal/SKILL.md`.
 
 ## The two homes
 

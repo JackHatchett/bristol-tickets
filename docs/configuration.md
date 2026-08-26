@@ -39,7 +39,7 @@ Three folders, three rules: `src/` is published, `config/` is git-ignored,
 ### `active_agent`
 
 **Required. Default `chief_of_staff`.** The agent slug every runtime uses. Set
-it from the strip above the board rather than by hand.
+it on the board's Settings tab rather than by hand.
 
 A host that takes per-project instructions can override it for its own sessions with an
 `agent_override: <slug>` line in its instructions. The override is read-only and
@@ -107,6 +107,14 @@ The scale itself does not vary per installation.
 | --- | --- |
 | `tickets_db` | `data/<instance>/tickets/tickets.db`. Required — every session reads it. |
 | `personal_db` | `data/<instance>/personal/db/personal.db`. Only meaningful with the `personal_db` block below. |
+
+### `skills`
+
+**Optional.** Where a third-party Agent Skill is installed.
+
+| Key | Meaning |
+| --- | --- |
+| `install_dir` | `data/<instance>/skills`. Read by `src/tools/skill_tools/skills.py`. Absent means only `src/skills/` is loadable. |
 
 ### `agents`
 

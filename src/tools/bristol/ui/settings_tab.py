@@ -6,11 +6,8 @@ Every field here reads and writes ``config/config.local.json`` through
 home. A key this build does not offer is left exactly as it was on save.
 
 The appearance choice applies the moment it is picked, so the scheme can be
-compared against the board it themes; Save is what commits it to the
-configuration.
-
-The active agent is deliberately absent: it changes what the whole application
-means, so it lives on the main window where it is always visible.
+compared against the board it themes. Save is what commits every field on the
+page, the appearance choice included.
 """
 
 from __future__ import annotations
@@ -29,6 +26,7 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local; see module docstring
 
+from .settled_combo import SettledComboBox
 from .theme import CHOICES as APPEARANCE_CHOICES
 from .theme import space
 
@@ -47,6 +45,14 @@ class SettingsTab(QWidget):
         # re-theme itself. Absent in a bare construction (the smoke check), where
         # there is no window to re-theme.
         self._on_appearance_changed = on_appearance_changed
+
+        # Which agent the next session runs as: the one field here that decides
+        # what a session is rather than how the board behaves. It is a settled
+        # combo because a wheel gesture aimed past the page must not move it.
+        self.next_agent = SettledComboBox()
+        self.next_agent.setToolTip(
+            "The agent the next session starts as. Saving writes active_agent "
+            "into the configuration and nothing else.")
 
         self.cross_agent = QComboBox()
         for value, caption in CROSS_AGENT_CHOICES:
@@ -67,6 +73,7 @@ class SettingsTab(QWidget):
         form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
         form.setHorizontalSpacing(space("xl"))
         form.setVerticalSpacing(space("lg"))
+        form.addRow("The next session starts as", self.next_agent)
         form.addRow("A card one agent files for another goes to", self.cross_agent)
         form.addRow("When a session stops for room", self.suggested_commit)
         form.addRow("Colour scheme", self.appearance)
@@ -108,10 +115,30 @@ class SettingsTab(QWidget):
         if self._on_appearance_changed is not None:
             self._on_appearance_changed(self.appearance.currentData())
 
+    def _load_agents(self) -> None:
+        """Offer the configured agents, opened on the active one.
+
+        Where the configuration names an agent this installation does not
+        configure, that name is offered too, so the page shows what a session
+        would actually start as. Where there is no list at all the picker is
+        empty and unclickable rather than offering a name no session would run
+        as.
+        """
+        slugs = config_file.agent_slugs()
+        active = config_file.get("active_agent")
+        if isinstance(active, str) and active and active not in slugs:
+            slugs = [active, *slugs]
+        self.next_agent.clear()
+        self.next_agent.addItems(slugs)
+        if active in slugs:
+            self.next_agent.setCurrentText(active)
+        self.next_agent.setEnabled(bool(slugs))
+
     def reload(self) -> None:
         """Show what the configuration currently says."""
         target = config_file.path()
         placed = target is not None and target.exists()
+        self._load_agents()
         stored = config_file.get(
             config_file.CROSS_AGENT_STAGE, config_file.CROSS_AGENT_STAGE_DEFAULT
         )
@@ -135,12 +162,17 @@ class SettingsTab(QWidget):
         self.status.clear()
 
     def _save(self) -> None:
+        changes = {
+            config_file.CROSS_AGENT_STAGE: self.cross_agent.currentData(),
+            config_file.SUGGESTED_COMMIT: self.suggested_commit.isChecked(),
+            config_file.APPEARANCE_SCHEME: self.appearance.currentData(),
+        }
+        # An empty picker means this installation configures no agents. Writing
+        # its blank would name an agent no session could run as.
+        if self.next_agent.currentText():
+            changes["active_agent"] = self.next_agent.currentText()
         try:
-            written = config_file.update({
-                config_file.CROSS_AGENT_STAGE: self.cross_agent.currentData(),
-                config_file.SUGGESTED_COMMIT: self.suggested_commit.isChecked(),
-                config_file.APPEARANCE_SCHEME: self.appearance.currentData(),
-            })
+            written = config_file.update(changes)
         except OSError as exc:
             self.status.setText(f"Not saved: {exc}")
             return

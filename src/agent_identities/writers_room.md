@@ -52,7 +52,7 @@ internal structure is the same either way.
 - `playbooks/writers_room/voice_distillation.md` — entered on a natural request
   or the `VOICE` keyword. This agent's application of the voice-capture method,
   scouting and distilling both.
-- `playbooks/_shared/notebook_proposal.md` — the notebook half of
+- `src/skills/notebook-proposal/SKILL.md` — the notebook half of
   `story_proposals.md`.
 
 ### 2.4 Tools
