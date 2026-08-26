@@ -54,22 +54,34 @@ contents in place instead.
 The sandbox carries no `sqlite3` command-line binary. Python's built-in
 `sqlite3` module is present and is what every tool here uses.
 
-## Installing a package
+## When the shell stops answering
 
-The sandbox's disk is a fixed allowance shared with the machine's other
-sessions, and it is normally close to full. A failed install still writes what
-it downloaded before it gives up, and a sandbox with no free space cannot open
-the sockets a command arrives on: every later call fails with a socket error,
-including the ones that reach the board.
+The sandbox holds a fixed volume of about ten gigabytes, and everything a
+session runs happens on it. At zero free space the sandbox can no longer create
+the socket file a command arrives on, so every call fails — reads, writes and
+the board alike — and the error names sockets rather than disk.
 
-- **Never install a package here.** A tool this sandbox lacks is a reason to
-  stage the files that step needs into a session's own container, never a reason
-  to try the install first and see.
-- **A wedged sandbox is rebuilt by quitting and reopening the desktop app**,
-  which the session survives.
+- **Read a repeated `failed to create bridge sockets` as a full volume**, not as
+  a broken bridge. The two are indistinguishable from the error text and only one
+  of them is common.
+- **Never install a package here.** A tool the sandbox lacks is a reason to stage
+  the files that step needs into a session's own container, never a reason to try
+  the install and see; a failed install still writes what it downloaded before it
+  gives up.
+- **Clear the volume by quitting the desktop application, moving its VM bundle to
+  the Trash, and reopening it.** The bundle is at
+  `~/Library/Application Support/Claude/vm_bundles`, it is the sandbox's whole
+  disk, and a fresh one is built on the next use. Nothing of the user's is inside
+  it: their files are on their own disk and are mounted in.
+- **The session survives that restart**, and the bridge reconnects.
 
-// Deleting a session's own files does not reclaim the space, because most of
-// the volume belongs to other sessions.
+// A bundle was observed at 20 GB against a volume that presents as 10 GB, and a
+// fresh one starts at about 1% used. What accumulates inside a long-lived bundle
+// is the host application's to reap; a session cannot reach it.
+
+`ticket_tools`' two status scripts warn when the volume they run on is nearly
+full, so the state is visible at session start rather than at the first failed
+write.
 
 ## Running a Qt application
 

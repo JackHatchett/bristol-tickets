@@ -47,6 +47,7 @@ This script prints:
     - FLEET active-board items owned by other agents (context only)
 """
 
+import os
 import sys
 import sqlite3
 from pathlib import Path
@@ -80,6 +81,38 @@ def owned_by(task_row: sqlite3.Row, me: str) -> bool:
     if assignee:
         return assignee == me
     return me in (task_row["epic_owner"] or "")
+
+
+# Under this much free space, a session is told before it starts choosing work.
+LOW_SPACE_BYTES = 500_000_000
+
+
+
+def warn_if_low_on_space() -> None:
+    """Say so when the filesystem this script runs on is nearly full.
+
+    Every board write is this process writing to a file, so a volume with no
+    room left stops the board rather than slowing it — and the failure arrives
+    as a tool error with no mention of disk, which reads like a broken bridge
+    rather than a full one. The warning costs one statvfs and is printed before
+    any work is chosen.
+
+    // Measured at the home directory rather than at this file, because the file
+    // may sit on a mount of another machine's disk whose free space says nothing
+    // about the one the process is running out of.
+    """
+    try:
+        stat = os.statvfs(Path.home())
+    except (OSError, AttributeError):
+        return
+    free = stat.f_bavail * stat.f_frsize
+    total = stat.f_blocks * stat.f_frsize
+    if total <= 0 or free >= LOW_SPACE_BYTES:
+        return
+    print(f"!! LOW DISK: {free / 1_000_000:.0f} MB free of "
+          f"{total / 1_000_000_000:.1f} GB on the filesystem this session runs "
+          f"on.\n   At zero, every board write fails and the failure does not "
+          f"mention disk. Clear space before working.\n")
 
 
 def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
@@ -345,6 +378,7 @@ def main() -> None:
     cur = conn.cursor()
 
     print(f"=== CoS Ticket status ({db_path}) ===\n")
+    warn_if_low_on_space()
 
     ms = cur.execute("SELECT name FROM theme WHERE is_milestone=1").fetchone()
     print(f"DIRECTION — current milestone: {ms['name'] if ms else '(none set)'}")
