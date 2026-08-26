@@ -1235,7 +1235,12 @@ def check_payload() -> list[str]:
     # schema.sql ships beside the code in a source tree and one folder above
     # it in a build, and a board cannot be provisioned without it.
     with tempfile.TemporaryDirectory() as tmp:
-        root = Path(tmp)
+        # Resolved, because schema_path resolves what it is given and the
+        # comparison below is against a path this test built.
+        # // macOS hands out temp directories under /var, which is a symlink to
+        # // /private/var, so an unresolved expectation never matches there while
+        # // it matches everywhere /tmp is a real directory.
+        root = Path(tmp).resolve()
         source_ui = root / "bristol" / "ui"
         source_ui.mkdir(parents=True)
         (root / "bristol" / "schema.sql").write_text("-- schema\n")
