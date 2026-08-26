@@ -42,7 +42,7 @@ bristol/
 │   ├── kanban_column.py KanbanColumn — a populated column + its queries
 │   ├── growing_edit.py  GrowingTextEdit — the field every typing surface uses
 │   ├── setup_wizard.py  first-run setup: folders, board, config, pointer
-│   ├── settings_tab.py  SettingsTab — board behaviour and appearance, stored in config
+│   ├── settings_tab.py  SettingsTab — app and session choices, stored in config
 │   └── main_window.py   MainWindow — toolbar, tabs, filters, search, inspector
 ├── reports/             the analytic report written on Clear Done (own README)
 │   ├── paths.py         where the report goes (env → .local → config)
@@ -140,15 +140,30 @@ written through `config_file.py` — the same file the wizard fills in, never a
 second store. A save round-trips the whole document, so a key an older build
 does not recognise survives untouched, and one Save commits the whole page.
 
-- **The next session starts as** — `active_agent`, the agent an agent session
-  takes its identity from. The picker offers the agents this installation
-  configures, and moves only on a deliberate choice.
-- **A card one agent files for another goes to** — `board.cross_agent_stage`,
-  the Board or the Backlog. `ticket_tools/ticket_write.py` reads the same key.
-- **When a session stops for room** — `session.suggested_commit`, read by the
-  agent at the moment the offer would fire.
-- **Colour scheme** — `appearance.scheme`, applied live as it is picked so it
-  can be compared against the board it themes.
+Two sections, split by which program reads the key. This app reads the board and
+appearance keys and acts on them itself; an agent session reads the session
+keys, and this app only writes them.
+
+**Bristol Tickets**
+
+- **Ticket Destination** — `board.new_ticket_stage`, the To Do column or the
+  Backlog. It governs every card `add-task` creates without an explicit
+  `--stage`, whoever files it and whoever it is for.
+  `ticket_tools/ticket_write.py` reads the same key.
+- **Theme** — `appearance.scheme`, applied live as it is picked so it can be
+  compared against the board it themes. The stored value names the palette
+  family; the caption is what this product calls it.
+
+**Agent Sessions**
+
+- **Agent** — `active_agent`, the agent a session takes its identity from. The
+  picker offers the agents this installation configures, and moves only on a
+  deliberate choice.
+- **Work Scope** — `session.work_whole_queue`, how far a session runs when told
+  to continue: *Whole Queue* or *One Ticket*. Read by the agent when the scope
+  decision is made.
+- **Git Commit on Session Close** — `session.suggested_commit`, read by the
+  agent as the session closes.
 
 ## Filtering the board
 

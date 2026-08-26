@@ -904,14 +904,22 @@ def check_bristol() -> list[str]:
             try:
                 config_file.update({"a_key_from_a_newer_build": {"kept": True}})
                 tab = SettingsTab()
-                if tab.cross_agent.currentData() != "active":
+                if tab.new_ticket.currentData() != "active":
                     raise SmokeFailure("Settings did not load the stored board setting")
-                tab.cross_agent.setCurrentIndex(tab.cross_agent.findData("backlog"))
+                tab.new_ticket.setCurrentIndex(tab.new_ticket.findData("backlog"))
                 tab._save()
-                if config_file.get(config_file.CROSS_AGENT_STAGE) != "backlog":
+                if config_file.get(config_file.NEW_TICKET_STAGE) != "backlog":
                     raise SmokeFailure("Settings did not write the board setting")
                 if config_file.get("a_key_from_a_newer_build.kept") is not True:
                     raise SmokeFailure("saving Settings dropped an unrecognised key")
+                # Work Scope: the whole queue by default, and One Ticket — the
+                # position that changes anything — reaches the file.
+                if tab.work_scope.currentData() is not True:
+                    raise SmokeFailure("Work Scope did not default to the whole queue")
+                tab.work_scope.setCurrentIndex(tab.work_scope.findData(False))
+                tab._save()
+                if config_file.get(config_file.WORK_WHOLE_QUEUE) is not False:
+                    raise SmokeFailure("Settings did not write the work scope")
                 if tab.appearance.currentData() != \
                         config_file.APPEARANCE_SCHEME_DEFAULT:
                     raise SmokeFailure("Settings did not load the stored scheme")

@@ -78,15 +78,21 @@ script.
   every other ticket tool calls when it finds no database at all.
 
 ### ticket_write.py
-The safe write helper — `add-epic`, `add-task`, `update-task`,
+The safe write helper — `add-epic`, `update-epic`, `add-task`, `update-task`,
 `update-task-status`, `set-stage`, `set-order`, `add-issue-log` and the `link-*`
 subcommands. Prefer it over inline SQL from a session. `connect()` self-heals
 the `issue_log` table and the Kanban `stage` / `sort_order` columns into older
 databases, mirroring the viewer's `ensure_schema_up_to_date()`.
 
-- **`add-task` defaults to `--stage active --status todo`**, so a new card lands
-  on the Board where it is seen and worked. `--stage backlog` is the deliberate
-  exception, asked for by name.
+- **`add-task` lands a new card where `board.new_ticket_stage` says**, unless
+  `--stage` names a tab, and always in `--status todo`. The key defaults to
+  `active`, the Board where a card is seen and worked; an explicit `--stage`
+  always wins.
+- **`update-epic --id N` edits what an epic *says*** — `--name`, `--type`,
+  `--status`, `--owner`, `--approver`, `--description`, `--hard-constraints`,
+  `--definition-of-done`, `--detail-path`, `--next-action`. It reaches the same
+  fields Bristol Tickets' epic dialog writes, and sets `closed_at` when a status
+  in `EPIC_STATUS_FINISHED` is given. It touches no task.
 - **`update-task --id N` edits what a card *says*** — `--title`,
   `--description`, `--estimate`, `--record-type`, `--reporter`, `--epic-id` —
   and touches no board position.
@@ -245,10 +251,10 @@ freely for itself or the user within its own zone. Anything landing in another
 agent's decision domain is an `add-task` with `--assignee` = that agent and
 `--reporter` = you — an ordinary card in `todo`, and the `assignee` is what
 makes it a request rather than an order: that agent's card to accept, reorder,
-or drop. Which tab it lands in is the user's, not the agent's: `add-task` reads
-`board.cross_agent_stage` from config — `active` by default, `backlog` if the
-user prefers — whenever an assignee differs from its reporter and no `--stage`
-is given. Bristol Tickets' Settings tab is where that choice is made. The
+or drop. Which tab any new card lands in is the user's, not the agent's: `add-task`
+reads `board.new_ticket_stage` from config — `active` by default, `backlog` if
+the user prefers — whenever no `--stage` is given, whoever files the card and
+whoever it is for. Bristol Tickets' Settings tab is where that choice is made. The
 `librarian` does not put "delete the xyz database" in `doing` for
 `chief_of_staff`; it files a `todo` card assigned to `chief_of_staff`, reporter
 `librarian`. There is no separate suggestion store, subcommand, or status

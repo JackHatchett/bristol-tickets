@@ -49,10 +49,11 @@ Usage:
         that lands in another agent's or the user's zone, add a card with
         --assignee <that agent/user> and --reporter <you>. The --assignee is
         what makes it a proposal rather than a command: it is that agent's card
-        to accept, reorder, or drop. Where it lands is the user's choice, held
-        in config as `board.cross_agent_stage` and edited in the Bristol
-        Tickets Settings tab: 'active' (the default — that agent's `todo` on the board the user
-        watches) or 'backlog'. An explicit --stage always wins.
+        to accept, reorder, or drop. Where any new card lands is the user's
+        choice, held in config as `board.new_ticket_stage` and edited in the
+        Bristol Tickets Settings tab: 'active' (the default — the `todo` column
+        on the board the user watches) or 'backlog'. An explicit --stage always
+        wins.
 
     python3 ticket_write.py update-task --id N [--title "..."]
         [--description "..."] [--estimate S|M|L|XL] [--record-type build|fix]
@@ -326,18 +327,18 @@ def _append_order(conn: sqlite3.Connection, stage: str, status: str) -> int:
     return int(row[0]) + 1
 
 
-def _cross_agent_stage() -> str:
-    """Where a card one agent files for another lands, per config.
+def _new_ticket_stage() -> str:
+    """Where a new card lands when no stage was named, per config.
 
-    `board.cross_agent_stage` is the user's setting, edited in Bristol Tickets'
+    `board.new_ticket_stage` is the user's setting, edited in Bristol Tickets'
     Settings tab. An unreadable config or an unrecognised value means the
-    default: the active Board, where the assignee sees it.
+    default: the active Board, where a to-do is seen and worked.
     """
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
     try:
         import read_config
 
-        choice = read_config.get("board.cross_agent_stage", "active")
+        choice = read_config.get("board.new_ticket_stage", "active")
     except Exception:  # noqa: BLE001 — a missing or malformed config is a default, not a failure
         return "active"
     return choice if choice in ("active", "backlog") else "active"
@@ -347,16 +348,14 @@ def _normalize_stage_status(stage, status, assignee=None, reporter=None):
     """Fold the legacy 'backlog' *status* into the Stage model: --status backlog
     means stage=backlog / status=todo unless an explicit --stage was given.
 
-    A new card otherwise lands on the active Board, which is where a to-do is
-    seen and worked; the backlog is the deliberate exception, asked for by name.
-    A card whose assignee is not its reporter is the one case the user gets to
-    redirect, through `board.cross_agent_stage`.
+    A new card given no stage lands where `board.new_ticket_stage` says, whoever
+    files it and whoever it is for. An explicit --stage always wins.
     """
     if (status or "").lower() == "backlog":
         return (stage or "backlog"), "todo"
-    if stage is None and assignee and reporter and assignee != reporter:
-        return _cross_agent_stage(), (status or "todo")
-    return (stage or "active"), (status or "todo")
+    if stage is None:
+        return _new_ticket_stage(), (status or "todo")
+    return stage, (status or "todo")
 
 
 def now() -> str:
@@ -374,6 +373,46 @@ def add_epic(args: argparse.Namespace) -> None:
         )
         conn.commit()
         print(f"OK: epic #{cur.lastrowid} added — {args.name} (owner: {args.owner})")
+    finally:
+        conn.close()
+
+
+def update_epic(args: argparse.Namespace) -> None:
+    """Edit what an epic says: name, type, status, owner, approver, description,
+    hard constraints, definition of done, detail path, next action.
+
+    The counterpart to `update-task` on the epic row. Bristol Tickets' epic
+    dialog writes the same fields; this is the CLI's way to reach them without
+    inline SQL. It touches no task.
+    """
+    conn = connect(getattr(args, "actor", None) or "agent")
+    try:
+        if conn.execute("SELECT 1 FROM epic WHERE id=?", (args.id,)).fetchone() is None:
+            sys.exit(f"update-epic: ERROR — no epic with id {args.id}")
+        fields = {
+            "name": args.name,
+            "type": args.type,
+            "status": args.status,
+            "owner": args.owner,
+            "approver": args.approver,
+            "description": args.description,
+            "hard_constraints": args.hard_constraints,
+            "definition_of_done": args.definition_of_done,
+            "detail_path": args.detail_path,
+            "next_action": args.next_action,
+        }
+        given = {k: v for k, v in fields.items() if v is not None}
+        if not given:
+            sys.exit("update-epic: ERROR — pass at least one field to change")
+        if "status" in given and given["status"] in create_tickets.EPIC_STATUS_FINISHED:
+            conn.execute("UPDATE epic SET closed_at = ? WHERE id = ? AND closed_at IS NULL",
+                         (now(), args.id))
+        conn.execute(
+            f"UPDATE epic SET {', '.join(f'{k} = ?' for k in given)} WHERE id = ?",
+            list(given.values()) + [args.id],
+        )
+        conn.commit()
+        print(f"OK: epic #{args.id} -> {', '.join(sorted(given))} updated")
     finally:
         conn.close()
 
@@ -741,6 +780,22 @@ def main() -> None:
                     help="the epic's status, in the vocabulary Bristol "
                          "Tickets writes (default: not started)")
     pe.set_defaults(func=add_epic)
+
+    pue = sub.add_parser("update-epic")
+    pue.add_argument("--id", type=int, required=True)
+    pue.add_argument("--name", default=None)
+    pue.add_argument("--type", default=None)
+    pue.add_argument("--status", default=None,
+                     choices=list(create_tickets.EPIC_STATUS_CHOICES))
+    pue.add_argument("--owner", default=None)
+    pue.add_argument("--approver", default=None)
+    pue.add_argument("--description", default=None)
+    pue.add_argument("--hard-constraints", dest="hard_constraints", default=None)
+    pue.add_argument("--definition-of-done", dest="definition_of_done", default=None)
+    pue.add_argument("--detail-path", dest="detail_path", default=None)
+    pue.add_argument("--next-action", dest="next_action", default=None)
+    pue.add_argument("--actor", default=None)
+    pue.set_defaults(func=update_epic)
 
     pt = sub.add_parser("add-task")
     pt.add_argument("--title", required=True)
