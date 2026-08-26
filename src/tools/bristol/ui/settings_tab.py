@@ -27,14 +27,13 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 import config_file  # bristol-local; see module docstring
 
-from .settled_combo import SettledComboBox
+from .settled_combo import SettledComboBox, fill_words
 from .theme import CHOICES as THEME_CHOICES
 from .theme import space
 
@@ -61,18 +60,6 @@ def _heading(text: str) -> QLabel:
     return label
 
 
-def _fill(combo: QComboBox, choices) -> QComboBox:
-    """Load a picker's options and size it to the widest of them.
-
-    A combo left at its default policy sizes to whichever option happens to be
-    current, so a longer one is drawn truncated the moment it is picked.
-    """
-    for value, caption in choices:
-        combo.addItem(caption, value)
-    combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-    return combo
-
-
 class SettingsTab(QWidget):
     def __init__(self, parent=None, on_appearance_changed=None) -> None:
         super().__init__(parent)
@@ -82,29 +69,44 @@ class SettingsTab(QWidget):
         # there is no window to re-theme.
         self._on_appearance_changed = on_appearance_changed
 
-        self.new_ticket = _fill(QComboBox(), NEW_TICKET_CHOICES)
+        self.new_ticket = fill_words(QComboBox(), NEW_TICKET_CHOICES)
+        self.new_ticket.currentIndexChanged.connect(
+            lambda _i: self._write(config_file.NEW_TICKET_STAGE,
+                                   self.new_ticket.currentData(),
+                                   "Ticket Destination"))
         self.new_ticket.setToolTip(
             "Where a new card lands when the agent filing it names no tab.")
 
-        self.appearance = _fill(QComboBox(), THEME_CHOICES)
-        self.appearance.currentIndexChanged.connect(self._preview_appearance)
+        self.appearance = fill_words(QComboBox(), THEME_CHOICES)
+        self.appearance.currentIndexChanged.connect(self._appearance_chosen)
 
         # Which agent the next session runs as: the one field here that decides
         # what a session is rather than how it behaves. It is a settled combo
         # because a wheel gesture aimed past the page must not move it.
         self.next_agent = SettledComboBox()
         self.next_agent.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        # `picked` fires only on a deliberate choice from an open list, so the
+        # one control that decides what the next session IS cannot be written by
+        # a gesture aimed past the page.
+        self.next_agent.picked.connect(
+            lambda slug: self._write("active_agent", slug, "Agent"))
         self.next_agent.setToolTip(
-            "The agent the next session starts as. Saving writes active_agent "
-            "into the configuration and nothing else.")
+            "The agent the next session starts as. Choosing one writes "
+            "active_agent into the configuration and nothing else.")
 
-        self.work_scope = _fill(QComboBox(), WORK_SCOPE_CHOICES)
+        self.work_scope = fill_words(QComboBox(), WORK_SCOPE_CHOICES)
+        self.work_scope.currentIndexChanged.connect(
+            lambda _i: self._write(config_file.WORK_WHOLE_QUEUE,
+                                   self.work_scope.currentData(), "Work Scope"))
         self.work_scope.setToolTip(
             "How far a session goes when you say continue.")
 
         # No text of its own: the row label carries the words, so the box sits
         # in the control column with every picker.
         self.suggested_commit = QCheckBox()
+        self.suggested_commit.toggled.connect(
+            lambda on: self._write(config_file.SUGGESTED_COMMIT, on,
+                                   "Git Commit on Session Close"))
         self.suggested_commit.setToolTip(
             "When a session ends having written files inside a git working "
             "tree, it offers a commit block to paste. It never runs it.")
@@ -124,16 +126,12 @@ class SettingsTab(QWidget):
         form.addRow("Work Scope", self.work_scope)
         form.addRow("Git Commit on Session Close", self.suggested_commit)
 
-        self.save_btn = QPushButton("Save")
-        self.save_btn.setObjectName("globalCreateBtn")
-        self.save_btn.clicked.connect(self._save)
         self.status = QLabel()
         self.status.setObjectName("formCaption")
         self.status.setWordWrap(True)
 
         buttons = QHBoxLayout()
         buttons.setSpacing(space("lg"))
-        buttons.addWidget(self.save_btn)
         buttons.addWidget(self.status, 1)
 
         layout = QVBoxLayout(self)
@@ -143,12 +141,34 @@ class SettingsTab(QWidget):
         layout.addLayout(buttons)
         layout.addStretch(1)
 
+        # Raised while reload() seats every control, so seating a stored value
+        # is never mistaken for someone choosing it.
+        self._loading = False
         self.reload()
 
-    def _preview_appearance(self) -> None:
-        """Apply the picked theme to the running app without writing anything."""
+    def _appearance_chosen(self) -> None:
+        """Re-theme the running app, then keep the choice."""
         if self._on_appearance_changed is not None:
             self._on_appearance_changed(self.appearance.currentData())
+        self._write(config_file.APPEARANCE_SCHEME,
+                    self.appearance.currentData(), "Theme")
+
+    def _write(self, key: str, value, caption: str) -> None:
+        """Persist one choice at the moment it is made.
+
+        A page of pickers behind a Save button asks the user to remember a second
+        step, and a choice that looks made but was never written is the failure
+        that follows. Each control writes its own key and nothing else, so a
+        failure names the row it belongs to.
+        """
+        if self._loading or not self.isEnabled():
+            return
+        try:
+            config_file.update({key: value})
+        except OSError as exc:
+            self.status.setText(f"{caption} not saved: {exc}")
+            return
+        self.status.setText(f"{caption} saved.")
 
     def _load_agents(self) -> None:
         """Offer the configured agents, opened on the active one.
@@ -171,6 +191,13 @@ class SettingsTab(QWidget):
 
     def reload(self) -> None:
         """Show what the configuration currently says."""
+        self._loading = True
+        try:
+            self._reload()
+        finally:
+            self._loading = False
+
+    def _reload(self) -> None:
         target = config_file.path()
         placed = target is not None and target.exists()
         self._load_agents()
@@ -190,30 +217,10 @@ class SettingsTab(QWidget):
             config_file.APPEARANCE_SCHEME, config_file.APPEARANCE_SCHEME_DEFAULT
         )
         scheme_index = self.appearance.findData(scheme)
-        self.appearance.blockSignals(True)
         self.appearance.setCurrentIndex(scheme_index if scheme_index >= 0 else 0)
-        self.appearance.blockSignals(False)
         self.setEnabled(placed)
         # An unplaced clone has nothing to write to, and says so where a save
         # result would otherwise appear.
         self.status.setText(
             "" if placed else "No configuration file yet — run File → Setup…"
         )
-
-    def _save(self) -> None:
-        changes = {
-            config_file.NEW_TICKET_STAGE: self.new_ticket.currentData(),
-            config_file.WORK_WHOLE_QUEUE: self.work_scope.currentData(),
-            config_file.SUGGESTED_COMMIT: self.suggested_commit.isChecked(),
-            config_file.APPEARANCE_SCHEME: self.appearance.currentData(),
-        }
-        # An empty picker means this installation configures no agents. Writing
-        # its blank would name an agent no session could run as.
-        if self.next_agent.currentText():
-            changes["active_agent"] = self.next_agent.currentText()
-        try:
-            written = config_file.update(changes)
-        except OSError as exc:
-            self.status.setText(f"Not saved: {exc}")
-            return
-        self.status.setText(f"Saved to {written.name}")

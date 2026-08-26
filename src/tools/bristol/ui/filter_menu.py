@@ -281,7 +281,7 @@ class FilterMenu(QWidget):
 
         title = QLabel("Filter")
         title.setObjectName("filterTitle")
-        self.clear_btn = QPushButton("Clear all")
+        self.clear_btn = QPushButton("Clear All")
         self.clear_btn.setObjectName("filterClear")
         self.clear_btn.setCursor(Qt.PointingHandCursor)
         self.clear_btn.clicked.connect(self._clear)

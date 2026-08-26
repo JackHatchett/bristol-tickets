@@ -54,6 +54,23 @@ contents in place instead.
 The sandbox carries no `sqlite3` command-line binary. Python's built-in
 `sqlite3` module is present and is what every tool here uses.
 
+## Installing a package
+
+The sandbox's disk is a fixed allowance shared with the machine's other
+sessions, and it is normally close to full. A failed install still writes what
+it downloaded before it gives up, and a sandbox with no free space cannot open
+the sockets a command arrives on: every later call fails with a socket error,
+including the ones that reach the board.
+
+- **Never install a package here.** A tool this sandbox lacks is a reason to
+  stage the files that step needs into a session's own container, never a reason
+  to try the install first and see.
+- **A wedged sandbox is rebuilt by quitting and reopening the desktop app**,
+  which the session survives.
+
+// Deleting a session's own files does not reclaim the space, because most of
+// the volume belongs to other sessions.
+
 ## Running a Qt application
 
 The sandbox carries no PySide6 and no room to install one, so Bristol Tickets

@@ -266,11 +266,11 @@ class InstancePage(QWizardPage):
         self.folder.field.textChanged.connect(self.completeChanged)
 
         layout = page_layout(self)
-        layout.addWidget(QLabel("Installation name"))
+        layout.addWidget(QLabel("Installation Name"))
         layout.addWidget(self.slug_edit)
         layout.addWidget(self.rejected_hint)
         layout.addSpacing(10)
-        layout.addWidget(QLabel("Data folder"))
+        layout.addWidget(QLabel("Data Folder"))
         layout.addWidget(self.folder)
         layout.addWidget(self.disagreement)
         layout.addStretch(1)
@@ -866,7 +866,7 @@ class PlacementDialog(QDialog):
 
         cancel = QPushButton("Cancel")
         cancel.clicked.connect(self.reject)
-        install = QPushButton("Put it here")
+        install = QPushButton("Put It Here")
         install.setObjectName(PRIMARY)
         install.setDefault(True)
         install.clicked.connect(self._accept)
@@ -970,7 +970,7 @@ class ConnectDialog(QDialog):
 
         copy_btn = QPushButton("Copy")
         copy_btn.clicked.connect(self._copy)
-        done = QPushButton("Open the board")
+        done = QPushButton("Open the Board")
         done.setObjectName(PRIMARY)
         done.setDefault(True)
         done.clicked.connect(self.accept)

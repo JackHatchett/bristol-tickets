@@ -8,6 +8,31 @@ Any agent loads any of these on demand: `src/templates/identity_template.md`
 Style contract for every README here:
 `src/templates/identity_template.md` §The governing-doc style contract.
 
+## A borrowed format's words, and our own
+
+Some strings in this tree are spelled the way somebody else spells them, and
+changing one breaks an exchange. Most are spelled the way we choose, and are
+free. One test separates them:
+
+**Would a file written by someone else stop being readable, or a file we write
+stop being read by them, if this string changed?**
+
+- **Yes — the string belongs to a protocol, and its spelling is not ours to
+  improve.** Defer to the format even where its wording is worse than ours. This
+  covers the Agent Skills frontmatter keys and the folder names the
+  specification defines, and the extension keys a borrowed skill carries, such as
+  Hermes's `metadata.hermes.*`. `src/playbooks/skill_conversion.md` §Frontmatter
+  is where that set is written down.
+- **No — the string is ours, and reads however serves the reader best.** This
+  covers every caption and label in `bristol/`, and the stored vocabularies only
+  `tickets.db` reads: `status`, `stage`, `record_type`, `estimate`,
+  `block_reason`, an epic's status.
+
+**A vocabulary borrowed as an idea is not a protocol.** `block_reason` was taken
+from Hermes's `kanban_block(kind=…)` and already spells one value differently,
+because nothing outside Bristol reads this board and no board imports another.
+Inspiration binds nothing; only an exchange does.
+
 ## Index
 
 One line per folder, and the condition that calls for it. Load a folder's README

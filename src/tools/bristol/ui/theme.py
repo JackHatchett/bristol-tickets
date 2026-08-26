@@ -103,8 +103,58 @@ LAYOUT = {
     "preview_min_h": 360,
 }
 
+# What a stored value is called on screen. The database keeps the value and a
+# reader sees the caption, so a vocabulary can be reworded without a migration —
+# `src/tools/bristol/ui/README.md` §Words on screen states the rule and its one
+# exception. Each list is ordered as the picker offers it.
+STATUS_CHOICES: list[tuple[str, str]] = [
+    ("todo", "To Do"),
+    ("doing", "Doing"),
+    ("done", "Done"),
+]
+
+# `active` is captioned Board, because that is the tab the card appears on.
+STAGE_CHOICES: list[tuple[str, str]] = [
+    ("backlog", "Backlog"),
+    ("active", "Board"),
+    ("archive", "Archive"),
+]
+
+# The vocabulary create_tickets.EPIC_STATUS_CHOICES writes.
+EPIC_STATUS_CHOICES: list[tuple[str, str]] = [
+    ("not started", "Not Started"),
+    ("in progress", "In Progress"),
+    ("completed", "Completed"),
+    ("on hold", "On Hold"),
+]
+
 # An effort code as the word a reader who does not know the codes can read.
-EFFORT_WORDS = {"S": "Small", "M": "Medium", "L": "Large", "XL": "Extra large"}
+EFFORT_WORDS = {"S": "Small", "M": "Medium", "L": "Large", "XL": "Extra Large"}
+EFFORT_CHOICES: list[tuple[str, str]] = [("", "Not Sized")] + [
+    (code, word) for code, word in EFFORT_WORDS.items()
+]
+EFFORT_HINT = (
+    "How much of a full usage budget this card would take.\n"
+    "Small — under a tenth.    Medium — a tenth to about half.\n"
+    "Large — half a budget or more.    Extra Large — more than one; split it."
+)
+
+# What kind of thing has stopped a card. None is not blocked. A dependency names
+# no card here — that is a 'blocks' link, resolved live — and the prose goes in a
+# comment. Mirrors ticket_tools/create_tickets.BLOCK_REASONS; the viewer carries
+# its own copy so it depends on no package outside itself.
+BLOCK_REASON_CHOICES: list[tuple[str | None, str]] = [
+    (None, "Not Blocked"),
+    ("dependency", "Dependency"),
+    ("decision", "User Decision"),
+    ("capability", "Missing Capability"),
+    ("transient", "Transient Failure"),
+]
+BLOCK_REASON_HINT = (
+    "What kind of thing has stopped this card. Which card is a Links entry.\n"
+    "Dependency — another card.    User Decision — yours to make.\n"
+    "Missing Capability — never granted.    Transient Failure — it failed once."
+)
 
 
 def space(step: str) -> int:

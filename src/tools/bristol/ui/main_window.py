@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
         search_go_btn.clicked.connect(self._execute_global_search)
         search_bar_layout.addWidget(search_go_btn)
 
-        self.hide_closed_checkbox = QCheckBox("Hide closed items")
+        self.hide_closed_checkbox = QCheckBox("Hide Closed Items")
         self.hide_closed_checkbox.setChecked(True)
         self.hide_closed_checkbox.stateChanged.connect(self._execute_global_search)
         search_bar_layout.addWidget(self.hide_closed_checkbox)
@@ -252,7 +252,7 @@ class MainWindow(QMainWindow):
             "Show the bulk-select checkboxes to activate or delete cards. "
             "Dragging to reorder never needs Edit.")
         self.backlog_edit_btn.clicked.connect(self._toggle_backlog_edit)
-        self.backlog_selall_btn = QPushButton("Select all")
+        self.backlog_selall_btn = QPushButton("Select All")
         self.backlog_selall_btn.clicked.connect(lambda: self._set_all_backlog_checks(True))
         self.backlog_clear_btn = QPushButton("Clear")
         self.backlog_clear_btn.clicked.connect(lambda: self._set_all_backlog_checks(False))

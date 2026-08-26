@@ -113,9 +113,19 @@ relations:
 
 - **related** — they belong together.
 - **blocks** / **blocked by** — a dependency. The card it blocks may not start
-  until this one is Done. This is the only mechanism for "not yet": there is no
-  blocked flag to set and forget, and the status readouts resolve a blocker live
-  so a dependency that has been satisfied stops showing.
+  until this one is Done. This is the only mechanism that names *which* card is
+  in the way: there is no blocked flag holding an id to set and forget, and the
+  status readouts resolve a blocker live so a dependency that has been satisfied
+  stops showing.
+
+**Blocked**, on both editing surfaces, says what *kind* of thing has stopped a
+card: a **dependency** (which one is the link's job), a **decision** that is
+yours to make, a **capability** the agent was never granted, or something
+**transient** that failed once. The reason is a value on the card; the prose that
+goes with it — which tool, which call, which choice — is a comment under the Log.
+A card left on a decision or a capability is listed under NEEDS YOU when a
+session reads the board, since no agent can clear either by working. Moving a
+card to Done clears its reason.
 
 **Links to an address** hold a web URL, a `zotero://` citation, an
 `obsidian://` note, a filesystem path, or any other scheme, with an optional

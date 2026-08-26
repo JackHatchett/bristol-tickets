@@ -1,4 +1,4 @@
-"""settled_combo.py — the picker that changes only when someone chooses.
+"""settled_combo.py — loading a picker, and the one that resists a stray gesture.
 
 A plain QComboBox takes the scroll wheel and the arrow keys whenever it holds
 focus, so a gesture aimed past it moves the value and every listener fires. A
@@ -16,6 +16,22 @@ _STEPPING_KEYS = (
     Qt.Key_Up, Qt.Key_Down, Qt.Key_PageUp, Qt.Key_PageDown,
     Qt.Key_Home, Qt.Key_End,
 )
+
+
+def fill_words(combo: QComboBox, choices, *, hint: str | None = None) -> QComboBox:
+    """Load a picker from (stored value, caption) pairs and size it to the widest.
+
+    The value stays in the item's data and the caption is all a reader sees, so
+    the two move independently. A combo left at its default policy sizes to
+    whichever option happens to be current, so a longer one is drawn truncated
+    the moment it is picked.
+    """
+    for value, caption in choices:
+        combo.addItem(caption, value)
+    combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+    if hint:
+        combo.setToolTip(hint)
+    return combo
 
 
 class SettledComboBox(QComboBox):

@@ -40,6 +40,7 @@ never an error.
 python3 skills.py list
 python3 skills.py view <name>
 python3 skills.py install <repo-url> <path-in-repo> [--name NAME]
+python3 skills.py convert <file.md> [--name NAME] [--description TEXT]
 python3 skills.py audit <name>
 python3 skills.py trust <name>
 ```
@@ -50,6 +51,14 @@ python3 skills.py trust <name>
 - **`install`** — shallow-clones the hub repository into a temporary directory,
   copies the named skill into quarantine, and prints the inventory. It refuses a
   name already present in either root.
+- **`convert`** — writes a foreign markdown definition into quarantine as a
+  skill. A subagent definition, a slash command and a prompt-pack entry are one
+  object, a markdown body under frontmatter, and the half of that frontmatter
+  which routes work — `tools`, `model`, a client's own extensions — has no reader
+  here, because a Bristol session's model and tool surface belong to its host.
+  `name`, `description` and `license` cross; everything else is dropped and named
+  in the output. A source stating no description is refused rather than given
+  one, since a skill without a trigger never routes; `--description` supplies it.
 - **`audit`** — the skill's `SKILL.md` followed by the full text of every script
   it carries.
 - **`trust`** — moves a quarantined skill into the install root, where `list`

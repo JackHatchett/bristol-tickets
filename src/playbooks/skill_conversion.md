@@ -157,6 +157,31 @@ skills-ref validate src/skills/<skill-name>
 The validator checks the frontmatter and the naming rules. A failure is a defect
 in the conversion, not in the source.
 
+## Converting a foreign definition
+
+The same target shape, from a source nobody here wrote: a subagent or persona
+definition, a slash command, a prompt-pack entry. Everything above governs the
+result; this names what differs at the input.
+
+- **The conversion is `python3 src/tools/skill_tools/skills.py convert
+  <file.md>`, and it lands in quarantine.** A foreign body is third-party content
+  and is read before it is trusted, exactly as an installed skill is —
+  `src/tools/skill_tools/README.md`.
+- **Only `name`, `description` and `license` cross.** `tools`, `model` and a
+  client's own extensions exist so a dispatcher can route a card to a configured
+  worker, and a Bristol session's model and tool surface belong to its host.
+- **A source with no description is refused, not given one.** The description is
+  the whole routing surface, and inventing one is authoring rather than
+  converting; `--description` is where a person supplies it deliberately.
+- **Rewrite a description over sixty characters before trusting it.** A foreign
+  `description` is usually prose about the agent rather than a trigger, and
+  §Frontmatter's limit applies to it unchanged.
+- **Steps 6 and 7 read differently.** There is no source of ours to retire, and
+  the validator runs against the converted folder as it does against any other.
+- **A definition carrying work state converts to nothing.** A bundled plan,
+  checklist or status document is `src/app.md` §The board is the only channel;
+  its prose may become a skill, and its checklist becomes cards.
+
 ## Failure modes
 
 - **A description over sixty characters** → a consuming client truncates it and

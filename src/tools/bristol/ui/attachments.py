@@ -201,7 +201,7 @@ class ImagePreviewDialog(QDialog):
         v.addWidget(scroll, 1)
 
         buttons = QHBoxLayout()
-        delete_btn = QPushButton("Delete image")
+        delete_btn = QPushButton("Delete Image")
         delete_btn.setObjectName("attachRemoveBtn")
         delete_btn.clicked.connect(self._confirm_delete)
         buttons.addWidget(delete_btn)
@@ -245,7 +245,7 @@ class AttachmentBar(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(space("sm"))
 
-        self.attach_btn = QPushButton("Attach image")
+        self.attach_btn = QPushButton("Attach Image")
         self.attach_btn.setToolTip("Attach an image file to this issue")
         self.attach_btn.clicked.connect(self._pick)
         # Sized to its text, not stretched across the pane — vertical space on

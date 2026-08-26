@@ -140,6 +140,12 @@ CREATE TABLE IF NOT EXISTS task (
     record_type TEXT    NOT NULL DEFAULT 'build',     -- 'build' (Story + acceptance criteria) | 'fix' (Expected/Observed).
     stage       TEXT    NOT NULL DEFAULT 'backlog',   -- backlog | active | archive (which tab; orthogonal to status).
     sort_order  INTEGER NOT NULL DEFAULT 0,           -- manual drag-to-reorder position; lower = higher in its list.
+    block_reason TEXT,                                -- NULL | dependency | decision | capability | transient.
+                                                      -- What kind of thing has stopped the card, never which card:
+                                                      -- 'dependency' is resolved live from the 'blocks' links, and the
+                                                      -- prose belongs in an issue_log comment. (The retired
+                                                      -- task.blocked / task.depends_on pair named the blocking card
+                                                      -- here and went stale; that job is the link's.)
     FOREIGN KEY (epic_id)  REFERENCES epic  (id),
     FOREIGN KEY (scope_id) REFERENCES scope (id)
 );
