@@ -99,6 +99,11 @@ NAME_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 # and what is lost is the routing signal rather than the detail.
 DESCRIPTION_ROUTING_LIMIT = 60
 
+# The frontmatter keys under which a foreign definition names the skills it
+# needs. A definition that states a dependency only in its prose declares
+# nothing, and convert says so rather than guessing at the body.
+DEPENDENCY_KEYS = ("skills", "required_skills", "dependencies", "requires")
+
 
 # ---------------------------------------------------------------------------
 # Roots
@@ -352,6 +357,43 @@ def split_frontmatter(path: Path) -> tuple[dict[str, str], str]:
     return fields, ""
 
 
+def declared_dependencies(path: Path) -> list[str]:
+    """The skills a definition's frontmatter names, in the order it names them.
+
+    Reads the block itself rather than the parsed fields, because a dependency
+    is usually a YAML list and `split_frontmatter` carries scalars only. An
+    inline value may be bracketed or comma-separated; an indented `- item` run
+    under the key is read the same way.
+    """
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].lstrip("\ufeff").rstrip() != "---":
+        return []
+    found: list[str] = []
+    collecting = False
+    for line in lines[1:]:
+        if line.rstrip() == "---":
+            break
+        stripped = line.strip()
+        if collecting:
+            if stripped.startswith("- "):
+                found.append(stripped[2:].strip().strip('"').strip("\''"))
+                continue
+            collecting = False
+        if line[:1] in {" ", "\t", "#"} or ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        if key.strip().lower() not in DEPENDENCY_KEYS:
+            continue
+        inline = value.strip().strip("[]")
+        if inline:
+            found.extend(part.strip().strip('"').strip("\''")
+                         for part in inline.split(",") if part.strip())
+        else:
+            collecting = True
+    seen: set[str] = set()
+    return [d for d in found if d and not (d in seen or seen.add(d))]
+
+
 def normalise_name(raw: str) -> str:
     """A skill name from arbitrary text: lowercased, non-name characters folded
     to hyphens, runs collapsed, ends trimmed. Returns '' when nothing survives."""
@@ -409,6 +451,14 @@ def cmd_convert(args) -> int:
     print(f"Quarantined at {target}")
     if dropped:
         print(f"Dropped, no reader in Bristol: {', '.join(sorted(dropped))}")
+    needs = declared_dependencies(source)
+    if needs:
+        print(f"Names the skills it depends on: {', '.join(needs)}\n"
+              f"    install each one before this skill is of any use:\n"
+              f"    python3 skills.py install <repo-url> <path-in-repo>")
+    else:
+        print("Declares no skills it depends on. One stated in the body alone is "
+              "not read here.")
     if len(description) > DESCRIPTION_ROUTING_LIMIT:
         print(f"description is {len(description)} characters; past "
               f"{DESCRIPTION_ROUTING_LIMIT} a client's index truncates it and the "

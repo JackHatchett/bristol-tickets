@@ -4,6 +4,67 @@ Skeleton and shared clauses for `src/agent_identities/<agent>.md`.
 
 ---
 
+## What an agent is made of
+
+An agent is three things: a **config entry**, queried one key at a time; a
+**charter**, read whole at session start; and **skills**, loaded when a
+description matches the task at hand. Which of the three holds a fact follows
+from what a session does with the fact, never from what the fact is about.
+
+- **A config entry holds values and paths, and no prose.** The charter's path,
+  the description a picker shows, data roots, context files, environment
+  variables, notebook access, and the skills attached to this agent.
+- **A charter holds what a session must have read before it can act safely** —
+  who the agent is, its mandate, the guardrails that halt it, and its boundaries
+  with the other agents. Never a list of file paths: a guardrail that fires only
+  if someone remembers to look it up is not a guardrail, and a path is never
+  one.
+- **A skill holds a procedure**, and every procedure is one. Neither of the
+  other two may carry a procedure. A skill calls the executable tools under
+  `src/tools/`; code is what a procedure runs rather than a fourth part of an
+  agent.
+
+Hermes is the agent runtime whose skill format Bristol reads, and its profile is
+the nearest thing to compare an agent with. Part by part: its `config.yaml` is
+the config entry, its `SOUL.md` is the charter, and its skills directory is
+skills. The one part with no equivalent there is **authority** — a mandate,
+guardrails that halt, and the rule that only `chief_of_staff` changes how an
+agent works, where Hermes restricts by capability alone. That difference is a
+decision rather than an omission, and one thing would reopen it: community agent
+definitions shipping as real bundles, prose and skills and configuration
+together under a licence.
+
+---
+
+## What of an agent can be imported
+
+Import is settled one part at a time, and a part that can be imported is never
+refused because another part cannot.
+
+- **Skills import whole.** A third-party skill lands in quarantine and becomes
+  loadable only when a person trusts it — `src/tools/skill_tools/README.md`.
+- **A config entry imports as associations** — which skills, which data roots,
+  which environment. A list of associations grants nothing, which makes it the
+  most portable part of an agent.
+- **A charter's role description imports as content to read.** A downloaded
+  description of what a role does is prose, and the user adopts it into a
+  charter by reading it. It is inert until then: `skills.py convert` writes a
+  foreign definition into quarantine as a skill, and no downloaded file becomes
+  an active charter or an entry in the agent picker.
+- **The mandate is authored and never imported.** Who the agent answers to, what
+  halts it, and what it may not change are the grant of authority itself.
+  Importing one would mean accepting authority from a file, which is the single
+  thing quarantine-then-trust exists to prevent, so nothing would make it
+  possible — not a better format, not a licence, not a signature.
+- **Fields that route work in another host do not import** — `tools`, `model`,
+  a client's own frontmatter extensions. A session's model and tool surface
+  belong to the host it runs in, and the conversion names each field it drops.
+- **The skills a definition declares it depends on are named as it is
+  imported**, so they can be installed rather than sitting in prose the user has
+  to notice.
+
+---
+
 ## Shared charter clauses
 
 Stated here once. A charter names the clause and adds only what is specific to
@@ -97,11 +158,12 @@ an error).
 language. Write it for a stranger — someone with a different job, different
 clients, a different notebook and a different software stack. Name anything the
 agent needs installed as a prerequisite, and say whether it works without it.
-Name the personal-data root in general terms; the split itself is
+Where its personal content lives is a path, so it is declared in the config
+entry and named here in general terms at most; the split itself is
 `src/templates/identity_template.md` §The machinery/personal-data split.}}
 
 {{Then write the same thing in one line into `config/config.local.json` at
-`agents.<agent>.notes` — that line is what the first-run agent picker and
+`agents.<agent>.description` — that line is what the first-run agent picker and
 `docs/agents.md` show.}}
 
 ---
@@ -110,27 +172,11 @@ Name the personal-data root in general terms; the split itself is
 
 ### 2.1 Session Start
 `src/templates/identity_template.md` §Session start{{, plus anything this agent
-must read before acting — name the file and stop}}.
+must have read before it can act safely — name the file and stop. A capability
+it merely calls is not that: §What an agent is made of keeps procedures in
+skills and paths in the config entry.}}
 
-### 2.2 Personal Data Root
-{{Where this agent's content lives, in generic terms, and which file inside it
-carries the concrete paths. Omit if the agent has no personal-data root.}}
-
-### 2.3 Playbooks
-{{One line each, pointing at `playbooks/<agent>/<file>.md` — name and purpose
-only. No procedure logic here.}}
-
-### 2.4 Tools
-{{One line each, pointing at `tools/<agent>/<file>`. A tool generic enough for
-other agents lives in a shared folder under `tools/` and is referenced there,
-never duplicated here.}}
-
-### 2.5 Protocols
-{{One line each, pointing at `protocols/<agent>/<file>.md`. Omit the section
-when the agent coordinates with no external party, and renumber what follows so
-the numbers stay contiguous.}}
-
-### 2.6 Bright-Line Guardrails Only
+### 2.2 Bright-Line Guardrails Only
 {{The hard rules that halt execution. One rule per bullet, imperative. Only real
 bright lines specific to this agent's domain — never approval-seeking on routine
 work.}}

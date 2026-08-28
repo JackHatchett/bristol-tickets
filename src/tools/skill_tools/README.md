@@ -73,6 +73,10 @@ python3 skills.py trust <name>
   `name`, `description` and `license` cross; everything else is dropped and named
   in the output. A source stating no description is refused rather than given
   one, since a skill without a trigger never routes; `--description` supplies it.
+  **The skills the source declares it depends on are named too**, from its
+  frontmatter's `skills`, `required_skills`, `dependencies` or `requires` key,
+  so they can be installed instead of being noticed later; a dependency stated
+  in the body alone is not a declaration and the output says as much.
 - **`audit`** — the skill's provenance record, then a scan of its code, then its
   `SKILL.md`, then the full text of every script it carries.
 - **`trust`** — moves a quarantined skill into the install root, where `list`

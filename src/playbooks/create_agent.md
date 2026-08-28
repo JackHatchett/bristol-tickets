@@ -23,20 +23,20 @@ registration. For converting an existing pre-framework bundle, use
 2. **Write `src/agent_identities/<agent>.md` from
    `src/templates/identity_template.md`.** Write it for a stranger: no
    assumption about the user's job, clients, courses, notebook layout or
-   software stack, and every third-party prerequisite named as one.
+   software stack, and every third-party prerequisite named as one. What may go
+   in it, and what belongs in the config entry or a skill instead, is that
+   template's §What an agent is made of.
 
 3. **Scaffold only what has real content to hold.** Most new agents start with
-   none of the three and add them as needs appear.
-   - `src/playbooks/<agent>/` — once a real step-by-step procedure exists, from
-     `src/templates/playbook_template.md`.
-   - `src/tools/<agent>/` — for genuinely agent-specific callables. A tool
-     useful to more than one agent goes in a shared folder nested under
-     `src/tools/` (`tools/wiki_tools/`, `tools/writing_tools/`,
-     `tools/ticket_tools/`), never a new top-level `src/` sibling.
-   - `src/protocols/<agent>/` — only if the agent coordinates with an external
-     party on a recurring contract, from `src/templates/protocol_template.md`.
-     That template draws the line: a protocol is a contract between two parties,
-     a playbook is a procedure one session runs.
+   none of it and add as needs appear.
+   - `src/skills/<skill-name>/` — once a real procedure exists. The format is
+     `src/tools/skill_tools/README.md`, and turning an existing procedure file
+     into one is `src/playbooks/skill_conversion.md`.
+   - `src/tools/<agent>/` — for genuinely agent-specific callables, which a
+     skill names the command line for. A tool useful to more than one agent goes
+     in a shared folder nested under `src/tools/` (`tools/wiki_tools/`,
+     `tools/writing_tools/`, `tools/ticket_tools/`), never a new top-level
+     `src/` sibling.
 
 4. **Give the agent a board epic.**
 
@@ -73,12 +73,10 @@ decided, and any deviation from these steps.
 
 ## Failure modes
 
-- **The charter starts inlining procedure logic** → move that content into its
-  own playbook, tool or protocol file and reduce the charter section to a
-  one-line pointer.
-- **A capability is unclear as tool, playbook or protocol** →
-  `src/templates/protocol_template.md` draws the line, and
-  `src/playbooks/migrate_legacy_agent.md` Step 5 applies the same split.
+- **The charter starts inlining procedure logic** → move it into a skill, and
+  leave nothing in its place; a pointer is a path, and a charter carries none.
+- **A capability is unclear as a tool or a skill** → the skill is the procedure
+  and the tool is the code it calls.
 
 ## Audit
 

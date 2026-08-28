@@ -1,8 +1,14 @@
 # The agents
 
-Seven agents ship with Bristol. Each is a Markdown charter under
-`src/agent_identities/`, plus playbooks for the tasks it performs and, for some,
-tools it can run.
+Seven agents ship with Bristol. An agent is three things: an entry in your
+configuration, holding its paths and settings; a charter, a Markdown file under
+`src/agent_identities/` that it reads in full at the start of every session,
+holding who it is, what it is for and what it may not do; and skills, folders of
+instructions it opens only when a task calls for one. Which of the three holds a
+given fact follows from what a session does with the fact — look it up, hold it
+throughout, or open it when the work needs it — rather than from what the fact
+is about. That shape is written down in `src/templates/identity_template.md`
+§What an agent is made of.
 
 One agent is active at a time. You choose it on the board's Settings tab, and
 the session that starts next loads that agent's charter and works that
@@ -152,3 +158,25 @@ intake.
 agent needs a charter, an entry in the `agents` block of your configuration, and
 an epic on the board carrying its slug as owner. `src/playbooks/migrate_legacy_agent.md`
 covers bringing in an agent that already exists somewhere else.
+
+### Starting from somebody else's
+
+You can download most of an agent. Nobody publishes whole ones — what the
+community publishes is skills, and role descriptions written for other tools,
+each a single Markdown file saying what a role does. Both are things you can
+bring in.
+
+What arrives: the skills, installed one at a time and inert until you trust
+them; the role description, which you read and adopt as the body of a charter;
+and the associations — which skills belong to this agent, where its content
+lives — which are settings you copy rather than write.
+
+What you decide: the mandate. Who the agent answers to, what stops it, and what
+it is not allowed to change. That is a few sentences, and writing them is
+minutes rather than an afternoon — but they are yours, because a file that could
+grant itself authority is the one thing this system refuses. So downloading a
+Product Manager means downloading a product manager's know-how, and the agent it
+belongs to is one you create.
+
+`src/templates/identity_template.md` §What of an agent can be imported is the
+rule, part by part.
