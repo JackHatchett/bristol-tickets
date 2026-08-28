@@ -1,7 +1,7 @@
 """ui/main_window.py — the top-level window.
 
 This module is the ``MainWindow`` shell: one full-width header bar carrying the
-app's identity, the view tabs and Create; the views those tabs switch between
+app's identity, the view tabs, Refresh and Create; the views those tabs switch between
 (Search, Backlog, Board, Archive, Settings); and the right-hand inspector panel.
 The header spans the window and the splitter sits under it, so nothing above the
 board floats on an alignment of its own.
@@ -118,8 +118,8 @@ class MainWindow(QMainWindow):
         self._build_menu_bar()
 
         # One full-width header spans the window, and the splitter sits under
-        # it: identity, the view tabs and Create all read as one bar rather than
-        # three floats on three alignments.
+        # it: identity, the view tabs, Refresh and Create all read as one bar
+        # rather than floats on separate alignments.
         shell = QWidget()
         shell_layout = QVBoxLayout(shell)
         shell_layout.setContentsMargins(0, 0, 0, 0)
@@ -140,6 +140,12 @@ class MainWindow(QMainWindow):
                                         space("lg"), space("lg"))
         outer_layout.setSpacing(space("lg"))
         main_splitter.addWidget(left_container)
+
+        # Refresh reloads every view, so it belongs beside Create in the one
+        # bar that spans every tab rather than on the Board.
+        self.refresh_btn = QPushButton("Refresh")
+        self.refresh_btn.setToolTip("Reload every view from the database.")
+        self.refresh_btn.clicked.connect(self._refresh_board)
 
         self.global_create_btn = QPushButton("Create")
         self.global_create_btn.setObjectName("globalCreateBtn")
@@ -169,9 +175,6 @@ class MainWindow(QMainWindow):
         self.chip_row = QHBoxLayout()
         self.chip_row.setContentsMargins(0, 0, 0, 0)
         self.chip_row.setSpacing(space("sm"))
-
-        self.refresh_btn = QPushButton("Refresh")
-        self.refresh_btn.clicked.connect(self._refresh_board)
 
         # The splitter and, at the window's right edge, the strip that brings a
         # collapsed detail pane back. The strip is outside the splitter so the
@@ -289,17 +292,23 @@ class MainWindow(QMainWindow):
         board_outer.setSpacing(space("lg"))
 
         # One control row above the columns, holding what applies to the whole
-        # board. A single card in any column is created from the master
-        # Create button, not from a per-column control. What narrows the board
-        # reads left to right — the button, then what it is narrowed to — and
-        # Refresh sits at the far end, where a growing chip row never moves it.
+        # board and nothing beyond it. A single card in any column is created
+        # from the master Create button, not from a per-column control. What
+        # narrows the board reads left to right — the button, then what it is
+        # narrowed to — and Clear Done sits at the far end, where a growing chip
+        # row never moves it. Refresh is not here: it reloads every view, so it
+        # lives in the header that spans every tab.
         board_controls = QHBoxLayout()
         board_controls.setSpacing(space("md"))
         board_controls.addWidget(self.filter_btn)
         board_controls.addLayout(self.chip_row)
         board_controls.addWidget(self.filter_clear_btn)
         board_controls.addStretch(1)
-        board_controls.addWidget(self.refresh_btn)
+        self.clear_done_btn = QPushButton("Clear Done")
+        self.clear_done_btn.setToolTip(
+            "Move every card in the Done column to the Archive.")
+        self.clear_done_btn.clicked.connect(self._clear_done)
+        board_controls.addWidget(self.clear_done_btn)
         board_outer.addLayout(board_controls)
 
         board_columns = QHBoxLayout()
@@ -309,9 +318,6 @@ class MainWindow(QMainWindow):
             col = KanbanColumn(self, self.conn, key, name)
             self.columns[key] = col
             board_columns.addWidget(col)
-        # Clearing Done moves every card in that one column to the Archive, so
-        # it is the Done column's action and sits in that column's own header.
-        self.columns["done"].add_header_button("Clear Done", self._clear_done)
         board_outer.addLayout(board_columns)
 
         self._board_tab_index = self._add_page(board_widget, "Board")
@@ -548,12 +554,13 @@ class MainWindow(QMainWindow):
 
     def _build_header(self) -> QWidget:
         """The one header bar: identity at the left, the view tabs beside it,
-        Create at the right, everything on one vertical centre line and closed
-        by a single hairline."""
+        Refresh and Create at the right, everything on one vertical centre line
+        and closed by a single hairline. Every control here acts on every tab."""
         header = QWidget()
         header.setObjectName("appHeader")
         bar = QHBoxLayout(header)
-        bar.setContentsMargins(space("xl"), space("md"), space("xl"), 0)
+        bar.setContentsMargins(space("xl"), space("md"), space("xl"),
+                               space("sm"))
         bar.setSpacing(space("lg"))
 
         identity = QLabel("Bristol Tickets")
@@ -573,6 +580,7 @@ class MainWindow(QMainWindow):
         bar.addLayout(self._tab_row)
 
         bar.addStretch(1)
+        bar.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
         bar.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
         return header
 

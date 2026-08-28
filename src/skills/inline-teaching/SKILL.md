@@ -15,6 +15,10 @@ runs inside a coaching procedure rather than as a session of its own.
 
 - **The user is present and directing.** This teaches inside a live exchange; it
   never produces a standalone lesson.
+- **The output is the exchange, not a text.** Anything written for the user to
+  read — a document, a report, a ticket body — is
+  `src/skills/writing-for-the-user/SKILL.md`, which owns how that text reads and
+  defers to §Procedure step 1 here for the register.
 
 ## Procedure
 

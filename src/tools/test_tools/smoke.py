@@ -224,6 +224,43 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("Archive should show one archived task")
         ok.append("Board/Backlog/Archive populate by stage")
 
+        # Where a control sits says what it reaches. Refresh reloads every
+        # view, so it is in the header beside Create and reachable from any
+        # tab; Clear Done touches the Board alone, so it is on the board's
+        # control row; a column header carries no control at all, which is
+        # what keeps the three names and counts on one line.
+        from PySide6.QtWidgets import QPushButton
+
+        header_bar = win.centralWidget().layout().itemAt(0).widget()
+        header_layout = header_bar.layout()
+        header_buttons = [
+            header_layout.itemAt(i).widget().text()
+            for i in range(header_layout.count())
+            if isinstance(header_layout.itemAt(i).widget(), QPushButton)]
+        if header_buttons[-2:] != ["Refresh", "Create"]:
+            raise SmokeFailure(
+                f"header should end on Refresh then Create, got {header_buttons}")
+        if header_layout.getContentsMargins()[3] <= 0:
+            raise SmokeFailure("the header's controls sit on its closing hairline")
+        board_row = win.pages.widget(win._board_tab_index).layout().itemAt(0).layout()
+        board_buttons = [
+            board_row.itemAt(i).widget().text()
+            for i in range(board_row.count())
+            if isinstance(board_row.itemAt(i).widget(), QPushButton)]
+        if board_buttons[-1] != "Clear Done":
+            raise SmokeFailure(
+                f"Clear Done should end the board's control row, got {board_buttons}")
+        for key, column in win.columns.items():
+            if column.findChildren(QPushButton):
+                raise SmokeFailure(f"the {key} column header carries a control")
+        win._show_page(0)
+        win.refresh_btn.click()
+        if win.columns["todo"].list_widget.count() != 1:
+            raise SmokeFailure("Refresh did not reload the board from another tab")
+        win._show_page(win._board_tab_index)
+        ok.append("Refresh and Create are the header's; Clear Done is the "
+                  "board's; a column header holds no control")
+
         # ---- What the board is showing ------------------------------------
         # One filter state narrows the board, the Backlog and the Archive and
         # leaves Search alone; the control row says what it holds.
