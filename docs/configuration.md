@@ -146,6 +146,7 @@ repository. Delete the block if you do not keep one.
 | `recipes_dir` | Where `librarian` keeps recipes. |
 | `agent_output_dir` | Where agents drop drafts for you to review. |
 | `reports_dir` | Where Clear Done writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
+| `plans_dir` | Where a planning document goes. |
 
 ### `zotero`
 

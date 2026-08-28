@@ -6,9 +6,8 @@ the style contract in `src/templates/identity_template.md`.
 
 ## Phase 1 — Configuration
 
-- **Read your host's note in `src/host_notes/`, where it has one.** Nothing
-  else in `/src` is written for one host: a rule says what to do, its note says
-  how on that host.
+- **Read your host's note in `src/host_notes/`, where it has one** — a rule
+  says what to do, its note says how on that host.
 - **Query the git-ignored `config/config.local.json` one field at a time** —
   `python3 src/tools/config_tools/read_config.py <dotted.key>`; never whole.
 - **Name user data in `/src` only by generic relative path**
@@ -30,24 +29,22 @@ the style contract in `src/templates/identity_template.md`.
   out loud rather than switching to it.
 - **Treat `none`, absent, or a slug with no `agents.*` key as no override.** Say
   an unrecognized slug out loud rather than guessing past it.
-- **Sign every write with your slug** (e.g. `career_coach`), on each
-  `--agent`, `--from-agent`, `--reporter` and `--actor` — which agent wrote,
-  never which application it ran inside.
+- **Sign every write with your slug** (e.g. `career_coach`) on every write
+  signature the CLI takes — which agent wrote, never which application it ran
+  inside.
 - **Load your charter from `read_config.py agents.<active_agent>.identity`** —
   your identity's source of truth; act on it before the snapshot.
 
 ## Phase 3 — State and the queue
 
 **1. Snapshot.** `chief_of_staff` runs
-`python3 src/tools/ticket_tools/cos_status.py` (fleet-wide); every other agent
-runs `python3 src/tools/ticket_tools/agent_status.py <slug>`, scoped to its own
-cards. When to read the database directly instead:
-`src/tools/ticket_tools/README.md` §Tools.
+`python3 src/tools/ticket_tools/cos_status.py`; every other agent runs
+`python3 src/tools/ticket_tools/agent_status.py <slug>`. When to read the
+database directly instead: `src/tools/ticket_tools/README.md` §Tools.
 
 **2. The next action is the top of your own queue.** The scripts compute it; do
 not re-derive one. A card's tab is `stage` (backlog | active | archive),
-orthogonal to its column, `status` (todo | doing | done). Precedence, identical
-for every agent:
+orthogonal to its column, `status`. Precedence, identical for every agent:
 
 1. active-stage cards you own, `doing`, in board order;
 2. then active-stage cards you own, `todo`, in board order;
@@ -67,14 +64,13 @@ for every agent:
 - **Where a script and this list disagree, the script is the bug.**
 
 **3. Order, blockers and pressure do three different jobs; never let one do
-another's.** Order (`task.sort_order`, position 1 next) alone decides what you
-work next. A blocker (a `blocks` link) gates whether you may *start* a card,
-never where it sits. Pressure (0–100) reads how hard a card is pushing, and
-means nothing across assignees. Mechanism:
-`src/tools/ticket_tools/README.md` §Board conventions.
+another's.** Order alone decides what you work next; a blocker gates only
+whether you may *start* a card; pressure means nothing across assignees.
+Mechanism: `src/tools/ticket_tools/README.md` §Board conventions.
 
 **4. Read a card's links and attached images before acting on it.** The ticket
-text alone is deliberately incomplete.
+text alone is deliberately incomplete. A note a document links is the exception:
+open it only when the work needs the concept it explains.
 
 **5. Touching a card puts it in `doing` — immediately, before the work.**
 Executing, investigating, commenting or linking all count:
@@ -145,19 +141,23 @@ tell the user to file a ticket for something you could just do.
 you write:
 
 - **Work state** — ticket lists, ordering tables, status roll-ups, "what I
-  filed" recaps. Analysis may live in a document; state may not.
+  filed" recaps, progress against a plan. Analysis and intent may live in a
+  document; state may not.
 - **Process commentary** — status labels on content (`PROVISIONAL`, `DRAFT`),
   dated change notes, rationale-for-existence preambles, rule-history asides,
   claims that one file outranks another, and any reference to an AI session,
-  agent or model as the origin of a decision. Naming which of two conflicting
-  rules wins is a boundary, not that claim.
-- **Deferral** — "phase 1 / phase 2," "later," "next pass," "TODO," in a file or
-  a ticket body. Either it is this ticket's scope or it is another card.
+  agent or model as the origin of a decision.
+- **Deferral** — "later," "next pass," "TODO," in a file or a ticket body.
+  Either it is this ticket's scope or it is another card. A plan's phases are
+  its subject.
 - **The file itself, when it is not a real deliverable** — no backups,
   duplicates, dated copies, `.bak` / `_old` / `-draft` / `.orig`, scratch dumps
   or "just in case" snapshots, anywhere, `/data` included. Safety copies go in
   the session scratchpad, and you delete your own intermediates. Where this and
   a charter's safety gate conflict, the charter wins.
+
+**Every file is written for a person to read.** Only one already shaped like
+configuration — a list, a mapping, a table of values — may be terse.
 
 Write the current state as plain assertion and stop. **One exception: a note
 about a non-obvious technical constraint, commented out with `//`**, in any file
