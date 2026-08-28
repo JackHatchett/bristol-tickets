@@ -15,10 +15,6 @@ runs inside a coaching procedure rather than as a session of its own.
 
 - **The user is present and directing.** This teaches inside a live exchange; it
   never produces a standalone lesson.
-- **The output is the exchange, not a text.** Anything written for the user to
-  read — a document, a report, a ticket body — is
-  `src/skills/writing-for-the-user/SKILL.md`, which owns how that text reads and
-  defers to §Procedure step 1 here for the register.
 
 ## Procedure
 
@@ -26,9 +22,9 @@ runs inside a coaching procedure rather than as a session of its own.
    in the files the task loaded.** Their own vocabulary, the questions they ask
    and the artifacts they have already built are the evidence. **Never assert a
    skill level in advance.**
-2. **Define a term in one plain sentence with one everyday analogy, the first
-   time it comes up.** One analogy, then continue with the work — an explanation
-   that outgrows the step it serves has become the subject.
+2. **Give the definition `src/app.md` Phase 4 requires one everyday analogy**,
+   then continue with the work — an explanation that outgrows the step it serves
+   has become the subject.
 3. **Answer the question asked, at the depth asked.** Internals beyond what the
    current step needs are a separate question the user can ask.
 4. **Raise the register as fluency shows.** Definitions the user starts
