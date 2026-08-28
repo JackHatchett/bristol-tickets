@@ -75,13 +75,31 @@ the board alike — and the error names sockets rather than disk.
   it: their files are on their own disk and are mounted in.
 - **The session survives that restart**, and the bridge reconnects.
 
-// A bundle was observed at 20 GB against a volume that presents as 10 GB, and a
-// fresh one starts at about 1% used. What accumulates inside a long-lived bundle
-// is the host application's to reap; a session cannot reach it.
+// The volume is an ext4 filesystem mounted without `discard`, on a thin image
+// file on the host's disk. Deleting a file inside frees the volume but sends no
+// TRIM, so the image keeps the blocks; `fstrim` from inside fails with
+// Operation not permitted. The image therefore tracks the high-water mark of
+// what has been written, not what is currently there.
 
-`ticket_tools`' two status scripts warn when the volume they run on is nearly
-full, so the state is visible at session start rather than at the first failed
-write.
+## What the bundle costs, and what actually grows
+
+The bundle holds two different things and only one of them is a session's doing.
+
+- **A fixed base image of about twelve gigabytes** — `rootfs.img` at ten, fully
+  allocated, plus its compressed original. That is the cost of the feature
+  existing and it does not grow.
+- **A session-data image that tracks a high-water mark.** This is the volume
+  sessions actually work on. On a fresh bundle it is tens of megabytes.
+
+- **Write large or throwaway things in a session's own container, not here.** A
+  downloaded package or an extracted archive raises the high-water mark and
+  nothing lowers it short of rebuilding. The cost of one such write is small; it
+  is the accumulation across a long-lived bundle that eventually reaches the
+  ceiling.
+- **Reclaiming the image is the desktop application's.** Rebuilding the bundle
+  is the whole of a session's part in it: nothing inside can see the image or
+  return its blocks, so never add a mechanism here that measures, prunes or
+  compacts it.
 
 ## Running a Qt application
 

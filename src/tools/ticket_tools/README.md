@@ -192,7 +192,9 @@ Phase 3.3 states the rule). Their storage:
 - **Order** is `task.sort_order`, a card's position in its column. The user sets
   it by dragging in Bristol Tickets; an agent sets it with `set-order`.
 - **A blocker** is a `blocks` link between two named cards, resolved live
-  against the blocking card's status. It never moves a card in the queue —
+  against the blocking card's status. Once that card is `done`, its own last
+  comment reads through the same link onto the card it blocked — a join at read
+  time, so the handoff is never a second copy of the comment. It never moves a card in the queue —
   precedence keeps a `doing` card first even when it is waiting on a `todo` one.
   Only the user drops the link or waves a card past an unmet blocker.
 - **A block reason** is `task.block_reason`, one of `dependency`, `decision`,

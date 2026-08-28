@@ -18,6 +18,16 @@ A third-party skill lands in `<install_dir>/.quarantine/<name>/` and is invisibl
 to `list` and `view` until `trust` promotes it. `audit` prints every script it
 carries. Nothing here executes a skill's code.
 
+An installed skill carries a `.origin.json` beside its SKILL.md holding the
+repository, the path inside it, the resolved commit and the licence found, so
+`list` can name where a skill came from and `audit` can answer both questions
+without a second lookup. A source stating no licence records that as absent.
+
+`audit` opens with a scan of the skill's code by `bandit`, run as a module of
+this interpreter and never installed from here. What it reads and what it does
+not is README.md §The scanner. A report is evidence: `trust` consults no scanner
+and stays a command a person runs.
+
 CLI
 ---
     python3 skills.py list
@@ -32,6 +42,8 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
+import re
 import shutil
 import subprocess
 import sys
@@ -43,7 +55,32 @@ import data_paths  # noqa: E402
 import read_config  # noqa: E402
 
 QUARANTINE = ".quarantine"
+
+# What an installed skill carries about where it came from, written beside its
+# SKILL.md so the record moves with the directory through quarantine and trust
+# and can never orphan. Dotted, so a client reading the skill by the
+# specification never sees it.
+ORIGIN_FILE = ".origin.json"
+
+# Where a repository states its licence. Read in this order, and the first that
+# exists is the one recorded.
+LICENCE_FILENAMES = ("LICENSE", "LICENSE.md", "LICENSE.txt", "LICENCE",
+                     "LICENCE.md", "LICENCE.txt", "COPYING", "COPYING.md")
+
+# What a record says instead of leaving a licence field blank. A skill whose
+# source states no licence has been read and found to state none, which is a
+# different fact from one nobody looked for.
+ABSENT = "absent"
+
 SCRIPT_SUFFIXES = {".py", ".sh", ".bash", ".zsh", ".js", ".mjs", ".ts", ".rb", ".pl", ".ps1"}
+
+# The scanner `audit` runs over a skill's code, invoked as a module so it is
+# found wherever this interpreter's packages are rather than on PATH. Bristol
+# never installs it: an absent scanner is a report that says so, not a failure.
+# What it reads and what it does not is `src/tools/skill_tools/README.md`
+# §The scanner.
+SCANNER = "bandit"
+SCANNER_READS = ".py"
 
 # The only top-level frontmatter keys a conversion carries across. The
 # specification defines a small set (src/playbooks/skill_conversion.md
@@ -129,6 +166,45 @@ def read_frontmatter(skill_md: Path) -> dict[str, str]:
     return fields
 
 
+def read_origin(skill_dir: Path) -> dict:
+    """The provenance record beside a skill's SKILL.md, or {} where there is
+    none — a native skill has no repository, and a skill installed before the
+    record existed carries no file."""
+    path = skill_dir / ORIGIN_FILE
+    if not path.is_file():
+        return {}
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return record if isinstance(record, dict) else {}
+
+
+def find_licence(clone: Path, source: Path) -> tuple[str, str]:
+    """(what the licence says, where it was read from) for a skill in a clone.
+
+    Three places, most specific first: the skill's own frontmatter, a licence
+    file beside the skill, and one at the repository root. A licence file is
+    recorded by its own first line — the name it gives itself — rather than by
+    a licence detected from its text, since a detection is a guess and this
+    records what was found. Both values are ABSENT when a repository states no
+    licence anywhere."""
+    declared = read_frontmatter(source / "SKILL.md").get("license", "").strip()
+    if declared:
+        return declared, "SKILL.md"
+    for directory in (source, clone):
+        for filename in LICENCE_FILENAMES:
+            candidate = directory / filename
+            if not candidate.is_file():
+                continue
+            for line in candidate.read_text(encoding="utf-8", errors="replace").splitlines():
+                if line.strip():
+                    rel = candidate.relative_to(clone)
+                    return line.strip(), str(rel)
+            return ABSENT, str(candidate.relative_to(clone))
+    return ABSENT, ABSENT
+
+
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as fh:
@@ -153,18 +229,38 @@ def _is_script(rel: Path) -> bool:
 # Commands
 # ---------------------------------------------------------------------------
 
+def _origin_column(skill_dir: Path, root_name: str) -> str:
+    """What a skill's origin reads as in a listing. A native skill has no
+    repository and says so; an installed one names the repository and the commit
+    it was taken at. A skill carrying no record falls back to its root, which is
+    all that is known about it."""
+    record = read_origin(skill_dir)
+    repo = record.get("repo")
+    if not repo:
+        return root_name
+    # Both spellings a git remote comes in — https://host/owner/repo and
+    # git@host:owner/repo — reduce to the last two segments, which is the pair
+    # that identifies the repository in either.
+    parts = [x for x in re.split(r"[/:]", repo.rstrip("/").removesuffix(".git")) if x]
+    where = "/".join(parts[-2:]) if len(parts) >= 2 else repo
+    commit = record.get("commit", "")
+    return f"{where}@{commit[:7]}" if commit and commit != ABSENT else where
+
+
 def cmd_list(_args) -> int:
     rows = []
-    for root, origin in ((native_root(), "native"), (installed_root(), "installed")):
+    for root, root_name in ((native_root(), "native"), (installed_root(), "installed")):
         for d in _skill_dirs(root):
             fm = read_frontmatter(d / "SKILL.md")
-            rows.append((fm.get("name", d.name), origin, fm.get("description", "")))
+            rows.append((fm.get("name", d.name), _origin_column(d, root_name),
+                         fm.get("description", "")))
     if not rows:
         print("No skills. Native root: src/skills/. Installed root: skills.install_dir in config.")
         return 0
     width = max(len(r[0]) for r in rows)
+    origin_width = max(len(r[1]) for r in rows)
     for name, origin, desc in rows:
-        print(f"{name:<{width}}  {origin:<9}  {desc}")
+        print(f"{name:<{width}}  {origin:<{origin_width}}  {desc}")
     pending = _skill_dirs(quarantine_root())
     if pending:
         names = ", ".join(d.name for d in pending)
@@ -208,10 +304,21 @@ def cmd_install(args) -> int:
             return 1
         target = data_paths.ensure_dir(root) / name
         shutil.copytree(source, target)
+        rows = _inventory(target)
+        commit = subprocess.run(
+            ["git", "-C", str(clone), "rev-parse", "HEAD"],
+            capture_output=True, text=True,
+        ).stdout.strip() or ABSENT
+        licence, licence_source = find_licence(clone, source)
+        record = {"repo": args.repo, "path": args.path, "commit": commit,
+                  "license": licence, "license_source": licence_source}
+        (target / ORIGIN_FILE).write_text(
+            json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
-    rows = _inventory(target)
     total = sum(r[1] for r in rows)
     print(f"Quarantined at {target}")
+    print(f"From {args.repo} {args.path} at {commit[:12]}")
+    print(f"Licence: {licence} (from {licence_source})")
     print(f"{len(rows)} files, {total} bytes. Not listed and not loadable until trusted.\n")
     width = max(len(str(r[0])) for r in rows)
     for rel, size, digest in rows:
@@ -312,6 +419,51 @@ def cmd_convert(args) -> int:
     return 0
 
 
+def scan(skill_dir: Path) -> dict | None:
+    """The scanner's findings over a skill's directory, or None where it could
+    not run. A scanner that finds something exits non-zero, so the report is
+    taken from what it printed rather than from its status."""
+    proc = subprocess.run(
+        [sys.executable, "-m", SCANNER, "-q", "-f", "json", "-r", str(skill_dir)],
+        capture_output=True, text=True,
+    )
+    try:
+        report = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return None
+    return report if isinstance(report, dict) else None
+
+
+def scan_lines(skill_dir: Path) -> list[str]:
+    """The scan section of an audit: what the scanner found, and what it did not
+    read. Named per file rather than summarised, since the point of the section
+    is to send a reader to a line."""
+    unread = sorted(str(rel) for rel, _, _ in _inventory(skill_dir)
+                    if _is_script(rel) and rel.suffix.lower() != SCANNER_READS)
+    report = scan(skill_dir)
+    if report is None:
+        return [f"=== scan ===",
+                f"No scanner. {SCANNER} is not installed for this interpreter, so "
+                f"nothing has read this code but you.",
+                f"    {Path(sys.executable).name} -m pip install {SCANNER}"]
+    out = [f"=== scan ({SCANNER}) ==="]
+    for issue in report.get("results", []):
+        where = Path(issue.get("filename", "")).name
+        out.append(f"{issue.get('issue_severity', '?'):<8} "
+                   f"{issue.get('test_id', '?')} {issue.get('issue_text', '')} "
+                   f"— {where}:{issue.get('line_number', '?')}")
+    if len(out) == 1:
+        out.append("Nothing found.")
+    for error in report.get("errors", []):
+        out.append(f"unread    {error.get('filename', '?')}: {error.get('reason', '')}")
+    if unread:
+        out.append(f"Not read by {SCANNER}, which reads {SCANNER_READS} only: "
+                   + ", ".join(unread))
+    out.append("A report is evidence. Trust is yours to give, and nothing here "
+               "gives it.")
+    return out
+
+
 def cmd_audit(args) -> int:
     root = quarantine_root()
     candidates = [d for d in _skill_dirs(root) if d.name == args.name]
@@ -323,6 +475,15 @@ def cmd_audit(args) -> int:
         candidates = [found[0]]
     skill_dir = candidates[0]
 
+    record = read_origin(skill_dir)
+    if record:
+        print("=== origin ===")
+        for key in ("repo", "path", "commit", "license", "license_source"):
+            print(f"{key}: {record.get(key, ABSENT)}")
+        print()
+    for line in scan_lines(skill_dir):
+        print(line)
+    print()
     print(f"=== {skill_dir}/SKILL.md ===")
     print((skill_dir / "SKILL.md").read_text(encoding="utf-8"), end="")
     scripts = [rel for rel, _, _ in _inventory(skill_dir) if _is_script(rel)]

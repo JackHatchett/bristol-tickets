@@ -711,6 +711,101 @@ def check_bristol() -> list[str]:
         ok.append("Links: one directed edge, related/blocks types, uri links, "
                   "pending buffer")
 
+        # A finished blocker's closing comment reaches the ticket it blocked.
+        # The properties that matter are that it is a read of two live rows —
+        # so editing the blocker's last comment changes what the blocked ticket
+        # shows and nothing is written onto it — that only finished blockers
+        # that said something contribute, that several arrive in the order they
+        # closed, and that the viewer and the CLI read the same thing.
+        from ui.links import carried_summaries
+
+        def _close(task_id, at):
+            lc.execute("UPDATE task SET status='done', closed_at=? WHERE id=?",
+                       (at, task_id))
+
+        def _say(task_id, body):
+            lc.execute("INSERT INTO issue_log (task_id, author, body, created_at) "
+                       "VALUES (?,'chief_of_staff',?,?)", (task_id, body, "2026-02-01"))
+
+        # The three that finish close in an order matching neither their ids
+        # ascending nor descending, so an id-ordered read cannot pass by luck.
+        hb = _seed_link_task("Blocked one")
+        hp1, hp2, hp3, hp4, hp5 = (_seed_link_task("Parent one"),
+                                   _seed_link_task("Parent two"),
+                                   _seed_link_task("Parent three"),
+                                   _seed_link_task("Parent four"),
+                                   _seed_link_task("Parent five"))
+        for parent in (hp1, hp2, hp3, hp4, hp5):
+            if add_issue_link(lc, parent, hb, relation="blocks") is not None:
+                raise SmokeFailure("a blocks link between fresh tickets was refused")
+        _say(hp1, "an earlier note")
+        _say(hp1, "one closing")
+        _close(hp1, "2026-01-03")
+        _say(hp2, "two closing")
+        _close(hp2, "2026-01-01")
+        _say(hp3, "three closing")
+        _close(hp3, "2026-01-02")
+        _close(hp4, "2026-01-04")          # done having said nothing
+        _say(hp5, "five is still open")    # not done — carries nothing
+        lc.commit()
+
+        got = carried_summaries(lc, hb)
+        if [e["id"] for e in got] != [hp2, hp3, hp1]:
+            raise SmokeFailure("carried summaries are not the finished blockers "
+                               "in the order they closed")
+        if [e["body"] for e in got] != ["two closing", "three closing", "one closing"]:
+            raise SmokeFailure("a carried summary is not the blocker's own last comment")
+        if lc.execute("SELECT COUNT(*) FROM issue_log WHERE task_id=?",
+                      (hb,)).fetchone()[0]:
+            raise SmokeFailure("a carried summary was copied onto the blocked ticket")
+        _say(hp1, "one closing, corrected")
+        lc.commit()
+        if carried_summaries(lc, hb)[2]["body"] != "one closing, corrected":
+            raise SmokeFailure("editing the blocker's last comment did not reach "
+                               "the blocked ticket — the summary is a copy, not a join")
+        if carried_summaries(lc, hp5):
+            raise SmokeFailure("a ticket blocking nothing carried a summary")
+
+        # The viewer shows it without the reader opening those tickets, and
+        # shows no empty section on a ticket nothing finished ahead of.
+        from ui.detail_pane import DetailPane
+        hpane = DetailPane(lc)
+        hpane.show_task(hb)
+        if not hpane.handoff_view.isVisibleTo(hpane) \
+                or not hpane._handoff_header.isVisibleTo(hpane):
+            raise SmokeFailure("the detail pane hid the carried summaries of a "
+                               "ticket that has them")
+        shown = hpane.handoff_view.toPlainText()
+        if "one closing, corrected" not in shown or "two closing" not in shown:
+            raise SmokeFailure("the detail pane did not render both carried summaries")
+        if "five is still open" in shown:
+            raise SmokeFailure("the detail pane carried an unfinished blocker's comment")
+        # Sized to what it holds, like the description above it: a section left
+        # at a widget's default height shows a heading and clips the handoff.
+        one = _seed_link_task("Blocked two")
+        add_issue_link(lc, hp2, one, relation="blocks")
+        lc.commit()
+        tall = hpane.handoff_view.height()
+        hpane.show_task(one)
+        if not hpane.handoff_view.height() < tall:
+            raise SmokeFailure("the carried-summaries section is not sized to its "
+                               "content — three summaries take the height of one")
+        hpane.show_task(hp5)
+        if hpane.handoff_view.isVisibleTo(hpane) \
+                or hpane._handoff_header.isVisibleTo(hpane):
+            raise SmokeFailure("the detail pane showed an empty carried-summaries section")
+
+        # The status scripts hold their own copy of this read, so the two are
+        # compared rather than trusted to stay in step.
+        _spec_cs = _ilu.spec_from_file_location(
+            "_cs", TOOLS / "ticket_tools" / "cos_status.py")
+        _cs = _ilu.module_from_spec(_spec_cs); _spec_cs.loader.exec_module(_cs)
+        cli = [(row[0], row[4]) for row in _cs.carried_summaries(lc, hb)]
+        if cli != [(e["id"], e["body"]) for e in carried_summaries(lc, hb)]:
+            raise SmokeFailure(f"carried-summary readers drifted: CLI {cli} vs viewer")
+        ok.append("Carried summaries: finished blockers only, in closing order, "
+                  "joined live, shown in the pane, and both readers agree")
+
         # First-run setup. The properties worth guarding are that a cancelled
         # wizard writes nothing, that a finished one produces a board, a
         # config with no placeholders left in it and a pointer, and that the

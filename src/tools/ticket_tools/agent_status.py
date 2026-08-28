@@ -323,6 +323,63 @@ def task_links(conn: sqlite3.Connection, task_id: int) -> list[str]:
     return out
 
 
+def carried_summaries(conn: sqlite3.Connection, task_id: int) -> list[tuple]:
+    """The closing comment of every finished ticket that blocks `task_id`, in
+    the order those tickets closed. `ui/links.py::carried_summaries` is the
+    viewer's copy of this read; the two are checked against each other in the
+    smoke suite rather than trusted to stay in step.
+
+    A join, never a copy: the `blocks` row and the blocking ticket's own log are
+    both read live, so editing that ticket's last comment changes what appears
+    here, and nothing is stored on the blocked ticket. A blocker that has not
+    finished, or finished having said nothing, contributes no entry."""
+    try:
+        blockers = conn.execute(
+            "SELECT b.id, b.title, b.closed_at "
+            "FROM task_link l JOIN task b ON b.id = l.task_id "
+            "WHERE l.kind='issue' AND l.dep_type='blocks' AND l.other_id=? "
+            "AND b.status='done' "
+            "ORDER BY b.closed_at IS NULL, b.closed_at, b.id",
+            (task_id,),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    out: list[tuple] = []
+    for blocker_id, title, _closed_at in blockers:
+        last = conn.execute(
+            "SELECT author, body, created_at FROM issue_log WHERE task_id=? "
+            "ORDER BY id DESC LIMIT 1",
+            (blocker_id,),
+        ).fetchone()
+        if last is None or not (last[1] or "").strip():
+            continue
+        out.append((blocker_id, title or "(missing)", last[0] or "",
+                    last[2] or "", last[1]))
+    return out
+
+
+def print_carried_summaries(conn: sqlite3.Connection,
+                            tasks: list[sqlite3.Row]) -> None:
+    """What the tickets each task waited on said as they finished, whole.
+
+    The other sections point at something to go and read; this one is the
+    reading, which is why it is not truncated. A card that has been unblocked
+    starts with what the last agent decided instead of a link back into another
+    ticket's log."""
+    hits = [(t, carried_summaries(conn, t["id"])) for t in tasks]
+    hits = [(t, rows) for t, rows in hits if rows]
+    if not hits:
+        return
+    print("\n--- CARRIED SUMMARIES (how each finished blocker closed; "
+          "you need not open those tickets) ---")
+    for t, rows in hits:
+        print(f"  #{t['id']} {t['title']}")
+        for blocker_id, title, author, at, body in rows:
+            print(f"    ← #{blocker_id} {title} [{at[:10]} {author}]")
+            for line in (body or "").splitlines():
+                print(f"        {line}")
+
+
 def print_links(conn: sqlite3.Connection, tasks: list[sqlite3.Row]) -> None:
     """Surface each task's links. A link is where a ticket's provenance and
     related material live — the Description is confined to its record-type
@@ -410,6 +467,10 @@ def main() -> None:
     print_needs_you(mine_all)
     print_comments(conn, mine_all)
     print_links(conn, mine_all)
+    # Scoped to the queue rather than to every card on the board: a
+    # handoff is what the agent about to work a card needs, and a card
+    # already done has nothing to be handed.
+    print_carried_summaries(conn, mine_q)
     print_attachments(conn, mine_all, db_path)
 
     _tail(cur, conn, me)

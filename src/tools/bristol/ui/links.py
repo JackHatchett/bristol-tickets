@@ -16,7 +16,9 @@ kinds and they share one table (`task_link`):
   row keeps its direction instead — ``task_id`` blocks ``other_id`` — and the
   same row renders as "blocks #M" on one card and "blocked by #N" on the other.
   "Blocked by" is a reading of the one row, never a second value and never a
-  mirror.
+  mirror. Once the blocking ticket is ``done`` that same row also carries its
+  closing comment onto the ticket it blocked — ``carried_summaries`` reads both
+  live, so the handoff is a join and never a copy.
 
 * ``uri`` — a link from a ticket to an address: a web URL, a ``zotero://``
   citation, an ``obsidian://`` note, or a bare filesystem path. Whatever is
@@ -214,6 +216,50 @@ def list_links(conn: sqlite3.Connection, task_id: int | None) -> list[dict]:
         out.append({
             "id": link_id, "kind": "uri", "relation": None, "other_id": None,
             "other_title": None, "uri": uri, "label": label,
+        })
+    return out
+
+
+def carried_summaries(conn: sqlite3.Connection, task_id: int | None) -> list[dict]:
+    """The closing comment of every finished ticket that blocks ``task_id``, in
+    the order those tickets closed: ``{id, title, closed_at, author, body,
+    at}``, oldest first.
+
+    A read-time join over the `blocks` row and the blocking ticket's own log —
+    nothing is copied onto this ticket and nothing is composed. Editing the
+    blocking ticket's last comment changes what this returns, and a blocker
+    that has not finished, or finished having said nothing, contributes no
+    entry.
+    """
+    if task_id is None:
+        return []
+    try:
+        blockers = conn.execute(
+            "SELECT b.id, b.title, b.closed_at "
+            "FROM task_link l JOIN task b ON b.id = l.task_id "
+            "WHERE l.kind='issue' AND l.dep_type='blocks' AND l.other_id=? "
+            "AND b.status='done' "
+            "ORDER BY b.closed_at IS NULL, b.closed_at, b.id",
+            (task_id,),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    out: list[dict] = []
+    for blocker_id, title, closed_at in blockers:
+        last = conn.execute(
+            "SELECT author, body, created_at FROM issue_log WHERE task_id=? "
+            "ORDER BY id DESC LIMIT 1",
+            (blocker_id,),
+        ).fetchone()
+        if last is None or not (last[1] or "").strip():
+            continue
+        out.append({
+            "id": blocker_id,
+            "title": title or "(missing ticket)",
+            "closed_at": closed_at,
+            "author": last[0] or "",
+            "body": last[1],
+            "at": last[2],
         })
     return out
 

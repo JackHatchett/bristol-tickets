@@ -118,6 +118,14 @@ relations:
   status readouts resolve a blocker live so a dependency that has been satisfied
   stops showing.
 
+Once a blocking card is Done, **Carried summaries** appears on the card it held
+up, under Links: each finished blocker's own last comment, oldest close first,
+so picking the card up starts with what was decided rather than a trip through
+another card's log. The status readouts print the same thing for the cards in
+your queue. It is a reading of the link and that comment, not a copy — editing
+the comment on the blocking card changes what the blocked one shows, and a
+blocker that finished without saying anything adds nothing.
+
 **Blocked**, on both editing surfaces, says what *kind* of thing has stopped a
 card: a **dependency** (which one is the link's job), a **decision** that is
 yours to make, a **capability** the agent was never granted, or something
