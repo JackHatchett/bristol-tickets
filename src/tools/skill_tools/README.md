@@ -29,8 +29,20 @@ never an error.
 - **A third-party skill lands in `<install_dir>/.quarantine/` and is invisible
   to `list` and `view` until `trust` promotes it.** Installing shows the file
   inventory with sizes and hashes, marking every file that is executable code.
-- **Nothing here runs a skill's code.** `audit` prints it; a session reads it and
-  decides.
+- **An installed skill carries its provenance in a `.origin.json` beside its
+  `SKILL.md`** — repository, path inside it, resolved commit, licence, and where
+  that licence was read from. Written inside the skill directory so the record
+  moves with it through quarantine and trust and cannot orphan; dotted, so a
+  client reading the skill by the specification never sees it. It is written
+  only under the git-ignored install root, never into `src/skills/`.
+- **A licence is recorded as it is found, never detected.** The skill's own
+  frontmatter first, then a licence file beside the skill, then one at the
+  repository root; a file is recorded by its own first line. A source stating no
+  licence anywhere is recorded as `absent`, which is a different fact from a
+  blank field.
+- **Nothing here runs a skill's code.** `audit` scans and prints it; a session
+  reads it and decides. A report never promotes a skill: `trust` is a separate
+  command a person runs, and it consults no scanner.
 - **No personal data.** Every path comes from config or from the project root
   marker.
 
@@ -46,7 +58,9 @@ python3 skills.py trust <name>
 ```
 
 - **`list`** — every loadable skill as name, origin and description, plus a
-  closing line naming anything quarantined.
+  closing line naming anything quarantined. Origin is `native`, or the
+  repository and commit a skill was installed from; a skill carrying no record
+  reads as its root, which is all that is known about it.
 - **`view`** — one skill's `SKILL.md` in full. This is the on-demand load.
 - **`install`** — shallow-clones the hub repository into a temporary directory,
   copies the named skill into quarantine, and prints the inventory. It refuses a
@@ -59,7 +73,27 @@ python3 skills.py trust <name>
   `name`, `description` and `license` cross; everything else is dropped and named
   in the output. A source stating no description is refused rather than given
   one, since a skill without a trigger never routes; `--description` supplies it.
-- **`audit`** — the skill's `SKILL.md` followed by the full text of every script
-  it carries.
+- **`audit`** — the skill's provenance record, then a scan of its code, then its
+  `SKILL.md`, then the full text of every script it carries.
 - **`trust`** — moves a quarantined skill into the install root, where `list`
   and `view` can reach it.
+
+## The scanner
+
+`audit` runs **bandit**, invoked as a module of the interpreter running
+`skills.py` so it is found wherever that interpreter's packages are. Bristol
+never installs it, and an interpreter without it produces a report saying so
+above the source, which is then the whole of the evidence.
+
+- **What it checks.** Python source, parsed to an AST and matched against its
+  published tests for known-dangerous calls: a shell in `subprocess`, `eval` and
+  `exec`, `pickle` and `yaml.load` over untrusted bytes, weak hashes and ciphers,
+  credentials written into the source, disabled certificate verification,
+  predictable temporary files.
+- **What it does not.** Any language but Python, so a skill's shell, JavaScript,
+  Ruby and PowerShell go unread and the report names them. Dataflow across
+  files. Intent — a call it names may be the right one and a call it passes may
+  be the wrong one. Code that is obfuscated, encoded, or fetched at run time,
+  which reads to it as ordinary Python.
+- **A finding is a place to look, not a verdict**, and a clean report says only
+  that these tests matched nothing.

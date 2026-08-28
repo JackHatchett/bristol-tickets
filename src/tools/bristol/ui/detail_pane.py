@@ -45,7 +45,7 @@ from PySide6.QtWidgets import (
 
 from .attachments import AttachmentBar
 from .growing_edit import GrowingTextEdit
-from .links import LinkBar
+from .links import LinkBar, carried_summaries
 from .record_dialog import STAGES, section_widget
 from .settled_combo import fill_words
 from .theme import (
@@ -198,6 +198,16 @@ class DetailPane(QWidget):
         self.links.header.setVisible(False)  # the section header above stands in
         self.links.on_open_issue = self.show_task
         self._body_layout.addWidget(self.links)
+        # What the tickets this one waited on said as they finished. It sits
+        # under Links because it is a reading of the `blocks` rows above it,
+        # and it is read-only for the same reason: the text belongs to the
+        # ticket that wrote it.
+        self._handoff_header = section_widget("Carried summaries")
+        self._body_layout.addWidget(self._handoff_header)
+        self.handoff_view = QTextEdit()
+        self.handoff_view.setReadOnly(True)
+        self._body_layout.addWidget(self.handoff_view)
+
         # Attachments are their own section, not a tail on Links.
         self._attach_header = section_widget("Attachments")
         self._body_layout.addWidget(self._attach_header)
@@ -272,25 +282,37 @@ class DetailPane(QWidget):
             self._attr_grid.addWidget(value_label, row, 1, Qt.AlignLeft | Qt.AlignTop)
         self._attr_grid.setColumnStretch(1, 1)
 
-    def _fit_description(self) -> None:
-        """Size the description to what it holds, within a bound: at least a few
-        lines so the section reads as present, at most a screenful so a long
-        ticket scrolls inside the field instead of pushing the log away."""
-        document = self.desc.document()
-        width = self.desc.viewport().width()
+    def _fit(self, view: QTextEdit, low_lines: int, high_lines: int) -> None:
+        """Size a read-only view to what it holds, within a bound: at least a
+        few lines so the section reads as present, at most a screenful so a long
+        one scrolls inside its own field instead of pushing the log away.
+
+        Called again on every resize, since a narrower pane rewraps the text
+        into more lines than it was measured at."""
+        document = view.document()
+        width = view.viewport().width()
         if width > 0:
             document.setTextWidth(width)
-        line = QFontMetrics(self.desc.font()).lineSpacing()
+        line = QFontMetrics(view.font()).lineSpacing()
         wanted = int(document.size().height()) + space("md") * 2
-        low, high = line * 3, line * 18
-        self.desc.setFixedHeight(max(low, min(wanted, high)))
-        self.desc.setVerticalScrollBarPolicy(
+        low, high = line * low_lines, line * high_lines
+        view.setFixedHeight(max(low, min(wanted, high)))
+        view.setVerticalScrollBarPolicy(
             Qt.ScrollBarAsNeeded if wanted > high else Qt.ScrollBarAlwaysOff)
+
+    def _fit_description(self) -> None:
+        self._fit(self.desc, 3, 18)
+
+    def _fit_handoffs(self) -> None:
+        # Bounded below the description's eighteen: the card's own text is the
+        # tallest thing in the pane, and what it waited on reads under it.
+        self._fit(self.handoff_view, 3, 14)
 
     def resizeEvent(self, event):  # noqa: N802 (Qt override)
         super().resizeEvent(event)
         if self.task_id is not None or self.epic_id is not None:
             self._fit_description()
+            self._fit_handoffs()
 
     def _collapse(self) -> None:
         if callable(self.on_collapse):
@@ -316,6 +338,9 @@ class DetailPane(QWidget):
         self.attachments.setVisible(False)
         self._links_header.setVisible(False)
         self._attach_header.setVisible(False)
+        self._handoff_header.setVisible(False)
+        self.handoff_view.setVisible(False)
+        self.handoff_view.clear()
         self.log_view.setPlainText("(Select an issue to see its log.)")
         self._set_attributes([])
         self._set_composer_enabled(False)
@@ -373,6 +398,7 @@ class DetailPane(QWidget):
         self._links_header.setVisible(True)
         self.links.setVisible(True)
         self.links.set_task(task_id)
+        self._render_handoffs()
         self._attach_header.setVisible(True)
         self.attachments.setVisible(True)
         self.attachments.set_task(task_id)
@@ -544,6 +570,39 @@ class DetailPane(QWidget):
         if callable(self.on_changed):
             self.on_changed()
 
+    # ----- carried summaries ------------------------------------------------
+
+    def _render_handoffs(self, *args) -> None:
+        """Show what each finished blocker said as it closed, oldest first.
+
+        Read live from the `blocks` rows and those tickets' own logs, so the
+        section appears when a blocker reaches done and changes when its last
+        comment is edited. A ticket nothing finished ahead of shows no section
+        at all rather than an empty one."""
+        entries = carried_summaries(self.conn, self.task_id)
+        self._handoff_header.setVisible(bool(entries))
+        self.handoff_view.setVisible(bool(entries))
+        if not entries:
+            self.handoff_view.clear()
+            return
+        parts: list[str] = []
+        for entry in entries:
+            head = html.escape(f"#{entry['id']} {entry['title']}")
+            author = html.escape(entry["author"])
+            when = html.escape(relative_time(entry["at"]))
+            body = html.escape(entry["body"]).replace("\n", "<br>")
+            parts.append(
+                f'<table width="100%" cellspacing="0" '
+                f'cellpadding="{space("md")}" '
+                f'style="margin-bottom:{space("sm")}px">'
+                f'<tr><td style="background-color:{C["LIST_BG"]};">'
+                f'<span style="color:{C["INK"]}"><b>{head}</b></span><br>'
+                f'<span style="color:{C["INK_SOFT"]}">{author} · {when}</span><br>'
+                f'<span style="color:{C["INK"]}">{body}</span>'
+                f'</td></tr></table>')
+        self.handoff_view.setHtml("".join(parts))
+        self._fit_handoffs()
+
     # ----- the log timeline -------------------------------------------------
 
     def _render_log(self, *args) -> None:
@@ -584,9 +643,11 @@ class DetailPane(QWidget):
         self.log_view.setHtml("".join(parts))
 
     def refresh_theme(self) -> None:
-        """Re-render what bakes palette values in: the timeline HTML."""
+        """Re-render what bakes palette values in: the timeline and the carried
+        summaries, both of which are HTML with colours resolved at build time."""
         if self.task_id is not None:
             self._render_log()
+            self._render_handoffs()
 
     def _post_comment(self) -> None:
         if self.task_id is None:
