@@ -57,9 +57,14 @@ Around it:
 - `src/tools/` — standalone programs. The ticket writer and status readers, the
   configuration resolver, file management, document conversion, scrapers,
   renderers, a test harness.
+- `src/skills/` — a procedure as a folder holding a `SKILL.md`, in the open
+  Agent Skills format, loaded when its description matches the task. This is
+  where a procedure goes; `src/templates/identity_template.md` §What an agent
+  is made of says why.
 
-Inside those last three, a folder named for an agent says who maintains what is
-in it, not who may run it. Any agent may load any playbook, tool or protocol.
+Inside `src/playbooks/`, `src/protocols/` and `src/tools/`, a folder named for
+an agent says who maintains what is in it, not who may run it. Any agent may
+load any playbook, tool or protocol.
 What serves more than one agent lives in that directory's `_shared/`, whose
 README indexes each capability in one line with the condition that calls for it;
 an agent reads the index and loads only what it will run. So a session pays
