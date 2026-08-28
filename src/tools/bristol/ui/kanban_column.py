@@ -1,9 +1,10 @@
 """ui/kanban_column.py — one scrollable column of task cards.
 
-``KanbanColumn`` is a region of the canvas: a header carrying the column's name,
-its card count and, where a column has one, a right-justified action button,
-over a stack of ``CardDelegate``-painted cards with no fill or border of its
-own. In the Kanban model it populates itself two ways:
+``KanbanColumn`` is a region of the canvas: a header carrying the column's name
+and its card count, over a stack of ``CardDelegate``-painted cards with no fill
+or border of its own. A header holds no controls, so every column's name and
+count sit on one line across the board. In the Kanban model it populates itself
+two ways:
 
 * BOARD columns (``status_key`` = todo|doing|done): the tasks whose
   ``stage='active'`` and whose ``status`` matches this column, in manual
@@ -36,7 +37,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -74,10 +74,10 @@ class KanbanColumn(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(space("md"))
 
-        # The header is the column: its name, how many cards are in it, and,
-        # for a column that has one, a right-justified action button. The
-        # stack below it has no fill and no border, so the cards are the only
-        # raised surfaces on the view.
+        # The header is the column: its name and how many cards are in it. An
+        # action over a column's cards is a board control and lives in the row
+        # above the columns. The stack below has no fill and no border, so the
+        # cards are the only raised surfaces on the view.
         header = QHBoxLayout()
         header.setContentsMargins(space("sm"), 0, 0, 0)
         header.setSpacing(space("md"))
@@ -90,8 +90,6 @@ class KanbanColumn(QWidget):
         self.count_label.setObjectName("columnCount")
         header.addWidget(self.count_label)
         header.addStretch(1)
-
-        self._header = header
         root.addLayout(header)
 
         self.list_widget = _DndListWidget(self)
@@ -113,17 +111,6 @@ class KanbanColumn(QWidget):
         self.list_widget.itemClicked.connect(self._inspect_task)
         root.addWidget(self.list_widget)
         self.setMinimumWidth(LAYOUT["column_min_w"])
-
-    # ----- the column's own actions ----------------------------------------
-
-    def add_header_button(self, label: str, callback) -> QPushButton:
-        """Add a visible push button to this column's header, right-justified
-        by the stretch already placed before it, styled like any other plain
-        QPushButton (e.g. the board's Refresh button)."""
-        btn = QPushButton(label)
-        btn.clicked.connect(callback)
-        self._header.addWidget(btn)
-        return btn
 
     def _set_count(self) -> None:
         self.count_label.setText(str(self.list_widget.count()))

@@ -115,6 +115,9 @@ user ones included, are context, not ordering.
 Before wrapping up a session that changed state, leave the board true.
 Mechanics: `src/skills/manage-tickets/SKILL.md` §Session closure.
 
+- **Write what the user reads to
+  `src/skills/writing-for-the-user/SKILL.md`** — this report, a document, a
+  ticket body, an answer carrying a finding.
 - **A session that wrote inside a git working tree ends with a commit block for
   it**, whatever stopped it — on by default;
   `src/skills/suggested-commit/SKILL.md`.

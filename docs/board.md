@@ -40,11 +40,13 @@ Drag a card to reorder it within a column or move it across. Position matters:
 the top of To Do is what an agent picks up next, and dragging is how you decide
 that.
 
-Above the columns sits one control row holding what applies to the whole board:
-**Filter**, whatever it is currently set to, and **Refresh** at the far end.
-Each column carries its own header — its name, how many cards are in it, and an
-overflow menu holding what acts on that column alone: creating a card in it,
-and, on Done, **Clear Done**.
+Above the columns sits one control row holding what applies to the Board:
+**Filter**, whatever it is currently set to, and **Clear Done** at the far end.
+Each column carries its own header — its name and how many cards are in it, and
+nothing else, so the three read across one line.
+
+**Refresh** and **Create** sit together at the right of the header bar, above
+the tabs, because each acts on every tab rather than on the Board alone.
 
 ## Filter
 
@@ -172,8 +174,8 @@ only that they changed, never the text.
 
 ## Clear Done
 
-**Clear Done**, in the Done column's own menu, sweeps every card in that column
-into the Archive in one click and writes a report.
+**Clear Done**, at the right of the Board's control row, sweeps every card in
+the Done column into the Archive in one click and writes a report.
 
 Clearing Done is the only natural period boundary a board has, so it is where
 the reporting cadence comes from. The report is one Markdown note per sweep,

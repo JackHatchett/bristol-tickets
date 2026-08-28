@@ -163,10 +163,13 @@ Two surfaces write a card, and each has its own job.
 ## What the board is made of
 
 - **The canvas is flat and the cards are the only raised surfaces.** A column is
-  a header — name, count, overflow menu — over a stack with no fill and no
+  a header — name and count, nothing else — over a stack with no fill and no
   border; the well behind the cards is `CANVAS`, not a container.
-- **An action that operates on one column lives in that column's menu**, and the
-  control row above the columns holds only what applies to the whole board.
+- **A control sits on the narrowest surface its effect reaches.** An action over
+  the Board's cards, whichever column it reads, goes on the control row above
+  the columns; one that reaches every tab goes in the header bar beside Create.
+  A column header carries no control, so the three names and counts read across
+  one line.
 - **Everything that narrows the board is one panel behind the Filter button**,
   and what it is narrowed to stands on the control row as a chip that removes
   itself. A second control that hides cards is a second place to look for why a
