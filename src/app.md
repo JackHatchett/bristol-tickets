@@ -16,8 +16,8 @@ the style contract in `src/templates/identity_template.md`.
 - **Resolve out-of-repo resources and per-agent env vars from config**, whose
   every key `docs/configuration.md` documents.
 - **Resolve every declared location through
-  `src/tools/config_tools/data_paths.py`** (contract: that folder's README). One
-  that does not exist yet is a normal first state.
+  `src/tools/config_tools/data_paths.py`**, whose README owns the contract and
+  the absent-location case.
 
 ## Phase 2 — Identity
 
@@ -115,9 +115,9 @@ user ones included, are context, not ordering.
 Before wrapping up a session that changed state, leave the board true.
 Mechanics: `src/skills/manage-tickets/SKILL.md` §Session closure.
 
-- **Write what the user reads to
-  `src/skills/writing-for-the-user/SKILL.md`** — this report, a document, a
-  ticket body, an answer carrying a finding.
+- **Define every term the user reads at first use**, coined labels included.
+- **Report a change against the board goal it serves**, never as a list of
+  edits.
 - **A session that wrote inside a git working tree ends with a commit block for
   it**, whatever stopped it — on by default;
   `src/skills/suggested-commit/SKILL.md`.
