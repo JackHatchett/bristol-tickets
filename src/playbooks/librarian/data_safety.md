@@ -21,6 +21,18 @@ Counting list-only titles as unread library would redefine every metric the
 snapshot reports. **Item type is not the test either** — the magazines are
 `magazineArticle`, so filtering on `book` alone silently drops them.
 
+The shipped collection layout, whose names a user may change in `/config`:
+
+| Collection | Means |
+|---|---|
+| Books I've Read | The read set. Membership is the `Read` field, and it says nothing about ownership. |
+| Owned | A subset built from the `Shelved` tag. |
+| Reading Lists | A parent; each list is its own collection under it, and never adds to Books I've Read. A list is aspirational; the read collection is a fact about the user. |
+| Loaned | Books currently out, alongside their other memberships. |
+
+Non-bibliographic values — Copy, Price paid, Genre, `personal.db id` — live in
+Zotero's `extra`, one `Key: value` per line.
+
 ## Schema — core fields
 
 The authoritative map is the FIELD MAP block at the top of

@@ -48,10 +48,10 @@ writing the charter or porting machinery, which do not depend on it.
 
 **Step 2a — Read the data root's own README for logic, not just content.**
 Navigational or operational logic sitting there ("which file is the master
-version," "where a finished artifact is saved") is ported into `/src`: to the
-charter if it is a structural pointer, to a playbook if it is tied to a workflow
-step. A data-folder README is read on demand by a human and never consulted at
-session start, so logic left there is invisible at runtime.
+version," "where a finished artifact is saved") is ported into `/src`: to a
+skill if it is a step of a procedure, to the agent's config entry if it is a
+location. A data-folder README is read on demand by a human and never consulted
+at session start, so logic left there is invisible at runtime.
 
 **Step 2b — Quarantine any state-tracking file, never inherit it.** A legacy
 data root often holds a living `STATE.md`, `CHANGELOG.md` or `next_session.md`.
@@ -71,8 +71,8 @@ specifics. This tells you which files move verbatim and which need Step 6 first.
 Create `src/agent_identities/<agent>.md` from
 `src/templates/identity_template.md`. Two constraints beyond the template:
 `src/app.md` §What a file may say governs what may appear in it, and **no
-procedure logic is inlined** — the charter names what playbooks and tools exist,
-never how they work.
+procedure logic is inlined and no file is named** — a charter carries what a
+session must have read before it can act safely and nothing else.
 
 ### Step 5 — Split the machinery
 

@@ -28,5 +28,5 @@ Application rows live in the `applications` table of
 `data/*/personal/db/personal.db`, written through
 `src/tools/personal_db/personal_write.py` (`add-application`,
 `update-application`). **Keep logging applications there as usual** — the
-charter's §2.2 grants that record its own home, and nothing in this playbook's
+charter grants that record its own home, and nothing in this playbook's
 closure steps touches it.

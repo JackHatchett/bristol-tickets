@@ -125,11 +125,22 @@ The scale itself does not vary per installation.
 | Key | Meaning |
 | --- | --- |
 | `identity` | Required. Repository-relative path to the charter. Read at every session start. |
+| `description` | The one line the setup wizard's agent list and `docs/agents.md` show. |
 | `key_context_files` | Files this agent reads on sight. Declarative. |
 | `key_data_paths` | The data folders this agent owns. The setup wizard creates these. |
 | `env` | Environment variables this agent's tools expect. |
-| `notebook_access` | `{ "read": bool, "write": bool }` — whether it may read and write your notebook. |
-| `notes` | The one-line description shown in the setup wizard's agent list. |
+| `notebook_access` | `{ "read": bool, "write": bool }` — whether it may read and write your notebook. An agent that may write only to the shared agent-output folder says so instead: `write_wikis` false, `write_output_dir` true. |
+| `skills` | The skills attached to this agent, by name, in the order a session matches them. A skill named by no agent is available to every agent. Set it with `skills.py attach` and `detach` rather than by hand. |
+
+An agent whose tools need a value no other agent has declares its own key beside
+these. `teaching_assistant` has one, `lesson_pipeline.stages`, which routes each
+stage of lesson production to whoever runs it;
+`src/playbooks/teaching_assistant/lesson_pipeline.md` states the legal values
+and which stage takes none.
+
+**A fact about an agent goes here or in its charter, never both.** The test and
+what each field costs are `src/templates/identity_template.md` §What an agent is
+made of.
 
 Delete an agent's entry to remove it from the fleet; add one, with a charter, to
 introduce your own.
@@ -204,7 +215,6 @@ context.
 | Key | Meaning |
 | --- | --- |
 | `real_world_roles` | Which AI is the architect of this system and which are consultants whose output is advice. |
-| `virtual_agent_roles` | Which agent may edit the system's own runtime documents. `chief_of_staff` by default. |
 | `code_projects_layer` | Who stewards `data/*/code_projects/` and on what terms. |
 | `project_local_nicknames_caveat` | Any word one of your projects uses in a sense that differs from this file's. |
 

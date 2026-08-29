@@ -6,9 +6,9 @@ conventions are `playbooks/librarian/data_safety.md`.
 
 ## Preconditions
 
-- **`ZOTERO_DATA_DIR` resolves to a real Zotero data directory**
-  (`agent_identities/librarian.md` §2.2). Where it does not, stop and say so
-  rather than guessing a path or fabricating a write location.
+- **`ZOTERO_DATA_DIR` resolves to a real Zotero data directory.** Where it does
+  not, stop and say so rather than guessing a path or fabricating a write
+  location.
 - **Zotero is quit before any path that writes `zotero.sqlite`.** The tools
   refuse to run while it is up. Reading never needs it.
 

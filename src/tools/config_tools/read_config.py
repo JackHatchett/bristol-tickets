@@ -79,6 +79,11 @@ def _config_path() -> Path:
     return _project_root() / "config" / "config.local.json"
 
 
+def config_path() -> Path:
+    """Where this installation's configuration lives."""
+    return _config_path()
+
+
 def load() -> dict:
     """Return the entire parsed config as a dict."""
     path = _config_path()

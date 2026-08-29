@@ -15,17 +15,15 @@ registration. For converting an existing pre-framework bundle, use
 
 ## Procedure
 
-1. **Check the name is unique against the `agents` block of
-   `config/config.local.json`.** That block is the live list of every agent;
-   there is no separate registry file. On a collision, ask the user to choose
-   another name or confirm they mean to extend the existing agent.
+1. **Settle the mandate and the guardrails with the user.** Those are the two
+   things nobody can supply for them: what the agent answers to and what halts
+   it. Everything else about the agent is a value, and the tool takes it as an
+   argument.
 
-2. **Write `src/agent_identities/<agent>.md` from
-   `src/templates/identity_template.md`.** Write it for a stranger: no
-   assumption about the user's job, clients, courses, notebook layout or
-   software stack, and every third-party prerequisite named as one. What may go
-   in it, and what belongs in the config entry or a skill instead, is that
-   template's §What an agent is made of.
+2. **Run `src/tools/agent_tools/create_agent.py`**, which writes the charter,
+   the config entry, the skill attachments and the board epic in one go and
+   refuses a name already in use. Its arguments and what each writes are
+   `src/tools/agent_tools/README.md`.
 
 3. **Scaffold only what has real content to hold.** Most new agents start with
    none of it and add as needs appear.
@@ -38,29 +36,7 @@ registration. For converting an existing pre-framework bundle, use
      `tools/writing_tools/`, `tools/ticket_tools/`), never a new top-level
      `src/` sibling.
 
-4. **Give the agent a board epic.**
-
-   ```
-   python3 src/tools/ticket_tools/ticket_write.py add-epic \
-     --name "<agent> — initial setup" --owner <agent>
-   ```
-
-   Add `--description` and `--next-action` as appropriate. The epic is the
-   agent's tagged slice of the one shared board; there is no per-agent database.
-
-5. **Create a data root only if the agent holds personal content.** Name the
-   folder after the content rather than the agent (`data/*/career/`,
-   `data/*/clients/`), and register the path under the agent's
-   `key_data_paths`. chief_of_staff has none.
-
-6. **Register the agent under `agents` in `config/config.local.json`**:
-   `identity` (repo-relative path to the charter), `description` (the line the
-   first-run wizard and `docs/agents.md` show), `key_context_files`,
-   `key_data_paths`, `env` if its tools need variables, `notebook_access`, and
-   `notes`. `config/config.example.json` is the shape to copy. This is the whole
-   registration step.
-
-7. **Stop there.** The agent's first session loads its charter and its board
+4. **Stop there.** The agent's first session loads its charter and its board
    epic and takes direction from the user; no onboarding tasks are seeded beyond
    the epic.
 

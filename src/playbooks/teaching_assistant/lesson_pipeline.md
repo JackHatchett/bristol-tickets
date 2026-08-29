@@ -126,4 +126,5 @@ Stage 4 has no key — it is always the deterministic renderer and validator.
 - `html_render.md` — stage 4 renderer.
 - `protocols/teaching_assistant/copilot_bridge.md` — external-engine hand-off
   for stages 2 and 3.
-- `src/agent_identities/teaching_assistant.md` §2.6 — the plan-gated bright line.
+- `src/agent_identities/teaching_assistant.md` §Bright-Line Guardrails Only —
+  the plan-gated bright line.

@@ -48,6 +48,9 @@ before running anything in it.
 - **`skill_tools/`** — the loader for Agent Skills: two roots, frontmatter-only
   listing, and a quarantine a third-party skill leaves only after its code is
   read. When a capability is packaged as a skill folder.
+- **`agent_tools/`** — creating an agent: its charter, its config entry, its
+  skill attachments and its board epic, from a mandate and its guardrails. When
+  the fleet gains a member.
 - **`file_management/`** — inspection of folders and photos, deduplication,
   renaming, and a verified move. When a task is about files on disk.
 - **`document_tools/`** — PDF-to-Markdown, recipe normalization. When a document

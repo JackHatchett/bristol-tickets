@@ -11,9 +11,8 @@ An agent is three things: a **config entry**, queried one key at a time; a
 description matches the task at hand. Which of the three holds a fact follows
 from what a session does with the fact, never from what the fact is about.
 
-- **A config entry holds values and paths, and no prose.** The charter's path,
-  the description a picker shows, data roots, context files, environment
-  variables, notebook access, and the skills attached to this agent.
+- **A config entry holds values and paths, and no prose.** Its fields are the
+  table below.
 - **A charter holds what a session must have read before it can act safely** —
   who the agent is, its mandate, the guardrails that halt it, and its boundaries
   with the other agents. Never a list of file paths: a guardrail that fires only
@@ -23,6 +22,49 @@ from what a session does with the fact, never from what the fact is about.
   other two may carry a procedure. A skill calls the executable tools under
   `src/tools/`; code is what a procedure runs rather than a fourth part of an
   agent.
+
+**What each part costs is why the test is what it is.** A charter is Markdown a
+session reads whole before it does anything, so it costs its entire length every
+session, used or not. A config entry is JSON no session reads whole —
+`read_config.py` takes one dotted key — so a key costs nothing until something
+asks for it. A fact a session must have read before it can act safely is
+therefore Markdown, because a lookup that might not happen is not a guardrail; a
+fact it looks up when a task needs it is a config key, because paying for it
+every session buys nothing.
+
+**Every agent's config entry has these fields**, and an agent whose tools need a
+value no other agent has declares its own key beside them:
+
+| Field | Holds |
+| --- | --- |
+| `identity` | The charter's repository-relative path. Required. |
+| `description` | The one line the agent picker and `docs/agents.md` show. |
+| `key_context_files` | Files this agent reads on sight. |
+| `key_data_paths` | The data folders it owns. |
+| `env` | The environment variables its tools expect. |
+| `notebook_access` | Whether it may read and write the Markdown notebook. |
+| `skills` | The skills attached to this agent, in the order they are matched. |
+
+A fact about an agent that is neither must-have-read nor one of these values is
+a procedure, and a procedure is a skill.
+
+**What the loader supplies, and what it cannot.** A session lists the installed
+skills at start and matches a task against their descriptions, so a charter that
+names a procedure by path is a second copy of something the loader already
+knows, and the loader is the source. Section by section:
+
+| Charter section | Supplied by the loader |
+| --- | --- |
+| Identity & System Role | No. What an agent is for is not a procedure and nothing routes to it. |
+| Session Start | Only in part. A file the agent must have read before it acts is named here, because a match happens when a task arrives and this has to happen before one does. |
+| Sources of truth and data rules | No. Where content lives is a config value; which of two copies is authoritative is the agent's own rule. |
+| Bright-Line Guardrails Only | No. A guardrail reached by a match is not a guardrail. |
+| Boundaries & Coordination | No. Which folders an agent owns, and where another agent's authority starts, is authority rather than capability. |
+| Playbooks, Tools, Protocols | Yes, entirely, which is why no charter has such a section. |
+
+**A procedure added to the system is reachable the moment it carries a
+description**, and no charter is edited for it. That is the whole of what the
+change buys, and it is why a charter that listed files had to stop.
 
 Hermes is the agent runtime whose skill format Bristol reads, and its profile is
 the nearest thing to compare an agent with. Part by part: its `config.yaml` is
@@ -45,7 +87,8 @@ refused because another part cannot.
   loadable only when a person trusts it — `src/tools/skill_tools/README.md`.
 - **A config entry imports as associations** — which skills, which data roots,
   which environment. A list of associations grants nothing, which makes it the
-  most portable part of an agent.
+  most portable part of an agent. An attachment names a skill and never copies
+  one, so the same skill serves as many agents as name it.
 - **A charter's role description imports as content to read.** A downloaded
   description of what a role does is prose, and the user adopts it into a
   charter by reading it. It is inert until then: `skills.py convert` writes a
@@ -72,8 +115,9 @@ its own agent.
 
 ### Session start
 
-Load this charter, then follow `src/app.md` Phases 2 and 3. Nothing beyond the
-charter and the board snapshot loads before the user says what they want done.
+Load this charter, then follow `src/app.md` Phases 2 and 3. Beyond the charter,
+the one-line index of the installed skills, and the board snapshot, no file
+loads before the user says what they want done.
 An agent's own snapshot is `python3 src/tools/ticket_tools/agent_status.py
 <slug>`.
 

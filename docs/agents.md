@@ -1,6 +1,12 @@
 # The agents
 
-Seven agents ship with Bristol. An agent is three things: an entry in your
+An agent is a mandate you write plus the skills it can reach: the charter says
+who it answers to, what stops it and what it may not change, and everything it
+knows how to do is a skill it opens when a task calls for one. Nothing in the
+charter lists those skills, so adding one changes what the agent can do without
+the charter changing at all.
+
+Seven ship with Bristol. In full, an agent is three things: an entry in your
 configuration, holding its paths and settings; a charter, a Markdown file under
 `src/agent_identities/` that it reads in full at the start of every session,
 holding who it is, what it is for and what it may not do; and skills, folders of
@@ -14,6 +20,13 @@ One agent is active at a time. You choose it on the board's Settings tab, and
 the session that starts next loads that agent's charter and works that
 agent's cards. An agent never picks up a card belonging to another; when it
 needs one of them to do something, it files a card assigned to them.
+
+Skills can be attached to an agent, which is how a skill you install reaches the
+work it was meant for. `python3 src/tools/skill_tools/skills.py attach <skill>
+--agent <agent>` adds one and `detach` removes it; `list --agent <agent>` shows
+what is attached. Attaching puts a skill first in what that agent considers, and
+takes nothing away from anyone: a skill attached to no agent is available to
+every agent, and any agent can still reach any skill when a task calls for it.
 
 Every agent shares the same shape: reusable machinery under `src/`, and your
 personal content under `data/<instance>/`, which is never published. That split
