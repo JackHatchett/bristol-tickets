@@ -1,6 +1,6 @@
 ---
 name: session-review
-description: Propose one skill change as a card, at session close.
+description: Propose one skill change as a card, at session close. Use when a session that changed something is closing and its board is already true.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3 to read the board.
 metadata:

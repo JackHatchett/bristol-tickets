@@ -1,6 +1,6 @@
 ---
 name: manage-tickets
-description: Ticket writing, session closure and effort sizing.
+description: Ticket writing, session closure and effort sizing. Use when writing a ticket body, sizing a card, closing a session, or asked what's next, where were we, or status.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3, and PySide6 for the viewer.
 metadata:

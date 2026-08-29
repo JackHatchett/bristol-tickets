@@ -1,6 +1,6 @@
 ---
 name: suggested-commit
-description: Turn a closing session's writes into a commit to paste.
+description: Turn a closing session's writes into a commit to paste. Use when a closing session wrote inside a git working tree.
 license: MIT
 compatibility: Needs git available to the user; the procedure runs no git command.
 metadata:

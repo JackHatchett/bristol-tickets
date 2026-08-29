@@ -1,6 +1,6 @@
 ---
 name: writing-a-plan
-description: Write a plan that says what is intended, not where it stands.
+description: Write a plan that says what is intended, not where it stands. Use when a body of work needs its intent and order written down, or that document revised.
 license: MIT
 metadata:
   bristol.kind: playbook

@@ -1,6 +1,6 @@
 ---
 name: inline-teaching
-description: Teach inside live coaching, at the user's own level.
+description: Teach inside live coaching, at the user's own level. Use when a term, tool or technique needs explaining to a user who is present and directing.
 license: MIT
 metadata:
   bristol.kind: playbook
