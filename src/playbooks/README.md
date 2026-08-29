@@ -46,8 +46,8 @@ Top-level playbooks are chief_of_staff's:
   folder under the Agent Skills specification.
 - `storage_audit.md` — the recurring storage cleanup inventory.
 
-Each other folder holds one agent's own playbooks, and that agent's charter
-names them:
+Each other folder holds one agent's own playbooks, and this list is where they
+are named:
 
 - `career_coach/` — base_resume_update, cover_letter, interview_prep,
   jd_evaluation, resume_tailoring, session_closure
@@ -70,5 +70,5 @@ names them:
   behavior is chief_of_staff's. A change another agent wants is a card assigned
   to chief_of_staff.
 - **The live registry of every agent and its data paths is the `agents` block
-  of `config/config.local.json`.** There is no routing file: an agent's own
-  charter names where its durable content lives.
+  of `config/config.local.json`.** There is no routing file, and a charter names
+  no path — `src/templates/identity_template.md` §What an agent is made of.

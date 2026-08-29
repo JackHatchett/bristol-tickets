@@ -49,4 +49,4 @@ Four reads. The user's request names one.
 
 Comments and flags go to the user, and a full write-up to
 `markdown_notebook.agent_output_dir`. **Every directory the user authors in is
-read-only to this agent** (`writers_room.md` §2.6).
+read-only to this agent** (`writers_room.md` §Write Authority).

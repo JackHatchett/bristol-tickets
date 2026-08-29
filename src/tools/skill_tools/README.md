@@ -24,8 +24,15 @@ never an error.
 - **Progressive disclosure is enforced, not advised.** `list` reads each
   `SKILL.md` only as far as the frontmatter's closing delimiter; `view` is the
   only command that loads a body.
+- **Every session runs `list` at start and `view` only when a task matches a
+  description** — `src/app.md` Phase 2 owns that rule. It is what makes an
+  installed skill reachable, and the reason `list`'s output is one line each.
 - **A skill's name is its directory name.** The specification requires the two
   to match, and the roots are flat.
+- **Attachment orders what a session matches first and fences nothing off.** A
+  per-agent allowlist would be a smaller system than the one that exists, where
+  any agent may load any skill; `list --agent` therefore prints every loadable
+  skill and marks the attached ones rather than filtering.
 - **A third-party skill lands in `<install_dir>/.quarantine/` and is invisible
   to `list` and `view` until `trust` promotes it.** Installing shows the file
   inventory with sizes and hashes, marking every file that is executable code.
@@ -49,16 +56,19 @@ never an error.
 ## skills.py
 
 ```
-python3 skills.py list
+python3 skills.py list [--agent <slug>]
 python3 skills.py view <name>
 python3 skills.py install <repo-url> <path-in-repo> [--name NAME]
 python3 skills.py convert <file.md> [--name NAME] [--description TEXT]
 python3 skills.py audit <name>
 python3 skills.py trust <name>
+python3 skills.py attach <name> --agent <slug>
+python3 skills.py detach <name> --agent <slug>
 ```
 
 - **`list`** — every loadable skill as name, origin and description, plus a
-  closing line naming anything quarantined. Origin is `native`, or the
+  closing line naming anything quarantined. `--agent <slug>` puts that agent's
+  attached skills first and marks them. Origin is `native`, or the
   repository and commit a skill was installed from; a skill carrying no record
   reads as its root, which is all that is known about it.
 - **`view`** — one skill's `SKILL.md` in full. This is the on-demand load.
@@ -81,6 +91,74 @@ python3 skills.py trust <name>
   `SKILL.md`, then the full text of every script it carries.
 - **`trust`** — moves a quarantined skill into the install root, where `list`
   and `view` can reach it.
+- **`install` closes with a compatibility note where the skill's own
+  frontmatter declares something with no reader here** — environment variables
+  it expects credentials for, and the Hermes toolsets it gates or offers itself
+  as a fallback for. Each says what will happen and names what it found. It is
+  a statement, never a gate: a skill whose gate is inert here may still carry a
+  body worth reading, and refusing it would decide something that is the
+  person's to decide. A skill carrying only fields the specification defines,
+  or declaring one of those keys and naming nothing under it, prints no note.
+- **`attach` / `detach`** — add or remove one skill name in
+  `agents.<slug>.skills`, written through `config_tools/write_config.py`. The
+  attachment is a name in the agent's config entry and never a copy of the
+  skill, so one skill serves as many agents as name it and detaching from one
+  leaves the others as they were. `attach` refuses a name `list` does not show,
+  which is what makes a quarantined skill unattachable until it is trusted.
+
+## Where a skill comes from
+
+`install` takes the address a repository shows while you are looking at a
+skill's folder, so the whole of the discovery step is finding a folder in a
+browser. These are the places worth browsing, each with what reviews it, because
+nothing here is reviewed by Bristol.
+
+| Hub | What it holds | What reviews it | Address |
+| --- | --- | --- | --- |
+| Anthropic's own | The specification, a skill template, and the skills behind a production assistant's document handling | Nothing published; it is one vendor's repository | `github.com/anthropics/skills` |
+| The specification | The Agent Skills standard and its reference material, not a catalogue | Its own contribution process | `github.com/agentskills/agentskills` |
+| awesome-hermes-skills | 258 entries — 72 built into Hermes, 101 shipped-but-disabled, 85 third-party | Curated by hand, and it says it is not an audit | `github.com/ZeroPointRepo/awesome-hermes-skills` |
+| Nous's optional catalogue | ~150 skills in 22 categories, shipped with Hermes and inactive until installed | Nothing stated | `hermes-agent.nousresearch.com/docs/reference/optional-skills-catalog` |
+| skills.sh | The largest directory, listing skills by their GitHub repository | A security-audit section, with no stated process | `skills.sh` |
+
+**The claims about review, in their own words.** awesome-hermes-skills states
+that "skills in this list are curated, not audited" and that maintainers can
+change them after they appear, and it accepts a submission on four mechanical
+tests — a working `SKILL.md`, commits in the last six months, a README with a
+one-line install, and not already listed. Nous's optional catalogue states
+nothing about review; its skills ship inside Hermes rather than being fetched.
+Anthropic's repository carries a demonstration-and-education disclaimer and no
+third-party submission process. The specification repository is a standard, not
+a catalogue, and reviews contributions to itself.
+
+**Scale and trust run in opposite directions**, which is the reason the two
+smallest entries above are the two worth reading first. The figures behind that,
+and Snyk's ToxicSkills population study, are the ecosystem survey in the user's
+notebook rather than repeated here.
+
+**Licence is a property of the skill, not of the hub.** awesome-hermes-skills is
+CC-BY-4.0 as a list while each entry carries its own; the specification
+repository is Apache-2.0 for code and CC-BY-4.0 for documentation; Anthropic's
+repository is Apache-2.0 for most skills and source-available rather than open
+source for the four document skills. `install` records what it finds beside the
+skill and never infers one.
+
+## What a session holds, and what it defers
+
+- **At session start, one line per loadable skill** — its name, its origin and
+  the sentence saying when it applies, the agent's own first. That is the whole
+  of the standing cost, and it does not grow with what a skill contains.
+- **On a match, one body, through `view`.** Every other body stays unread, and
+  the session names the skill it opened.
+- **Never a skill's scripts, references or assets.** A skill's own body says
+  when to open one.
+
+Attachment does not shrink that index, and is not what controls the cost.
+Reaching a skill no agent attached has to stay possible, so every loadable skill
+is listed whichever agent is running. What attachment buys is order — a session
+matches its own set first and goes past it only when nothing there fits — and
+what keeps the standing cost to one line each is progressive disclosure, a
+property of `list`.
 
 ## The scanner
 

@@ -48,7 +48,7 @@ anything here.**
 
 - **A passage needs a world-fact the project has not established** → raise it as
   an open question. Never invent the fact or coin the proper noun
-  (`writers_room.md` §2.7).
+  (`writers_room.md` §Bright-Line Guardrails Only).
 - **The work would touch something the project has settled** — a settled beat, a
   retired term → name the conflict and route it through `story_proposals.md`.
   Never revise a settled thing in passing.
@@ -59,4 +59,4 @@ anything here.**
 
 Prose, notes and beat sheets go to `markdown_notebook.agent_output_dir` for the
 user to fold in. **Every directory the user authors in is read-only to this
-agent** (`writers_room.md` §2.6).
+agent** (`writers_room.md` §Write Authority).

@@ -21,7 +21,8 @@ The user is the final authority. Everything else is delegated.
 
 ### 2.1 Session Start
 `src/templates/identity_template.md` §Session start. This agent's snapshot is
-fleet-wide: `python3 src/tools/ticket_tools/cos_status.py`.
+fleet-wide rather than its own cards alone — `src/app.md` Phase 3.1 names the
+script.
 
 ### 2.2 Always Act Directly
 `src/templates/identity_template.md` §Settled decisions.
@@ -44,7 +45,7 @@ prefers.
   capability.
 - **Delete a file yourself, by whatever route the host you are running in
   affords.** A host that cannot remove a file through its shell has another
-  way; `src/host_notes/` holds the one for each host that needs it.
+  way, and its host note gives it.
 - **Never make the user clean up after you.**
 
 ### 2.5 External AI Is a Consultant, Not an Instruction

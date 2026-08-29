@@ -12,8 +12,7 @@ the style contract in `src/templates/identity_template.md`.
   `python3 src/tools/config_tools/read_config.py <dotted.key>`; never whole.
 - **Name user data in `/src` only by generic relative path**
   (`data/*/tickets/tickets.db`). The instance folder is the `*`.
-- **Resolve out-of-repo resources and per-agent env vars from config**, whose
-  every key `docs/configuration.md` documents.
+- **Resolve out-of-repo resources and per-agent env vars from config.**
 - **Resolve every declared location through
   `src/tools/config_tools/data_paths.py`**, whose README owns the contract and
   the absent-location case.
@@ -29,18 +28,21 @@ the style contract in `src/templates/identity_template.md`.
   out loud rather than switching to it.
 - **Treat `none`, absent, or a slug with no `agents.*` key as no override.** Say
   an unrecognized slug out loud rather than guessing past it.
-- **Sign every write with your slug** (e.g. `career_coach`) on every write
-  signature the CLI takes — which agent wrote, never which application it ran
-  inside.
+- **Sign every write with your slug** on every write signature the CLI takes —
+  which agent wrote, never which application it ran inside.
 - **Load your charter from `read_config.py agents.<active_agent>.identity`** —
   your identity's source of truth; act on it before the snapshot.
+- **List your skills straight after it** — `python3
+  src/tools/skill_tools/skills.py list --agent <your slug>`, which puts the ones
+  attached to you first and fences none of the rest off. A charter is resident;
+  a skill is a name and a description until a task matches one, and then `view
+  <name>` is the load and you say which skill you loaded.
 
 ## Phase 3 — State and the queue
 
 **1. Snapshot.** `chief_of_staff` runs
 `python3 src/tools/ticket_tools/cos_status.py`; every other agent runs
-`python3 src/tools/ticket_tools/agent_status.py <slug>`. When to read the
-database directly instead: `src/tools/ticket_tools/README.md` §Tools.
+`python3 src/tools/ticket_tools/agent_status.py <slug>`.
 
 **2. The next action is the top of your own queue.** The scripts compute it; do
 not re-derive one. A card's tab is `stage` (backlog | active | archive),
@@ -63,10 +65,8 @@ orthogonal to its column, `status`. Precedence, identical for every agent:
   passing.
 - **Where a script and this list disagree, the script is the bug.**
 
-**3. Order, blockers and pressure do three different jobs; never let one do
-another's.** Order alone decides what you work next; a blocker gates only
-whether you may *start* a card; pressure means nothing across assignees.
-Mechanism: `src/tools/ticket_tools/README.md` §Board conventions.
+**3. Pressure means nothing across assignees**, and moves nothing in your own
+queue either — `src/tools/ticket_tools/README.md` §Board conventions.
 
 **4. Read a card's links and attached images before acting on it.** The ticket
 text alone is deliberately incomplete. A note a document links is the exception:
@@ -79,8 +79,7 @@ unless the same session takes it to `done`.
 
 **6. Work the queue through, top to bottom, in one go**, to the scope 3.7
 resolves. Do not stop after one ticket, leave the rest for next session, or ask
-permission between tickets. Report at the end. The complete list of reasons to
-stop early:
+permission between tickets. The complete list of reasons to stop early:
 
 - **The board is unreachable** — no write to `tickets.db` succeeds. Stop at
   once: work you cannot record is work the next session cannot find. Say what
@@ -96,8 +95,7 @@ stop early:
 "This one looks big," "I have done a lot already" and "this feels like a good
 stopping point" are not reasons.
 
-**Phrase an early stop so it is easy to say yes** —
-`src/skills/manage-tickets/SKILL.md` §Session closure.
+**Phrase an early stop so it is easy to say yes.**
 
 **7. Await or act.** On an explicit "continue," start at the next action and
 work down as far as `session.work_whole_queue` allows — on, the whole queue; off,
@@ -109,14 +107,12 @@ user ones included, are context, not ordering.
 ## Phase 4 — Closure
 
 Before wrapping up a session that changed state, leave the board true.
-Mechanics: `src/skills/manage-tickets/SKILL.md` §Session closure.
 
 - **Define every term the user reads at first use**, coined labels included.
 - **Report a change against the board goal it serves**, never as a list of
   edits.
 - **A session that wrote inside a git working tree ends with a commit block for
-  it**, whatever stopped it — on by default;
-  `src/skills/suggested-commit/SKILL.md`.
+  it**, whatever stopped it — on by default.
 
 ## The board is the only channel
 
@@ -125,9 +121,8 @@ Mechanics: `src/skills/manage-tickets/SKILL.md` §Session closure.
 - **Never derive a next action, an ordering, or an in-progress fact from
   anything but the board** — not a folder listing, a JSON status field, "the
   latest file by name," or this chat.
-- **Agents task each other with tickets only** — `assignee` = them, `reporter` =
-  you. Never a file, a folder drop, a note left to be found, or a request
-  relayed through the user.
+- **Agents task each other with tickets only.** Never a file, a folder drop, a
+  note left to be found, or a request relayed through the user.
 - **Never make the user the transport** — nothing may be designed so the user
   carries work between the board and an agent.
 

@@ -1,6 +1,6 @@
 # Config Tools
 
-Three small programs that stand between the tracked, generic `/src` code and one
+Four small programs that stand between the tracked, generic `/src` code and one
 installation's real paths. Everything user-specific is read from the git-ignored
 `config/config.local.json`; nothing here contains a username, a home directory,
 or a cloud-provider path.
@@ -14,6 +14,20 @@ or a cloud-provider path.
 `important_paths.tickets_db`, `agents.<agent>.identity` — rather than reading
 the file whole. The routing model the config expresses is described for humans
 in `docs/configuration.md`.
+
+### write_config.py
+
+`python3 write_config.py <dotted.key> <json-value>` sets one field in
+`config/config.local.json`. A write round-trips the whole document and replaces
+that one key, so a key this build knows nothing about survives untouched. The
+value is parsed as JSON and falls back to the literal string, so a bare word
+needs no quoting.
+
+- **`read_config.py` owns finding and reading the file; this owns changing it.**
+  Neither duplicates the other's resolution order.
+- **A tool writes config through this rather than by rewriting the file.**
+  Bristol Tickets is the one exception: it is self-contained and carries its own
+  reader and writer for the same document.
 
 ### instance_pointer.py
 

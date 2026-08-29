@@ -25,8 +25,8 @@ plan and does not design one.
   corrected drafts. Delivered as clean copyable file blocks, or written to
   shared disk, with no preamble or postscript.
 - **Guardrail cited, never restated:** never generate materials without an
-  complete plan (`src/agent_identities/teaching_assistant.md` §2.6,
-  `lesson_pipeline.md`).
+  complete plan (`src/agent_identities/teaching_assistant.md` §Bright-Line
+  Guardrails Only, `lesson_pipeline.md`).
 
 ## The contract
 

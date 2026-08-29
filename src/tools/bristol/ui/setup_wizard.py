@@ -130,7 +130,7 @@ def _shipped_agents(root: Path) -> list[tuple[str, str]]:
     if not isinstance(agents, dict):
         return []
     return [
-        (slug, str(body.get("notes", "")).strip())
+        (slug, str(body.get("description", "")).strip())
         for slug, body in agents.items()
         if slug != "_notes" and isinstance(body, dict)
     ]
@@ -362,14 +362,14 @@ class AgentsPage(QWizardPage):
         self.boxes: dict[str, QCheckBox] = {}
         holder = QWidget()
         inner = QVBoxLayout(holder)
-        for slug, notes in _shipped_agents(root):
+        for slug, description in _shipped_agents(root):
             box = QCheckBox(slug)
             box.setChecked(True)
             box.stateChanged.connect(self.completeChanged)
             self.boxes[slug] = box
             inner.addWidget(box)
-            if notes:
-                caption = QLabel(notes)
+            if description:
+                caption = QLabel(description)
                 caption.setWordWrap(True)
                 caption.setIndent(22)
                 inner.addWidget(caption)

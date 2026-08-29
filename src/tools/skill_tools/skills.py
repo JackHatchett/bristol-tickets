@@ -30,12 +30,15 @@ and stays a command a person runs.
 
 CLI
 ---
-    python3 skills.py list
+    python3 skills.py list [--agent SLUG]
     python3 skills.py view <name>
+    python3 skills.py install <address> [--name NAME]
     python3 skills.py install <repo-url> <path-in-repo> [--name NAME]
     python3 skills.py convert <file.md> [--name NAME] [--description TEXT]
     python3 skills.py audit <name>
     python3 skills.py trust <name>
+    python3 skills.py attach <name> --agent SLUG
+    python3 skills.py detach <name> --agent SLUG
 """
 
 from __future__ import annotations
@@ -53,6 +56,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
 import data_paths  # noqa: E402
 import read_config  # noqa: E402
+import write_config  # noqa: E402
 
 QUARANTINE = ".quarantine"
 
@@ -103,6 +107,30 @@ DESCRIPTION_ROUTING_LIMIT = 60
 # needs. A definition that states a dependency only in its prose declares
 # nothing, and convert says so rather than guessing at the body.
 DEPENDENCY_KEYS = ("skills", "required_skills", "dependencies", "requires")
+
+# Frontmatter keys that name something a Bristol session does not have. Each is
+# valid in the format it comes from and inert here, which is exactly why it has
+# to be said out loud: a reader that does not know a key ignores it, and the
+# skill then installs cleanly and quietly does nothing. Two keys name the same
+# fact, so they are grouped by consequence rather than by key.
+FOREIGN_GATES = {
+    "required_environment_variables": "credentials",
+    "env_vars": "credentials",
+    "requires_toolsets": "toolsets",
+    "fallback_for_toolsets": "fallback",
+}
+
+GATE_CONSEQUENCE = {
+    "credentials":
+        "This skill expects credentials from a mechanism Bristol does not "
+        "have, so whatever needs them will not run here",
+    "toolsets":
+        "This skill is gated on Hermes toolsets, which a Bristol session has "
+        "none of, so the gate has no reader here",
+    "fallback":
+        "This skill offers itself as the fallback for Hermes toolsets, which "
+        "a Bristol session has none of, so it is never chosen that way",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -252,24 +280,97 @@ def _origin_column(skill_dir: Path, root_name: str) -> str:
     return f"{where}@{commit[:7]}" if commit and commit != ABSENT else where
 
 
-def cmd_list(_args) -> int:
+ATTACHMENTS = "agents.{slug}.skills"
+
+
+def attached_to(slug: str) -> list[str]:
+    """The skill names attached to one agent, in configured order."""
+    names = read_config.get(ATTACHMENTS.format(slug=slug), [])
+    return [n for n in names if isinstance(n, str)] if isinstance(names, list) else []
+
+
+def _agent_slugs() -> list[str]:
+    agents = read_config.get("agents", {})
+    return [s for s in agents if s != "_notes"] if isinstance(agents, dict) else []
+
+
+def _require_agent(slug: str) -> None:
+    known = _agent_slugs()
+    if slug not in known:
+        raise SystemExit(
+            f"no agent '{slug}' in config. Configured: {', '.join(known) or 'none'}")
+
+
+def _all_skills() -> list[tuple[str, str, str]]:
+    """Every loadable skill as (name, origin, description), both roots."""
     rows = []
     for root, root_name in ((native_root(), "native"), (installed_root(), "installed")):
         for d in _skill_dirs(root):
             fm = read_frontmatter(d / "SKILL.md")
             rows.append((fm.get("name", d.name), _origin_column(d, root_name),
                          fm.get("description", "")))
+    return rows
+
+
+def cmd_list(args) -> int:
+    rows = _all_skills()
     if not rows:
         print("No skills. Native root: src/skills/. Installed root: skills.install_dir in config.")
         return 0
+
+    slug = getattr(args, "agent", None)
+    attached: list[str] = []
+    if slug:
+        _require_agent(slug)
+        attached = attached_to(slug)
+        order = {name: i for i, name in enumerate(attached)}
+        rows.sort(key=lambda r: order.get(r[0], len(order)))
+
+    mark_width = len("yours") if attached else 0
     width = max(len(r[0]) for r in rows)
     origin_width = max(len(r[1]) for r in rows)
     for name, origin, desc in rows:
-        print(f"{name:<{width}}  {origin:<{origin_width}}  {desc}")
+        prefix = f"{'yours' if name in attached else '':<{mark_width}}  " if attached else ""
+        print(f"{prefix}{name:<{width}}  {origin:<{origin_width}}  {desc}")
+    if slug:
+        print(f"\nWhat is marked yours is attached to {slug} and matched first; "
+              f"every other skill listed is reachable the same way.")
+
     pending = _skill_dirs(quarantine_root())
     if pending:
         names = ", ".join(d.name for d in pending)
         print(f"\nQuarantined, not loadable until trusted: {names}")
+    return 0
+
+
+def _known_skill(name: str) -> bool:
+    return any(r[0] == name for r in _all_skills())
+
+
+def cmd_attach(args) -> int:
+    _require_agent(args.agent)
+    if not _known_skill(args.name):
+        raise SystemExit(
+            f"no loadable skill '{args.name}'. `list` names what is loadable; a "
+            f"quarantined skill has to be trusted first.")
+    attached = attached_to(args.agent)
+    if args.name in attached:
+        print(f"{args.name} is already attached to {args.agent}")
+        return 0
+    write_config.set_key(ATTACHMENTS.format(slug=args.agent), attached + [args.name])
+    print(f"{args.name} attached to {args.agent}")
+    return 0
+
+
+def cmd_detach(args) -> int:
+    _require_agent(args.agent)
+    attached = attached_to(args.agent)
+    if args.name not in attached:
+        print(f"{args.name} is not attached to {args.agent}")
+        return 0
+    write_config.set_key(ATTACHMENTS.format(slug=args.agent),
+                         [n for n in attached if n != args.name])
+    print(f"{args.name} detached from {args.agent}. It stays loadable by every agent.")
     return 0
 
 
@@ -284,24 +385,104 @@ def cmd_view(args) -> int:
     return 0
 
 
+class AddressError(Exception):
+    """An address that names no skill, saying which part could not be resolved."""
+
+
+def resolve_address(address: str) -> tuple[str, str, str | None]:
+    """(repository URL, path inside it, ref or None) from one browser address.
+
+    The forms a person has in the clipboard are what a repository host shows
+    while looking at a folder or a file:
+    `https://host/<owner>/<repo>/tree/<ref>/<path>` and the `blob` form ending
+    at a file, whose containing directory is what holds the skill.
+    """
+    trimmed = address.rstrip("/")
+    if "://" not in trimmed:
+        raise AddressError(
+            f"'{address}' is not a URL. Pass a repository URL and the path "
+            f"inside it as two arguments, or paste the address of the skill's "
+            f"folder.")
+    scheme, _, rest = trimmed.partition("://")
+    host, _, tail = rest.partition("/")
+    parts = [p for p in tail.split("/") if p]
+    if len(parts) < 2:
+        raise AddressError(f"'{address}' names no repository on {host}.")
+    owner, repo = parts[0], parts[1]
+    remainder = parts[2:]
+    # GitLab spells the same two views /-/tree/ and /-/blob/.
+    if remainder[:1] == ["-"]:
+        remainder = remainder[1:]
+    if not remainder:
+        raise AddressError(
+            f"'{address}' names the repository {owner}/{repo} and no path "
+            f"inside it, so it names no skill. Open the skill's own folder and "
+            f"paste that address, or pass the path as a second argument.")
+    view = remainder[0]
+    if view not in {"tree", "blob"}:
+        raise AddressError(
+            f"'{address}' has no /tree/ or /blob/ segment, so the ref and the "
+            f"path inside {owner}/{repo} cannot be told apart. Paste the "
+            f"address the repository shows while you are looking at the skill's "
+            f"folder.")
+    if len(remainder) < 3:
+        raise AddressError(
+            f"'{address}' names a ref in {owner}/{repo} and no path after it, "
+            f"so it names no skill.")
+    ref = remainder[1]
+    inside = remainder[2:]
+    if view == "blob":
+        inside = inside[:-1]
+        if not inside:
+            raise AddressError(
+                f"'{address}' names a file at the root of {owner}/{repo}, "
+                f"which is not a skill directory.")
+    return f"{scheme}://{host}/{owner}/{repo}.git", "/".join(inside), ref
+
+
 def cmd_install(args) -> int:
     root = quarantine_root()
     if root is None:
         print("config declares no skills.install_dir; nowhere to install to.", file=sys.stderr)
         return 1
 
+    ref = None
+    if args.path is None:
+        try:
+            repo, path, ref = resolve_address(args.repo)
+        except AddressError as failure:
+            print(failure, file=sys.stderr)
+            return 1
+    else:
+        repo, path = args.repo, args.path
+
     with tempfile.TemporaryDirectory() as tmp:
         clone = Path(tmp) / "repo"
         result = subprocess.run(
-            ["git", "clone", "--depth", "1", args.repo, str(clone)],
+            ["git", "clone", "--depth", "1", repo, str(clone)],
             capture_output=True, text=True,
         )
         if result.returncode != 0:
             print(result.stderr.strip() or "clone failed", file=sys.stderr)
             return 1
-        source = clone / args.path
+        if ref is not None:
+            # One fetch covers a branch, a tag and a commit alike; a default
+            # branch that already is the ref makes it a no-op.
+            fetched = subprocess.run(
+                ["git", "-C", str(clone), "fetch", "--depth", "1", "origin", ref],
+                capture_output=True, text=True,
+            )
+            if fetched.returncode == 0:
+                subprocess.run(
+                    ["git", "-C", str(clone), "checkout", "--detach", "FETCH_HEAD"],
+                    capture_output=True, text=True,
+                )
+            else:
+                print(f"'{ref}' could not be fetched; reading the default branch.",
+                      file=sys.stderr)
+        source = clone / path
         if not (source / "SKILL.md").is_file():
-            print(f"{args.path} holds no SKILL.md in {args.repo}.", file=sys.stderr)
+            print(f"{path} holds no SKILL.md in {repo}.", file=sys.stderr)
             return 1
         name = args.name or read_frontmatter(source / "SKILL.md").get("name") or source.name
         if find_skill(name, include_quarantine=True) is not None:
@@ -315,14 +496,14 @@ def cmd_install(args) -> int:
             capture_output=True, text=True,
         ).stdout.strip() or ABSENT
         licence, licence_source = find_licence(clone, source)
-        record = {"repo": args.repo, "path": args.path, "commit": commit,
+        record = {"repo": repo, "path": path, "commit": commit,
                   "license": licence, "license_source": licence_source}
         (target / ORIGIN_FILE).write_text(
             json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
     total = sum(r[1] for r in rows)
     print(f"Quarantined at {target}")
-    print(f"From {args.repo} {args.path} at {commit[:12]}")
+    print(f"From {repo} {path} at {commit[:12]}")
     print(f"Licence: {licence} (from {licence_source})")
     print(f"{len(rows)} files, {total} bytes. Not listed and not loadable until trusted.\n")
     width = max(len(str(r[0])) for r in rows)
@@ -331,6 +512,7 @@ def cmd_install(args) -> int:
         print(f"{mark} {str(rel):<{width}}  {size:>9}  {digest[:16]}")
     print("\n* is executable code. Read it before trusting the skill:")
     print(f"    python3 skills.py audit {name}")
+    print_compatibility(target)
     return 0
 
 
@@ -392,6 +574,86 @@ def declared_dependencies(path: Path) -> list[str]:
             collecting = True
     seen: set[str] = set()
     return [d for d in found if d and not (d in seen or seen.add(d))]
+
+
+def foreign_gates(path: Path) -> list[tuple[str, list[str]]]:
+    """(consequence, names) for every FOREIGN_GATES key a SKILL.md declares.
+
+    Reads the frontmatter block itself rather than the parsed fields: these keys
+    carry lists, two of them are nested under `metadata.hermes`, and one is a
+    list of mappings whose `name` is the variable. A key's own name is the
+    match, at whatever indentation it sits, and indentation is what ends its
+    block, so a mapping item's other fields are skipped rather than read as
+    values.
+    """
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].lstrip("\ufeff").rstrip() != "---":
+        return []
+
+    def clean(raw: str) -> str:
+        return raw.strip().strip('"').strip("'")
+
+    found: dict[str, list[str]] = {}
+    group: str | None = None
+    key_indent = 0
+    for line in lines[1:]:
+        if line.rstrip() == "---":
+            break
+        stripped = line.strip()
+        indent = len(line) - len(line.lstrip())
+        if group is not None:
+            if not stripped:
+                continue
+            if indent > key_indent:
+                if stripped.startswith("- "):
+                    item = stripped[2:].strip()
+                    name, sep, value = item.partition(":")
+                    found[group].append(clean(value) if sep and name.strip() == "name"
+                                        else clean(item))
+                continue
+            group = None
+        if not stripped or stripped.startswith("#") or ":" not in stripped:
+            continue
+        key, _, value = stripped.partition(":")
+        key = key.strip()
+        if key not in FOREIGN_GATES:
+            continue
+        group = FOREIGN_GATES[key]
+        key_indent = indent
+        found.setdefault(group, [])
+        inline = value.strip().strip("[]")
+        if inline:
+            found[group].extend(clean(part) for part in inline.split(",") if part.strip())
+            group = None
+    out = []
+    for g in GATE_CONSEQUENCE:
+        if g not in found:
+            continue
+        seen: set[str] = set()
+        names = [n for n in found[g] if n and not (n in seen or seen.add(n))]
+        # A key naming nothing is not a gate. `requires_toolsets: []` is a
+        # skill saying it needs none, and reporting it would be a false alarm.
+        if names:
+            out.append((g, names))
+    return out
+
+
+def print_compatibility(source: Path) -> None:
+    """Say what a skill's own frontmatter declares that has no reader here.
+
+    Nothing is printed for a skill carrying only fields the specification
+    defines, and nothing here refuses an install: what a gated skill is worth is
+    the person's call, and its body may be worth reading whatever the gate says.
+    """
+    gates = foreign_gates(source / "SKILL.md")
+    if not gates:
+        return
+    print("\nCompatibility")
+    for group, values in gates:
+        named = ", ".join(values) if values else "none named"
+        print(f"  {GATE_CONSEQUENCE[group]}: {named}.")
+    print("  It installs and trusts either way; this is what to expect from it, "
+          "not a refusal.")
 
 
 def normalise_name(raw: str) -> str:
@@ -565,14 +827,21 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("list", help="every loadable skill: name and description only")
+    p_list = sub.add_parser(
+        "list", help="every loadable skill: name and description only")
+    p_list.add_argument("--agent", help="put this agent's attached skills first")
 
     p_view = sub.add_parser("view", help="load one skill's body")
     p_view.add_argument("name")
 
     p_install = sub.add_parser("install", help="fetch a skill into quarantine")
-    p_install.add_argument("repo", help="git URL of the hub repository")
-    p_install.add_argument("path", help="the skill's directory inside that repository")
+    p_install.add_argument(
+        "repo", metavar="address",
+        help="the address of the skill's folder, or the repository's git URL")
+    p_install.add_argument(
+        "path", nargs="?",
+        help="the skill's directory inside that repository, where the first "
+             "argument is a bare repository URL")
     p_install.add_argument("--name", help="override the installed directory name")
 
     p_convert = sub.add_parser(
@@ -588,10 +857,19 @@ def main(argv: list[str]) -> int:
     p_trust = sub.add_parser("trust", help="promote a quarantined skill to loadable")
     p_trust.add_argument("name")
 
+    p_attach = sub.add_parser("attach", help="attach a skill to an agent")
+    p_attach.add_argument("name")
+    p_attach.add_argument("--agent", required=True)
+
+    p_detach = sub.add_parser("detach", help="remove a skill from an agent")
+    p_detach.add_argument("name")
+    p_detach.add_argument("--agent", required=True)
+
     args = parser.parse_args(argv)
     return {
         "list": cmd_list, "view": cmd_view, "install": cmd_install,
         "convert": cmd_convert, "audit": cmd_audit, "trust": cmd_trust,
+        "attach": cmd_attach, "detach": cmd_detach,
     }[args.command](args)
 
 

@@ -14,8 +14,13 @@ running as one agent, working one board. The loop is short:
 
 You do not have to prompt any of this. The agent reads `src/app.md`, which tells
 it how to boot: read the configuration one key at a time, find out which agent is
-active, load that agent's charter, then read the board and work out what it
-should be doing.
+active, load that agent's charter, list the skills it can reach, then read the
+board and work out what it should be doing.
+
+Listing the skills costs one line each — a name and the sentence saying when it
+applies. The instructions inside a skill are read only when a task matches that
+sentence, and the agent says which skill it opened. Installing one is therefore
+enough to change what a session does; you do not have to mention it.
 
 The last step prints a snapshot: the current milestone, the active epics, and
 the agent's own queue in order, with the next action named at the top. The

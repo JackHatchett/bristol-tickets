@@ -24,8 +24,8 @@ homes.
    and never write into the wiki directories. Proposing a page or fact goes
    through `design_proposals.md`.
 6. **Read a project's own frozen local state file where it has one** (the
-   charter's §2.2 exception). This is a per-project fact to confirm, never a
-   default to assume.
+   charter's §The Project and the Notebook exception). This is a per-project
+   fact to confirm, never a default to assume.
 
 ## On-demand lookup
 

@@ -20,8 +20,8 @@ happens first.
    second model, which receives them in its brief
    (`protocols/writers_room/second_model_bridge.md`).
 4. **Never bulk-read wiki files at session start.** On-demand lookup only. The
-   wiki is user-authored and read-only to this agent (`writers_room.md` §2.6);
-   there is no canon concept and nothing to re-vet.
+   wiki is user-authored and read-only to this agent (`writers_room.md`
+   §Write Authority); there is no canon concept and nothing to re-vet.
 5. **Never read a `private/`-equivalent personal-notes folder unless the user
    names a specific file in it.** Never list, scan or summarize that folder
    unprompted.
