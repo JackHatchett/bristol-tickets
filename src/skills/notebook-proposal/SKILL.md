@@ -1,6 +1,6 @@
 ---
 name: notebook-proposal
-description: Route a fact whose home is the user's Markdown notebook.
+description: Route a fact whose home is the user's Markdown notebook. Use when a fact worth keeping arrives from the user or an outside collaborator.
 license: MIT
 metadata:
   bristol.kind: playbook

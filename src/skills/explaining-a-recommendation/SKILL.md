@@ -1,6 +1,6 @@
 ---
 name: explaining-a-recommendation
-description: Shape a document that ends on a recommendation.
+description: Shape a document that ends on a recommendation. Use when writing up more than one finding, or the options a decision opens.
 license: MIT
 metadata:
   bristol.kind: playbook

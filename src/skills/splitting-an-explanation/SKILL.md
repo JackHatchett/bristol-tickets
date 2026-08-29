@@ -1,6 +1,6 @@
 ---
 name: splitting-an-explanation
-description: Move a concept out of a document into its own note.
+description: Move a concept out of a document into its own note. Use when a document rests on a concept too large to define in place.
 license: MIT
 metadata:
   bristol.kind: playbook

@@ -55,10 +55,13 @@ Two fields are required and carry the whole routing surface.
 - **`name` — the source file's basename, hyphenated.** One to sixty-four
   characters, lowercase `a-z` and `0-9` and hyphens, no leading or trailing
   hyphen, no consecutive hyphens, identical to the parent directory name.
-- **`description` — one sentence, capability first, ending in a period.** The
-  specification's ceiling is 1024 characters; write to sixty. A consuming
-  client's always-loaded skill index truncates past sixty characters, and what
-  is lost is the routing signal rather than detail.
+- **`description` — the capability, then the branches that trigger it.** A
+  branch is a distinct case the skill handles, and a description naming none
+  leaves a session to guess when to load the body, which is the whole job of
+  this field. The specification's ceiling is 1024 characters; write the shortest
+  sentence that carries both halves.
+  // One consuming client's always-loaded index was seen to truncate a
+  // description past sixty characters. Bristol's own reader prints it whole.
 
 Three optional fields are used, and one is not.
 
@@ -173,9 +176,9 @@ result; this names what differs at the input.
 - **A source with no description is refused, not given one.** The description is
   the whole routing surface, and inventing one is authoring rather than
   converting; `--description` is where a person supplies it deliberately.
-- **Rewrite a description over sixty characters before trusting it.** A foreign
+- **Rewrite a description that names no trigger before trusting it.** A foreign
   `description` is usually prose about the agent rather than a trigger, and
-  §Frontmatter's limit applies to it unchanged.
+  §Frontmatter's rule applies to it unchanged.
 - **Steps 6 and 7 read differently.** There is no source of ours to retire, and
   the validator runs against the converted folder as it does against any other.
 - **A definition carrying work state converts to nothing.** A bundled plan,
@@ -184,8 +187,8 @@ result; this names what differs at the input.
 
 ## Failure modes
 
-- **A description over sixty characters** → a consuming client truncates it and
-  the skill stops routing. Cut it before saving.
+- **A description naming no branch** → the skill is listed and never reached.
+  Write what fires it before saving.
 - **A nested map under `metadata`** → the specification's metadata maps strings
   to strings. Flatten to dotted keys.
 - **`name` and the directory disagree** → validation fails. Rename the
