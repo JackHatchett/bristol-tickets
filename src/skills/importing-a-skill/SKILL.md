@@ -1,6 +1,6 @@
 ---
 name: importing-a-skill
-description: Take a skill address to an attached, loadable skill. Use when a repository link, a skill address or a foreign definition is handed to a session.
+description: Installs a skill from a link or a file, checks what is inside it, and attaches it to an agent. Use when someone gives you a link to a skill, or a skill file, to add.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3, and bandit in that interpreter for the scan.
 metadata:

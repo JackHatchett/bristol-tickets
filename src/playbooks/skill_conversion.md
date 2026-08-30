@@ -65,11 +65,21 @@ Two fields are required and carry the whole routing surface.
 - **`name` — the source file's basename, hyphenated.** One to sixty-four
   characters, lowercase `a-z` and `0-9` and hyphens, no leading or trailing
   hyphen, no consecutive hyphens, identical to the parent directory name.
-- **`description` — the capability, then the branches that trigger it.** A
-  branch is a distinct case the skill handles, and a description naming none
-  leaves a session to guess when to load the body, which is the whole job of
-  this field. The specification's ceiling is 1024 characters; write the shortest
-  sentence that carries both halves.
+- **`description` — what the skill does, then the situations that call for
+  it.** The user reads a list of these to decide what each skill is for, and a
+  session matches a task against the same sentence; both readings fail
+  together, so write it for the user and the matching follows. A description
+  naming no situation leaves a session to guess when to load the body, which is
+  the other half of this field's job.
+  - **Say what the skill does to what, in the words a reader who has never seen
+    this system would use.** A coined verb, or a noun standing in for a plain
+    verb — shape a document, route a fact, walk a project, turn a session's
+    writes — is what makes this field unreadable.
+  - **Name the situation the reader would recognise himself in**, never the
+    internal condition a session tests for.
+  - **Prefer a readable sentence to a short one.** The specification's ceiling
+    is 1024 characters and a description written this way comes nowhere near
+    it; compression is what produces the coined verbs.
   // One consuming client's always-loaded index was seen to truncate a
   // description past sixty characters. Bristol's own reader prints it whole.
 

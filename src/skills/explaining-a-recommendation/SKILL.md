@@ -1,6 +1,6 @@
 ---
 name: explaining-a-recommendation
-description: Shape a document that ends on a recommendation. Use when writing up more than one finding, or the options a decision opens.
+description: Standardizes the way agents present a recommendation, including the options considered and why each one lost. Use when writing up several findings, or a decision that could go more than one way.
 license: MIT
 metadata:
   bristol.kind: playbook

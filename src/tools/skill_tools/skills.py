@@ -254,23 +254,24 @@ def _inventory(skill_dir: Path) -> list[tuple[Path, int, str]]:
     return rows
 
 
-def _files_and_scripts(skill_dir: Path) -> tuple[int, list[str]]:
-    """(how many files, which of them are executable code) for one skill.
+def _files_and_scripts(skill_dir: Path) -> tuple[list[str], list[str]]:
+    """(every file in a skill, and which of them are code), both relative to the
+    skill's own directory.
 
     `_inventory` answers the same question and hashes every file to do it, which
     is what an install's one-time inventory wants and what a listing of every
     skill on the machine cannot afford.
     """
-    count = 0
+    everything: list[str] = []
     scripts: list[str] = []
     for f in sorted(skill_dir.rglob("*")):
         if not f.is_file():
             continue
-        count += 1
-        rel = f.relative_to(skill_dir)
-        if _is_script(rel):
-            scripts.append(str(rel))
-    return count, scripts
+        rel = str(f.relative_to(skill_dir))
+        everything.append(rel)
+        if _is_script(Path(rel)):
+            scripts.append(rel)
+    return everything, scripts
 
 
 def _is_script(rel: Path) -> bool:
@@ -365,13 +366,77 @@ def cmd_list(args) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# How a skill reads to a person
+# ---------------------------------------------------------------------------
+#
+# One skill, three facts a reader has to be told rather than left to infer:
+# where it came from, what is inside it, and which agents hold it. Every surface
+# that shows a skill says them in these words, so the app, a detail view and an
+# import report never teach the same fact twice.
+
+_NUMBER_WORDS = ("no", "one", "two", "three", "four", "five", "six", "seven",
+                 "eight", "nine", "ten", "eleven", "twelve")
+
+
+def _spell(count: int) -> str:
+    """A small number as the word a person would say, so the number and the
+    noun beside it agree."""
+    return _NUMBER_WORDS[count] if 0 <= count < len(_NUMBER_WORDS) else str(count)
+
+
+def source_url(origin: dict) -> str:
+    """The web address of the exact source a skill was taken from, built from
+    its provenance record: the repository, the commit, and the path inside it.
+    Empty for a skill with no record, which is every native one."""
+    repo = (origin.get("repo") or "").rstrip("/").removesuffix(".git")
+    commit = origin.get("commit", "")
+    if not repo or not commit or commit == ABSENT:
+        return ""
+    if repo.startswith("git@"):
+        host, _, rest = repo.partition(":")
+        repo = f"https://{host.removeprefix('git@')}/{rest}"
+    inside = (origin.get("path") or "").strip("/")
+    return f"{repo}/tree/{commit}" + (f"/{inside}" if inside else "")
+
+
+def origin_phrase(record: dict) -> str:
+    """Where a skill came from. A reader is told outright rather than being
+    expected to know that a root name is an answer."""
+    if record.get("root") == "native":
+        return "Came with Bristol"
+    if not record.get("repo"):
+        return "Downloaded, source not recorded"
+    return f"Downloaded from {record.get('origin', '')}"
+
+
+def contents_phrase(record: dict) -> str:
+    """What is inside a skill. A skill carrying code and one carrying none are
+    not the same risk, so they are not the same sentence."""
+    files = int(record.get("files", 0))
+    scripts = len(record.get("scripts", []))
+    total = f"{_spell(files)} file" + ("" if files == 1 else "s")
+    if not scripts:
+        return f"{total}, no code"
+    if files == 1:
+        return f"{total}, and it is code"
+    if scripts == files:
+        return f"{total}, all of them code"
+    return f"{total}, {_spell(scripts)} of them code"
+
+
+def holders_phrase(holders: list[str]) -> str:
+    """Which agents hold a skill, including when the answer is none."""
+    return "Held by " + (", ".join(holders) if holders else "no agent")
+
+
 def _skill_record(skill_dir: Path, root_name: str) -> dict:
     """One skill as data: what `list` prints, plus what a surface needs to say
     the same things a session is told."""
     fm = read_frontmatter(skill_dir / "SKILL.md")
     record = read_origin(skill_dir)
-    files, scripts = _files_and_scripts(skill_dir)
-    return {
+    contents, scripts = _files_and_scripts(skill_dir)
+    fields = {
         "name": fm.get("name", skill_dir.name),
         "directory": skill_dir.name,
         "description": fm.get("description", ""),
@@ -381,24 +446,41 @@ def _skill_record(skill_dir: Path, root_name: str) -> dict:
         "commit": record.get("commit", ""),
         "license": record.get("license", "") or fm.get("license", ""),
         "license_source": record.get("license_source", ""),
-        "files": files,
+        "files": len(contents),
+        "file_list": contents,
         "scripts": scripts,
+        "path": str(skill_dir),
+        "source_url": source_url(record),
     }
+    fields["said_origin"] = origin_phrase(fields)
+    fields["said_contents"] = contents_phrase(fields)
+    return fields
 
 
 def _listing() -> dict:
     """Every skill on this machine, loadable and quarantined, plus which agent
     attaches which. One read, so a surface and a session cannot disagree about a
-    name, a description or an origin."""
+    name, a description or an origin.
+
+    Each skill carries its three facts already worded — `said_origin`,
+    `said_contents`, `said_holders` — so every surface that shows a skill shows
+    the same sentence rather than composing its own.
+    """
     skills = []
     for root, root_name in ((native_root(), "native"),
                             (installed_root(), "installed"),
                             (quarantine_root(), "quarantined")):
         for d in _skill_dirs(root):
             skills.append(_skill_record(d, root_name))
+    agents = {slug: attached_to(slug) for slug in _agent_slugs()}
+    for record in skills:
+        holders = sorted(slug for slug, names in agents.items()
+                         if record["name"] in names)
+        record["holders"] = holders
+        record["said_holders"] = holders_phrase(holders)
     return {
         "skills": skills,
-        "agents": {slug: attached_to(slug) for slug in _agent_slugs()},
+        "agents": agents,
     }
 
 

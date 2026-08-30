@@ -1,6 +1,6 @@
 ---
 name: session-review
-description: Propose one skill change as a card, at session close. Use when a session that changed something is closing and its board is already true.
+description: Looks back at what a session did and suggests at most one improvement to a skill, filed as a card. Use when a session that changed something is finishing and its board is already up to date.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3 to read the board.
 metadata:

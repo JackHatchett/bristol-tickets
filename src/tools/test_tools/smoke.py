@@ -1161,32 +1161,55 @@ def check_bristol() -> list[str]:
             # Skills: the page reads one listing and files the judgment as a
             # card. The loader is stubbed, so what is checked is the page —
             # what it groups, what it says a skill carries, and what it writes.
+            import importlib.util as _ilu
             import json as _json
 
             from ui.skills_tab import SkillsTab
+
+            # The row's words come from the loader, so the stub listing is
+            # worded by the loader too and the two cannot drift apart.
+            _spec = _ilu.spec_from_file_location(
+                "smoke_skills", TOOLS / "skill_tools" / "skills.py")
+            _loader = _ilu.module_from_spec(_spec)
+            _spec.loader.exec_module(_loader)
 
             listing = {
                 "skills": [
                     {"name": "native-one", "directory": "native-one",
                      "description": "A native skill.", "origin": "native",
                      "root": "native", "repo": "", "commit": "", "license": "MIT",
-                     "license_source": "", "files": 1, "scripts": []},
+                     "license_source": "", "files": 1, "scripts": [],
+                     "holders": [], "file_list": ["SKILL.md"],
+                     "path": "/nowhere/native-one", "source_url": ""},
                     {"name": "with-code", "directory": "with-code",
                      "description": "An installed skill carrying scripts.",
                      "origin": "someone/repo@abc1234", "root": "installed",
                      "repo": "https://github.com/someone/repo",
                      "commit": "abc1234def", "license": "Apache-2.0",
                      "license_source": "SKILL.md", "files": 4,
-                     "scripts": ["scripts/run.py"]},
+                     "scripts": ["scripts/run.py"],
+                     "holders": ["chief_of_staff"],
+                     "file_list": ["SKILL.md", "references/a.md", "assets/b.txt",
+                                   "scripts/run.py"],
+                     "path": "/nowhere/with-code",
+                     "source_url": "https://github.com/someone/repo/tree/abc1234def/skills/with-code"},
                     {"name": "waiting", "directory": "waiting",
                      "description": "A skill nothing has read.",
                      "origin": "someone/other@0000000", "root": "quarantined",
                      "repo": "https://github.com/someone/other",
                      "commit": "0000000aaa", "license": "MIT",
-                     "license_source": "SKILL.md", "files": 2, "scripts": []},
+                     "license_source": "SKILL.md", "files": 2, "scripts": [],
+                     "holders": [], "file_list": ["SKILL.md", "references/x.md"],
+                     "path": "/nowhere/waiting",
+                     "source_url": "https://github.com/someone/other/tree/0000000aaa/waiting"},
                 ],
                 "agents": {"chief_of_staff": ["with-code"], "librarian": []},
             }
+            for _record in listing["skills"]:
+                _record["said_origin"] = _loader.origin_phrase(_record)
+                _record["said_contents"] = _loader.contents_phrase(_record)
+                _record["said_holders"] = _loader.holders_phrase(
+                    _record["holders"])
             calls: list[tuple] = []
 
             def _stub_run(self, *args):
@@ -1199,33 +1222,148 @@ def check_bristol() -> list[str]:
             SkillsTab._run = _stub_run
             try:
                 stab = SkillsTab(mconn)
-                rows = [stab.list.item(i).text().splitlines()[0]
-                        for i in range(stab.list.count())]
-                if rows[0] != "Quarantined" or "waiting" not in rows[1]:
+                texts = [stab.list.item(i).text()
+                         for i in range(stab.list.count())]
+                rows = [t.splitlines()[0] for t in texts]
+                if rows[0] != "Quarantined" or rows[2] != "waiting":
                     raise SmokeFailure("Skills does not put quarantined skills first")
-                if "chief_of_staff" not in [r for r in rows if "with-code" in r][0]:
-                    raise SmokeFailure("Skills does not name the agents that hold a skill")
-                # A skill carrying code does not read like one that carries none.
+                # The page says what it is for before it is used: what Import
+                # does, and what quarantine is.
+                from ui.skills_tab import IMPORT_NOTE, QUARANTINE_NOTE
+                if rows[1] != QUARANTINE_NOTE:
+                    raise SmokeFailure("the Quarantined section does not say what quarantine is")
+                if stab.import_note.text() != IMPORT_NOTE:
+                    raise SmokeFailure("the page does not say what Import does")
+                for phrase in ("quarantine", "no session can use it",
+                               "chief_of_staff"):
+                    if phrase not in IMPORT_NOTE:
+                        raise SmokeFailure(
+                            f"the Import note does not say {phrase!r}")
+                # A quarantined row names the card that will decide it.
+                if "No card asks for it yet" not in texts[2]:
+                    raise SmokeFailure("a quarantined row does not name its card")
+                # Every value below the name says what it is, so nothing on the
+                # row has to be recognised to be read.
+                coded_row = [t for t in texts if t.startswith("with-code")][0]
+                native_row = [t for t in texts if t.startswith("native-one")][0]
+                facts = coded_row.splitlines()[1]
+                if "Held by chief_of_staff" not in facts:
+                    raise SmokeFailure("Skills does not say the agents are the holders")
+                if "Downloaded from someone/repo@abc1234" not in facts:
+                    raise SmokeFailure("Skills does not say where a skill was downloaded from")
+                if "Came with Bristol" not in native_row.splitlines()[1]:
+                    raise SmokeFailure("Skills still expects the reader to know 'native'")
+                if "Held by no agent" not in native_row.splitlines()[1]:
+                    raise SmokeFailure("Skills leaves an unheld skill's holders unsaid")
+                # A skill carrying code does not read like one that carries none,
+                # and a count agrees with the noun beside it.
                 coded = [s for s in listing["skills"] if s["scripts"]][0]
                 plain = [s for s in listing["skills"] if not s["scripts"]][0]
-                if SkillsTab._code_line(coded) == SkillsTab._code_line(plain):
+                if coded["said_contents"] == plain["said_contents"]:
                     raise SmokeFailure("Skills describes code and no code identically")
-                if "no executable code" not in SkillsTab._code_line(plain):
+                if "no code" not in plain["said_contents"]:
                     raise SmokeFailure("Skills does not say when a skill carries no code")
+                if _loader.contents_phrase({"files": 1, "scripts": []}) != "one file, no code":
+                    raise SmokeFailure("a count and its noun disagree in number")
+                # A description longer than the list is cut visibly rather than
+                # running under the right-hand edge.
+                long_one = dict(plain, name="long-one",
+                                description="word " * 400, holders=[])
+                long_one["said_holders"] = _loader.holders_phrase([])
+                listing["skills"].append(long_one)
+                stab.reload()
+                drawn = [t for t in
+                         (stab.list.item(i).text() for i in range(stab.list.count()))
+                         if t.startswith("long-one")][0].splitlines()[2]
+                if len(drawn) >= len(long_one["description"]):
+                    raise SmokeFailure("Skills does not cut a long description to the row")
+                listing["skills"].remove(long_one)
+                stab.reload()
 
-                # Trust is the override and exists only where something is
-                # waiting to be judged; a native skill cannot be removed.
-                stab._select("waiting")
-                if not stab.trust_btn.isVisible() and stab.isVisible():
-                    raise SmokeFailure("no trust override on a quarantined skill")
-                if stab.attach_btn.isEnabled():
-                    raise SmokeFailure("a quarantined skill can be attached")
+                # There is no trust control: the user has no basis on which to
+                # press one, and saying so on the card is the whole route.
+                if hasattr(stab, "trust_btn"):
+                    raise SmokeFailure("the page still offers a trust override")
+                if hasattr(stab, "attach_btn") or hasattr(stab, "detach_btn"):
+                    raise SmokeFailure("attaching is still on the tab's bottom row")
                 stab._select("native-one")
                 if stab.remove_btn.isEnabled():
                     raise SmokeFailure("a native skill can be removed from the app")
                 stab._select("with-code")
-                if not stab.attach_btn.isEnabled():
-                    raise SmokeFailure("a loadable skill cannot be attached")
+                if not stab.open_btn.isEnabled():
+                    raise SmokeFailure("a selected skill cannot be opened")
+
+                # The bottom row narrows the list three ways, and they narrow
+                # together.
+                from ui.skills_tab import (
+                    ANY_AGENT,
+                    ANY_SOURCE,
+                    CAME_WITH,
+                    NO_AGENT,
+                    SkillDialog,
+                )
+
+                def _named():
+                    return [stab.list.item(i).text().splitlines()[0]
+                            for i in range(stab.list.count())
+                            if stab.list.item(i).data(Qt.UserRole)]
+
+                stab.search.setText("scripts")
+                if _named() != ["with-code"]:
+                    raise SmokeFailure(f"the text filter does not narrow: {_named()}")
+                stab.search.clear()
+                stab.source.setCurrentText(CAME_WITH)
+                if _named() != ["native-one"]:
+                    raise SmokeFailure(f"the source filter does not narrow: {_named()}")
+                stab.source.setCurrentText(ANY_SOURCE)
+                stab.holder.setCurrentText("chief_of_staff")
+                if _named() != ["with-code"]:
+                    raise SmokeFailure(f"the agent filter does not narrow: {_named()}")
+                stab.holder.setCurrentText(NO_AGENT)
+                if "with-code" in _named():
+                    raise SmokeFailure("the no-agent filter keeps a held skill")
+                stab.holder.setCurrentText(ANY_AGENT)
+                if len(_named()) != 3:
+                    raise SmokeFailure("clearing the filters does not restore the list")
+
+                # A skill opens, and that is where its agents are chosen.
+                writes: list[tuple] = []
+
+                def _dialog_run(*args):
+                    writes.append(args)
+                    return 0, f"stub ran {' '.join(args)}", ""
+
+                coded_record = [s for s in listing["skills"]
+                                if s["name"] == "with-code"][0]
+                dlg = SkillDialog(None, coded_record,
+                                  ["chief_of_staff", "librarian"],
+                                  "---\nname: with-code\n---\nthe body",
+                                  _dialog_run)
+                if "the body" not in dlg.body.toPlainText():
+                    raise SmokeFailure("a skill's view does not show its SKILL.md")
+                if dlg.body.toPlainText() != dlg.body.toPlainText() or not dlg.body.isReadOnly():
+                    raise SmokeFailure("a skill's view offers to edit published source")
+                if dlg.files.count() != len(coded_record["file_list"]):
+                    raise SmokeFailure("a skill's view does not list its files")
+                if dlg.source_btn is None or coded_record["source_url"] not in dlg.source_btn.toolTip():
+                    raise SmokeFailure("a downloaded skill's view has no link to its source")
+                if not dlg.boxes["chief_of_staff"].isChecked() or dlg.boxes["librarian"].isChecked():
+                    raise SmokeFailure("the tick boxes do not carry who holds the skill")
+                dlg.boxes["librarian"].setChecked(True)
+                dlg.boxes["chief_of_staff"].setChecked(False)
+                if ("attach", "with-code", "--agent", "librarian") not in writes:
+                    raise SmokeFailure("ticking an agent did not attach through the loader")
+                if ("detach", "with-code", "--agent", "chief_of_staff") not in writes:
+                    raise SmokeFailure("unticking an agent did not detach through the loader")
+
+                # A native skill opens and reads, and offers no edit either.
+                native = SkillDialog(None, listing["skills"][0],
+                                     ["chief_of_staff"], "native text",
+                                     _dialog_run)
+                if not native.body.isReadOnly() or native.files.count() != 1:
+                    raise SmokeFailure("a native skill's view does not read")
+                if native.source_btn is not None:
+                    raise SmokeFailure("a native skill's view offers a source it has none of")
 
                 # The judgment is a card, and the card is chief_of_staff's.
                 before = mconn.execute("SELECT COUNT(*) FROM task").fetchone()[0]
@@ -1239,20 +1377,30 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure("the import card is not chief_of_staff's")
                 if (row[3], row[4]) != ("todo", "active"):
                     raise SmokeFailure("the import card did not land on the board")
-                if "waiting" not in row[0] or "no executable code" not in row[5]:
+                if "waiting" not in row[0] or "two files, no code" not in row[5]:
                     raise SmokeFailure("the import card does not name the skill and what it carries")
 
-                # Attaching from the page is the loader's own command.
-                calls.clear()
-                stab.agent.setCurrentText("librarian")
-                stab._select("with-code")
-                stab._attachment("attach")
-                if ("attach", "with-code", "--agent", "librarian") not in calls:
-                    raise SmokeFailure("attaching from the page did not call the loader")
+                # An import reports the skill, where it came from, what is in
+                # it and the card that decides it, in that order.
+                report = stab.status.text()
+                if report:
+                    raise SmokeFailure("the page reports before anything ran")
+                stab.address.setText("https://github.com/someone/other/tree/main/waiting")
+                stab._import()
+                report = stab.status.text()
+                places = [report.find(bit) for bit in
+                          ("waiting", "Downloaded from someone/other@0000000",
+                           "two files, no code", "chief_of_staff")]
+                if -1 in places or places != sorted(places):
+                    raise SmokeFailure(
+                        f"the import report does not say the four things in order: {report!r}")
+                if "#" not in report:
+                    raise SmokeFailure("the import report names no card")
+
             finally:
                 SkillsTab._run = _orig_run
-            ok.append("Skills reads one listing, files the judgment as a card, "
-                      "and attaches through the loader")
+            ok.append("Skills reads one listing, says what it is for, narrows "
+                      "three ways, and attaches from a skill's own view")
 
             skills_win = MainWindow(mconn)
             names = [b.text() for b in skills_win._tab_buttons]
