@@ -49,7 +49,17 @@ never an error.
   blank field.
 - **Nothing here runs a skill's code.** `audit` scans and prints it; a session
   reads it and decides. A report never promotes a skill: `trust` is a separate
-  command a person runs, and it consults no scanner.
+  command, and it consults no scanner.
+- **`chief_of_staff` decides what a session may load, and the board carries the
+  decision.** The judgment follows a read of the body and of every script, never
+  a report; the procedure and its four cases are
+  `src/skills/importing-a-skill/SKILL.md`. A skill that does not clear stays in
+  quarantine and the card returns to the user with what stopped it — a refusal
+  the user may overrule, which is the only part of importing that is theirs.
+- **Capability is judged here; authority is granted by the user.** A skill is a
+  procedure a session may load, and judging one is reading. A mandate is the
+  grant of power itself and is authored rather than imported —
+  `src/templates/identity_template.md` §What of an agent can be imported.
 - **No personal data.** Every path comes from config or from the project root
   marker.
 
@@ -90,7 +100,8 @@ python3 skills.py detach <name> --agent <slug>
 - **`audit`** — the skill's provenance record, then a scan of its code, then its
   `SKILL.md`, then the full text of every script it carries.
 - **`trust`** — moves a quarantined skill into the install root, where `list`
-  and `view` can reach it.
+  and `view` can reach it. It moves a directory and asserts nothing; what makes
+  the move safe is the read that preceded it.
 - **`install` closes with a compatibility note where the skill's own
   frontmatter declares something with no reader here** — environment variables
   it expects credentials for, and the Hermes toolsets it gates or offers itself

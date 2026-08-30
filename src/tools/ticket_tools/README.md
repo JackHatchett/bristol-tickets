@@ -64,6 +64,21 @@ it; where a script and that rule disagree, the script is the bug. **Read the
 database directly only where one of them errors, the database was just created,
 or the user asks for history the snapshot omits.**
 
+Both close on **LAST FINISHED**, the agent's three most recently closed cards
+and how each one closed, read across every epic and both the active board and
+the archive.
+
+- **It is bounded at three and its comments are cut**, because it orients a
+  session in its role and the queue above it is the work. `ROLE_HISTORY_CARDS`
+  and `ROLE_HISTORY_CHARS` are the two numbers.
+- **A card belongs to the agent its `assignee` names.** The change log records
+  which actor closed a card, and a third of finished cards carry no such row, so
+  reading it here would shorten an agent's history the further back it reached.
+- **A comment already printed above keeps its card's line and loses its body.**
+  The same text twice in one read teaches the reader to skim both.
+- **An agent that has finished nothing gets no section**, which is a first state
+  rather than an empty one.
+
 ### create_tickets.py
 `python3 create_tickets.py --instance <name>` provisions an empty tickets
 database under `data/<instance>/tickets/` with the full schema the viewer

@@ -179,15 +179,18 @@ community publishes is skills, and role descriptions written for other tools,
 each a single Markdown file saying what a role does. Both are things you can
 bring in.
 
-What arrives: the skills, installed one at a time and inert until you trust
-them; the role description, which you read and adopt as the body of a charter;
-and the associations — which skills belong to this agent, where its content
-lives — which are settings you copy rather than write.
+What arrives: the skills, each fetched, read and attached for you by
+`chief_of_staff`, which tells you afterwards what it took and what it refused;
+the role description, which you read and adopt as the body of a charter; and the
+associations — which skills belong to this agent, where its content lives —
+which are settings you copy rather than write.
 
 What you decide: the mandate. Who the agent answers to, what stops it, and what
 it is not allowed to change. That is a few sentences, and writing them is
 minutes rather than an afternoon — but they are yours, because a file that could
-grant itself authority is the one thing this system refuses. So downloading a
+grant itself authority is the one thing this system refuses. Judging whether a
+downloaded skill is safe is not in that category and is not yours; it is a read,
+and reading is what agents are for. So downloading a
 Product Manager means downloading a product manager's know-how, and the agent it
 belongs to is one you create.
 
