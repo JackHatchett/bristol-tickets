@@ -123,7 +123,9 @@ Import is settled one part at a time, and a part that can be imported is never
 refused because another part cannot.
 
 - **Skills import whole.** A third-party skill lands in quarantine and becomes
-  loadable only when a person trusts it — `src/tools/skill_tools/README.md`.
+  loadable once `chief_of_staff` has read it and trusted it —
+  `src/tools/skill_tools/README.md` owns the mechanism and
+  `src/skills/importing-a-skill/SKILL.md` the judgment.
 - **A config entry imports as associations** — which skills, which data roots,
   which environment. A list of associations grants nothing, which makes it the
   most portable part of an agent. An attachment names a skill and never copies
@@ -134,10 +136,12 @@ refused because another part cannot.
   foreign definition into quarantine as a skill, and no downloaded file becomes
   an active charter or an entry in the agent picker.
 - **The mandate is authored and never imported.** Who the agent answers to, what
-  halts it, and what it may not change are the grant of authority itself.
-  Importing one would mean accepting authority from a file, which is the single
-  thing quarantine-then-trust exists to prevent, so nothing would make it
-  possible — not a better format, not a licence, not a signature.
+  halts it, and what it may not change are the grant of authority itself, and
+  the user is the only source of one. Nothing would make importing a mandate
+  possible — not a better format, not a licence, not a signature — because the
+  question is who granted the power rather than whether the file is safe. This
+  is where a mandate parts from a skill: a skill is a capability, and reading it
+  is enough to judge it.
 - **Fields that route work in another host do not import** — `tools`, `model`,
   a client's own frontmatter extensions. A session's model and tool surface
   belong to the host it runs in, and the conversion names each field it drops.

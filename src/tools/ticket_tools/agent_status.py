@@ -205,23 +205,26 @@ def latest_comment_per_task(conn: sqlite3.Connection,
 
 
 def print_comments(conn: sqlite3.Connection,
-                   tasks: list[sqlite3.Row]) -> None:
+                   tasks: list[sqlite3.Row]) -> set[int]:
     """Surface the latest comment on each of `tasks` that has one; ⚠ marks
     user-authored ones (context to read, NOT a pressure signal — pressure/stage
     decide the next task, never a comment)."""
     latest = latest_comment_per_task(conn, [t["id"] for t in tasks])
     if not latest:
-        return
+        return set()
+    shown: set[int] = set()
     print("\n--- COMMENTS on your active-board tasks (⚠ = user; context to read, NOT a pressure signal) ---")
     for t in tasks:
         c = latest.get(t["id"])
         if not c:
             continue
+        shown.add(t["id"])
         mark = "⚠ " if (c["author"] or "").strip() == "user" else "  "
         body = " ".join((c["body"] or "").split())
         if len(body) > 300:
             body = body[:297] + "..."
         print(f"{mark}#{t['id']} [{c['created_at'][:10]} {c['author']}] {body}")
+    return shown
 
 
 def print_needs_you(rows: list[sqlite3.Row]) -> None:
@@ -359,7 +362,7 @@ def carried_summaries(conn: sqlite3.Connection, task_id: int) -> list[tuple]:
 
 
 def print_carried_summaries(conn: sqlite3.Connection,
-                            tasks: list[sqlite3.Row]) -> None:
+                            tasks: list[sqlite3.Row]) -> set[int]:
     """What the tickets each task waited on said as they finished, whole.
 
     The other sections point at something to go and read; this one is the
@@ -369,15 +372,96 @@ def print_carried_summaries(conn: sqlite3.Connection,
     hits = [(t, carried_summaries(conn, t["id"])) for t in tasks]
     hits = [(t, rows) for t, rows in hits if rows]
     if not hits:
-        return
+        return set()
+    shown: set[int] = set()
     print("\n--- CARRIED SUMMARIES (how each finished blocker closed; "
           "you need not open those tickets) ---")
     for t, rows in hits:
         print(f"  #{t['id']} {t['title']}")
         for blocker_id, title, author, at, body in rows:
+            shown.add(blocker_id)
             print(f"    ← #{blocker_id} {title} [{at[:10]} {author}]")
             for line in (body or "").splitlines():
                 print(f"        {line}")
+    return shown
+
+
+# How many finished cards a session opens with. Three, because a closing
+# comment here is a paragraph rather than a run record: five of them displaces
+# the queue this section exists to orient, and the section points at the board
+# rather than standing in for reading it.
+ROLE_HISTORY_CARDS = 3
+
+# A closing comment is shown here to orient and not to be worked from, so it is
+# cut. The whole of it is on the card.
+ROLE_HISTORY_CHARS = 400
+
+
+def role_history(conn: sqlite3.Connection, me: str,
+                 limit: int = ROLE_HISTORY_CARDS) -> list[tuple]:
+    """This agent's most recently finished cards, and how each one closed.
+
+    A read-time join over `task` and `issue_log` across every epic and both the
+    active board and the archive. Nothing is stored: a closing comment edited
+    later reads differently here the next time, and there is no second copy to
+    go stale.
+
+    Ownership is `task.assignee` — the same key that decides the queue. The
+    change log records which actor moved a card to `done`, and reading it here
+    would be the more literal answer to "who closed it", but a third of finished
+    cards carry no such row, so an agent's history would silently shorten the
+    further back it reached.
+    """
+    try:
+        rows = conn.execute(
+            "SELECT t.id, t.title, t.closed_at, "
+            "       COALESCE(e.name, '(no epic)') AS epic "
+            "FROM task t LEFT JOIN epic e ON t.epic_id = e.id "
+            "WHERE t.assignee = ? AND t.status = 'done' "
+            "ORDER BY t.closed_at IS NULL, t.closed_at DESC, t.id DESC "
+            "LIMIT ?",
+            (me, limit),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    out: list[tuple] = []
+    for r in rows:
+        last = conn.execute(
+            "SELECT body FROM issue_log WHERE task_id=? ORDER BY id DESC LIMIT 1",
+            (r["id"],),
+        ).fetchone()
+        body = " ".join(((last[0] if last else "") or "").split())
+        out.append((r["id"], r["title"] or "(missing)", r["epic"],
+                    (r["closed_at"] or "")[:10], body))
+    return out
+
+
+def print_role_history(conn: sqlite3.Connection, me: str,
+                       already_shown: set[int]) -> None:
+    """What this agent last finished, so a session starts inside its role.
+
+    Printed last, after the queue and everything the queue points at, because it
+    is continuity rather than work.
+
+    `already_shown` is every card whose comment this read has printed above. One
+    of those keeps its line and loses its body: the same comment twice in one
+    status read teaches the reader to skim both.
+    """
+    rows = role_history(conn, me)
+    if not rows:
+        return
+    print(f"\n--- LAST FINISHED by {me} ({len(rows)} most recent, any epic; "
+          f"continuity, not a queue) ---")
+    for tid, title, epic, closed, body in rows:
+        print(f"  #{tid} [{epic}] {title}  (closed {closed})")
+        if not body:
+            continue
+        if tid in already_shown:
+            print("      (its closing comment is printed above)")
+            continue
+        if len(body) > ROLE_HISTORY_CHARS:
+            body = body[:ROLE_HISTORY_CHARS - 3] + "..."
+        print(f"      {body}")
 
 
 def print_links(conn: sqlite3.Connection, tasks: list[sqlite3.Row]) -> None:
@@ -465,13 +549,14 @@ def main() -> None:
             print("   Your backlog is also empty — await direction.")
 
     print_needs_you(mine_all)
-    print_comments(conn, mine_all)
+    shown = print_comments(conn, mine_all)
     print_links(conn, mine_all)
     # Scoped to the queue rather than to every card on the board: a
     # handoff is what the agent about to work a card needs, and a card
     # already done has nothing to be handed.
-    print_carried_summaries(conn, mine_q)
+    shown |= print_carried_summaries(conn, mine_q)
     print_attachments(conn, mine_all, db_path)
+    print_role_history(conn, me, shown)
 
     _tail(cur, conn, me)
 
