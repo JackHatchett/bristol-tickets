@@ -254,6 +254,25 @@ def _inventory(skill_dir: Path) -> list[tuple[Path, int, str]]:
     return rows
 
 
+def _files_and_scripts(skill_dir: Path) -> tuple[int, list[str]]:
+    """(how many files, which of them are executable code) for one skill.
+
+    `_inventory` answers the same question and hashes every file to do it, which
+    is what an install's one-time inventory wants and what a listing of every
+    skill on the machine cannot afford.
+    """
+    count = 0
+    scripts: list[str] = []
+    for f in sorted(skill_dir.rglob("*")):
+        if not f.is_file():
+            continue
+        count += 1
+        rel = f.relative_to(skill_dir)
+        if _is_script(rel):
+            scripts.append(str(rel))
+    return count, scripts
+
+
 def _is_script(rel: Path) -> bool:
     return rel.suffix.lower() in SCRIPT_SUFFIXES
 
@@ -313,6 +332,9 @@ def _all_skills() -> list[tuple[str, str, str]]:
 
 
 def cmd_list(args) -> int:
+    if getattr(args, "json", False):
+        print(json.dumps(_listing(), indent=2))
+        return 0
     rows = _all_skills()
     if not rows:
         print("No skills. Native root: src/skills/. Installed root: skills.install_dir in config.")
@@ -341,6 +363,43 @@ def cmd_list(args) -> int:
         names = ", ".join(d.name for d in pending)
         print(f"\nQuarantined, not loadable until trusted: {names}")
     return 0
+
+
+def _skill_record(skill_dir: Path, root_name: str) -> dict:
+    """One skill as data: what `list` prints, plus what a surface needs to say
+    the same things a session is told."""
+    fm = read_frontmatter(skill_dir / "SKILL.md")
+    record = read_origin(skill_dir)
+    files, scripts = _files_and_scripts(skill_dir)
+    return {
+        "name": fm.get("name", skill_dir.name),
+        "directory": skill_dir.name,
+        "description": fm.get("description", ""),
+        "origin": _origin_column(skill_dir, root_name),
+        "root": root_name,
+        "repo": record.get("repo", ""),
+        "commit": record.get("commit", ""),
+        "license": record.get("license", "") or fm.get("license", ""),
+        "license_source": record.get("license_source", ""),
+        "files": files,
+        "scripts": scripts,
+    }
+
+
+def _listing() -> dict:
+    """Every skill on this machine, loadable and quarantined, plus which agent
+    attaches which. One read, so a surface and a session cannot disagree about a
+    name, a description or an origin."""
+    skills = []
+    for root, root_name in ((native_root(), "native"),
+                            (installed_root(), "installed"),
+                            (quarantine_root(), "quarantined")):
+        for d in _skill_dirs(root):
+            skills.append(_skill_record(d, root_name))
+    return {
+        "skills": skills,
+        "agents": {slug: attached_to(slug) for slug in _agent_slugs()},
+    }
 
 
 def _known_skill(name: str) -> bool:
@@ -510,7 +569,14 @@ def cmd_install(args) -> int:
     for rel, size, digest in rows:
         mark = "*" if _is_script(rel) else " "
         print(f"{mark} {str(rel):<{width}}  {size:>9}  {digest[:16]}")
-    print("\n* is executable code. Read it before trusting the skill:")
+    # A skill of Markdown and one carrying scripts are not the same risk, so
+    # they do not close on the same sentence.
+    if any(_is_script(rel) for rel, _size, _digest in rows):
+        print("\n* is executable code. Read every one of them before trusting "
+              "the skill:")
+    else:
+        print("\nNo executable code. The body is the whole of what there is to "
+              "read:")
     print(f"    python3 skills.py audit {name}")
     print_compatibility(target)
     return 0
@@ -823,6 +889,41 @@ def cmd_trust(args) -> int:
     return 0
 
 
+def cmd_remove(args) -> int:
+    """Delete an installed or quarantined skill, and detach it everywhere.
+
+    A native skill is source under version control; removing one is an edit to
+    the repository and is refused here, so this command can never be the route
+    by which published code disappears.
+    """
+    found = find_skill(args.name, include_quarantine=True)
+    if found is None:
+        print(f"No skill named '{args.name}'.", file=sys.stderr)
+        return 1
+    skill_dir, origin = found
+    if origin == "native":
+        print(f"'{args.name}' is a native skill under src/skills/. Remove it by "
+              f"editing the repository, not from here.", file=sys.stderr)
+        return 1
+    # The directory goes first: a detachment recorded against a skill still on
+    # disk is a skill nobody holds, which is recoverable, and the reverse is an
+    # attachment naming nothing.
+    try:
+        shutil.rmtree(skill_dir)
+    except OSError as exc:
+        print(f"Could not remove {skill_dir}: {exc.strerror or exc}. Nothing was "
+              f"detached.", file=sys.stderr)
+        return 1
+    holders = [slug for slug in _agent_slugs() if args.name in attached_to(slug)]
+    for slug in holders:
+        write_config.set_key(ATTACHMENTS.format(slug=slug),
+                             [n for n in attached_to(slug) if n != args.name])
+    where = "quarantine" if origin == "quarantined" else "the install root"
+    held = f" It was attached to {', '.join(holders)}." if holders else ""
+    print(f"Removed {args.name} from {where}.{held}")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -830,6 +931,10 @@ def main(argv: list[str]) -> int:
     p_list = sub.add_parser(
         "list", help="every loadable skill: name and description only")
     p_list.add_argument("--agent", help="put this agent's attached skills first")
+    p_list.add_argument(
+        "--json", action="store_true",
+        help="every skill, quarantined ones included, and each agent's "
+             "attachments, as data")
 
     p_view = sub.add_parser("view", help="load one skill's body")
     p_view.add_argument("name")
@@ -865,11 +970,15 @@ def main(argv: list[str]) -> int:
     p_detach.add_argument("name")
     p_detach.add_argument("--agent", required=True)
 
+    p_remove = sub.add_parser(
+        "remove", help="delete an installed or quarantined skill and detach it")
+    p_remove.add_argument("name")
+
     args = parser.parse_args(argv)
     return {
         "list": cmd_list, "view": cmd_view, "install": cmd_install,
         "convert": cmd_convert, "audit": cmd_audit, "trust": cmd_trust,
-        "attach": cmd_attach, "detach": cmd_detach,
+        "attach": cmd_attach, "detach": cmd_detach, "remove": cmd_remove,
     }[args.command](args)
 
 

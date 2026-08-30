@@ -44,6 +44,7 @@ that owns the concern.
 | `ui/record_dialog.py` | `UnifiedRecordDialog` — the create and edit modal | the form: fields, validation, save, delete |
 | `ui/kanban_column.py` | `KanbanColumn` and the queries filling it | which tasks appear in a column, and drop behaviour |
 | `ui/settings_tab.py` | `SettingsTab` — board behaviour stored in config | a new setting |
+| `ui/skills_tab.py` | `SkillsTab` — the skill loader's listing, and importing one | anything about skills in the app |
 | `ui/setup_wizard.py` | first-run setup: folders, board, config, pointer | the first-run flow |
 | `ui/main_window.py` | `MainWindow` — toolbar, tabs, filters, search, inspector | top-level layout |
 

@@ -21,6 +21,7 @@ pieces it composes live in sibling modules:
     setup_wizard.py  first-run setup, also reachable from File → Setup…
     settings_tab.py  SettingsTab (the next-session agent, board behaviour,
                      appearance — all stored in config.local.json)
+    skills_tab.py    SkillsTab (what a session can load, and importing one)
 
 Each file stays small enough for an external consultant to ingest and edit in
 one pass.
@@ -63,6 +64,7 @@ from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
 from .settings_tab import SettingsTab
+from .skills_tab import SkillsTab
 from .theme import (
     COLUMNS,
     LAYOUT,
@@ -335,6 +337,9 @@ class MainWindow(QMainWindow):
         self.archive_results.itemDoubleClicked.connect(self._on_archive_item_double_clicked)
         archive_layout.addWidget(self.archive_results)
         self._archive_tab_index = self._add_page(archive_widget, "Archive")
+
+        self.skills_tab = SkillsTab(self.conn, on_card_filed=self._refresh_board)
+        self._skills_tab_index = self._add_page(self.skills_tab, "Skills")
 
         self.settings_tab = SettingsTab(
             on_appearance_changed=self._preview_appearance)
@@ -948,3 +953,6 @@ class MainWindow(QMainWindow):
         self._sync_backlog_bar()
         self._load_archive(self.filters)
         self._execute_global_search()
+        # Skills are not in the database and take no filter; they are reloaded
+        # here so one Refresh means the same thing on every tab.
+        self.skills_tab.reload()

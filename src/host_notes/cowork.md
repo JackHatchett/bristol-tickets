@@ -8,9 +8,15 @@ not the shell your machine runs.
 
 The shell cannot remove a file until the session holds a delete grant: the
 bridge blocks `unlink`, so `rm` and `rmdir` fail on a connected folder. A
-session asks for that grant with the tool its host offers for it, and the ask
-comes first — before any workaround, and early enough that the user answers one
-prompt rather than several.
+session asks for that grant with the tool its host offers for it.
+
+- **Ask at session start, for every connected folder, before any work.** By the
+  time a session needs the grant it has usually already left something behind,
+  and a grant arriving then is one the user answers while blocked. One ask, once,
+  is also the whole cost.
+- **Report an ask that does not reach the user rather than repeating it.** The
+  request can be refused by the host before it is ever shown, and a second
+  identical call produces the same silence.
 
 // The tool has been named `device_request_delete_permission`. Whether a
 // session holds it is a property of that session, so look for it rather than
@@ -38,7 +44,13 @@ for f in $(find .git -name '*.lock'); do mv "$f" <sink>; done
 ```
 
 `<sink>` is one path every leaving is renamed onto, and the file manager
-removes it once at the end.
+removes it once at the end. It goes inside a connected folder: a rename onto a
+path outside the mount is a copy and an `unlink`, and fails.
+
+**A session's last act in a repository is a clearing pass, and no git command
+follows it.** The lock that stops the user's own next command is the one their
+session left, and a read leaves one as surely as a write — so a status or a diff
+run to check the work is what breaks the commit block offered underneath it.
 
 // `git status` and `git diff` take the index lock too — any command that reads
 // the index refreshes it — so a run of read-only commands leaves one as surely

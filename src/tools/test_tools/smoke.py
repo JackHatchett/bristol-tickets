@@ -1157,6 +1157,108 @@ def check_bristol() -> list[str]:
                 config_file.path = _orig_path
             ok.append("Settings writes each choice as it is made, and a load is "
                       "not a choice")
+
+            # Skills: the page reads one listing and files the judgment as a
+            # card. The loader is stubbed, so what is checked is the page —
+            # what it groups, what it says a skill carries, and what it writes.
+            import json as _json
+
+            from ui.skills_tab import SkillsTab
+
+            listing = {
+                "skills": [
+                    {"name": "native-one", "directory": "native-one",
+                     "description": "A native skill.", "origin": "native",
+                     "root": "native", "repo": "", "commit": "", "license": "MIT",
+                     "license_source": "", "files": 1, "scripts": []},
+                    {"name": "with-code", "directory": "with-code",
+                     "description": "An installed skill carrying scripts.",
+                     "origin": "someone/repo@abc1234", "root": "installed",
+                     "repo": "https://github.com/someone/repo",
+                     "commit": "abc1234def", "license": "Apache-2.0",
+                     "license_source": "SKILL.md", "files": 4,
+                     "scripts": ["scripts/run.py"]},
+                    {"name": "waiting", "directory": "waiting",
+                     "description": "A skill nothing has read.",
+                     "origin": "someone/other@0000000", "root": "quarantined",
+                     "repo": "https://github.com/someone/other",
+                     "commit": "0000000aaa", "license": "MIT",
+                     "license_source": "SKILL.md", "files": 2, "scripts": []},
+                ],
+                "agents": {"chief_of_staff": ["with-code"], "librarian": []},
+            }
+            calls: list[tuple] = []
+
+            def _stub_run(self, *args):
+                calls.append(args)
+                if args[:2] == ("list", "--json"):
+                    return 0, _json.dumps(listing), ""
+                return 0, f"stub ran {' '.join(args)}", ""
+
+            _orig_run = SkillsTab._run
+            SkillsTab._run = _stub_run
+            try:
+                stab = SkillsTab(mconn)
+                rows = [stab.list.item(i).text().splitlines()[0]
+                        for i in range(stab.list.count())]
+                if rows[0] != "Quarantined" or "waiting" not in rows[1]:
+                    raise SmokeFailure("Skills does not put quarantined skills first")
+                if "chief_of_staff" not in [r for r in rows if "with-code" in r][0]:
+                    raise SmokeFailure("Skills does not name the agents that hold a skill")
+                # A skill carrying code does not read like one that carries none.
+                coded = [s for s in listing["skills"] if s["scripts"]][0]
+                plain = [s for s in listing["skills"] if not s["scripts"]][0]
+                if SkillsTab._code_line(coded) == SkillsTab._code_line(plain):
+                    raise SmokeFailure("Skills describes code and no code identically")
+                if "no executable code" not in SkillsTab._code_line(plain):
+                    raise SmokeFailure("Skills does not say when a skill carries no code")
+
+                # Trust is the override and exists only where something is
+                # waiting to be judged; a native skill cannot be removed.
+                stab._select("waiting")
+                if not stab.trust_btn.isVisible() and stab.isVisible():
+                    raise SmokeFailure("no trust override on a quarantined skill")
+                if stab.attach_btn.isEnabled():
+                    raise SmokeFailure("a quarantined skill can be attached")
+                stab._select("native-one")
+                if stab.remove_btn.isEnabled():
+                    raise SmokeFailure("a native skill can be removed from the app")
+                stab._select("with-code")
+                if not stab.attach_btn.isEnabled():
+                    raise SmokeFailure("a loadable skill cannot be attached")
+
+                # The judgment is a card, and the card is chief_of_staff's.
+                before = mconn.execute("SELECT COUNT(*) FROM task").fetchone()[0]
+                task_id = stab._file_card(listing["skills"][2])
+                row = mconn.execute(
+                    "SELECT title, assignee, reporter, status, stage, description "
+                    "FROM task WHERE id=?", (task_id,)).fetchone()
+                if mconn.execute("SELECT COUNT(*) FROM task").fetchone()[0] != before + 1:
+                    raise SmokeFailure("importing a skill filed no card")
+                if row[1] != "chief_of_staff" or row[2] != "user":
+                    raise SmokeFailure("the import card is not chief_of_staff's")
+                if (row[3], row[4]) != ("todo", "active"):
+                    raise SmokeFailure("the import card did not land on the board")
+                if "waiting" not in row[0] or "no executable code" not in row[5]:
+                    raise SmokeFailure("the import card does not name the skill and what it carries")
+
+                # Attaching from the page is the loader's own command.
+                calls.clear()
+                stab.agent.setCurrentText("librarian")
+                stab._select("with-code")
+                stab._attachment("attach")
+                if ("attach", "with-code", "--agent", "librarian") not in calls:
+                    raise SmokeFailure("attaching from the page did not call the loader")
+            finally:
+                SkillsTab._run = _orig_run
+            ok.append("Skills reads one listing, files the judgment as a card, "
+                      "and attaches through the loader")
+
+            skills_win = MainWindow(mconn)
+            names = [b.text() for b in skills_win._tab_buttons]
+            if "Skills" not in names or names.index("Skills") > names.index("Settings"):
+                raise SmokeFailure("no Skills tab before Settings")
+            ok.append("the Skills tab stands in the header")
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok

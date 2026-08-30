@@ -47,6 +47,10 @@ never an error.
   repository root; a file is recorded by its own first line. A source stating no
   licence anywhere is recorded as `absent`, which is a different fact from a
   blank field.
+- **A surface over this loader routes to the same decision and never makes its
+  own.** Bristol Tickets' Skills tab performs the mechanical half of an import
+  and files the judgment as a card, because judging a skill is a read of its
+  body and every script it carries, and an application cannot read.
 - **Nothing here runs a skill's code.** `audit` scans and prints it; a session
   reads it and decides. A report never promotes a skill: `trust` is a separate
   command, and it consults no scanner.
@@ -66,7 +70,7 @@ never an error.
 ## skills.py
 
 ```
-python3 skills.py list [--agent <slug>]
+python3 skills.py list [--agent <slug>] [--json]
 python3 skills.py view <name>
 python3 skills.py install <repo-url> <path-in-repo> [--name NAME]
 python3 skills.py convert <file.md> [--name NAME] [--description TEXT]
@@ -74,10 +78,15 @@ python3 skills.py audit <name>
 python3 skills.py trust <name>
 python3 skills.py attach <name> --agent <slug>
 python3 skills.py detach <name> --agent <slug>
+python3 skills.py remove <name>
 ```
 
 - **`list`** — every loadable skill as name, origin and description, plus a
-  closing line naming anything quarantined. `--agent <slug>` puts that agent's
+  closing line naming anything quarantined. **`--json`** returns every skill
+  including the quarantined ones, what each carries, and each agent's
+  attachments, as data. It is one read, which is what stops a surface built on
+  it and a session reading the same loader from disagreeing about a name, a
+  description or an origin. `--agent <slug>` puts that agent's
   attached skills first and marks them. Origin is `native`, or the
   repository and commit a skill was installed from; a skill carrying no record
   reads as its root, which is all that is known about it.
@@ -110,6 +119,12 @@ python3 skills.py detach <name> --agent <slug>
   body worth reading, and refusing it would decide something that is the
   person's to decide. A skill carrying only fields the specification defines,
   or declaring one of those keys and naming nothing under it, prints no note.
+- **`remove`** — delete an installed or quarantined skill and detach it from
+  every agent that held it. The directory goes before the detachments, so a
+  filesystem that refuses the delete leaves the attachments intact rather than
+  leaving an agent naming a skill that is gone. It refuses a native skill: those
+  are source under version control, and removing one is an edit to the
+  repository.
 - **`attach` / `detach`** — add or remove one skill name in
   `agents.<slug>.skills`, written through `config_tools/write_config.py`. The
   attachment is a name in the agent's config entry and never a copy of the
