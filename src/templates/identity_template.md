@@ -78,6 +78,45 @@ together under a licence.
 
 ---
 
+## When one job is two agents
+
+A role is added because the work divides, never because the title exists. Any
+one of three tests makes a job separate from the agent carrying it:
+
+- **A different mandate** — the new job answers for a different thing, the way
+  building what a card decided differs from deciding it.
+- **A different guardrail** — a rule that must halt the new job would have to be
+  written into the existing charter as an exception to it.
+- **Work that must not review itself** — one agent holding both the authorship
+  and the judgement of the same output.
+
+**Work failing all three tests is a capability rather than an agent**, and it
+reaches the fleet as a skill an existing agent attaches.
+
+**A separate job becomes its own agent, never a section added to an existing
+charter.** One agent identity runs per session — `src/app.md` — and that is kept
+rather than relaxed: a charter loads whole and resident, so two of them in one
+session are two mandates and two guardrail sets with nothing saying which wins.
+Adding roles around the rule is how it goes without ever being repealed.
+
+**`chief_of_staff` is one job carrying two more.** Architecture, board
+governance, system maintenance and authority over fleet behaviour pass no test
+between them: one mandate whose subject is the system itself, one guardrail set,
+and an authority a second agent cannot hold without two agents editing the same
+governing documents. The two it also carries are separate jobs — **review**,
+because what is written here is judged by whoever wrote it, and **execution**,
+whose mandate is to build to a decision rather than to make one. Every other
+agent in the fleet is one job by these tests.
+
+**The cost of switching agents decides none of this.** A switch is one config
+write — `active_agent`, from Bristol Tickets' Settings picker or
+`write_config.py` — and a new session, and what it loses is the conversation
+rather than the state: the board carries everything a session recorded, and
+nothing carries what it did not. A switch that feels expensive is a reason to
+make switching cheaper, never a reason to merge two mandates into one agent.
+
+---
+
 ## What of an agent can be imported
 
 Import is settled one part at a time, and a part that can be imported is never
