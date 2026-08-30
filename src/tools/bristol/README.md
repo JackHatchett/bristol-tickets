@@ -43,6 +43,7 @@ bristol/
 │   ├── growing_edit.py  GrowingTextEdit — the field every typing surface uses
 │   ├── setup_wizard.py  first-run setup: folders, board, config, pointer
 │   ├── settings_tab.py  SettingsTab — app and session choices, stored in config
+│   ├── skills_tab.py    SkillsTab — what a session can load, and importing one
 │   └── main_window.py   MainWindow — toolbar, tabs, filters, search, inspector
 ├── reports/             the analytic report written on Clear Done (own README)
 │   ├── paths.py         where the report goes (env → .local → config)

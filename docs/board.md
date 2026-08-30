@@ -23,8 +23,11 @@ cards onto the Board) or **Delete**.
 
 **Search** finds cards and epics by text and shows the matches as a list. It
 takes no filter: it is the one view whose job is to find a card the board is not
-showing. **Settings** holds every choice this installation makes, the agent your
-next session runs as included.
+showing. **Skills** lists every skill a session can load, which agents hold
+each one, and takes the address of a new one: pasting it fetches the skill into
+quarantine and files a card for `chief_of_staff` to read and judge it, because
+that judgment is a read and the app cannot read. **Settings** holds every choice
+this installation makes, the agent your next session runs as included.
 
 ## The three columns
 
