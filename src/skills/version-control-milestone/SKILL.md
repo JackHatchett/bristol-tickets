@@ -1,6 +1,6 @@
 ---
 name: version-control-milestone
-description: Walk a project to a saved commit at a milestone. Use when a scaffold exists, a phase closed, or a first working slice runs.
+description: Saves a project to a recoverable point with git, giving the commands one line at a time with what each does. Use when something real just landed — a scaffold exists, a phase closed, or a first working version runs.
 license: MIT
 compatibility: Needs git available to the user in the project folder.
 metadata:

@@ -26,7 +26,11 @@ takes no filter: it is the one view whose job is to find a card the board is not
 showing. **Skills** lists every skill a session can load, which agents hold
 each one, and takes the address of a new one: pasting it fetches the skill into
 quarantine and files a card for `chief_of_staff` to read and judge it, because
-that judgment is a read and the app cannot read. **Settings** holds every choice
+that judgment is a read and the app cannot read. A skill opens into a view of
+its own — its text, its files, its source and a tick box per agent — and that is
+where a skill is attached to an agent; the row of controls under the list
+narrows the list instead, by text, by whether a skill came with Bristol or was
+downloaded, and by which agent holds it. **Settings** holds every choice
 this installation makes, the agent your next session runs as included.
 
 ## The three columns

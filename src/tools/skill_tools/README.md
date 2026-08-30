@@ -90,6 +90,19 @@ python3 skills.py remove <name>
   attached skills first and marks them. Origin is `native`, or the
   repository and commit a skill was installed from; a skill carrying no record
   reads as its root, which is all that is known about it.
+  - **A `--json` record carries its three facts already worded** —
+    `said_origin`, `said_contents`, `said_holders`, beside the raw `root`,
+    `files`, `scripts` and `holders` they are built from. A surface shows the
+    worded form so the app, a detail view and an import report tell a reader the
+    same fact in the same words; the raw fields are for anything that has to
+    count or compare, alongside `path`, `file_list` and `source_url` — the
+    skill's directory, everything in it, and the web address of the exact
+    commit and folder it came from, which is what a surface needs to open a
+    skill rather than only name it. The wording is `origin_phrase`, `contents_phrase` and
+    `holders_phrase`, and it is written for someone who has never seen this
+    system: a skill came with Bristol or names where it was downloaded from, a
+    count agrees with the noun beside it, and a skill carrying code does not
+    read like one carrying none.
 - **`view`** — one skill's `SKILL.md` in full. This is the on-demand load.
 - **`install`** — shallow-clones the hub repository into a temporary directory,
   copies the named skill into quarantine, and prints the inventory. It refuses a
