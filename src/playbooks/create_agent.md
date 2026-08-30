@@ -6,6 +6,9 @@ registration. For converting an existing pre-framework bundle, use
 
 ## Preconditions
 
+- **The work meets a separation test** —
+  `src/templates/identity_template.md` §When one job is two agents. Work that
+  meets none of them is a skill attached to an agent that already exists.
 - **The user has confirmed the agent's canonical name** in snake_case.
 - **The user has said in general terms what the agent is for**, and whether it
   needs a personal-data root under `data/*/`.
