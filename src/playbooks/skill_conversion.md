@@ -47,6 +47,16 @@ name the files that are not skills at all. The specification is at
   copy of a behaviour that has one owner.
 - **The body names the exact command line**, which
   `src/templates/playbook_template.md` already requires.
+- **A skill is read and a tool is run, and that is the whole distinction.** A
+  skill is text a session decides whether to follow; a tool is a program whose
+  result is the same however the session feels about it. Converting a tool to a
+  skill replaces a program with instructions for doing its job by hand.
+- **There is no tool to import from the ecosystem.** A Hermes toolset is a group
+  of functions inside that runtime, admitted per thread by a whitelist; nobody
+  publishes or installs one. A skill declaring `requires_toolsets` or
+  `fallback_for_toolsets` is naming a runtime it expects, which is why `install`
+  reports those as gates with no reader here rather than as dependencies to go
+  and fetch — `src/tools/skill_tools/README.md`.
 
 ## Frontmatter
 
