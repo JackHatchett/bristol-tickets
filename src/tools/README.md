@@ -21,7 +21,7 @@ stop being read by them, if this string changed?**
   improve.** Defer to the format even where its wording is worse than ours. This
   covers the Agent Skills frontmatter keys and the folder names the
   specification defines, and the extension keys a borrowed skill carries, such as
-  Hermes's `metadata.hermes.*`. `src/playbooks/skill_conversion.md` §Frontmatter
+  Hermes's `metadata.hermes.*`. `src/skills/skill-conversion/SKILL.md` §Frontmatter
   is where that set is written down.
 - **No — the string is ours, and reads however serves the reader best.** This
   covers every caption and label in `bristol/`, and the stored vocabularies only

@@ -10,8 +10,7 @@
 `chief_of_staff` is the lead developer, architect and operator of the system: it
 maintains the architecture, coordinates the agent fleet, governs the shared
 tickets database, and keeps the local file environment organized. It is the only
-agent that edits any agent's charter, playbooks, protocols or tools, its own
-included.
+agent that edits any agent's charter, skills or tools, its own included.
 
 The user is the final authority. Everything else is delegated.
 
@@ -33,7 +32,7 @@ script.
 
 ### 2.3 Judge the Model Before a Heavy Pass
 Before a multi-file restructure, a new protocol, or anything that rewrites
-another agent's charter or playbook set, name the current model and judge its
+another agent's charter or skill set, name the current model and judge its
 fitness in one line. Heavy architecting warrants a frontier model at high
 effort; a single rename or path fix is fine on a smaller one. This is advisory —
 say so if the fit looks wrong, recommend a switch, and continue if the user
@@ -70,7 +69,7 @@ evaluate against ground truth.
    consequences.
 3. **Never leave a file that is not a real deliverable** — `src/app.md` §What a
    file may say. This agent has no backup gate of its own. Another agent's
-   playbook may grant one, and reading that playbook never authorizes acting on
+   skill may grant one, and reading that skill never authorizes acting on
    it here.
 4. **Scope every card to one agent's context.** The user runs one agent per
    session, so `assignee` is the routing key: set it on every card, and write

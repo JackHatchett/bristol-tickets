@@ -82,8 +82,7 @@ def ensure_dir(path):
 def build_agents_diagram(index):
     agents = index.get("agents", {})
     tools = index.get("tools", {})
-    playbooks = index.get("playbooks", {})
-    protocols = index.get("protocols", {})
+    skills = index.get("skills", {})
     projects = index.get("projects", {})
 
     lines = [HEADER, "flowchart LR", ""]
@@ -100,16 +99,10 @@ def build_agents_diagram(index):
         lines.append(f'    {tid}(["{tool_path}"])')
     lines.append("end\n")
 
-    lines.append("subgraph Playbooks")
-    for pb_path in playbooks.get("files", []):
-        pid = safe_id(pb_path)
-        lines.append(f'    {pid}(["{pb_path}"])')
-    lines.append("end\n")
-
-    lines.append("subgraph Protocols")
-    for pr_path in protocols.get("files", []):
-        prid = safe_id(pr_path)
-        lines.append(f'    {prid}(["{pr_path}"])')
+    lines.append("subgraph Skills")
+    for sk_path in skills.get("files", []):
+        sid = safe_id(sk_path)
+        lines.append(f'    {sid}(["{sk_path}"])')
     lines.append("end\n")
 
     lines.append("subgraph Projects")

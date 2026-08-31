@@ -299,7 +299,7 @@ a human skims, not a log.
 - **Bullets, not paragraphs.** One idea per bullet, ≤ ~15 words.
 - **2–4 short headers.** Ticket: `Goal` / `Done so far` / `Needs next`.
 - **Hard length cap.** Past ~10 lines or ~8 bullets, cut it, or move durable
-  detail to the file that owns it — charter, playbook, README, config.
+  detail to the file that owns it — charter, skill, README, config.
 - **Write the current state, not a history of every step.**
 
 ## Links (`task_link`)

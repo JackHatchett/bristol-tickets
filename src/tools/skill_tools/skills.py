@@ -6,7 +6,7 @@ and `description`, per the Agent Skills specification
 (github.com/agentskills/agentskills). Two roots hold them:
 
     native      src/skills/ in this repository — Bristol's own converted
-                playbooks and protocols, published with the code.
+                procedures, published with the code.
     installed   the path declared at `skills.install_dir` in config, resolved
                 through config_tools/data_paths.py. Git-ignored; third-party.
 
@@ -87,7 +87,7 @@ SCANNER = "bandit"
 SCANNER_READS = ".py"
 
 # The only top-level frontmatter keys a conversion carries across. The
-# specification defines a small set (src/playbooks/skill_conversion.md
+# specification defines a small set (src/skills/skill-conversion/SKILL.md
 # §Frontmatter); a foreign definition's other keys — `tools`, `model`, `color`,
 # `allowed-tools`, a client's own extensions — exist so a dispatcher can route a
 # card to a configured worker, and a Bristol session's model and tool surface

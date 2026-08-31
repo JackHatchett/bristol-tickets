@@ -33,7 +33,7 @@ python3 create_agent.py <slug> \
     [--data-path data/<instance>/<domain>]... \
     [--context-file <path>]... \
     [--skill <name>]... \
-    [--owns playbooks/<slug>/]... \
+    [--owns tools/<slug>/]... \
     [--notebook read|write|none] \
     [--no-epic]
 ```

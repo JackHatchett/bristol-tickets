@@ -33,7 +33,7 @@ procedure names the other homes its own content has.
 3. **Surface every conflict with specific file and section citations**, and
    **ask which governs where two sources disagree** rather than picking one.
 4. **Route it** to the summary in the agent-output dir, or to whatever other
-   home the calling playbook gives it.
+   home the calling skill gives it.
 
 ## Rules
 

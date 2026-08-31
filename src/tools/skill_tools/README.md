@@ -5,12 +5,12 @@ The loader for Agent Skills — the open format at
 `SKILL.md` whose YAML frontmatter carries `name` and `description`. This file
 owns the *mechanism*: the two roots, the disclosure contract, and the
 quarantine. Converting a Bristol file into a skill is
-`src/playbooks/skill_conversion.md`. Style contract:
+`src/skills/skill-conversion/SKILL.md`. Style contract:
 `src/templates/identity_template.md` §The governing-doc style contract.
 
 ## Two roots
 
-- **Native — `src/skills/`.** Bristol's own converted playbooks and protocols,
+- **Native — `src/skills/`.** Bristol's own procedures,
   published with the code and maintained by `chief_of_staff`.
 - **Installed — the path declared at `skills.install_dir` in config**, resolved
   through `config_tools/data_paths.py` and git-ignored. Third-party skills only.

@@ -18,7 +18,7 @@ harvest.
 
 ### 2.1 Session Start and Close
 `src/templates/identity_template.md` §Session start, plus
-`playbooks/career_coach/session_closure.md` — its session-start section at the
+`src/skills/session-closure/SKILL.md` — its session-start section at the
 open, its closure section at the close. Both run every session, like the board
 check; neither is triggered.
 
@@ -82,5 +82,4 @@ rebuild or duplicate it inside an interactive session.
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns `playbooks/career_coach/`, `tools/career_coach/` and
-`protocols/career_coach/`.
+Owns `tools/career_coach/` and the skills whose `bristol.maintainer` names it.

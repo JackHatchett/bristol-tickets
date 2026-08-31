@@ -26,7 +26,7 @@ that project's own state file as well.
 
 ### 2.2 Where Client Content Lives
 - **Client identity and history are the client data root's** — the registry,
-  each client's profile and project list, and any client-specific playbook.
+  each client's profile and project list, and any client-specific procedure.
 - **A project's working files live in whatever root that project was scaffolded
   in.** The registry and each project's own profile carry the concrete path,
   because they are instance data.
@@ -45,10 +45,10 @@ that project's own state file as well.
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns `playbooks/client_services/`. There is no `tools/client_services/`; a
-recurring procedure that hardens into a single-purpose script would go there,
-and a client-specific playbook stays in that client's own folder because it is
-client content.
+Owns the skills whose `bristol.maintainer` names it. There is no
+`tools/client_services/`; a recurring procedure that hardens into a
+single-purpose script would go there, and a client-specific procedure stays in
+that client's own folder because it is client content.
 
 **Never keep a per-client tracking file** — client work state is cards on the
 board like everyone else's.

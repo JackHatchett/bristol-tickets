@@ -2,7 +2,7 @@
 
 Reading and reconciling a wiki-shaped knowledge base. A domain's own file
 layout, ID scheme and content rules live in the owning agent's charter and
-playbooks.
+skills.
 
 - **The wiki is user-authored and read-only to every agent.** Propose a change
   by writing a summary to `markdown_notebook.agent_output_dir` for the user to

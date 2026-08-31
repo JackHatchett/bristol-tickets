@@ -12,8 +12,8 @@ Machinery for capturing how a person writes and scaffolding a draft.
 
 ## Using these
 
-- **Point a playbook at `voice_capture.md` rather than restating the method.**
-  The owning agent's charter and playbooks own whose voice, which project, and
-  what the technique inventory holds.
+- **Point a skill at `voice_capture.md` rather than restating the method.** The
+  owning agent's charter and skills own whose voice, which project, and what the
+  technique inventory holds.
 
-`playbooks/writers_room/voice_distillation.md` uses the pattern.
+`src/skills/voice-distillation/SKILL.md` uses the pattern.

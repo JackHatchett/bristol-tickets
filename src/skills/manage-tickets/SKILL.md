@@ -89,7 +89,7 @@ the skeleton back next time the record opens.
 | What kind of thing stopped the card | `update-task-status --block-reason dependency\|decision\|capability\|transient` |
 | "This came from that review / that note / that page" | A link (`link-add --uri`) |
 | "This relates to ticket #153" | A link (`link-add --to-task 153`) |
-| Durable technical detail (schema notes, a working pattern) | The file that owns it — a README or playbook — then link to it |
+| Durable technical detail (schema notes, a working pattern) | The file that owns it — a README or skill — then link to it |
 
 Use comments freely: they are human prose rather than a template, they are what
 the board renders under the Log, and the only rule on them is
@@ -124,7 +124,8 @@ this includes cross-agent suggestions: `--assignee` = that agent or the user,
 `--reporter` = you, still on the active board.
 
 **5. Scope each card to one agent's context.** The user runs sessions per agent,
-so a session loads only that agent's charter, playbooks and protocols. Write the
+so a session loads that agent's charter and matches its own skills first. Write
+the
 card so its assignee can execute it with only its own documents loaded — that is
 what makes `assignee` the routing key rather than a label.
 

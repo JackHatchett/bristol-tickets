@@ -20,7 +20,7 @@ CLI
         [--context-file <path>]... \\
         [--skill <name>]... \\
         [--notebook read|write|none] \\
-        [--owns playbooks/<slug>/]...
+        [--owns tools/<slug>/]...
 """
 
 from __future__ import annotations

@@ -12,4 +12,4 @@ think and write.
 
 `tools/writing_tools/voice_capture.md` is the other method: sample-first, for
 sentence-level craft the person cannot articulate.
-`playbooks/career_coach/cover_letter.md` §Voice owns how a profile is consumed.
+`src/skills/cover-letter/SKILL.md` §Voice owns how a profile is consumed.

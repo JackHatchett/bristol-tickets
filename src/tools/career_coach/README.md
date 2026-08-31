@@ -24,4 +24,4 @@ content: it resolves from `agents.career_coach.key_data_paths` plus
 `applications/cover_letters/*_CL_Blacklist.txt`, and `--blacklist` overrides
 that. More than one match under that glob is an error naming the flag.
 
-`playbooks/career_coach/cover_letter.md` owns where the gate sits in drafting.
+`src/skills/cover-letter/SKILL.md` owns where the gate sits in drafting.

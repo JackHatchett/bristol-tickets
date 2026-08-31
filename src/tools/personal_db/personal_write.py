@@ -3,7 +3,7 @@
 personal_write.py — write CLI for personal.db.
 
 Subcommands (applications domain only — books live in Zotero, see
-src/tools/zotero/ and playbooks/librarian/add_book.md):
+src/tools/zotero/ and src/skills/add-book/SKILL.md):
 
   add-application     --company C --role R [--status ... --fit-verdict ... --gaps ...
                       --location ... --ats ... --date-evaluated ... --cover-letter ...

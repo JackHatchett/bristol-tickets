@@ -46,8 +46,8 @@ progress across active courses, and rendering a lesson to a readable HTML page.
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns `playbooks/teaching_assistant/`, `tools/teaching_assistant/` and
-`protocols/teaching_assistant/`.
+Owns `tools/teaching_assistant/` and the skills whose `bristol.maintainer`
+names it.
 
 **Never gate a lesson on a build's progress.** Where the user is also building
 something under `game_designer`'s `code_projects/`, note the connection between

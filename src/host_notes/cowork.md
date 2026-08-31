@@ -75,6 +75,19 @@ maintenance`, which pack loose refs by unlinking them, and `git checkout` of a
 tracked file, which unlinks before it writes. Restore a file by writing its
 contents in place instead.
 
+## Seeing an application on the machine
+
+The shell's process table is the sandbox's own, and the applications the user
+runs are not in it. `pgrep`, `ps` and `pkill` answer about the sandbox whatever
+the desktop is doing, so a check written as "is X running" reports no every
+time.
+
+- **Ask a file, not a process.** An application that holds a file open while it
+  runs — a lock file, a database journal — leaves that file on the real disk,
+  where the bridge reads it.
+- **Quitting an application is the user's**, or computer use; nothing here
+  signals a process.
+
 ## Reading a database
 
 The sandbox carries no `sqlite3` command-line binary. Python's built-in
@@ -146,6 +159,10 @@ leaves whatever it had written. This is why every board write opens with
 replacing the file.
 
 ## Project instructions
+
+**Two settings inside the application are what a clone cannot bring with it**:
+the folder Cowork reads, connected in its own folder picker, and the per-project
+instructions below. Everything else this system needs is in the repository.
 
 Cowork takes its per-project instructions as text you paste into the project,
 not as a file it reads from the folder, so `AGENTS.md` and `CLAUDE.md` at the
