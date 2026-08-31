@@ -35,6 +35,11 @@ keeps state in memory, so a write behind a live Zotero is silently lost or
 corrupted. Every writer here calls `require_zotero_closed()` and exits with an
 instruction rather than risking it. **Quit Zotero (Cmd-Q) before running.**
 
+**The gate reads a file rather than a process list.** `zotero.sqlite-journal`
+beside the database exists for as long as Zotero holds the library and goes when
+it closes, so it is the signal wherever the tools run; a process check finds
+Zotero only where the shell is the machine's own.
+
 Rows written here carry `version=0, synced=0` — exactly what Zotero records for
 a local edit it has not yet pushed. The next sync uploads them. Never invent a
 version number; that is the server's to assign.
@@ -103,9 +108,11 @@ Payloads live in `data/*/personal/game_records/`, one file per batch:
 }
 ```
 
-The collection name is optional in a payload and otherwise comes from
-`zotero.collections.point_and_click` in config, so a second game type is a
-second config key rather than a code change.
+A payload names its collection by configuration key — `collection_key`, one of
+the keys under `zotero.collections` — so a collection can be renamed in one
+place. A literal `collection` still wins where one is given, and a payload
+naming neither takes `point_and_click`. A key with no name configured is
+refused, because naming a new collection is the user's.
 
 Behaviour worth knowing:
 

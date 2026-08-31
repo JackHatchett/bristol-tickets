@@ -164,8 +164,8 @@ future-change instruction.
 
 Every agent except chief_of_staff may add content as ordinary execution: a fact
 into the section that owns it, a deliverable, a correction in place. No agent
-may change how it works — editing its own charter, playbooks, protocols or
-tools, adding or repealing a rule, changing a file's structure, introducing a
+may change how it works — editing its own charter, skills or tools, adding or
+repealing a rule, changing a file's structure, introducing a
 file other files must consult, or moving where content lives. Wanting to, being
 right, and the user approving it in chat are none of them authorization. Each
 goes to chief_of_staff as an active-board card (`--assignee chief_of_staff

@@ -49,11 +49,7 @@ Around it:
 
 - `src/agent_identities/` — one charter per agent: what that agent is, what it
   owns, what it may not do.
-- `src/playbooks/` — the steps for a specific task an agent performs.
-- `src/protocols/` — procedures for working with something outside the system,
-  including handoffs to external AI tools.
-- `src/templates/` — the shapes a new charter, playbook, protocol or README has
-  to take.
+- `src/templates/` — the shapes a new charter or README has to take.
 - `src/tools/` — standalone programs. The ticket writer and status readers, the
   configuration resolver, file management, document conversion, scrapers,
   renderers, a test harness.
@@ -62,12 +58,11 @@ Around it:
   where a procedure goes; `src/templates/identity_template.md` §What an agent
   is made of says why.
 
-Inside `src/playbooks/`, `src/protocols/` and `src/tools/`, a folder named for
-an agent says who maintains what is in it, not who may run it. Any agent may
-load any playbook, tool or protocol.
-What serves more than one agent lives in that directory's `_shared/`, whose
-README indexes each capability in one line with the condition that calls for it;
-an agent reads the index and loads only what it will run. So a session pays
+Inside `src/tools/`, a folder named for an agent says who maintains what is in
+it, not who may run it, and a skill says the same in its `bristol.maintainer`.
+Any agent may load any skill or tool. The skill index is one line per skill with
+the situation that calls for it; an agent reads the index and loads only what it
+will run. So a session pays
 context for a capability at the moment the task needs it, and a capability is
 written once instead of once per agent.
 

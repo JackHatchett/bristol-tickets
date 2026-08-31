@@ -11,7 +11,7 @@ no runtime state.** Style contract:
 # {{Folder name}}
 
 {{One or two sentences: what this folder holds and which conceptual layer it
-belongs to — runtime, config, data, tools, playbooks, protocols, templates.}}
+belongs to — runtime, config, data, tools, skills, templates.}}
 
 ## What belongs here
 

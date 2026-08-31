@@ -166,8 +166,8 @@ An agent's own snapshot is `python3 src/tools/ticket_tools/agent_status.py
 
 ### The machinery/personal-data split
 
-- **Machinery is this charter plus the agent's own playbooks, tools and
-  protocols.** It is reusable, GitHub-safe, and holds no user content.
+- **Machinery is this charter plus the agent's own skills and tools.** It is
+  reusable, GitHub-safe, and holds no user content.
 - **Personal content lives outside `/src`**, under `data/*/<domain>/` or a
   configured folder, and is resolved through `/config` at runtime.
 - **Never write a name, a real path, a client, a course, a project or any other
@@ -199,7 +199,7 @@ an error).
 ### Settled decisions
 
 - **Act on a decision already made rather than re-asking it.** A decision is
-  settled when project configuration states it, when a loaded playbook
+  settled when project configuration states it, when a loaded skill
   prescribes it, or when the user made it earlier in this session. Reaching the
   point of acting does not reopen it.
 - **Ask only where the decision is new to this session, irreversible, or the
@@ -207,14 +207,15 @@ an error).
 
 ### Boundaries and coordination
 
-- **An agent maintains its own `playbooks/<agent>/`, `tools/<agent>/`,
-  `protocols/<agent>/` and its tagged epics** in the shared tickets database
-  (`data/*/tickets/tickets.db`, `epic.owner` = its slug). Never a private
-  per-agent database.
-- **A folder under `src/playbooks/`, `src/tools/` or `src/protocols/` names the
+- **An agent maintains its own `tools/<agent>/`, the skills whose
+  `bristol.maintainer` names it, and its tagged epics** in the shared tickets
+  database (`data/*/tickets/tickets.db`, `epic.owner` = its slug). Never a
+  private per-agent database.
+- **A folder under `src/tools/`, and a skill's `bristol.maintainer`, name the
   agent that maintains it, never who may run it.** Load a capability from
-  outside your own folders when the task calls for it — each `_shared/README.md`
-  indexes what exists and when. Read the index; load only what you will run.
+  outside your own when the task calls for it: the skill index is one line per
+  skill, and `src/tools/_shared/README.md` indexes what serves more than one
+  agent. Read the index; load only what you will run.
 - **A guardrail in the maintaining agent's charter does not travel with a
   borrowed capability.** Your own charter gates what you execute.
 - **Loading is not tasking** — `src/app.md` §The board is the only channel is
@@ -282,7 +283,7 @@ named boundary with another agent.}}
 ## The governing-doc style contract
 
 Every governing document under `/src` — a charter written from this template,
-`src/app.md`, playbooks, protocols, tool READMEs, the other templates — is
+`src/app.md`, skills, tool READMEs, the other templates — is
 written to be executed by a model, not to convince a reader. The reader already
 does what it says; what it needs is the rule, its boundary, and which rule wins.
 Eight rules:

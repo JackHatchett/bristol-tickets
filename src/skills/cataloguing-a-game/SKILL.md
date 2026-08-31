@@ -18,7 +18,7 @@ A game has no ISBN, so Add Item by Identifier cannot reach one and the record is
 assembled from published sources instead. The field-by-field template is
 `references/citation_template.md`, and it is shared by every video-game
 collection rather than being specific to point-and-click. Safety gates on any
-Zotero write: `src/playbooks/librarian/data_safety.md`.
+Zotero write: `src/skills/data-safety/SKILL.md`.
 
 ## Preconditions
 
@@ -26,11 +26,11 @@ Zotero write: `src/playbooks/librarian/data_safety.md`.
   not, stop and report the exact path checked rather than choosing one.
 - **Zotero is quit before the write in step 6.** Steps 1 to 5 write nothing and
   run with Zotero open.
-- **The collection name comes from configuration.**
-  `python3 src/tools/config_tools/read_config.py zotero.collections.point_and_click`
-  gives the point-and-click collection; a further game type is a further key
-  beside it, and a collection this skill has not been given a key for is a
-  structural change the user approves first.
+- **The collection is named by a configuration key, never by a literal name.**
+  `python3 src/tools/config_tools/read_config.py zotero.collections` lists the
+  keys; a payload carries the key as `collection_key`. A game type with no key
+  yet is a new collection, which is a structural change the user approves
+  first.
 
 ## The sources, and what each one is for
 
@@ -69,6 +69,7 @@ the first of these that held the game.
 
    ```json
    {
+     "collection_key": "point_and_click",
      "games": [
        {"title": "...", "developer": "...", "date": "...", "system": "...",
         "url": "...", "catalog": "..."}

@@ -2,7 +2,7 @@
 
 Getting job-description text from a job alert into a triage-ready file.
 
-**Optional.** `career_coach` runs every playbook off a pasted job description.
+**Optional.** `career_coach` runs every skill off a pasted job description.
 This folder automates the incoming half and asks for real setup: a mail account
 receiving job alerts, Google API credentials (`credentials.example.json` is the
 shape), a settings file (`settings.example.json`), the OS keychain, and a

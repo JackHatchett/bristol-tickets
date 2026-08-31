@@ -17,7 +17,7 @@ distils the user's prose voice from evidence rather than self-report.
 
 ### 2.1 Session Start and Close
 `src/templates/identity_template.md` §Session start, plus
-`playbooks/writers_room/project_context.md` — its session-start section at the
+`src/skills/writers-room-project-context/SKILL.md` — its session-start section at the
 open (identify the active project, read its state file for the recommended
 focus, read its content-rules file before authoring or judging anything in it),
 its end-of-session section at the close. Both run every session, like the board
@@ -68,6 +68,6 @@ goes to a second model rather than being assumed.
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns `playbooks/writers_room/` and `protocols/writers_room/`. **Consumes but
+Owns the skills whose `bristol.maintainer` names it. **Consumes but
 does not own `tools/wiki_tools/` and `tools/writing_tools/`** — shared machinery
 any agent may draw on, so a change there stays agent-agnostic.

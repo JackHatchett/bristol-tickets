@@ -71,18 +71,26 @@ def db_path() -> Path:
 
 
 def zotero_is_running() -> bool:
-    """True if a Zotero process is alive, by process table then journal file."""
+    """True if Zotero holds the library open.
+
+    The signal is the file rather than the process, because a shell that is not
+    the machine's own shell reads a process table the desktop is not in, and
+    answers "no Zotero" whatever Zotero is doing. The database and the files
+    beside it are on the real disk and are read the same way from anywhere.
+    """
+    # // Zotero keeps the library in PERSIST journal mode, so
+    # // zotero.sqlite-journal exists for as long as Zotero holds the database
+    # // and goes when it closes. Its header is zeroed between transactions,
+    # // which is a committed journal rather than a stale file.
+    if (data_dir() / "zotero.sqlite-journal").exists():
+        return True
     try:
         out = subprocess.run(
             ["pgrep", "-x", "zotero"], capture_output=True, text=True, timeout=10
         )
-        if out.returncode == 0 and out.stdout.strip():
-            return True
+        return out.returncode == 0 and bool(out.stdout.strip())
     except (OSError, subprocess.SubprocessError):
-        pass
-    # Fallback for environments without pgrep, or a Zotero that crashed while
-    # holding the database: a live rollback journal means an open connection.
-    return (data_dir() / "zotero.sqlite-journal").exists()
+        return False
 
 
 def require_zotero_closed() -> None:

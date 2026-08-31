@@ -12,11 +12,11 @@ worldbuilding, a game's bible, a documentation set.
 
 ## Using these
 
-- **Point a playbook at `wiki_conventions.md` rather than restating it.** An
-  agent's own charter and playbooks own that domain's file layout, ID scheme and
+- **Point a skill at `wiki_conventions.md` rather than restating it.** An
+  agent's own charter and skills own that domain's file layout, ID scheme and
   content rules, and nothing else.
-- **Two playbooks describing the same reconcile flow differently is drift** —
-  cut both back to a reference.
+- **Two skills describing the same reconcile flow differently is drift** — cut
+  both back to a reference.
 
-`playbooks/writers_room/story_proposals.md` and
-`playbooks/game_designer/design_proposals.md` use the pattern.
+`src/skills/story-proposals/SKILL.md` and
+`src/skills/design-proposals/SKILL.md` use the pattern.

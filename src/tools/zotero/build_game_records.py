@@ -92,10 +92,29 @@ def payload_dir() -> Path:
     return root / "data" / dp.instance_slug() / "personal" / "game_records"
 
 
-def default_collection() -> str:
-    """The collection name, from config, falling back to the shipped default."""
+DEFAULT_KEY = "point_and_click"
+
+
+def collection_name(payload) -> str:
+    """The collection this payload writes into.
+
+    A payload names a configuration key rather than a literal name, so a
+    collection can be renamed in one place. A literal `collection` still wins
+    where one is given, and a payload naming neither takes the point-and-click
+    key.
+    """
     collections = zc._config().get("zotero", {}).get("collections", {})
-    return collections.get("point_and_click") or DEFAULT_COLLECTION
+    literal = str(payload.get("collection", "")).strip()
+    if literal:
+        return literal
+    key = str(payload.get("collection_key", "")).strip() or DEFAULT_KEY
+    name = collections.get(key)
+    if not name:
+        sys.exit(
+            f"No collection configured for zotero.collections.{key}. "
+            "Naming a new collection is the user's."
+        )
+    return name
 
 
 # ---------------------------------------------------------------- normalising
@@ -312,7 +331,7 @@ def check(payload, path):
 
 
 def build_one(conn, payload, keys, index, dry_run):
-    name = payload.get("collection") or default_collection()
+    name = collection_name(payload)
     games = payload["games"]
 
     if dry_run:

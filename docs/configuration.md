@@ -135,7 +135,7 @@ The scale itself does not vary per installation.
 An agent whose tools need a value no other agent has declares its own key beside
 these. `teaching_assistant` has one, `lesson_pipeline.stages`, which routes each
 stage of lesson production to whoever runs it;
-`src/playbooks/teaching_assistant/lesson_pipeline.md` states the legal values
+`src/skills/lesson-pipeline/SKILL.md` states the legal values
 and which stage takes none.
 
 **A fact about an agent goes here or in its charter, never both.** The test and
@@ -229,10 +229,11 @@ before anything is published (`src/tools/file_management/keyword_scan.py`).
 | `exclude_suffixes` | File extensions to skip. |
 | `exclude_prefixes` | Directory name prefixes to skip. |
 
-### `tools`, `playbooks`, `protocols`
+### `tools`, `skills`
 
 **Required.** Each holds a `root` path and a `files` list. The roots point at
-`src/tools/`, `src/playbooks/` and `src/protocols/`.
+`src/tools/` and `src/skills/`. `skills` also holds `install_dir`, the root a
+downloaded skill lands in.
 
 ### `stack`
 

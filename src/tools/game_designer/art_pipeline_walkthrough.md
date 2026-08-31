@@ -49,7 +49,7 @@ Optional. A tool that trains a small model on one character so it can be
 generated in any pose or scene.
 
 - **Settle the character's reference look in stage 1 first**, recording it
-  through `playbooks/game_designer/design_proposals.md`. A model trained on an
+  through `src/skills/design-proposals/SKILL.md`. A model trained on an
   unsettled design locks in the wrong face.
 - **Reach for it only when stage 1 alone stops holding consistency.**
 

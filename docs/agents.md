@@ -44,7 +44,7 @@ folders and no presence on the board.
 It is the lead developer and operator of the system: it restructures folders,
 edits configuration, writes and fixes the tools, and keeps the file environment
 organised. It is the only agent permitted to change how any agent works —
-charters, playbooks, protocols, tools. Every other agent adds content; behaviour
+charters, skills, tools. Every other agent adds content; behaviour
 changes route here as a card.
 
 It is also the agent to talk to about your own machine. Organising a folder,
@@ -166,10 +166,10 @@ intake.
 
 ## Adding your own
 
-`src/playbooks/create_agent.md` is the procedure, and
+`src/skills/create-agent/SKILL.md` is the procedure, and
 `src/templates/identity_template.md` is the shape a charter has to take. A new
 agent needs a charter, an entry in the `agents` block of your configuration, and
-an epic on the board carrying its slug as owner. `src/playbooks/migrate_legacy_agent.md`
+an epic on the board carrying its slug as owner. `src/skills/migrate-legacy-agent/SKILL.md`
 covers bringing in an agent that already exists somewhere else.
 
 ### Starting from somebody else's

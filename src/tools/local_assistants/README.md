@@ -16,7 +16,7 @@ No assistant is defined yet.
 
 ## Invariants
 
-These specialize `protocols/_shared/external_ai_bridge.md`; an assistant's own
+These specialize `src/skills/external-ai-bridge/SKILL.md`; an assistant's own
 bridge protocol adds only its delta.
 
 - **The local model decides nothing canonical.** It never authors the thing it

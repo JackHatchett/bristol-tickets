@@ -11,11 +11,11 @@ findings, each handled as a proposal.
   worldbuilding and design files bear on the review's focus. Read the project's
   actual filenames rather than assuming any.
 - **Route every finding back as a proposal** — through
-  `playbooks/game_designer/design_proposals.md` where it touches design content,
+  `src/skills/design-proposals/SKILL.md` where it touches design content,
   or as a card (`tools/ticket_tools/ticket_write.py add-task`) where it is a
   process or architecture action. A confident review is still a proposal.
 
-`protocols/_shared/external_ai_bridge.md` governs a recurring external-AI
+`src/skills/external-ai-bridge/SKILL.md` governs a recurring external-AI
 contract; a single pass carries no memory model, sync discipline or return
 schema, so it needs none of it.
 

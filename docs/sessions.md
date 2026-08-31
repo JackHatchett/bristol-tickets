@@ -98,8 +98,9 @@ do.
 ## Running one agent per session
 
 Sessions are per agent on purpose — "do the chief_of_staff cards," then later
-"do the career_coach cards." A session loads only that agent's charter and
-playbooks rather than the whole library, which is why the assignee on a card
+"do the career_coach cards." A session loads only that agent's charter, and
+matches its own skills first, rather than the whole library, which is why the
+assignee on a card
 matters: it is the routing key.
 
 To pin a project to a specific agent regardless of the board's setting, put

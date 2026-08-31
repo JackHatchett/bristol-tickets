@@ -60,8 +60,8 @@ by name.
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns `playbooks/librarian/`, `tools/zotero/` and
-`tools/document_tools/normalize_recipes.py`.
+Owns `tools/zotero/`, `tools/document_tools/normalize_recipes.py` and the
+skills whose `bristol.maintainer` names it.
 
 **A dated backup taken before a bulk or destructive Zotero change is this
 agent's own gate**, and it is the exception to `src/app.md` §What a file may say

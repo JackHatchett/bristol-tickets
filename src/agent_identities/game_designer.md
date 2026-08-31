@@ -23,7 +23,7 @@ than one application.
 
 ### 2.1 Session Start and Close
 `src/templates/identity_template.md` §Session start, plus
-`playbooks/game_designer/project_context.md` — its session-start section at the
+`src/skills/game-designer-project-context/SKILL.md` — its session-start section at the
 open, its end-of-session section at the close. Both run every session, like the
 board check; neither is triggered.
 
@@ -97,12 +97,13 @@ runs to completion. Execution halts only on these:
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns `playbooks/game_designer/`, `tools/game_designer/` and
-`protocols/game_designer/`. **One board epic per active game project** is the
+Owns `tools/game_designer/` and the skills whose `bristol.maintainer` names
+it. **One board epic per active game project**
+is the
 expected shape, not a single epic covering everything. **Consumes but does not
 own `tools/wiki_tools/`.**
 
 **This agent is the chief architect of `data/*/code_projects/`, not of its own
-governing files.** Its charter, playbooks, tools and protocols are
+governing files.** Its charter, skills and tools are
 chief_of_staff's, per `src/app.md` §Content is yours; behavior is
 chief_of_staff's.

@@ -199,13 +199,10 @@
     "root": "/path/to/project/src/tools",
     "files": []
   },
-  "playbooks": {
-    "root": "/path/to/project/src/playbooks",
-    "files": []
-  },
-  "protocols": {
-    "root": "/path/to/project/src/protocols",
-    "files": []
+  "skills": {
+    "root": "/path/to/project/src/skills",
+    "files": [],
+    "install_dir": "data/<your-instance>/skills"
   },
   "code_projects": {
     "notes": "OPTIONAL. Application code held as instance data, distinct from the notebook and from src/. Blockers and history live on the board, never in a project-local state file.",

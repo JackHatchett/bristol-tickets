@@ -11,7 +11,7 @@ metadata:
 
 Read what a session actually did and propose at most one skill change as a card.
 The pass writes no skill file. The skill format and the folder shape are
-`src/playbooks/skill_conversion.md`; the loader is `src/tools/skill_tools/`.
+`src/skills/skill-conversion/SKILL.md`; the loader is `src/tools/skill_tools/`.
 
 ## Preconditions
 
@@ -99,7 +99,7 @@ python3 src/tools/ticket_tools/ticket_write.py add-task \
 ```
 
 - **The description carries the proposed text in full**, in the shape
-  `skill_conversion.md` requires, so the card can be applied without deriving it
+  `src/skills/skill-conversion/SKILL.md` requires, so the card can be applied without deriving it
   again.
 - **Link the card the lesson came from** —
   `link-add --task <new> --to-task <source> --type related` — so the evidence is

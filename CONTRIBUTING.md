@@ -43,8 +43,8 @@ builds each GUI's widgets headlessly and catches what `py_compile` cannot.
 
 ## Documentation
 
-Every governing document under `/src` — the agent charters, playbooks,
-protocols, tool READMEs — is written to the style contract in
+Every governing document under `/src` — the agent charters, the skills, the
+tool READMEs — is written to the style contract in
 `src/templates/identity_template.md` §The governing-doc style contract. A
 documentation change follows it.
 
