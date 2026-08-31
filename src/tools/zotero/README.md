@@ -76,6 +76,55 @@ It is configured inside Zotero (File → Export Library → Better CSL JSON → 
 updated), and registered in Zotero's prefs, not here. Nothing in this folder
 writes or schedules it; if it ever needs rebuilding, redo that export.
 
+## build_game_records.py
+
+Turns a reviewed game payload into Zotero **Software** items (`computerProgram`)
+in a named collection. A game has no ISBN, so Add Item by Identifier cannot
+reach one; the record is assembled from published databases first and written
+here last. The procedure that assembles it is
+`src/skills/cataloguing-a-game/SKILL.md`, and the field-by-field template is
+`references/citation_template.md` inside it.
+
+```
+python3 build_game_records.py <payload.json> [more.json ...]
+python3 build_game_records.py --all
+python3 build_game_records.py --dry-run <payload.json>
+```
+
+Payloads live in `data/*/personal/game_records/`, one file per batch:
+
+```json
+{
+  "collection": "Point and Click Games",
+  "games": [
+    {"title": "...", "developer": "Legend Entertainment", "date": "1993",
+     "system": "DOS", "url": "https://...", "catalog": "..."}
+  ]
+}
+```
+
+The collection name is optional in a payload and otherwise comes from
+`zotero.collections.point_and_click` in config, so a second game type is a
+second config key rather than a code change.
+
+Behaviour worth knowing:
+
+- **Six fields are required and a payload missing any of them is refused** —
+  title, developer, date, system, url, catalog. A record without them is one
+  nobody could check afterwards, which is the only thing the tool is strict
+  about. Everything else is left blank when no source states it.
+- **A title already in the library as a Software item is reused**, and only its
+  collection membership is added. Nothing is overwritten, so a payload can be
+  corrected and replayed.
+- **The developer is a creator, not a field.** It is stored as `programmer`, a
+  studio held as a single-field name, which is what makes a citation render it
+  as the author. `company` holds the publisher.
+- **`programmingLanguage` is never written.** On a Software item that field
+  means the language the program was written in; the language it is played in is
+  `Language: en` in `extra`.
+- `--dry-run` opens the database read-only and reports what it would create and
+  what it would reuse, so a payload can be reviewed with Zotero still open.
+
 ## build_reading_lists.py
 
 Turns a published reading list into a Zotero collection.

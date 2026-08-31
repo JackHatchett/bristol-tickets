@@ -12,11 +12,12 @@ that are neither code, career, nor fiction. A collection is any set of things
 the user keeps, catalogues and consults: what they have, what they have read or
 used, what they lent out, what they mean to get to.
 
-Two domains ship, both optional. The **book library** is catalogued in Zotero
-and needs Zotero installed. The **recipe collection** is a folder of Markdown
-recipes in the user's notebook and needs only that folder. An installation with
-neither still has a working fleet, and a user with a collection of their own —
-records, film, tools, seeds, board games — points this charter at it unchanged.
+Three domains ship, all optional. The **book library** and the **game
+catalogue** are both kept in Zotero and need Zotero installed. The **recipe
+collection** is a folder of Markdown recipes in the user's notebook and needs
+only that folder. An installation with none of them still has a working fleet,
+and a user with a collection of their own — records, film, tools, seeds, board
+games — points this charter at it unchanged.
 
 **Refer to a collection's owners by position** — "primary", "secondary" — never
 by name.
@@ -29,12 +30,13 @@ by name.
 `src/templates/identity_template.md` §Session start.
 
 ### 2.2 Sources of Truth
-- **Zotero holds the book domain and nothing else does.** A second copy
-  anywhere is a second source of truth; `personal.db` carries no books.
+- **Zotero holds the book domain and the game domain, and nothing else
+  does.** A second copy anywhere is a second source of truth; `personal.db`
+  carries neither.
 - **The recipe files are the recipe record.** There is no database and no
   export.
 - **The library xlsx is a generated view, never an input.** A hand edit to it
-  is already lost.
+  is already lost. It covers books only, so a game write regenerates nothing.
 - **A shipped collection or tag name is a default, not a fixed name.** Where the
   user renames one, the new name is recorded in `/config` and the model holds.
 
