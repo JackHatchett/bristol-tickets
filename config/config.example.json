@@ -38,12 +38,16 @@
     }
   },
   "markdown_notebook": {
-    "notes": "OPTIONAL. A Markdown notebook outside the repo: a folder of Markdown notes you hand-edit in a desktop notebook app. Whether an agent may read and write here is its config entry's notebook_access. reports_dir is read by Bristol's report writer, which falls back to an env var, a local pointer file, then nothing.",
+    "notes": "OPTIONAL. A Markdown notebook outside the repo: a folder of Markdown notes you hand-edit in a desktop notebook app. ZONES: agent access is granted by zone, never as one bit per agent. WRITABLE - workspace_dir and inbox_dir, in full: the agent workspace and the capture inbox, with courses_dir, agent_output_dir and reports_dir inside the first of them. MOVE TARGET - archive_dir: a file moves into it from a writable zone, and that is the only write it takes. READ-ONLY - every other top-level folder, which you author; a fact whose home is one of them goes to agent_output_dir as a summary for you to fold in. Each agent's notebook_access entry names the zones that agent reaches. reports_dir is read by Bristol's report writer, which falls back to an env var, a local pointer file, then nothing.",
     "notes_dir": "/path/to/notebook",
-    "courses_dir": "/path/to/notebook/courses",
+    "workspace_dir": "/path/to/notebook/ai_workspace",
+    "inbox_dir": "/path/to/notebook/inbox",
+    "assistant_prompts_dir": "/path/to/notebook/ai_workspace/assistant-prompts",
+    "archive_dir": "/path/to/notebook/archive",
+    "courses_dir": "/path/to/notebook/ai_workspace/courses",
     "recipes_dir": "/path/to/notebook/recipes",
-    "agent_output_dir": "/path/to/notebook/agent_output",
-    "reports_dir": "/path/to/notebook/bristol_reports"
+    "agent_output_dir": "/path/to/notebook/ai_workspace/agent_output",
+    "reports_dir": "/path/to/notebook/ai_workspace/bristol_reports"
   },
   "important_paths": {
     "_notes": "Repo-relative paths to the databases. tickets_db is required — every agent session reads it. Create it with src/tools/ticket_tools/create_tickets.py --instance <your-instance>.",
@@ -81,7 +85,11 @@
       ],
       "notebook_access": {
         "read": true,
-        "write": false
+        "write_zones": [
+          "workspace",
+          "inbox"
+        ],
+        "archive_moves": true
       },
       "skills": [
         "importing-a-skill",
@@ -100,7 +108,11 @@
       },
       "notebook_access": {
         "read": true,
-        "write": true
+        "write_zones": [
+          "workspace",
+          "inbox"
+        ],
+        "archive_moves": true
       }
     },
     "career_coach": {
@@ -121,7 +133,8 @@
       },
       "notebook_access": {
         "read": true,
-        "write": false
+        "write_zones": [],
+        "archive_moves": false
       }
     },
     "client_services": {
@@ -133,7 +146,11 @@
       ],
       "notebook_access": {
         "read": true,
-        "write": false
+        "write_zones": [
+          "workspace",
+          "inbox"
+        ],
+        "archive_moves": true
       }
     },
     "game_designer": {
@@ -145,7 +162,11 @@
       ],
       "notebook_access": {
         "read": true,
-        "write": false
+        "write_zones": [
+          "workspace",
+          "inbox"
+        ],
+        "archive_moves": true
       },
       "skills": [
         "inline-teaching",
@@ -173,7 +194,11 @@
       },
       "notebook_access": {
         "read": true,
-        "write": true
+        "write_zones": [
+          "workspace",
+          "inbox"
+        ],
+        "archive_moves": true
       },
       "skills": [
         "inline-teaching"
@@ -188,7 +213,11 @@
       ],
       "notebook_access": {
         "read": true,
-        "write": false
+        "write_zones": [
+          "workspace",
+          "inbox"
+        ],
+        "archive_moves": true
       },
       "skills": [
         "notebook-proposal"

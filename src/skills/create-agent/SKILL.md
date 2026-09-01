@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.scripts: src/tools/agent_tools/create_agent.py src/tools/ticket_tools/create_tickets.py
 ---
 # create-agent
 

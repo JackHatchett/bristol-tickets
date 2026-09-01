@@ -6,6 +6,7 @@ compatibility: Runs inside a Bristol repository; needs python3 to read the board
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.scripts: src/tools/skill_tools/propose_skill.py src/tools/skill_tools/skills.py
 ---
 # session-review
 
@@ -90,20 +91,21 @@ proposal names the section it replaces, or the exact text before and after.
 ### Step 3 — File one card
 
 ```
-python3 src/tools/ticket_tools/ticket_write.py add-task \
-  --title "<Patch|Add> <skill> — <what changes>" \
-  --record-type build \
-  --assignee chief_of_staff --reporter <your slug> --actor <your slug> \
-  --estimate S \
-  --description "<the proposed text in full>"
+python3 src/tools/skill_tools/propose_skill.py \
+  --skill <name> --reporter <your slug> \
+  --change "<what changes>" --body-file <the proposed text> \
+  --from-task <the card the lesson came from>
 ```
 
-- **The description carries the proposed text in full**, in the shape
-  `src/skills/skill-conversion/SKILL.md` requires, so the card can be applied without deriving it
-  again.
-- **Link the card the lesson came from** —
-  `link-add --task <new> --to-task <source> --type related` — so the evidence is
-  one hop away.
+- **The proposed text is the card's description, in full**, in the shape
+  `src/skills/skill-conversion/SKILL.md` requires, so the card can be applied
+  without deriving it again. The tool takes it from a file, or from standard
+  input with `--body-file -`.
+- **It titles, assigns, links and files.** Patch or Add follows from whether the
+  skill exists, the card goes to chief_of_staff with you as reporter, the skill
+  it patches is linked, and `--from-task` puts the evidence one hop away.
+- **It declines a second card carrying the same proposal**, by title or by
+  identical text, and names the card that already has it.
 - **One proposal per session.** A pass that files three has stopped judging.
 - **Nothing to propose is a real outcome** and files no card.
 

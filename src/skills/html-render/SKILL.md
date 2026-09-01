@@ -6,6 +6,7 @@ compatibility: Needs python3 and the repository's teaching_assistant renderer.
 metadata:
   bristol.kind: playbook
   bristol.maintainer: teaching_assistant
+  bristol.scripts: src/tools/teaching_assistant/html_renderer/render.py
 ---
 # html-render
 

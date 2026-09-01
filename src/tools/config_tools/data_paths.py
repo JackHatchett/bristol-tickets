@@ -32,6 +32,15 @@ The third case is why `data/<instance>/career` in config resolves correctly
 whatever the user named the folder they cloned into: the root is found by
 walking up to the `src/app.md` marker, never by folder name.
 
+The first case has a second step, for the same reason. A host may reach the
+user's folders somewhere other than where config names them — a sandbox with the
+chosen folders mounted into it reaches every one of them under a mount root, and
+`~` there is the sandbox's own home rather than the user's. So an absolute
+declared path that is not on disk is looked for once more *beside the project*,
+which is where a host that relocates those folders puts them, and where they
+already are on a machine running the system directly. Nothing here asks which
+host it is: the project's own parent answers, whichever host that is.
+
 CLI
 ---
     python3 data_paths.py --agent career_coach
@@ -120,14 +129,44 @@ def notebook_root() -> Path | None:
     return Path(os.path.expanduser(declared.strip()))
 
 
+def beside_the_project(expanded: Path) -> Path | None:
+    """The same location, found beside the project, or None.
+
+    A host may reach the user's folders somewhere other than where config names
+    them. The folders the project sits among are those folders, because the
+    project is one of them, so a declared path that is not on disk is rebuilt
+    from the deepest of its own ancestors that names a folder there. The deepest
+    match wins: it is the most specific of the user's folders the path names.
+    """
+    try:
+        neighbourhood = project_root().parent
+    except SystemExit:
+        return None
+    parts = expanded.parts
+    for i in range(len(parts) - 1, 0, -1):
+        candidate = neighbourhood / parts[i]
+        if candidate.is_dir():
+            found = candidate.joinpath(*parts[i + 1:])
+            return found if found != expanded else None
+    return None
+
+
 def resolve(declared: str | Path) -> Path:
-    """The absolute path a declaration refers to. Reads config; touches no disk."""
+    """The absolute path a declaration refers to.
+
+    Reads config. Touches the disk only for an absolute declared path that is
+    not there, which is the one case a host can have relocated — see the module
+    docstring's Path resolution.
+    """
     text = str(declared).strip()
     if not text:
         raise ValueError("data_paths.resolve: empty path")
     expanded = Path(os.path.expanduser(text))
     if expanded.is_absolute():
-        return expanded
+        if expanded.exists():
+            return expanded
+        relocated = beside_the_project(expanded)
+        return relocated if relocated is not None else expanded
     notebook = notebook_root()
     if notebook is not None:
         head, _, tail = text.partition("/")

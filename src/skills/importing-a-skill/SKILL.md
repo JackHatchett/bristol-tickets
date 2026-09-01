@@ -6,6 +6,7 @@ compatibility: Runs inside a Bristol repository; needs python3, and bandit in th
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.scripts: src/tools/skill_tools/skills.py
 ---
 # importing-a-skill
 

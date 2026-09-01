@@ -6,6 +6,7 @@ compatibility: Needs python3 and a local Zotero data directory.
 metadata:
   bristol.kind: playbook
   bristol.maintainer: librarian
+  bristol.scripts: src/tools/personal_db/render_snapshot.py src/tools/zotero/zotero_export.py
 ---
 # data-safety
 

@@ -99,7 +99,18 @@ def charter_text(slug: str, role: str, guardrails: list[str],
 
 
 def notebook_access(choice: str) -> dict:
-    return {"read": choice in {"read", "write"}, "write": choice == "write"}
+    """The zones a new agent reaches — config's markdown_notebook §ZONES.
+
+    `write` grants both writable zones and the move into the archive, which is
+    the whole of what an agent may write; `read` grants the notebook without
+    them; `none` grants nothing.
+    """
+    writes = choice == "write"
+    return {
+        "read": choice in {"read", "write"},
+        "write_zones": ["workspace", "inbox"] if writes else [],
+        "archive_moves": writes,
+    }
 
 
 def main(argv: list[str]) -> int:

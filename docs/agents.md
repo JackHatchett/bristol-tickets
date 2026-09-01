@@ -174,25 +174,32 @@ covers bringing in an agent that already exists somewhere else.
 
 ### Starting from somebody else's
 
-You can download most of an agent. Nobody publishes whole ones — what the
-community publishes is skills, and role descriptions written for other tools,
-each a single Markdown file saying what a role does. Both are things you can
-bring in.
+An agent someone else refined arrives as one file — `<slug>.agent.json`, holding
+the charter, the settings, and the address of every skill the agent uses.
 
-What arrives: the skills, each fetched, read and attached for you by
-`chief_of_staff`, which tells you afterwards what it took and what it refused;
-the role description, which you read and adopt as the body of a charter; and the
-associations — which skills belong to this agent, where its content lives —
-which are settings you copy rather than write.
+```
+python3 src/tools/agent_tools/import_agent.py <file.agent.json>
+python3 src/tools/agent_tools/import_agent.py <file.agent.json> --accept
+```
 
-What you decide: the mandate. Who the agent answers to, what stops it, and what
-it is not allowed to change. That is a few sentences, and writing them is
-minutes rather than an afternoon — but they are yours, because a file that could
-grant itself authority is the one thing this system refuses. Judging whether a
-downloaded skill is safe is not in that category and is not yours; it is a read,
-and reading is what agents are for. So downloading a
-Product Manager means downloading a product manager's know-how, and the agent it
-belongs to is one you create.
+Handing one of yours over is `python3 src/tools/agent_tools/export_agent.py
+<slug>`. Nothing of yours travels with it: every absolute path and every
+environment variable's value is left for whoever imports it to fill, and so is
+the name of your own notebook folder.
+
+Two runs rather than one, because a file arriving with a mandate in it is a
+stranger's statement of what an agent may do. The first writes nothing: it
+prints the mandate and the guardrails, and fetches the skills into quarantine
+where nothing loads until it is read. Reading the mandate is what grants it, and
+that reading is yours. Judging whether a downloaded skill is safe is not — that
+is a read, and reading is what agents are for.
+
+The wider ecosystem publishes no whole agents. What it publishes is skills, and
+role descriptions written for other tools, each a single Markdown file saying
+what a role does; `skills.py install` takes the first and `skills.py convert`
+the second. A Product Manager downloaded from a public hub is still a pile of
+parts. One handed to you by somebody else running Bristol is an agent.
 
 `src/templates/identity_template.md` §What of an agent can be imported is the
-rule, part by part.
+rule, part by part, and `src/skills/importing-an-agent/SKILL.md` is the
+procedure.

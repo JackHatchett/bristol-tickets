@@ -16,8 +16,8 @@ CLI
         -> /Volumes/<ExternalDrive>
     python3 read_config.py important_paths.tickets_db
         -> data/<instance>/tickets/tickets.db
-    python3 read_config.py agents.career_coach.notebook_access.write
-        -> false
+    python3 read_config.py agents.career_coach.notebook_access.write_zones
+        -> []
     python3 read_config.py agents.teaching_assistant.key_data_paths.0
         -> data/<instance>/teaching
     python3 read_config.py agents                 # whole subtree, pretty JSON

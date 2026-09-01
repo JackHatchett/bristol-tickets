@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: teaching_assistant
+  bristol.scripts: src/tools/ticket_tools/agent_status.py
 ---
 # navigator
 

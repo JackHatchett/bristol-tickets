@@ -42,7 +42,7 @@ value no other agent has declares its own key beside them:
 | `key_context_files` | Files this agent reads on sight. |
 | `key_data_paths` | The data folders it owns. |
 | `env` | The environment variables its tools expect. |
-| `notebook_access` | Whether it may read and write the Markdown notebook. |
+| `notebook_access` | Which zones of the Markdown notebook it reaches. |
 | `skills` | The skills attached to this agent, in the order they are matched. |
 
 A fact about an agent that is neither must-have-read nor one of these values is
@@ -133,15 +133,21 @@ refused because another part cannot.
 - **A charter's role description imports as content to read.** A downloaded
   description of what a role does is prose, and the user adopts it into a
   charter by reading it. It is inert until then: `skills.py convert` writes a
-  foreign definition into quarantine as a skill, and no downloaded file becomes
-  an active charter or an entry in the agent picker.
-- **The mandate is authored and never imported.** Who the agent answers to, what
-  halts it, and what it may not change are the grant of authority itself, and
-  the user is the only source of one. Nothing would make importing a mandate
-  possible — not a better format, not a licence, not a signature — because the
-  question is who granted the power rather than whether the file is safe. This
-  is where a mandate parts from a skill: a skill is a capability, and reading it
-  is enough to judge it.
+  foreign definition into quarantine as a skill, and a file describing a whole
+  agent writes nothing at all until the run that adopts it.
+- **A whole agent travels as one file** — its charter, its config entry with
+  every local value taken out, and the address of each skill it names.
+  `src/tools/agent_tools/README.md` §The agent file owns the format, and
+  `src/skills/importing-an-agent/SKILL.md` the judgment.
+- **The mandate is granted by the user and never by the file.** Who the agent
+  answers to, what halts it, and what it may not change are the grant of
+  authority itself, and a person reading them is what grants it:
+  `import_agent.py` prints the mandate and the guardrails and writes nothing,
+  and the second run, after that reading, is the grant. Nothing would make an
+  unread mandate valid — not a better format, not a licence, not a signature —
+  because the question is who granted the power rather than whether the file is
+  safe. This is where a mandate parts from a skill: a skill is a capability, and
+  reading it is enough to judge it.
 - **Fields that route work in another host do not import** — `tools`, `model`,
   a client's own frontmatter extensions. A session's model and tool surface
   belong to the host it runs in, and the conversion names each field it drops.
@@ -172,6 +178,14 @@ An agent's own snapshot is `python3 src/tools/ticket_tools/agent_status.py
   configured folder, and is resolved through `/config` at runtime.
 - **Never write a name, a real path, a client, a course, a project or any other
   instance specific into a tracked file**, including as a string literal.
+- **A secret lives in the OS keychain and never in a file** — not in config, not
+  in a tracked file, not in a git-ignored one. A tool that needs one reads it
+  from the keychain at the moment it runs, and a tool that cannot do that asks
+  the user rather than storing it.
+- **A folder of the user's own work is data, not a repository.** Never `git
+  init` one, add it to a remote, or write a git artifact into it: a folder that
+  becomes a repository acquires a second history of its own, and the user did
+  not ask for one.
 - **Load personal context from its files each session**, never from memory of a
   previous one.
 

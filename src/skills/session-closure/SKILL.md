@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
+  bristol.scripts: src/tools/personal_db/personal_write.py
 ---
 # session-closure
 

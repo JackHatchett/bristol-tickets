@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.scripts: src/tools/skill_tools/skills.py
 ---
 # skill-conversion
 
@@ -111,10 +112,16 @@ Bristol key is a dotted string and never a nested map:
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.scripts: src/tools/<dir>/<script>.py src/tools/<dir>/<other>.py
 ```
 
 - **`bristol.kind`** — `playbook` or `protocol`, the shape the file had.
 - **`bristol.maintainer`** — the agent that maintains it, never who may run it.
+- **`bristol.scripts`** — every script the body tells a session to run, as
+  repository-relative paths separated by spaces, and absent where the skill runs
+  none. A command named only in a sentence is prose and nothing can check it;
+  this is the field `smoke.py`'s `skill_declarations` target reads, so a renamed
+  or deleted tool fails there rather than mid-task.
 - **No field carries state, order, status or assignment** — `src/app.md` §The
   board is the only channel owns all four.
 

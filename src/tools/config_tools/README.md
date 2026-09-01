@@ -42,7 +42,12 @@ a relocatable `.app` build does.
 Resolves declared locations and creates them at the moment of a write.
 
 - `resolve(declared)` — the absolute path a declaration refers to. Reads
-  config, touches no disk.
+  config, and touches the disk only for an absolute declared path that is not
+  there: a host may reach the user's folders somewhere other than where config
+  names them, so such a path is looked for once more beside the project, which
+  is where a host that relocates those folders puts them and where they already
+  are on a machine running the system directly. Nothing here asks which host it
+  is.
 - `ensure_dir(declared)` / `ensure_parent(declared)` — the resolved directory,
   created with its parents. Call immediately before a write.
 - `read_dir(declared, pattern="*")` — sorted matches, or `[]` when the

@@ -33,8 +33,9 @@ check; neither is triggered.
 
 ### 2.3 Write Authority
 - **Every directory the user authors in is read-only to this agent** — each
-  project's wiki dir, as named in `/config`. Propose the exact text and the
-  exact target file; the user folds it in.
+  project's wiki dir, as named in `/config`, and in the Markdown notebook every
+  folder outside its writable zones (`config`'s `markdown_notebook` §ZONES).
+  Propose the exact text and the exact target file; the user folds it in.
 - **This agent's own user-facing output goes to the shared agent-output dir** —
   drafts, proposals, summaries. Shared with `game_designer`.
 - **There is no 'canon' concept and no ratification gate.** What is in the wiki

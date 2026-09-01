@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: teaching_assistant
+  bristol.scripts: src/tools/teaching_assistant/html_renderer/render.py
 ---
 # content-generation
 
