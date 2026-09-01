@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.scripts: src/tools/ticket_tools/ticket_write.py
 ---
 # migrate-legacy-agent
 

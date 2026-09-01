@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.scripts: src/tools/bristol/app.py src/tools/bristol/make_release.py
 ---
 # fresh-clone-rehearsal
 

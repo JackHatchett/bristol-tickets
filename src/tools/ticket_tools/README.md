@@ -47,6 +47,12 @@ contract for both: `src/templates/identity_template.md`.
 
 ## Tools
 
+### status_common.py
+The board read itself, and the only copy of it. Ownership, the next-action
+precedence, the queue sort, the comments, links, carried summaries, attachments
+and role history live here, and both front ends below call them. A rule about
+how a queue is read is therefore written once and cannot drift between agents.
+
 ### cos_status.py
 Status snapshot for `chief_of_staff`. Prints the milestone and active epics
 (fleet-wide), the active-board size (`stage='active'`), then chief_of_staff's
@@ -56,8 +62,14 @@ by other agents — coordination visibility only, never its own queue.
 ### agent_status.py
 The same reader for every other agent, requiring an `agent_slug` argument
 (`python3 agent_status.py career_coach`). Scoped to that agent's own epics and
-cards. It shares the `owned_by`, active-stage and precedence logic with
-`cos_status.py`; the two stay in lockstep.
+cards, and printing no fleet section.
+
+- **Each front end holds its own slug, its own headings, and — for
+  `cos_status.py` — the fleet section.** Everything else is
+  `status_common.py`.
+- **Which one an agent runs stays two commands rather than a flag.** Which agent
+  a session is running as is an identity, not an option — `src/app.md` Phase
+  3.1.
 
 Both scripts implement the selection rule in `src/app.md` Phase 3, which owns
 it; where a script and that rule disagree, the script is the bug. **Read the
@@ -347,6 +359,7 @@ Reading a ticket's links before executing it is `src/app.md` Phase 3.4.
 ```
 <project-root>
     src/tools/ticket_tools
+        status_common.py
         cos_status.py
         agent_status.py
         create_tickets.py

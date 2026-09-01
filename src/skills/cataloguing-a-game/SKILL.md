@@ -6,6 +6,7 @@ compatibility: Needs Zotero installed on the same machine, python3, and web acce
 metadata:
   bristol.kind: playbook
   bristol.maintainer: librarian
+  bristol.scripts: src/tools/config_tools/read_config.py src/tools/zotero/build_game_records.py
 ---
 
 # cataloguing-a-game
@@ -98,8 +99,10 @@ the first of these that held the game.
    Re-running is safe: a title already in the library as a Software item is
    reused and only its collection membership is added.
 
-7. **Say which fields were left blank and what would fill them.** That is the
-   whole handover — the user decides whether a blank is worth chasing.
+7. **Say which fields were left blank and what would fill them, and name any
+   required field that was filled without a source separately.** That is the
+   whole handover — the user decides whether a blank is worth chasing, and an
+   assumption he cannot see is one he cannot overrule.
 
 **Nothing is regenerated afterwards.** The `library.xlsx` snapshot is the book
 domain's generated view and has no game columns; running it after a game write
@@ -119,6 +122,13 @@ reports the same book figures as before.
 - **A payload the tool refuses** → it names the entry and the missing field. A
   record with no title, developer, date, system, URL or catalog is one nobody
   could check afterwards, which is why those six are required.
+- **A required field has no source** → blank is not an option there: the tool
+  refuses the payload, so pick the most defensible value, note it in that
+  entry as an assumption and say what it rests on, and name it in the step-7
+  handover on its own rather than folding it into the blanks. It is one
+  entry's flag, not a reason to stop the batch. `system` is where this
+  actually happens — a digital-only release or a fan game whose sources name
+  no platform.
 - **A collection name that is not in configuration** → stop. Naming a new
   collection is a structural change and is the user's.
 

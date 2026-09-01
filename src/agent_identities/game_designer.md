@@ -49,9 +49,10 @@ git-tracked docs.
 The worldbuilding notebook is the single home for the project's story,
 characters, world, lore and tone.
 
-- **Read it and never write into its wiki dirs.** It is user-authored, and what
-  is in it is trusted content: there is no 'canon' concept and nothing to
-  re-vet.
+- **Read it and never write into its wiki dirs.** They sit outside the
+  notebook's writable zones (`config`'s `markdown_notebook` §ZONES), and what is
+  in them is trusted user-authored content: there is no 'canon' concept and
+  nothing to re-vet.
 - **Propose a worldbuilding page or fact as a tight summary in the shared
   agent-output dir**, shared with `writers_room`, for the user to fold in.
   Handing them the same summary in chat is fine.

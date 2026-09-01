@@ -57,13 +57,21 @@ def _config() -> dict:
 
 
 def data_dir() -> Path:
-    """Absolute path to the Zotero data directory."""
+    """Absolute path to the Zotero data directory.
+
+    Resolved through config_tools/data_paths, so a declared path naming the
+    user's own filesystem is found wherever the running host reaches it rather
+    than only where config spells it.
+    """
     env = os.environ.get("ZOTERO_DATA_DIR")
     if not env:
         env = _config().get("zotero", {}).get("env", {}).get("ZOTERO_DATA_DIR")
     if not env:
         env = str(Path.home() / "Zotero")
-    return Path(env).expanduser()
+    sys.path.insert(0, str(_project_root() / "src" / "tools" / "config_tools"))
+    import data_paths  # noqa: E402  (resolved here so the module imports alone)
+
+    return data_paths.resolve(env)
 
 
 def db_path() -> Path:

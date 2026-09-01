@@ -100,6 +100,7 @@ in one line**, and nothing here overrides it.
 | `inline_coding` | `game_designer` | hand-writing and editing project code in the editor, not chat |
 | `course_materials` | `teaching_assistant` | writing and linting lesson materials from an approved plan (pipeline stages 2 and 3) |
 | `notebook_qa` | any | notebook-only Q&A and retrieval, with no repo or system context |
+| `notebook_prompt_library` | `chief_of_staff` | maintaining the notebook assistant's own custom prompts — the same tool as `notebook_qa`, a different job |
 
 ### 1e. When to route the user to an external tool
 
@@ -124,6 +125,9 @@ Reference triggers, each in the named charter:
 - **`teaching_assistant`** → a `materials` or `lint` stage routed out → the
   configured `course_materials` engine, resolved by `lesson_pipeline.stages`.
 - **Any agent** → notebook-only retrieval → the configured `notebook_qa` agent.
+- **`chief_of_staff`** → a prompt in the assistant's library is being added,
+  corrected or indexed → the configured `notebook_prompt_library` agent, per
+  `src/skills/notebook-prompt-library/SKILL.md`.
 
 ## 2. How a thin bridge specializes this
 
@@ -145,5 +149,8 @@ A `references/<agent>.md` is short. It:
 - `assets/protocol_template.md` — how to write a contract with an outside
   party.
 - `references/career_coach.md`, `references/career_coach_local_fallback.md`,
-  `references/game_designer.md`, `references/teaching_assistant.md` and
-  `references/writers_room.md` — one agent's delta each.
+  `references/chief_of_staff.md`, `references/game_designer.md`,
+  `references/teaching_assistant.md` and `references/writers_room.md` — one
+  agent's delta each.
+- `src/skills/notebook-prompt-library/SKILL.md` — the procedure behind
+  `references/chief_of_staff.md`.

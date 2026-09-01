@@ -6,6 +6,7 @@ compatibility: Needs python3 and the repository's document tools for the .docx o
 metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
+  bristol.scripts: src/tools/career_coach/cl_lint.py
 ---
 # cover-letter
 

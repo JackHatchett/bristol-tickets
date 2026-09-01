@@ -47,7 +47,7 @@ walls — so each posting routes by source to the cheapest method that reaches i
 | `gmail_harvest.py` | 0 | Gmail API to `applications/pipeline/job_feed.json` |
 | `jd_scraper.py` | 1 | Playwright to JD text files |
 | `daily_pipeline.py` | — | the orchestrator, and the only thing a schedule calls |
-| `keyring_utils.py`, `migrate_to_keyring.py` | — | secrets in the OS keychain, never in plaintext config |
+| `keyring_utils.py`, `migrate_to_keyring.py` | — | the keychain read, per `src/templates/identity_template.md` §The machinery/personal-data split |
 | `setup_cron.sh` | — | installs the cron entry, reading `CAREER_COACH_DIR` from the environment |
 
 ## The LinkedIn recipe

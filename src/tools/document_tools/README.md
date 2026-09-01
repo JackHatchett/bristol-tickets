@@ -12,6 +12,21 @@ it and extracts the text. Each `<name>.pdf` yields `<name>_OCR.pdf` and
 `<name>.md` beside it, and the source moves into `processed_pdfs/` on success.
 Needs `ocrmypdf` and `pdftotext` on the path.
 
+### check_prompts.py
+
+```
+python3 check_prompts.py
+```
+
+Reads every note in `markdown_notebook.assistant_prompts_dir` and reports where
+it departs from the contract in `src/skills/notebook-prompt-library/SKILL.md`:
+a missing `copilot-command-*` key, a missing `ai/prompt` tag, a repeated
+context-menu order, a wiki-link resolving to no note in
+`markdown_notebook.notes_dir`, and — in a frontmatter block a prompt tells the
+assistant to emit — a Templater expression or a key set carrying no template's
+keys. It takes no path argument and repairs nothing; exit status is 1 when any
+check matched.
+
 ### normalize_recipes.py
 
 ```

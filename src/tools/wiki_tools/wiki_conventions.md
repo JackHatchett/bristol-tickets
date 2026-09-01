@@ -4,9 +4,10 @@ Reading and reconciling a wiki-shaped knowledge base. A domain's own file
 layout, ID scheme and content rules live in the owning agent's charter and
 skills.
 
-- **The wiki is user-authored and read-only to every agent.** Propose a change
-  by writing a summary to `markdown_notebook.agent_output_dir` for the user to
-  fold in.
+- **A wiki is user-authored, and no agent writes into one.** A wiki that lives
+  in the Markdown notebook is in its read-only zone — `config`'s
+  `markdown_notebook` §ZONES. Propose a change by writing a summary to
+  `markdown_notebook.agent_output_dir` for the user to fold in.
 - **There is no ratification state.** Nothing in a wiki is pending, provisional
   or ratified, and no agent marks it so.
 

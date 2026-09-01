@@ -120,6 +120,21 @@ FOREIGN_GATES = {
     "fallback_for_toolsets": "fallback",
 }
 
+# What covers a Hermes toolset's ground here, where anything does. The table
+# names only toolsets whose ground something here actually covers; a toolset
+# absent from it is reported as uncovered, which is a statement about this table
+# rather than a guess about the skill.
+TOOLSET_GROUND = {
+    "kanban": "the board — ticket_tools/ticket_write.py writes it and "
+              "ticket_tools/status_common.py reads it",
+    "tasks": "the board — ticket_tools/ticket_write.py writes it and "
+             "ticket_tools/status_common.py reads it",
+    "skills": "the loader — skill_tools/skills.py, which lists, installs, "
+              "audits, trusts and attaches",
+    "memory": "nothing, deliberately: a session's memory is the board — "
+              "src/app.md §The board is the only channel",
+}
+
 GATE_CONSEQUENCE = {
     "credentials":
         "This skill expects credentials from a mechanism Bristol does not "
@@ -800,6 +815,14 @@ def print_compatibility(source: Path) -> None:
     for group, values in gates:
         named = ", ".join(values) if values else "none named"
         print(f"  {GATE_CONSEQUENCE[group]}: {named}.")
+        # A gate with no reader here is half the answer; the other half is
+        # whether the ground it names is covered by something else.
+        if group in {"toolsets", "fallback"}:
+            for name in values:
+                ground = TOOLSET_GROUND.get(name.strip().lower())
+                print(f"    {name}: {ground}." if ground
+                      else f"    {name}: nothing here is declared as covering "
+                           f"that ground.")
     print("  It installs and trusts either way; this is what to expect from it, "
           "not a refusal.")
 

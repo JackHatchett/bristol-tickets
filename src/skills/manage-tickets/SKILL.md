@@ -6,6 +6,7 @@ compatibility: Runs inside a Bristol repository; needs python3, and PySide6 for 
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.scripts: src/tools/bristol/app.py src/tools/ticket_tools/ticket_write.py
 ---
 
 # manage-tickets
@@ -55,6 +56,10 @@ As [owner] I want [what should change] so that [why it matters].
 Acceptance Criteria:
 1. Given [starting state], when [action], then [expected result].
 ```
+
+**A build card's last criterion names how it will be checked** —
+`src/skills/verifying-a-card/SKILL.md`, which owns what counts as one and what
+happens when a card has none.
 
 Add a numbered line per criterion. A worked one: "Given the active agent is
 chief_of_staff and a host is loading Bristol, when a session loads
@@ -158,6 +163,26 @@ thing in the message:
 - **Set the card's block reason to what actually stopped it**, and put the tool,
   the call or the choice in a comment beside it. A `capability` or a `decision`
   is what puts the card under NEEDS YOU the next time anyone reads the board.
+
+## Splitting a card
+
+An XL card is split before it is started, and so is any card whose work would
+not fit one session. Splitting after it stalls is the same work done twice.
+
+- **Split where a reviewer could accept one part and reject the one beside it.**
+  That is the only boundary that produces two cards rather than one card written
+  twice; a split by technical layer produces halves that cannot be judged apart.
+- **Fold setup, scaffolding and documentation into the part whose deliverable
+  needs them.** A card for the scaffolding of another card is a dependency
+  nobody wanted.
+- **Each part carries its own verification** —
+  `src/skills/verifying-a-card/SKILL.md`. A part that cannot be checked on its
+  own is not a part.
+- **The split lands on the board before the work does**: `add-task` per part,
+  each linked to the card that split, and that card closed with a comment naming
+  them. A split held in the session's head is a plan nobody else can read.
+- **A card that resists splitting has a scope nobody has worked out yet**, and
+  finding that out is the next action rather than starting it.
 
 ## Effort sizing — what S/M/L/XL measure
 

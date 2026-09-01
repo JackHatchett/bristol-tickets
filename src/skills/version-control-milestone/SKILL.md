@@ -19,6 +19,11 @@ procedure decides when a milestone has been reached.
   durable.**
 - **The repository state is known.** Ask, or run `git status`, rather than
   assuming whether the folder is already a repo.
+- **The folder is code rather than the user's own data.** A folder of his work —
+  notes, documents, photos, a client's files — is data and never becomes a
+  repository, `src/templates/identity_template.md` §The machinery/personal-data
+  split. Where the answer is data, this skill does not apply and the milestone
+  is a backup question instead.
 
 ## Procedure
 

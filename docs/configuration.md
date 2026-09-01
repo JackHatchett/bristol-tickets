@@ -129,7 +129,7 @@ The scale itself does not vary per installation.
 | `key_context_files` | Files this agent reads on sight. Declarative. |
 | `key_data_paths` | The data folders this agent owns. The setup wizard creates these. |
 | `env` | Environment variables this agent's tools expect. |
-| `notebook_access` | `{ "read": bool, "write": bool }` — whether it may read and write your notebook. An agent that may write only to the shared agent-output folder says so instead: `write_wikis` false, `write_output_dir` true. |
+| `notebook_access` | `{ "read": bool, "write_zones": [ … ], "archive_moves": bool }` — which zones of your notebook this agent reaches. The zone names are `workspace` and `inbox`; an empty list is an agent that reads your notebook and never writes in it. |
 | `skills` | The skills attached to this agent, by name, in the order a session matches them. A skill named by no agent is available to every agent. Set it with `skills.py attach` and `detach` rather than by hand. |
 
 An agent whose tools need a value no other agent has declares its own key beside
@@ -150,11 +150,21 @@ introduce your own.
 **Optional.** A folder of Markdown notes you edit yourself, outside the
 repository. Delete the block if you do not keep one.
 
+Access is granted by zone rather than one bit per agent. `workspace_dir` and
+`inbox_dir` are writable in full; `archive_dir` takes files moved in from one of
+them and nothing else; every other top-level folder is yours to author, and a
+fact whose home is one of them reaches you as a summary in `agent_output_dir`.
+Which zones a given agent reaches is its `notebook_access`.
+
 | Key | Meaning |
 | --- | --- |
 | `notes_dir` | The notebook root. |
+| `workspace_dir` | The agent workspace. Writable, and the other keys below sit inside it. |
+| `inbox_dir` | Your capture inbox. Writable. |
+| `assistant_prompts_dir` | The notebook assistant's custom-prompt notes. Inside `workspace_dir`, and it must match the assistant's own prompts-folder setting. |
+| `archive_dir` | Where an agent may move a file from a writable zone. |
 | `courses_dir` | Where `teaching_assistant` writes courses. |
-| `recipes_dir` | Where `librarian` keeps recipes. |
+| `recipes_dir` | Where `librarian` keeps recipes. Read-only, like everything you author. |
 | `agent_output_dir` | Where agents drop drafts for you to review. |
 | `reports_dir` | Where Clear Done writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
 | `plans_dir` | Where a planning document goes. |

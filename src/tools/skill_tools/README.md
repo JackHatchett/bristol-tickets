@@ -124,6 +124,11 @@ python3 skills.py remove <name>
 - **`trust`** — moves a quarantined skill into the install root, where `list`
   and `view` can reach it. It moves a directory and asserts nothing; what makes
   the move safe is the read that preceded it.
+- **A native skill declares the scripts it runs** in
+  `metadata.bristol.scripts`, and `smoke.py`'s `skill_declarations` target
+  checks each one is on disk. A command named only in a sentence cannot be
+  checked, which is how a renamed tool becomes a failure halfway through a task
+  instead of a failure in the suite.
 - **`install` closes with a compatibility note where the skill's own
   frontmatter declares something with no reader here** — environment variables
   it expects credentials for, and the Hermes toolsets it gates or offers itself
@@ -132,6 +137,10 @@ python3 skills.py remove <name>
   body worth reading, and refusing it would decide something that is the
   person's to decide. A skill carrying only fields the specification defines,
   or declaring one of those keys and naming nothing under it, prints no note.
+  **A named toolset also gets the other half of the answer** — what covers that
+  ground here, named where anything does, and reported as uncovered where the
+  table names nothing. That is a statement about the table rather than a guess
+  about the skill.
 - **`remove`** — delete an installed or quarantined skill and detach it from
   every agent that held it. The directory goes before the detachments, so a
   filesystem that refuses the delete leaves the attachments intact rather than
@@ -144,6 +153,65 @@ python3 skills.py remove <name>
   skill, so one skill serves as many agents as name it and detaching from one
   leaves the others as they were. `attach` refuses a name `list` does not show,
   which is what makes a quarantined skill unattachable until it is trusted.
+
+## What a skill records about itself
+
+- **Nothing about its use.** No count, no last-used timestamp, no run history in a
+  skill's own files. What a session did is a card — `src/app.md` §The board is the
+  only channel — and a count of how often a skill was reached is derivable from
+  the board rather than a fact needing a home. A runtime that keeps such counters
+  keeps them because a scheduler reads them; nothing here schedules anything.
+- **Its licence, in its own frontmatter.** Every skill this repository ships
+  carries `license: MIT`, and the repository's `LICENSE` says the same for the
+  whole tree. That is what a stranger reading one needs.
+- **Its origin, where it came from elsewhere** — the `.origin.json` above, written
+  under the git-ignored install root and never into `src/skills/`, because a
+  native skill's origin is the repository it is published in.
+
+**Bristol redistributes no skill's bytes.** An exported agent
+(`src/tools/agent_tools/README.md` §The agent file) names each skill by the
+address it was installed from, and the person importing fetches it from that
+source under that source's own terms. Three consequences, and they are the whole
+of what publishing changes:
+
+- **A skill that came from outside keeps its own origin on the way out.** The
+  export reads the `.origin.json` and emits that repository, path, commit and
+  licence — never this one's. A borrowed skill passing through here never arrives
+  somewhere else claiming to be Bristol's.
+- **A skill whose licence was recorded `absent` still crosses as an address.**
+  There is no grant for Bristol to pass on and none is needed: nothing is copied,
+  and the recipient answers to the source. The record says `absent` rather than
+  blank, which is the difference between a source that stated no licence and a
+  field nobody filled.
+- **A skill installed before the record existed carries no address at all**, so
+  an export names it as a capability the importer must find for themselves.
+
+## propose_skill.py
+
+```
+python3 propose_skill.py --skill <name> --reporter <slug> \
+    --change "what changes" --body-file <path> \
+    [--from-task N] [--attach-to <slug>|none] [--estimate S]
+```
+
+The filing step of `src/skills/session-review/SKILL.md` §Step 3, as one command.
+It titles the card `Patch` or `Add` from whether the skill exists, assigns it to
+`chief_of_staff` with the proposing agent as reporter, carries the proposed text
+as the description, links the skill it patches and the card the lesson came
+from, and notes which agent the skill would serve.
+
+- **It writes no skill file.** A proposal is a card, because writing or patching
+  a skill is a behaviour change — `src/app.md` §Content is yours; behavior is
+  chief_of_staff's.
+- **It declines a duplicate rather than filing a second card**, matching an open
+  card by title or by identical description, and names the one that already
+  carries it. A finished card is not a duplicate: the same lesson learned again
+  is a new proposal.
+- **Every write goes through `ticket_tools/ticket_write.py`**, so a card filed
+  here and a card filed by hand are the same object, and its own read of the
+  board opens with `PRAGMA journal_mode=MEMORY` like every other.
+- **The skill it patches is linked repository-relative** where it is inside the
+  tree, because an absolute path is one machine's.
 
 ## Where a skill comes from
 

@@ -37,6 +37,41 @@ Claude desktop app; any host meeting those three requirements should work.
 The downloaded app brings its own Python. Running from source wants 3.10 or
 later.
 
+## Skills other people wrote
+
+A **skill** is a folder holding one Markdown file that tells an agent how to do
+one job. It is an open format, and people publish thousands of them free.
+Bristol reads them where they already are: point one setting
+(`skills.install_dir`, in your configuration) at a folder of skills you keep,
+and every skill in it is listed the moment a session starts — nothing copied, no
+install step. To get that you need only what Bristol needs anyway: a Mac, and an
+AI application that can read your folder and run commands in it, such as the
+Claude desktop app. You do not need Hermes, the program many of these skills
+were written for, nor an account with it, nor any other tool they mention.
+
+What crosses, and what does not:
+
+- **A skill crosses.** A folder with a `SKILL.md` inside it loads, whoever
+  wrote it and whatever tool they wrote it for.
+- **A description of a role written for another tool crosses once converted.**
+  These arrive as a single Markdown file whatever the tool calls them, and one
+  command turns each into a skill.
+- **The lines inside a skill that route work in another tool are ignored** —
+  which model to use, which tools to allow. Your AI application decides both,
+  and Bristol has no say in either.
+- **A skill that expects a password, an API key or another tool's own features
+  does nothing here.** Installing one says so, and leaves the choice to you.
+- **The rest of another tool does not cross.** Its board, its runtime, its
+  scheduler and its saved profiles are that tool's, and Bristol claims nothing
+  about them. If you use Hermes, the claim is only that the skills you have load
+  here.
+
+Two things worth knowing before you point the setting at a folder you care
+about. Nothing here reviews a downloaded skill for you — a session reads it and
+decides, and `src/skills/importing-a-skill/SKILL.md` is how. And that same
+folder is where Bristol puts anything you install afterwards, so it reads and
+writes there rather than only reading.
+
 ## Install
 
 1. **Download** `BristolTickets-<version>.zip` from

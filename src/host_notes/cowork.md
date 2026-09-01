@@ -145,11 +145,63 @@ The bundle holds two different things and only one of them is a session's doing.
 The sandbox carries no PySide6 and no room to install one, so Bristol Tickets
 itself and the smoke targets that build its widgets do not run there. The
 targets that touch no Qt do. The rest run wherever a Qt is installed: the
-machine the folder belongs to, under computer use, or a session's own container
-with PySide6 installed and the tree copied into it.
+machine the folder belongs to, under computer use, or a session's own container,
+which is the one a session takes by itself.
 
 // `QT_QPA_PLATFORM=offscreen` is what lets those targets build widgets with no
 // display attached.
+
+### The container route
+
+- **Send the tree as one archive.** The bridge stages files rather than
+  directories and takes a bounded number per call, and the tree is more files
+  than that, so it crosses as a single archive written into a connected folder:
+
+  ```
+  tar czf "$HOME/mnt/<connected-folder>/bristol_smoke.tgz" \
+      -C "$HOME/mnt/<project-folder>" src config
+  ```
+
+- **`src` and `config` are what those targets read**, which is the rule rather
+  than a list: the tools they build the widgets from, the schema they provision
+  a board from, and the configuration both resolve through. Nothing under
+  `/data` is needed — a target that wants a board provisions its own.
+- **Install PySide6 in the container and invoke the target directly.**
+
+  ```
+  mkdir -p /tmp/bristol && tar xzf <staged archive> -C /tmp/bristol
+  pip install PySide6 --break-system-packages
+  cd /tmp/bristol && QT_QPA_PLATFORM=offscreen \
+      python3 src/tools/test_tools/smoke.py bristol
+  ```
+
+- **`run_smoke.sh` is not the entry point here.** It installs PySide6 wherever it
+  is invoked, so running it from the bridged shell installs into the sandbox,
+  which is the one thing that must not happen there. In the container the
+  install is the deliberate step above and `smoke.py` is called directly.
+- **The extracted copy is a snapshot.** Re-archive and re-stage before every run
+  that follows an edit: a passing run against a stale copy is worse than no run,
+  because it reports on code the user does not have.
+- **Remove the archive from the connected folder when the run is finished** —
+  §Removing a file. It is not a deliverable, and it is stale the moment the tree
+  changes.
+
+// The container has room for PySide6 and the sandbox does not; that difference
+// is the whole reason this route exists rather than the simpler one.
+
+## The sandbox home is not the user's home
+
+`~` in this shell is the sandbox's own home, and the user's folders are reachable
+only under the mount root the bridge gives them. A path naming the user's
+filesystem — `~/Library/...`, `/Users/<name>/...` — therefore names nothing here.
+
+- **Resolve a declared location through
+  `src/tools/config_tools/data_paths.py`** rather than expanding the string. It
+  looks for an absent absolute path beside the project, which is where this
+  host's mount root puts every connected folder, so config keeps one spelling
+  and both hosts read it.
+- **A tool that expands a config path itself has this fault**, whatever the path
+  looks like, and the fix is the resolver rather than a second spelling.
 
 ## Writing to a connected folder
 
