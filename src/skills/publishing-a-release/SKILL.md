@@ -2,7 +2,7 @@
 name: publishing-a-release
 description: Puts a release of Bristol Tickets on GitHub — the checks that gate it, the build that publishes it, the notes it carries, and the first-install check the install path earns. Use when a release is being cut.
 license: MIT
-compatibility: Needs git and the GitHub CLI available to the user in the project folder.
+compatibility: Needs git available to the user in the project folder, and the GitHub CLI to dispatch the build and read a failed run from a terminal.
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
@@ -27,7 +27,13 @@ committing.
 - **The session runs** every check below, every repository file edit, and the
   commits.
 - **The user runs** anything needing a credential: the push, the workflow
-  dispatch, and the command that writes the notes.
+  dispatch, and the command that writes the notes. The GitHub CLI is the route
+  for all three; where it is absent, the repository's own Actions and Releases
+  pages do the same work in a browser and nothing needs installing to finish a
+  release.
+- **A failed run's logs reach a session only through the user.** Downloading
+  them takes repository admin rights, so `gh run view --log-failed` is what puts
+  the failing output where it can be read.
 - **Give each user command on its own, in a copy-paste block, with what it
   does**, and wait for what it printed before giving the next.
 
@@ -87,6 +93,9 @@ Session steps, run before `src/VERSION` is raised.
 - **Close with the first-launch step**: macOS refuses an unsigned app until it
   is allowed once in System Settings → Privacy & Security, and
   `docs/install.md` carries the wording.
+- **Write them against the tag the workflow created**, with
+  `gh release edit v<version> --notes`, or the Edit button on the release page.
+  The workflow publishes the first-launch line alone.
 
 ## When a first-install check is required
 
@@ -232,6 +241,10 @@ Against the artifact a stranger actually gets, on the user's own machine.
 
 - **The workflow publishes a release whose notes are the first-launch line
   alone** → the notes are written after it, against the tag it created.
+- **A check crashes on the runner where it passes locally** → it read the
+  configuration the build wrote rather than a real one. The build writes
+  `config/config.example.json` with one unique home substituted, so a check
+  that reads configuration meets the one a new installation gets.
 - **The user's real Bristol Tickets opens the scratch board afterwards** → the
   pointer was not handed back. §The clone step 10, or
   `instance_pointer.py --write` from the real repo.
