@@ -34,8 +34,8 @@ Two parties, two roles, never overlapping.
 
 - **teaching_assistant** plans and owns the source of truth: it produces the
   complete plan, briefs the engine, then reviews and files whatever comes back —
-  updating `syllabus/syllabus.md`, `syllabus/progress.json` and
-  `PROJECT_MANIFEST.md`, and running stage 4. **It never delegates planning and
+  updating `syllabus/syllabus.md` and `syllabus/progress.json`, and running
+  stage 4. **It never delegates planning and
   never accepts drafts that skip stage 4.**
 - **The delegated engine** executes one stage from the plan: writing
   the lesson, exercise and quiz drafts for stage 2, or linting and correcting

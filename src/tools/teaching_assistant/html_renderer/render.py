@@ -317,12 +317,7 @@ def build_index(base, course):
         exists = os.path.exists(os.path.join(hdir, fn))
         link = '<a href="%s">%s</a>' % (fn, html.escape(L.get("topic", "Lesson " + nn))) if exists \
                else '<span style="color:#999">%s</span>' % html.escape(L.get("topic", "Lesson " + nn))
-        marks = []
-        if L.get("lesson_complete"): marks.append("content ✓")
-        if L.get("studied"): marks.append("studied ✓")
-        if L.get("mastery"): marks.append(html.escape(str(L["mastery"])))
-        status = " · ".join(marks) if marks else "&mdash;"
-        rows.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (nn, link, status))
+        rows.append("<tr><td>%s</td><td>%s</td></tr>" % (nn, link))
     page = """<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>%s — Index</title>
@@ -332,7 +327,7 @@ th,td{border:1px solid #e4ddd2;padding:8px 12px;text-align:left}th{background:#f
 a{color:#7a4b2b}.foot{color:#6b6359;font-family:sans-serif;font-size:13px;margin-top:32px}
 @media(prefers-color-scheme:dark){body{background:#1c1a17;color:#e9e3d8}th{background:#272320}td,th{border-color:#3a352d}a{color:#d6a373}}</style>
 </head><body><h1>%s</h1>
-<table><thead><tr><th>#</th><th>Lesson</th><th>Status</th></tr></thead><tbody>
+<table><thead><tr><th>#</th><th>Lesson</th></tr></thead><tbody>
 %s
 </tbody></table>
 <p class="foot">Generated %s · self-contained, no external dependencies</p>
