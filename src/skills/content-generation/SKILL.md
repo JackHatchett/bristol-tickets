@@ -35,22 +35,20 @@ schema, engine routing and the gates. Stages 3 and 4 run after this, always.
      `:::drill` markers: ordered commands, expected output, verification
    - `quizzes/quiz_NN_topic.md`
 3. **Add a row for the new lesson to `syllabus/syllabus.md`.**
-4. **Update `syllabus/progress.json`** (schema v2, `lessons[]` objects): set
+4. **Update `syllabus/progress.json`** (schema v3, `lessons[]` objects): set
    `lesson_generated`, `exercise_generated` and `quiz_generated` to `true` for
    this lesson and write the three filenames.
-   - **Write content facts only.** Those four fields describe what exists on
-     disk. **Never write work state here** — not `current_lesson`,
-     `lesson_complete`, `studied`, `mastery` or `course_complete`. Where a
-     lesson stands is a board fact; writing it here creates a second tracker
-     that will disagree with the board. Advance the ticket, not
-     `current_lesson`.
+   - **Write content facts only.** Those fields describe what exists on disk.
+     **Never add a field saying where anyone stands** — no `current_lesson`, no
+     `lesson_complete`, no `studied`, no `mastery`, no `course_complete`. Where
+     the fleet stands on a course is a card, and where the learner stands is the
+     `learning` domain of `personal.db`. Advance the ticket.
    - **Verify each filename resolves before writing it.** The `lesson_file`,
      `exercise_file` and `quiz_file` values must be the actual filenames landing
      on disk in step 2, never derived from the topic or slug — a topic-derived
      guess drifts silently the moment a written filename differs from the topic
      wording, and any tool trusting `progress.json` then hits a missing file.
-5. **Mark the three files as generated in `PROJECT_MANIFEST.md`.**
-6. **Render the HTML reading page** —
+5. **Render the HTML reading page** —
    `tools/teaching_assistant/html_renderer/render.py <course> <NN>`, per
    `src/skills/html-render/SKILL.md`. The Markdown is the source of truth; the HTML is generated
    from it, and both are kept.
@@ -84,6 +82,6 @@ short `add-issue-log` comment to it.
 
 ## Audit
 
-**Whether `PROJECT_MANIFEST.md` and `progress.json` still match what is on disk
-for each course.** They are metadata mirrors; the Markdown files are the source
-of truth.
+**Whether `progress.json` still names what is on disk for each course.** It is
+a manifest of the Markdown files, and the Markdown files are the source of
+truth.

@@ -22,11 +22,10 @@ next-action engine competing with the board.
 
 **`syllabus/progress.json` is a file manifest, not a tracker.** The only
 questions to ask it are content questions: does this lesson exist, what is its
-topic, what is its filename, has the file been generated. **Any status-shaped
-field in that JSON — `current_lesson`, `course_complete`, `lesson_complete`,
-`studied`, `mastery`, `tutored_on` — is stale by definition and must not be read
-to decide anything.** The HTML renderer paints some of them as badges; a
-generated artifact displaying a value is not a channel an agent reads back.
+topic, what is its filename, has the file been generated. **A status-shaped
+field found in that JSON — a `current_lesson`, a `studied`, a `mastery` — is
+stale by definition, is not part of the manifest, and must not be read to decide
+anything.**
 
 ## Preconditions
 

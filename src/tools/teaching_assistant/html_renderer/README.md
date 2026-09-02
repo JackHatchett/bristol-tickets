@@ -34,12 +34,16 @@ environment variable where courses live elsewhere.
 
 ## progress.json
 
-The course's `syllabus/progress.json` supplies lesson titles and filenames —
-the file manifest, and nothing beyond it.
+The course's `syllabus/progress.json` is the course's file manifest and nothing
+else. Its whole content is `course`, `course_title`, `schema_version`,
+`total_lessons`, and one entry per lesson holding `number`, `topic`, the three
+filenames and the three `*_generated` flags saying which files exist.
 
-- **Never read its status-shaped fields to decide what is done or what comes
-  next.** That is a board fact: `src/app.md` §The board is the only channel.
-- **Painting one as a badge in a generated page is the only sanctioned use.**
+- **A field saying where the learner stands does not belong here.** Where the
+  fleet stands on a course is a card; where the learner stands is the `learning`
+  domain of `personal.db` — `docs/architecture.md` §The study interface.
+- **The rendered index links lessons and paints no status**, because there is
+  none here to paint.
 
 ## Markers
 

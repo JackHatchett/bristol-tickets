@@ -22,11 +22,11 @@ agent's cards. An agent never picks up a card belonging to another; when it
 needs one of them to do something, it files a card assigned to them.
 
 Skills can be attached to an agent, which is how a skill you install reaches the
-work it was meant for. `python3 src/tools/skill_tools/skills.py attach <skill>
---agent <agent>` adds one and `detach` removes it; `list --agent <agent>` shows
-what is attached. Attaching puts a skill first in what that agent considers, and
-takes nothing away from anyone: a skill attached to no agent is available to
-every agent, and any agent can still reach any skill when a task calls for it.
+work it was meant for. Attaching puts a skill first in what that agent
+considers, and takes nothing away from anyone: a skill attached to no agent is
+available to every agent, and any agent can still reach any skill when a task
+calls for it. [skills.md](skills.md) covers what a skill is, where skills live,
+and how one arrives.
 
 Every agent shares the same shape: reusable machinery under `src/`, and your
 personal content under `data/<instance>/`, which is never published. That split

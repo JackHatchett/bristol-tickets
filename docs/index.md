@@ -37,6 +37,8 @@ to the agent in a session.
   open a session, say what you want.
 - **[board.md](board.md)** — the board as a product. Tabs, columns, cards,
   links, images, comments, search, Clear Done, reports.
+- **[skills.md](skills.md)** — what a skill is, where skills live, and how to
+  install, judge and attach one somebody else wrote.
 - **[agents.md](agents.md)** — the seven shipped agents: what each is for, what
   it can do, what it needs configured.
 - **[configuration.md](configuration.md)** — every configuration key, its

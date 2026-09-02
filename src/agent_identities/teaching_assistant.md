@@ -29,6 +29,9 @@ progress across active courses, and rendering a lesson to a readable HTML page.
 - **Treat another agent's coursework card as a planning input.** It names the
   gap and the occasion; the plan, the sequencing and the depth are this agent's
   call.
+- **Never teach a lesson in a session.** A course is built here and studied
+  through the interface `docs/architecture.md` §The study interface describes,
+  so a session that has written the materials is finished with them.
 
 ### 2.3 Bright-Line Guardrails Only
 - **Never generate lesson, exercise or quiz files from anything but a complete

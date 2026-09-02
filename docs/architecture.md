@@ -81,6 +81,50 @@ Neither surface is primary. You can run Bristol Tickets alone as a Kanban board
 and never open a session. You can work a session without opening
 Bristol Tickets. The database is what they agree on.
 
+## The study interface
+
+A course is studied through a coded interface, never through a conversation. The
+content is written once, and reading it afterwards costs nothing.
+
+**One place lists every course, and it is a tab in Bristol Tickets.** A course
+reached from there inherits the launcher, the installer, the update mechanism
+and the configuration resolver that already exist. Serving the rendered pages
+over localhost is how that tab opens a lesson rather than a shape competing
+with it.
+
+- **A second application costs a second release pipeline** — its own build, its
+  own signing, its own version file — bought for one icon.
+- **A page opened straight off the filesystem costs the progress record.**
+  Browser storage on a `file://` page is per-browser and per-origin, and
+  clearing site data clears the course with it.
+
+**A lesson is drawn by the browser, not by Qt.** `src/tools/bristol/slim.py`
+keeps `QtCore`, `QtGui` and `QtWidgets` in the built bundle and removes Qt's
+browser engine, so a lesson drawn inside the app would be re-rendered into Qt's
+rich-text subset and lose the styling the renderer already gives it. Two things
+follow: the tab starts a local server and hands the browser a URL, and that
+server uses the standard library alone, as the renderer does.
+
+**Progress lives in the `learning` domain of `personal.db`.** One store, on the
+user's own disk, carried by the same backup as the rest of `/data`, and readable
+by any interface put in front of it.
+
+- **Not `tickets.db`.** The board holds what the fleet is doing about a course —
+  write lesson 8, fix the renderer. Which page a learner stopped on is not work
+  an agent does.
+- **Not `syllabus/progress.json`.** That file is the course's file manifest, and
+  a status field in it is stale the moment anything else records the same fact.
+
+**Interactive means the lesson answers back.** A learner reads it, answers its
+quiz and is told right or wrong at once, marks an exercise done, and reopens the
+course where they left off.
+
+- **Grading code the learner writes is out of scope.** The reference
+  implementation runs a game engine to do it; these courses are Markdown.
+- **No agent reads the learning domain.** It is what an interface reopens a page
+  from, never an input to a next action, so §The board is the only channel is
+  unchanged by it.
+
 ## Design constraints
 
 **The tools stay small and separately runnable.** `src/tools/` is a set of

@@ -7,7 +7,7 @@ launcher.
 Everything on the board is editable by hand. Nothing here requires an agent, and
 an agent working the board makes exactly the same changes you would.
 
-## The three tabs
+## The tabs
 
 A card's **stage** decides which tab it lives in. Stage is independent of the
 column a card sits in.
@@ -21,19 +21,28 @@ cards onto the Board) or **Delete**.
 
 **Archive** — retired cards, most recently changed first, as a plain list.
 
+Four more tabs sit beside those three, and none of them holds cards.
+
 **Search** finds cards and epics by text and shows the matches as a list. It
 takes no filter: it is the one view whose job is to find a card the board is not
-showing. **Skills** lists every skill a session can load, which agents hold
-each one, and takes the address of a new one: pasting it fetches the skill into
-quarantine and files a card for `chief_of_staff` to read and judge it, because
-that judgment is a read and the app cannot read. A skill opens into a view of
-its own — its text, its files, its source and a tick box per agent — and that is
-where a skill is attached to an agent; the row of controls under the list
-narrows the list instead, by text, by whether a skill came with Bristol or was
-downloaded, and by which agent holds it. **Agents** lists the agents this
-installation configures and creates or edits any of them through a form holding
-everything an agent is, charter included, so an agent can be made and corrected
-with no AI and no text editor; it is described in `docs/agents.md`.
+showing.
+
+**Skills** lists every skill a session can load, which agents hold each one, and
+takes the address of a new one. A skill opens into a view of its own — its text,
+its files, its source and a tick box per agent — and that is where a skill is
+attached to an agent. The row of controls under the list narrows the list
+instead: by text, by whether a skill came with Bristol or was downloaded, and by
+which agent holds it. Pasting an address fetches that skill into quarantine and
+files a card for `chief_of_staff` to read and judge it, because that judgment is
+a read and an application cannot read. [skills.md](skills.md) is the whole of
+it.
+
+**Agents** lists the agents this installation configures, and creates or edits
+any of them through a form holding everything an agent is, charter included, so
+an agent can be made and corrected with no AI and no text editor.
+[agents.md](agents.md) §Without an AI, and without a text editor describes the
+form field by field.
+
 **Settings** holds every choice this installation makes, the agent your next
 session runs as included.
 
