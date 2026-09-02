@@ -24,6 +24,14 @@ something under `config/` or `data/`, the change is wrong: `/src` is generic and
 resolves every local path through `/config` at runtime, including string
 literals.
 
+## Commit messages
+
+- **A commit message says what changed, and nothing about what produced it.**
+  No AI co-author or assistance trailer. That this project is built with an AI
+  agent is stated once, in `README.md`, in the author's own words; the commit
+  history is a published surface and names no vendor, exactly as `/src` does
+  not.
+
 ## Code conventions
 
 - **Tools stay small and separately runnable.** `src/tools/` is a set of
