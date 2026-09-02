@@ -345,6 +345,11 @@ class MainWindow(QMainWindow):
             on_appearance_changed=self._preview_appearance)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
 
+        # The window opens on the Board: the active work is what a launch is
+        # for, and the tab row keeps the order it reads in. Selected once, after
+        # every page exists, so no other tab is selected on the way here.
+        self._show_page(self._board_tab_index)
+
         # The detail pane: the selected card, read and edited in place. A pane
         # write refreshes the board; the pane's collapse control hands the
         # splitter work back here.
@@ -601,8 +606,6 @@ class MainWindow(QMainWindow):
         button.clicked.connect(lambda _checked, i=index: self._show_page(i))
         self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
-        if index == 0:
-            self._show_page(0)
         return index
 
     def _show_page(self, index: int) -> None:

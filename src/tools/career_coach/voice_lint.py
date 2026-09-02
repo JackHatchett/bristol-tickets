@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
 """
-cl_lint.py : Cover-letter blacklist linter for career_coach.
+voice_lint.py : the voice blacklist linter for career_coach.
 
 Scans a draft (.txt or .docx) against the instance's blacklist file (the
 user's personal, banned-phrase checklist, kept in their own project — never
 in this shared tool) and reports every banned phrase, dash construct, and
-period-emphasis run. Run it on the DRAFT TEXT before packing the docx, and
-again on the packed docx. This is the mechanism that makes the voice
-guardrails actually enforced instead of merely documented.
+period-emphasis run. It governs everything written in the user's own voice —
+a cover letter, a resume, a profile section, a post — and not only a letter.
+Run it on the DRAFT TEXT before packing a docx, and again on the packed docx.
+This is the mechanism that makes the voice guardrails actually enforced
+instead of merely documented.
 
 Usage:
-    python3 cl_lint.py <draft.txt | letter.docx> [--blacklist PATH]
+    python3 voice_lint.py <draft.txt | draft.docx> [--fiction] [--blacklist PATH]
 
 The blacklist is found in the instance's own career data root — the
 `agents.career_coach.key_data_paths` this installation declares, then
-`applications/cover_letters/*_CL_Blacklist.txt`. `--blacklist` overrides that
-for a one-off file.
+`foundation/*_Voice_Blacklist.txt`. `--blacklist` overrides that for a one-off
+file.
+
+The two coded patterns are scoped the way the voice profile scopes them, and
+--fiction is the switch. The banned phrases bind everything the user writes as
+himself; the dash constraint is business writing's, and period-separated
+emphasis is barred in non-fiction and is a device in fiction.
 
 Exit codes:
     0  clean (FLAG warnings may still print)
@@ -32,7 +39,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
 import data_paths  # noqa: E402  (the shared declared-path resolver)
 
-BLACKLIST_GLOB = "applications/cover_letters/*_CL_Blacklist.txt"
+BLACKLIST_GLOB = "foundation/*_Voice_Blacklist.txt"
 
 
 def discover_blacklist():
@@ -106,10 +113,25 @@ def line_of(text, idx):
     return text.count("\n", 0, idx) + 1
 
 
+BULLET_MARKER = re.compile("^[ \t]*(--|[-*\u2022])[ \t]+")
+DASH = re.compile("\u2014|\u2013|\u2012|--| - ")
+
+
 def check_dash(text):
+    """Dash constructs, ignoring a bullet marker at the head of a line.
+
+    A resume writes its bullets as "-- Designed and built ...", which is markup
+    rather than a clause break. The marker is skipped and a dash later in the
+    same line is still reported."""
     hits = []
-    for m in re.finditer(r"\u2014|\u2013|\u2012|--| - ", text):
-        hits.append((line_of(text, m.start()), m.group().strip() or "space-hyphen-space"))
+    offset = 0
+    for line in text.split("\n"):
+        marker = BULLET_MARKER.match(line)
+        start = marker.end() if marker else 0
+        for m in DASH.finditer(line[start:]):
+            hits.append((line_of(text, offset + start + m.start()),
+                         m.group().strip() or "space-hyphen-space"))
+        offset += len(line) + 1
     return hits
 
 
@@ -137,8 +159,11 @@ def main():
     bl_path = None
     if "--blacklist" in sys.argv:
         bl_path = sys.argv[sys.argv.index("--blacklist") + 1]
+        args = [a for a in args if a != bl_path]
+    fiction = "--fiction" in sys.argv
     if not args:
-        print("usage: python3 cl_lint.py <draft.txt|letter.docx> [--blacklist PATH]\n"
+        print("usage: python3 voice_lint.py <draft.txt|draft.docx> [--fiction] "
+              "[--blacklist PATH]\n"
               "       (the blacklist is found in the instance's career data root "
               "when --blacklist is omitted)")
         return 2
@@ -168,10 +193,14 @@ def main():
         for idx in find_phrase(low, p):
             flag_hits.append((line_of(text, idx), p))
 
-    dash_hits = check_dash(text)
-    pe_hits = check_period_emphasis(text)
+    # The phrase lists bind every form. The two coded patterns are business
+    # writing's and non-fiction's respectively, so fiction is scanned for banned
+    # phrases alone.
+    dash_hits = [] if fiction else check_dash(text)
+    pe_hits = [] if fiction else check_period_emphasis(text)
 
-    print(f"== cl_lint: {os.path.basename(draft)} ==")
+    print(f"== voice_lint: {os.path.basename(draft)}"
+          f"{' (fiction)' if fiction else ''} ==")
 
     blocking = bool(hard_hits or dash_hits or pe_hits)
 

@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
+  bristol.scripts: src/tools/career_coach/voice_lint.py
 ---
 # base-resume-update
 
@@ -66,7 +67,13 @@ Resume_Plain_Text.txt       -- the plain-text source of truth
    rather than putting it in, get the user's word first; a prior version kept
    as a file is the duplicate step 4 bars.
 
-6. **Close through `src/skills/session-closure/SKILL.md`**, which carries the context-module
+6. **Lint the plain-text master before closing.** `python3
+   tools/career_coach/voice_lint.py <the plain-text master>`; fix every HARD,
+   dash and period-emphasis hit and review the FLAG hits. The gate covers
+   everything written in the user's voice —
+   `src/tools/career_coach/README.md` owns the tool.
+
+7. **Close through `src/skills/session-closure/SKILL.md`**, which carries the context-module
    additions this update surfaced.
 
 ## Failure modes
@@ -82,4 +89,5 @@ Resume_Plain_Text.txt       -- the plain-text source of truth
 
 - The formatted and plain-text masters carry the same roles, dates and bullet
   substance.
+- `voice_lint.py` passes on the plain-text master.
 - No file in `foundation/` is a copy, a version or a dated variant of a master.

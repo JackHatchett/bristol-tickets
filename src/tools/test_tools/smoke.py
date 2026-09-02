@@ -214,6 +214,16 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("handoff table survived schema_guard")
         ok.append("MainWindow builds; Handoff tab and table are gone")
 
+        # A launch opens on the active work, and the tab row keeps its order.
+        if win.pages.currentIndex() != win._board_tab_index:
+            raise SmokeFailure("the window did not open on the Board view")
+        selected = [b.text() for b in win._tab_buttons if b.isChecked()]
+        if selected != ["Board"]:
+            raise SmokeFailure(f"the Board tab is not the selected one: {selected}")
+        if [b.text() for b in win._tab_buttons][0] != "Search":
+            raise SmokeFailure("the tab row order changed to put Board first")
+        ok.append("a launch opens on Board, with the tab row order unchanged")
+
         # Kanban stage model: tabs populate from task.stage.
         win._refresh_board()
         if win.columns["todo"].list_widget.count() != 1:
@@ -747,6 +757,27 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("flush_pending dropped a buffered link's relation")
         ok.append("Links: one directed edge, related/blocks types, uri links, "
                   "pending buffer")
+
+        # A bare-path link is stored repository-relative for a file inside the
+        # repository, so the row outlives the machine that wrote it. Opening one
+        # therefore has to resolve it against the project root, and leave a path
+        # anywhere else on the disk as written.
+        from ui.links import resolve_uri_path
+        import config_file as _cf
+
+        root = _cf.project_root()
+        if root is None:
+            raise SmokeFailure("no project root, so a relative link cannot resolve")
+        if resolve_uri_path("src/app.md") != root / "src/app.md":
+            raise SmokeFailure("a repository-relative link did not resolve "
+                               "against the project root")
+        if not resolve_uri_path("src/app.md").is_file():
+            raise SmokeFailure("a repository-relative link resolved to no file")
+        outside = Path("/tmp/somewhere/else.md")
+        if resolve_uri_path(str(outside)) != outside:
+            raise SmokeFailure("an absolute link was not passed through as written")
+        ok.append("Links: a repository-relative uri resolves against the project "
+                  "root and an absolute one is passed through")
 
         # A finished blocker's closing comment reaches the ticket it blocked.
         # The properties that matter are that it is a read of two live rows —

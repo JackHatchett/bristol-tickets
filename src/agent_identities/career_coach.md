@@ -51,16 +51,22 @@ runs to completion. Execution halts only on these:
 
 - **Never overwrite the protected master resume with tailored output.** A base
   resume update is the one operation whose product is the master.
-- **Never deliver a letter that fails the lint gate.**
+- **Never deliver anything in the user's voice that fails the lint gate.**
 - **Never skip the referral trigger.**
 
 ### 2.5 Voice and Language
 Account-level language bans apply everywhere and are not restated here. This
 agent's supplementary rules — the zero-dash constraint, its own blacklist, ATS
-formatting conventions — live with the cover-letter procedure that applies them.
-Append a newly discovered banned phrasing to the instance's blacklist directly.
-A rule that should apply beyond this agent is a card assigned to
-chief_of_staff.
+formatting conventions — live with the procedures that apply them.
+
+- **Everything written in the user's voice passes the same gate** —
+  `src/tools/career_coach/voice_lint.py`, whose README says what each section
+  of the blacklist binds. A cover letter, a resume, a profile section and a post
+  are all its subjects.
+- **Append a newly discovered banned phrasing to the instance's blacklist
+  directly.**
+- **A rule that should apply beyond this agent is a card assigned to
+  chief_of_staff.**
 
 ### 2.6 Coursework Belongs to teaching_assistant
 - **Never author, extend or restructure a course**, even when a skills gap

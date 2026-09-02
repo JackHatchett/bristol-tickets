@@ -43,7 +43,7 @@ wins.**
 ## Domain quirks
 
 - **The local model scans its own draft against the blacklist by hand.** The
-  `cl_lint.py` gate does not run here.
+  `voice_lint.py` gate does not run here.
 - **Re-check the zero-dash and banned-language rules on every draft.** Weaker
   offline models drift more than the primary system.
 - **Force a strict fill-in output template for the verdict** in the local system

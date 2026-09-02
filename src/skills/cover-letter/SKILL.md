@@ -6,7 +6,7 @@ compatibility: Needs python3 and the repository's document tools for the .docx o
 metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
-  bristol.scripts: src/tools/career_coach/cl_lint.py
+  bristol.scripts: src/tools/career_coach/voice_lint.py
 ---
 # cover-letter
 
@@ -20,7 +20,8 @@ and packing happen in the same turn, with no further prompt-back.
   the genre's rules and never overrides one; where the two appear to conflict,
   the voice guideline is what needs correcting.
 - **The enforceable phrase list is the instance's own blacklist file**, in the
-  user's career data root. This skill holds the rules that shape a letter,
+  user's career data root. It governs everything written in the user's voice
+  rather than a letter alone. This skill holds the rules that shape a letter,
   not the wordings that fail it.
 - **The account-level banned phrases and constructs bind here too**, and are not
   restated in this file.
@@ -226,10 +227,10 @@ anything that trips:
   not-exaggerating — directness is the default, so stating it is a tell
 - vague reaction statements with no content
 
-**Then run `tools/career_coach/cl_lint.py` on the draft text**, fix every HARD,
-dash and period-emphasis hit, review FLAG hits, pack the docx, and run the lint
-tool again on the packed docx. It must pass before delivery. The tool finds the
-instance's blacklist in the user's career data root, where the list lives
+**Then run `tools/career_coach/voice_lint.py` on the draft text**, fix every
+HARD, dash and period-emphasis hit, review FLAG hits, pack the docx, and run the
+lint tool again on the packed docx. It must pass before delivery. The tool finds
+the instance's blacklist in the user's career data root, where the list lives
 because it is their content rather than the tool's.
 
 ## Delivery
