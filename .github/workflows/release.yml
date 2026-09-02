@@ -20,11 +20,19 @@ jobs:
       - name: Install the build dependencies
         run: python3 -m pip install --upgrade pip PySide6 py2app
 
-      - name: Name a home outside the tree
+      # The shipped example is what a new installation gets, and it declares
+      # the agents and paths the checks read. Only the home is replaced, with
+      # one nothing in the tree can name, so the identity scan has a real
+      # needle to look for.
+      - name: Write the configuration the checks read
         run: |
-          mkdir -p config
-          printf '{"drives":{"local_home":{"path":"/opt/%s"}}}\n' "$(uuidgen)" \
-            > config/config.local.json
+          python3 - <<'PY'
+          import json, pathlib, uuid
+          cfg = json.loads(pathlib.Path("config/config.example.json").read_text())
+          cfg["drives"]["local_home"]["path"] = f"/opt/{uuid.uuid4()}"
+          pathlib.Path("config/config.local.json").write_text(
+              json.dumps(cfg, indent=2) + "\n")
+          PY
 
       - name: Build the release
         run: python3 src/tools/bristol/make_release.py
