@@ -338,6 +338,10 @@ both created with `ticket_write.py link-add --task N`:
   `obsidian://` note, or a filesystem path. Bristol Tickets hands whatever is
   stored to the OS to open, so the tool encodes no schemes, vault names or user
   paths. Add `--label` for a caption.
+  - **A file inside the repository is stored repository-relative**
+    (`src/skills/manage-tickets/SKILL.md`), and Bristol Tickets resolves it
+    against the project root when the row is opened. A path anywhere else on the
+    disk is stored absolute and passed through as written.
 
 `link-list --task N` prints link ids and how each reads from that ticket;
 `link-remove --id L` deletes one. Bristol Tickets shows links above the Issue

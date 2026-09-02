@@ -25,6 +25,9 @@ kinds and they share one table (`task_link`):
   stored is handed to the OS to open, so the tool encodes no scheme list, no
   vault name and no user-specific path. A bare path opens in whatever
   application owns that file type; an ``obsidian://`` URI always opens Obsidian.
+  A relative bare path is a file inside the repository and resolves against the
+  project root at open time, so the row stays true on a second machine and under
+  a host that mounts the folder somewhere else.
 
 Why links exist at all: a ticket Description must stay inside its Build/Fix
 template, which left provenance — "this came out of that review", "this relates
@@ -42,6 +45,7 @@ from __future__ import annotations
 
 import sqlite3
 from datetime import datetime, timezone
+from pathlib import Path
 
 from PySide6.QtCore import QUrl, Qt
 from PySide6.QtGui import QDesktopServices
@@ -58,6 +62,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+import config_file  # bristol-local: the one config.local.json reader/writer
 
 from .dialogs import confirm, notify
 from .growing_edit import GrowingTextEdit
@@ -287,11 +293,25 @@ def open_uri(uri: str) -> bool:
     ``zotero://`` reaches Zotero and ``obsidian://`` reaches Obsidian); anything
     else is treated as a filesystem path and opened with whatever application
     owns that file type. Bristol Tickets deliberately knows nothing about which
-    app that is."""
+    app that is.
+
+    A relative path is a path inside the repository and resolves against the
+    project root, which is what makes such a link readable from a second machine
+    or from a host that mounts the folder somewhere else. An absolute path is
+    somewhere else on the disk and is passed through as written."""
     url = QUrl(uri)
     if not url.scheme():
-        url = QUrl.fromLocalFile(uri)
+        url = QUrl.fromLocalFile(str(resolve_uri_path(uri)))
     return QDesktopServices.openUrl(url)
+
+
+def resolve_uri_path(uri: str) -> Path:
+    """The filesystem path a bare-path link refers to."""
+    path = Path(uri).expanduser()
+    if path.is_absolute():
+        return path
+    root = config_file.project_root()
+    return root / path if root is not None else path
 
 
 def _elide(text: str) -> str:

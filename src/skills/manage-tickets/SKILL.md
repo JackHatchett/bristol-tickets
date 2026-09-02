@@ -92,7 +92,7 @@ the skeleton back next time the record opens.
 | Reasoning, findings, what you did, what's needed next | An `add-issue-log` comment |
 | A decision the user must make before you proceed | An `add-issue-log` comment, plus `assignee` = `user` |
 | What kind of thing stopped the card | `update-task-status --block-reason dependency\|decision\|capability\|transient` |
-| "This came from that review / that note / that page" | A link (`link-add --uri`) |
+| "This came from that review / that note / that page" | A link (`link-add --uri`) — a file inside the repository repository-relative (`src/tools/ticket_tools/README.md`), a file anywhere else by its absolute path |
 | "This relates to ticket #153" | A link (`link-add --to-task 153`) |
 | Durable technical detail (schema notes, a working pattern) | The file that owns it — a README or skill — then link to it |
 

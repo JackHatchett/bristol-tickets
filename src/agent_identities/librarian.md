@@ -50,8 +50,10 @@ by name.
 - **Leave a field blank rather than guess it.**
 - **Write to Zotero, then regenerate the xlsx.**
 - **Put nothing in "Books I've Read" except a book the user has read.**
-- **Never run `normalize_recipes.py --write` against a folder you have not read
-  first.** The repair is in place.
+- **The recipe collection is read-only to this agent.** It sits outside the
+  notebook's writable zones (`config`'s `markdown_notebook` §ZONES); repairing a
+  recipe in place is the user's own run of `normalize_recipes.py`, and
+  `src/tools/document_tools/README.md` gives the procedure.
 
 ---
 

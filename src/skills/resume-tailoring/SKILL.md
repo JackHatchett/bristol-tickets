@@ -6,6 +6,7 @@ compatibility: Needs python3 and the repository's document tools for the .docx o
 metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
+  bristol.scripts: src/tools/career_coach/voice_lint.py
 ---
 # resume-tailoring
 
@@ -151,6 +152,12 @@ mid-session** — accumulate across the session and hand off a full draft at
 `src/skills/session-closure/SKILL.md` or on demand.
 
 ## Delivery
+
+**Run `tools/career_coach/voice_lint.py` on the plain-text resume before
+packaging**, fix every HARD, dash and period-emphasis hit, review the FLAG hits,
+and run it again on the packed file. The gate covers everything written in the
+user's voice, and a resume is one of them —
+`src/tools/career_coach/README.md` owns the tool.
 
 **Package all three documents into `[Company]_Application.zip`** and present it
 as the primary download. Individual files may also be presented for review.

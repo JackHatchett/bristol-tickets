@@ -20,10 +20,13 @@ they are not recipes and must never be renamed or given recipe frontmatter.
 Run from terminal:
     python3 src/tools/document_tools/normalize_recipes.py
 
-Safety: dry-run by default. Pass --write to commit changes.
+Dry-run by default. --write repairs files in place and --rename rewrites
+wikilinks across the notebook; both are the user's own commands, because the
+recipe folder and the notebook around it sit outside the notebook's writable
+zones. An agent runs the dry run, reports what it would change, and hands over
+the command.
 """
 
-import os
 import re
 import sys
 import hashlib
@@ -32,22 +35,26 @@ import unicodedata
 from pathlib import Path
 from datetime import datetime, timezone
 
-# ── Config ────────────────────────────────────────────────────────────────────
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
+import data_paths  # noqa: E402
+import read_config  # noqa: E402
+
+# ── Config ───────────────────────────────────────────────────────────────────────
 
 def _notebook_path(key: str) -> Path:
     """Resolve a markdown_notebook.<key> folder from config.
+
     No personal path is hardcoded in /src; the concrete folder lives in the
-    git-ignored config."""
-    import json
-    cfg = Path(__file__).resolve().parents[3] / "config" / "config.local.json"
-    try:
-        val = json.loads(cfg.read_text())["markdown_notebook"][key]
-    except (OSError, KeyError, ValueError) as e:
+    git-ignored config, and data_paths owns turning a declaration into a real
+    path — a host that reaches the user's folders somewhere other than where
+    config names them is that module's case, not this file's.
+    """
+    declared = read_config.get(f"markdown_notebook.{key}", None)
+    if not declared:
         raise SystemExit(
-            f"normalize_recipes: could not resolve markdown_notebook.{key} "
-            f"from {cfg} ({e})."
+            f"normalize_recipes: config has no markdown_notebook.{key}."
         )
-    return Path(os.path.expanduser(val))
+    return data_paths.resolve(declared)
 
 RECIPES_DIR = _notebook_path("recipes_dir")
 NOTEBOOK_DIR = _notebook_path("notes_dir")
