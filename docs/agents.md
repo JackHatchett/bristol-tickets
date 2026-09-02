@@ -172,6 +172,45 @@ agent needs a charter, an entry in the `agents` block of your configuration, and
 an epic on the board carrying its slug as owner. `src/skills/migrate-legacy-agent/SKILL.md`
 covers bringing in an agent that already exists somewhere else.
 
+### Without an AI, and without a text editor
+
+Bristol Tickets' **Agents** tab does the same thing as a form. It lists the
+agents you have configured; **New Agent** opens a blank one, and opening a
+listed agent fills the form with everything that agent currently is.
+
+The form holds every property an agent has, and all of it is editable, each
+with the control its kind deserves:
+
+- the **charter** as one Markdown editor holding the whole document, beside the
+  rest of the form rather than buried in it;
+- the **charter file**, the **data folders** and the **context files** as
+  pickers — you choose a real folder or file, and the path is stored in the
+  portable spelling `src/tools/config_tools/data_paths.py` owns, so it still
+  resolves on another machine;
+- **notebook access** as a tick box per zone, under Read and Write. The
+  notebook is read whole or not at all, which is why Read holds one box;
+  writing is granted a zone at a time, so Write holds one per zone;
+- **environment variables** as a name beside a value, with a picker for a value
+  that names a folder;
+- the **skills** attached to it as a tick list of every skill this
+  installation can load;
+- and one field per key in the entry this build has no control of its own for,
+  named after the key and holding the JSON it holds. An agent with no such key
+  gets no such field.
+
+Nothing is read-only except the name of an agent that already exists, which is
+what its charter file and its config key are named after.
+
+Three fields are marked required: **Name**, **Description** and **Charter**. A
+new agent's charter opens on the skeleton from
+`src/templates/identity_template.md` for you to fill in. Save is refused while
+one of the three is empty, and the refusal names the field.
+
+Saving writes the charter and the config entry through the same tools a session
+runs, and those tools check everything before their first write: a refused save
+leaves neither file touched. No AI call and no network, so an agent can be made
+on a plane.
+
 ### Starting from somebody else's
 
 An agent someone else refined arrives as one file — `<slug>.agent.json`, holding

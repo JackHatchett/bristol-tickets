@@ -22,6 +22,7 @@ pieces it composes live in sibling modules:
     settings_tab.py  SettingsTab (the next-session agent, board behaviour,
                      appearance — all stored in config.local.json)
     skills_tab.py    SkillsTab (what a session can load, and importing one)
+    agents_tab.py    AgentsTab (who is in the fleet, created and edited by form)
 
 Each file stays small enough for an external consultant to ingest and edit in
 one pass.
@@ -63,6 +64,7 @@ from .links import remove_links_for_task
 from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
+from .agents_tab import AgentsTab
 from .settings_tab import SettingsTab
 from .skills_tab import SkillsTab
 from .theme import (
@@ -231,7 +233,7 @@ class MainWindow(QMainWindow):
         self.search_results.itemClicked.connect(self._on_search_item_clicked)
         self.search_results.itemDoubleClicked.connect(self._on_search_item_double_clicked)
         search_layout.addWidget(self.search_results, 1)
-        self._add_page(search_widget, "Search")
+        self._search_tab_index = self._add_page(search_widget, "Search")
 
         # BACKLOG — a single manually-ordered list (drag to reorder, saved) with
         # per-card checkboxes driving a bulk Activate / Delete bar.
@@ -338,6 +340,10 @@ class MainWindow(QMainWindow):
         archive_layout.addWidget(self.archive_results)
         self._archive_tab_index = self._add_page(archive_widget, "Archive")
 
+        self.agents_tab = AgentsTab()
+        self._agents_tab_index = self._add_page(self.agents_tab, "Agents")
+
+
         self.skills_tab = SkillsTab(self.conn, on_card_filed=self._refresh_board)
         self._skills_tab_index = self._add_page(self.skills_tab, "Skills")
 
@@ -345,10 +351,6 @@ class MainWindow(QMainWindow):
             on_appearance_changed=self._preview_appearance)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
 
-        # The window opens on the Board: the active work is what a launch is
-        # for, and the tab row keeps the order it reads in. Selected once, after
-        # every page exists, so no other tab is selected on the way here.
-        self._show_page(self._board_tab_index)
 
         # The detail pane: the selected card, read and edited in place. A pane
         # write refreshes the board; the pane's collapse control hands the
@@ -365,6 +367,13 @@ class MainWindow(QMainWindow):
         # configuration and written back as the user moves things.
         main_splitter.setStretchFactor(0, 1)
         main_splitter.setStretchFactor(1, 1)
+        # Which pages the detail pane belongs to, by index rather than by name,
+        # so reordering the tab row cannot leave this list behind.
+        self._card_page_indexes = {
+            self._search_tab_index, self._backlog_tab_index,
+            self._board_tab_index, self._archive_tab_index,
+        }
+
         self._pane_collapsed = False
         self._detail_width = int(
             config_file.get(config_file.DETAIL_WIDTH, LAYOUT["split_detail"])
@@ -384,6 +393,12 @@ class MainWindow(QMainWindow):
 
         if bool(config_file.get(config_file.DETAIL_COLLAPSED, False)):
             self._set_pane_collapsed(True, save=False)
+
+        # The window opens on the Board: the active work is what a launch is
+        # for, and the tab row keeps the order it reads in. Selected once, after
+        # every page and the pane exist, so no other tab is selected on the way
+        # here and the pane starts in the state that page wants.
+        self._show_page(self._board_tab_index)
 
         self._sync_filter_row()
         self._refresh_board()
@@ -612,6 +627,22 @@ class MainWindow(QMainWindow):
         self.pages.setCurrentIndex(index)
         for position, button in enumerate(self._tab_buttons):
             button.setChecked(position == index)
+        self._sync_pane_to_page(index)
+
+    def _sync_pane_to_page(self, index: int) -> None:
+        """The detail pane belongs to the views that show cards.
+
+        It reads and edits the selected card, and Agents, Skills and Settings
+        have no cards to select, so it stands there saying to select one that
+        the page cannot offer. Hidden without touching the collapsed state or
+        the stored width, so leaving one of those pages restores the pane
+        exactly as the user left it.
+        """
+        if not hasattr(self, "detail_pane"):
+            return
+        cards = index in self._card_page_indexes
+        self.detail_pane.setVisible(cards and not self._pane_collapsed)
+        self.pane_reveal.setVisible(cards and self._pane_collapsed)
 
     # ----- Menu bar ---------------------------------------------------------
 

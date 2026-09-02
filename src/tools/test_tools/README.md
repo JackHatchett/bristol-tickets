@@ -20,8 +20,9 @@ bash run_smoke.sh bristol         # one or more named targets
   present; on Linux without them it installs PySide6 and extracts the GL/EGL
   libraries Qt needs into a cache under `TMPDIR`, without root.
 - **`smoke.py`** — the per-target checks, registered in `TARGETS` (`bristol`,
-  `payload`, `test_control`, `governing_docs`, `skill_declarations`,
-  `published_files`). Add a target by writing a `check_*` function
+  `agent_tools`, `payload`, `test_control`, `governing_docs`,
+  `skill_declarations`, `published_files`). Add a target by writing a `check_*`
+  function
   returning a list of failure strings and registering it. Each target runs in its
   own subprocess.
   // Every GUI ships a top-level `ui` package, and two of them cannot coexist in
@@ -39,6 +40,14 @@ bash run_smoke.sh bristol         # one or more named targets
   script is reported by tool with every skill that declares it, because a
   renamed tool is one edit and what the person fixing it needs is the whole
   list. It reads Markdown only, so it runs without Qt.
+- **`agent_tools` asserts an agent's two files cannot drift apart**: creating
+  writes the charter and the config entry together, a refused edit writes
+  neither, an edit reaches both, the charter file can be moved, and a fresh read
+  finds what was entered. It also asserts every shipped charter reads back as
+  the file it is, that every key every entry holds reaches a field or `extra` so
+  an edit cannot drop one, and that neither agent tool imports anything reaching
+  a network or a model. It runs in a scratch clone and touches no GUI, so it
+  runs without Qt.
 - **`published_files` asserts the machinery carries no installation**: this
   git-identity's name and email, the home path declared at `drives.local_home`,
   and any `/Users/<name>` literal are absent from every tracked file except
