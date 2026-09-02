@@ -1512,6 +1512,10 @@ def check_bristol() -> list[str]:
             ok.append("the detail pane belongs to the card views and returns "
                       "to the Board as it was left")
 
+            if not agents_page._agents:
+                raise SmokeFailure(
+                    "the Agents tab lists no agent, so the form holds nothing "
+                    "to check: the configuration this ran against declares none")
             record = agents_page._agents[0]
             filled = AgentDialog(None, record, agents_page._run, set(listed),
                                  agents_page._skills)
