@@ -39,6 +39,8 @@ to the agent in a session.
   links, images, comments, search, Clear Done, reports.
 - **[skills.md](skills.md)** — what a skill is, where skills live, and how to
   install, judge and attach one somebody else wrote.
+- **[studying.md](studying.md)** — working through a course: the reading
+  interface, and the Markdown by hand.
 - **[agents.md](agents.md)** — the seven shipped agents: what each is for, what
   it can do, what it needs configured.
 - **[configuration.md](configuration.md)** — every configuration key, its

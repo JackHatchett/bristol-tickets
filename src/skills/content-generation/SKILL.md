@@ -52,6 +52,12 @@ schema, engine routing and the gates. Stages 3 and 4 run after this, always.
    `tools/teaching_assistant/html_renderer/render.py <course> <NN>`, per
    `src/skills/html-render/SKILL.md`. The Markdown is the source of truth; the HTML is generated
    from it, and both are kept.
+6. **Mirror the study guide.** `docs/studying.md` is the source; the copy beside
+   the courses in the notebook is a copy of its body. Where the two differ,
+   rewrite the notebook copy from the repository one, keeping the notebook
+   copy's frontmatter, and confirm the Courses Hub note still links to it. The
+   guide describes the shape of a course rather than listing courses, so a new
+   course never edits it.
 
 ## File shapes
 

@@ -93,6 +93,7 @@ python3 personal_write.py find-company --company Acme
 python3 personal_write.py record-progress --course git_course --lesson 3 --kind opened
 python3 personal_write.py record-progress --course git_course --lesson 3 --kind quiz \
     --item q1 --score 4/5
+python3 personal_write.py clear-progress --course git_course --lesson 3 --kind reading
 python3 personal_write.py find-place [--course git_course]
 
 python3 personal_write.py render --domain all
@@ -102,8 +103,12 @@ python3 snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
 ```
 
 `record-progress` takes `--course`, `--lesson`, `--kind` and optionally `--item`
-and `--score`, and `find-place` answers where to reopen one course or every
-course. `add-application` and `update-application` take the full column set as flags —
+and `--score`; `clear-progress` takes the same key and removes that row; and
+`find-place` answers where to reopen one course or every course.
+
+- **The study interface calls this module rather than the CLI.** `record`,
+  `clear`, `marks` and `place` are the four functions it imports, so the SQL
+  behind them has one home — `src/tools/teaching_assistant/study_server/`. `add-application` and `update-application` take the full column set as flags —
 `--company`, `--role`, `--fit-notes`, `--fit-verdict`, `--gaps`, `--location`,
 `--ats`, `--date-evaluated`, `--cover-letter`, `--status`, `--contact`,
 `--referral`, `--jd-link`, `--year` — and re-render the affected snapshot unless
@@ -150,7 +155,8 @@ agents are untouched either way.
 
 - **`career_coach`** reads and writes applications here. `find-company` gives a
   new session that company's prior rows rather than the whole history.
-- **The study interface** writes and reads `learning`. No agent does either.
+- **The study interface** writes and reads `learning`, through the four
+  functions above. No agent does either.
 - **`librarian`** owns books, which live in Zotero, and regenerates the library
   snapshot with `render_snapshot.py --domain books`. That path copies
   `zotero.sqlite` first, so it runs with Zotero open; every writer under
