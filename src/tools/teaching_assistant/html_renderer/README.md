@@ -28,9 +28,15 @@ than the course root, so no generated file lands among the sources.
 
 ## The courses root
 
-Resolved as `--base`, then `$TEACHING_ASSISTANT_COURSES_DIR` from
-`config/config.local.json`, then `~/Projects`. No path is hardcoded; set the
-environment variable where courses live elsewhere.
+`--base` first, used as written. Otherwise
+`$TEACHING_ASSISTANT_COURSES_DIR`, and otherwise
+`agents.teaching_assistant.env.TEACHING_ASSISTANT_COURSES_DIR` in config.
+
+- **The last two are declarations, and go through
+  `config_tools/data_paths.py`**, which owns what a declaration means and finds
+  the folder on a host that mounts the user's folders somewhere else.
+- **Nothing here expands a path itself**, and there is no guessed fallback: a
+  root declared nowhere is an error naming the key.
 
 ## progress.json
 

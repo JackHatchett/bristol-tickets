@@ -66,6 +66,16 @@ data/<instance>/system/logs/<domain>_snapshots/
 - **`books`** — a registry row with `source='zotero'` and no tables. Its metrics
   are computed in `tools/zotero/zotero_export.py` and, in the xlsx, as live
   Excel formulas over the sheet, so they follow the data.
+- **`learning_progress`** — one row per thing the learner did in a course, with
+  `v_learning_stats` and `v_learning_place` beside it. `kind` is `opened`,
+  `reading`, `quiz` or `exercise`, `item` names which quiz or exercise, and
+  `UNIQUE(course, lesson, kind, item)` means doing the same thing again updates
+  that row rather than adding a second. `v_learning_place` is the one query the
+  study interface runs to reopen a course.
+
+**The learning domain is read by an interface, never by an agent deciding what
+is next.** Where the fleet stands on a course is a card;
+`docs/architecture.md` §The study interface owns the boundary.
 
 ## Commands
 
@@ -79,13 +89,21 @@ python3 render_snapshot.py --domain books --no-archive
 python3 personal_write.py add-application --company X --role Y --status Applied
 python3 personal_write.py update-application --id 42 --status Interviewing
 python3 personal_write.py find-company --company Acme
+
+python3 personal_write.py record-progress --course git_course --lesson 3 --kind opened
+python3 personal_write.py record-progress --course git_course --lesson 3 --kind quiz \
+    --item q1 --score 4/5
+python3 personal_write.py find-place [--course git_course]
+
 python3 personal_write.py render --domain all
 
 python3 snapshot_archive.py --dir <...>/library_snapshots --stem library
 python3 snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
 ```
 
-`add-application` and `update-application` take the full column set as flags —
+`record-progress` takes `--course`, `--lesson`, `--kind` and optionally `--item`
+and `--score`, and `find-place` answers where to reopen one course or every
+course. `add-application` and `update-application` take the full column set as flags —
 `--company`, `--role`, `--fit-notes`, `--fit-verdict`, `--gaps`, `--location`,
 `--ats`, `--date-evaluated`, `--cover-letter`, `--status`, `--contact`,
 `--referral`, `--jd-link`, `--year` — and re-render the affected snapshot unless
@@ -132,6 +150,7 @@ agents are untouched either way.
 
 - **`career_coach`** reads and writes applications here. `find-company` gives a
   new session that company's prior rows rather than the whole history.
+- **The study interface** writes and reads `learning`. No agent does either.
 - **`librarian`** owns books, which live in Zotero, and regenerates the library
   snapshot with `render_snapshot.py --domain books`. That path copies
   `zotero.sqlite` first, so it runs with Zotero open; every writer under
