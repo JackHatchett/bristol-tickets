@@ -51,6 +51,11 @@ numbered so a stateless model can be told exactly which one to pull.
 | approach menu and anecdotes | The cover-letter approach menu and proof-point anecdotes |
 | blacklist | Banned-language list; the Gem's manual lint gate |
 
+**The blacklist slot is a copy of the canonical list and never an edited
+version of it.** The Gem cannot read the disk, so the slot has to hold bytes;
+refreshing it is a copy and re-upload, and a phrase is added to the canonical
+file rather than to the slot.
+
 **The filled-in knowledge files live in the user's instance project, never
 under `src/`.** The Gem's instructions text necessarily inlines identity, voice
 and anecdote detail, because the Gem cannot read `src/` at runtime; this

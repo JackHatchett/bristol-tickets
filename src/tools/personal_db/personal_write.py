@@ -2,15 +2,18 @@
 """
 personal_write.py — write CLI for personal.db.
 
-Subcommands (applications domain only — books live in Zotero, see
-src/tools/zotero/ and src/skills/add-book/SKILL.md):
+Subcommands for the applications and learning domains — books live in Zotero,
+see src/tools/zotero/ and src/skills/add-book/SKILL.md:
 
   add-application     --company C --role R [--status ... --fit-verdict ... --gaps ...
                       --location ... --ats ... --date-evaluated ... --cover-letter ...
                       --contact ... --referral ... --jd-link ... --year YYYY --fit-notes ...]
   update-application  --id N  [any of the same fields]
   find-company        --company C     # "have I applied here?" lookup for career_coach
-  render              [--domain all|applications|books]
+  record-progress     --course C --lesson N --kind opened|reading|quiz|exercise
+                      [--item X --score S]
+  find-place          [--course C]    # where to reopen a course, or every course
+  render              [--domain all|applications|learning|books]
 
 DB is SoT; mutating subcommands re-render the affected snapshot automatically
 unless --no-render is passed. Write-safety via db_common (MEMORY journal).
@@ -97,6 +100,49 @@ def find_company(args) -> None:
               f"[{r['status']}, {r['fit_verdict']}, {r['date_evaluated'] or r['year']}]")
 
 
+KINDS = ("opened", "reading", "quiz", "exercise")
+
+
+def record_progress(args) -> None:
+    """One thing the learner did. Doing it again updates that row."""
+    if args.kind not in KINDS:
+        sys.exit("record-progress: --kind must be one of %s" % ", ".join(KINDS))
+    conn = dbc.connect()
+    conn.execute("""
+        INSERT INTO learning_progress(course,lesson,kind,item,score,recorded_at)
+        VALUES(?,?,?,?,?,?)
+        ON CONFLICT(course,lesson,kind,item) DO UPDATE SET
+          score=excluded.score,
+          recorded_at=excluded.recorded_at
+    """, (args.course, args.lesson, args.kind, args.item or "", args.score, _now()))
+    conn.commit()
+    conn.close()
+    what = "%s lesson %s %s" % (args.course, args.lesson, args.kind)
+    print("\u2713 recorded %s%s" % (what, (" (%s)" % args.item) if args.item else ""))
+    if not args.no_render:
+        _rerender("learning")
+
+
+def find_place(args) -> None:
+    """The lesson each course was last opened at."""
+    conn = dbc.connect()
+    if args.course:
+        rows = conn.execute(
+            "SELECT course, lesson, recorded_at FROM v_learning_place WHERE course=?",
+            (args.course,)).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT course, lesson, recorded_at FROM v_learning_place "
+            "ORDER BY recorded_at DESC").fetchall()
+    conn.close()
+    if not rows:
+        print("No course has been opened yet." if not args.course
+              else "%s has not been opened yet." % args.course)
+        return
+    for r in rows:
+        print("  %s \u2014 lesson %s (opened %s)" % (r["course"], r["lesson"], r["recorded_at"]))
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="personal.db write CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -119,6 +165,19 @@ def build_parser() -> argparse.ArgumentParser:
     add_app_args(u); u.set_defaults(func=update_application)
     f = sub.add_parser("find-company"); f.add_argument("--company", required=True)
     f.set_defaults(func=find_company)
+
+    g = sub.add_parser("record-progress")
+    g.add_argument("--course", required=True)
+    g.add_argument("--lesson", type=int, required=True)
+    g.add_argument("--kind", required=True, choices=KINDS)
+    g.add_argument("--item", default="")
+    g.add_argument("--score")
+    g.add_argument("--no-render", action="store_true")
+    g.set_defaults(func=record_progress)
+
+    w = sub.add_parser("find-place"); w.add_argument("--course")
+    w.set_defaults(func=find_place)
+
     r = sub.add_parser("render"); r.add_argument("--domain", default="all")
     r.set_defaults(func=lambda args: _rerender(args.domain))
     return p

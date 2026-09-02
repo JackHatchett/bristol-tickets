@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import db_common as dbc  # noqa: E402
 
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"
 
 # name, display_name, source, primary_table, snapshot_file, stats_view, sort_order, notes
 DOMAINS = [
@@ -26,6 +26,10 @@ DOMAINS = [
     ("books", "Book Library", "zotero", "items", "library.xlsx", None, 20,
      "Books domain (librarian). Source of truth is Zotero, not this DB — "
      "read through src/tools/zotero/zotero_export.py."),
+    ("learning", "Course Progress", "personal_db", "learning_progress",
+     "learning.xlsx", "v_learning_stats", 30,
+     "Where the learner stands in a course. Read by the study interface, "
+     "never by an agent deciding a next action."),
 ]
 
 

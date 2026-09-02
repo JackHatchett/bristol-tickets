@@ -25,7 +25,7 @@ behaviour and explains the retention. One file per day maximum, so running this
 repeatedly in an afternoon does not pile up.
 
 Usage:
-  PERSONAL_DB_DIR=... python3 render_snapshot.py [--domain applications|books|all]
+  PERSONAL_DB_DIR=... python3 render_snapshot.py [--domain applications|learning|books|all]
                                                  [--no-archive]
 
 Prereq: openpyxl
@@ -88,6 +88,27 @@ SPECS = {
             ("Rejected", '=COUNTIF(Applications!J:J,"Rejected*")'),
             ("Pending", '=COUNTIF(Applications!J:J,"Pending*")'),
             ("With Cover Letter", '=COUNTIF(Applications!I:I,"Yes")'),
+        ],
+    },
+    "learning": {
+        "subdir": "learning_snapshots",
+        "source": "personal_db",
+        "sheet": "Learning",
+        "table": "Learning",
+        "columns": [
+            ("Course", "course", 26), ("Lesson", "lesson", 8),
+            ("Kind", "kind", 12), ("Item", "item", 22),
+            ("Score", "score", 12), ("Recorded", "recorded_at", 20),
+        ],
+        "sql": """SELECT course, lesson, kind, item, score, recorded_at
+                  FROM learning_progress
+                  ORDER BY LOWER(course), lesson, kind, item""",
+        # C = Kind
+        "stats": [
+            ("Lessons Opened", '=COUNTIF(Learning!C:C,"opened")'),
+            ("Lessons Read", '=COUNTIF(Learning!C:C,"reading")'),
+            ("Quizzes Answered", '=COUNTIF(Learning!C:C,"quiz")'),
+            ("Exercises Done", '=COUNTIF(Learning!C:C,"exercise")'),
         ],
     },
     "books": {

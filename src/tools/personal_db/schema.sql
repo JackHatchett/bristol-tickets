@@ -82,6 +82,48 @@ SELECT
     (SELECT COUNT(*) FROM applications WHERE referral IS NOT NULL AND TRIM(referral)<>'') AS with_referral;
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- DOMAIN: learning
+-- Where the learner stands in a course. Not where the fleet stands on one:
+-- that is a card, and docs/architecture.md §The study interface says why the
+-- two are different stores. No agent reads this domain to decide a next
+-- action; an interface reads it to reopen a page.
+--
+-- One row per thing done, keyed so doing it again updates that row rather than
+-- adding a second. `kind` is 'opened' (the lesson was put on screen),
+-- 'reading' (the lesson was marked read), 'quiz' or 'exercise'. `item` names
+-- which quiz or exercise, and is '' rather than NULL so the uniqueness holds —
+-- SQLite counts two NULLs as different.
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS learning_progress (
+    id          INTEGER PRIMARY KEY,
+    course      TEXT NOT NULL,               -- the course folder's own name
+    lesson      INTEGER NOT NULL,
+    kind        TEXT NOT NULL,               -- opened | reading | quiz | exercise
+    item        TEXT NOT NULL DEFAULT '',    -- which quiz or exercise; '' for the lesson itself
+    score       TEXT,                        -- a quiz result as recorded; NULL otherwise
+    recorded_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(course, lesson, kind, item)
+);
+CREATE INDEX IF NOT EXISTS idx_learning_course ON learning_progress(course);
+CREATE INDEX IF NOT EXISTS idx_learning_kind   ON learning_progress(kind);
+
+-- Where to reopen each course: its most recently opened lesson.
+CREATE VIEW IF NOT EXISTS v_learning_place AS
+SELECT p.course, p.lesson, p.recorded_at
+FROM learning_progress p
+WHERE p.kind = 'opened'
+  AND p.recorded_at = (SELECT MAX(q.recorded_at) FROM learning_progress q
+                       WHERE q.course = p.course AND q.kind = 'opened');
+
+CREATE VIEW IF NOT EXISTS v_learning_stats AS
+SELECT
+    (SELECT COUNT(DISTINCT course) FROM learning_progress)                 AS courses_started,
+    (SELECT COUNT(*) FROM learning_progress WHERE kind='opened')           AS lessons_opened,
+    (SELECT COUNT(*) FROM learning_progress WHERE kind='reading')          AS lessons_read,
+    (SELECT COUNT(*) FROM learning_progress WHERE kind='quiz')             AS quizzes_answered,
+    (SELECT COUNT(*) FROM learning_progress WHERE kind='exercise')         AS exercises_done;
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- DOMAIN: books — NOT IN THIS DB
 -- Zotero is the source of truth for book data. This file holds no books, loans,
 -- lists, list_items or book_snapshots tables and no v_book_stats view; reading

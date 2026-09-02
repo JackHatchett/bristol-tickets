@@ -13,11 +13,15 @@ Usage:
     (optional)  --base /path/to/courses  # override the courses root
 
 Courses root resolution (no personal path hardcoded here):
-    1. --base, if passed
-    2. $TEACHING_ASSISTANT_COURSES_DIR, if set (see config/config.local.json)
-    3. ~/Projects (generic fallback, matches the convention other legacy
-       course tooling assumed — override with one of the above if courses
-       actually live elsewhere, e.g. a Markdown-notebook project root)
+    1. --base, if passed, used as written
+    2. $TEACHING_ASSISTANT_COURSES_DIR, if set
+    3. agents.teaching_assistant.env.TEACHING_ASSISTANT_COURSES_DIR in config
+
+    2 and 3 are declarations rather than paths, and go through
+    config_tools/data_paths.py, which owns what a declaration means and finds
+    the folder on a host that mounts it somewhere else. Nothing here expands a
+    path itself, and there is no guessed fallback: a root declared nowhere is
+    an error naming the key.
 
 Marker syntax (embed in lesson/exercise/quiz Markdown; all optional):
 
@@ -68,7 +72,10 @@ def _inline(text):
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)",
                   lambda m: '<a href="%s">%s</a>' % (html.escape(m.group(2), quote=True), m.group(1)),
                   text)
-    text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
+    # Bold runs before italics and may hold a single-* span, so a bold
+    # phrase with an italic word inside it is one <strong>. Non-greedy, so
+    # two bold phrases on a line stay two.
+    text = re.sub(r"\*\*(?!\s)(.+?)(?<!\s)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*(?!\s)([^*]+?)\*", r"<em>\1</em>", text)
     text = re.sub(r"(?<![\w])_(?!\s)([^_]+?)_(?![\w])", r"<em>\1</em>", text)
     text = re.sub(r"\x00(\d+)\x00", lambda m: "<code>%s</code>" % spans[int(m.group(1))], text)
@@ -136,6 +143,27 @@ ULI = re.compile(r"^\s*[-*+]\s+(.*)$")
 OLI = re.compile(r"^\s*\d+\.\s+(.*)$")
 TROW = re.compile(r"^\s*\|.*\|\s*$")
 TSEP = re.compile(r"^\s*\|?[\s:-]*-[\s:|-]*\|?\s*$")
+
+
+def _continues_item(line):
+    """Whether a line wraps the list item above it rather than starting a block.
+
+    A wrapped item is one item however many source lines it takes, so its
+    continuation lines are joined onto it before any inline markup is read —
+    which is what lets a ** span cross the wrap.
+    """
+    if not line.strip():
+        return False
+    if ULI.match(line) or OLI.match(line):
+        return False
+    if HEADING.match(line) or HR.match(line) or TROW.match(line):
+        return False
+    stripped = line.lstrip()
+    if stripped.startswith(("```", ":::", ">")):
+        return False
+    if re.match(r"^\s*<!--.*-->\s*$", line):
+        return False
+    return True
 
 
 def md_to_html(text):
@@ -211,8 +239,12 @@ def md_to_html(text):
             items = []
             pat = OLI if ordered else ULI
             while i < n and pat.match(lines[i]):
-                items.append("<li>%s</li>" % _inline(pat.match(lines[i]).group(1).strip()))
+                parts = [pat.match(lines[i]).group(1).strip()]
                 i += 1
+                while i < n and _continues_item(lines[i]):
+                    parts.append(lines[i].strip())
+                    i += 1
+                items.append("<li>%s</li>" % _inline(" ".join(parts)))
             out.append("<%s>\n%s\n</%s>" % (tag, "\n".join(items), tag))
             continue
 
@@ -338,12 +370,42 @@ a{color:#7a4b2b}.foot{color:#6b6359;font-family:sans-serif;font-size:13px;margin
     return idx
 
 
+COURSES_KEY = "agents.teaching_assistant.env.TEACHING_ASSISTANT_COURSES_DIR"
+
+
+def _config_tools():
+    """The repository's config_tools package, found from this file's own path."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    tools = os.path.dirname(os.path.dirname(here))
+    path = os.path.join(tools, "config_tools")
+    if path not in sys.path:
+        sys.path.insert(0, path)
+    import data_paths
+    import read_config
+    return data_paths, read_config
+
+
+def courses_root():
+    """The absolute courses root, resolved rather than expanded."""
+    data_paths, read_config = _config_tools()
+    declared = os.environ.get("TEACHING_ASSISTANT_COURSES_DIR")
+    if not declared:
+        declared = read_config.get(COURSES_KEY, None)
+    if not declared:
+        raise SystemExit(
+            "No courses root. Set $TEACHING_ASSISTANT_COURSES_DIR, pass --base, "
+            "or declare %s in config." % COURSES_KEY)
+    return str(data_paths.resolve(declared))
+
+
 def main(argv):
-    base = os.environ.get("TEACHING_ASSISTANT_COURSES_DIR") or os.path.expanduser("~/Projects")
+    base = None
     if "--base" in argv:
         k = argv.index("--base")
         base = argv[k + 1]
         del argv[k:k + 2]
+    if base is None:
+        base = courses_root()
     if len(argv) < 2:
         raise SystemExit(__doc__)
     course, target = argv[0], argv[1]
