@@ -22,6 +22,7 @@ pieces it composes live in sibling modules:
     settings_tab.py  SettingsTab (the next-session agent, board behaviour,
                      appearance — all stored in config.local.json)
     skills_tab.py    SkillsTab (what a session can load, and importing one)
+    courses_tab.py   CoursesTab (every course, and the control that opens one)
     agents_tab.py    AgentsTab (who is in the fleet, created and edited by form)
 
 Each file stays small enough for an external consultant to ingest and edit in
@@ -65,6 +66,7 @@ from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
 from .agents_tab import AgentsTab
+from .courses_tab import CoursesTab
 from .settings_tab import SettingsTab
 from .skills_tab import SkillsTab
 from .theme import (
@@ -347,6 +349,9 @@ class MainWindow(QMainWindow):
         self.skills_tab = SkillsTab(self.conn, on_card_filed=self._refresh_board)
         self._skills_tab_index = self._add_page(self.skills_tab, "Skills")
 
+        self.courses_tab = CoursesTab()
+        self._courses_tab_index = self._add_page(self.courses_tab, "Courses")
+
         self.settings_tab = SettingsTab(
             on_appearance_changed=self._preview_appearance)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
@@ -500,11 +505,15 @@ class MainWindow(QMainWindow):
         self._refresh_board()
 
     def closeEvent(self, event):  # noqa: N802 (Qt override)
-        """Flush a splitter save still waiting on its debounce, so a drag made
-        just before quitting still survives the restart."""
+        """Leave nothing behind: a splitter save still waiting on its debounce,
+        so a drag made just before quitting survives the restart, and the study
+        server if the Courses tab started one."""
         if self._splitter_save_timer.isActive():
             self._splitter_save_timer.stop()
             self._save_pane_geometry()
+        # The study server is a child process, and a child that outlives the
+        # window goes on holding its port with nothing to stop it.
+        self.courses_tab.shutdown()
         super().closeEvent(event)
 
     # ----- What the board is showing ---------------------------------------
@@ -987,6 +996,7 @@ class MainWindow(QMainWindow):
         self._sync_backlog_bar()
         self._load_archive(self.filters)
         self._execute_global_search()
-        # Skills are not in the database and take no filter; they are reloaded
-        # here so one Refresh means the same thing on every tab.
+        # Skills and courses are not in the database and take no filter; they
+        # are reloaded here so one Refresh means the same thing on every tab.
         self.skills_tab.reload()
+        self.courses_tab.reload()

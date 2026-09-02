@@ -82,6 +82,30 @@
   .studied{font-family:-apple-system,Segoe UI,Roboto,sans-serif; font-size:15px;
     color:var(--muted); margin-top:48px; padding-top:20px; border-top:1px solid var(--rule)}
   .studied input{transform:scale(1.2); margin-right:8px; vertical-align:middle}
+  .marked{display:block; font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:15px; color:var(--muted); margin-top:20px}
+  .marked input{transform:scale(1.15); margin-right:8px; vertical-align:middle}
+  .quiz-q{margin:28px 0; padding-left:2px}
+  .quiz-prompt{margin:0 0 10px}
+  .quiz-options{list-style:none; margin:0; padding:0}
+  .quiz-options li{margin:6px 0}
+  .quiz-opt{display:block; width:100%; text-align:left; cursor:pointer;
+    font-family:inherit; font-size:17px; line-height:1.5; color:var(--fg);
+    background:var(--code-bg); border:1px solid var(--rule); border-radius:6px;
+    padding:9px 12px}
+  .quiz-opt:hover{border-color:var(--link)}
+  .quiz-letter{font-weight:bold; margin-right:8px; color:var(--muted)}
+  .quiz-opt.right{border-color:var(--drill); background:var(--drill-bg)}
+  .quiz-opt.wrong{border-color:var(--checkpoint); background:var(--checkpoint-bg)}
+  .quiz-verdict{font-family:-apple-system,Segoe UI,Roboto,sans-serif; font-size:15px;
+    margin:10px 0 0}
+  .quiz-verdict.right{color:var(--drill)}
+  .quiz-verdict.wrong{color:var(--checkpoint)}
+  .quiz-why{font-size:16px; color:var(--muted); margin-top:6px;
+    border-left:3px solid var(--rule); padding-left:12px}
+  .quiz-why p{margin:6px 0}
+  .quiz-score{font-family:-apple-system,Segoe UI,Roboto,sans-serif; font-size:15px;
+    margin-top:24px; padding-top:14px; border-top:1px solid var(--rule); color:var(--muted)}
   footer.lesson{margin-top:40px; padding-top:18px; border-top:1px solid var(--rule);
     font-family:-apple-system,Segoe UI,Roboto,sans-serif; font-size:13px; color:var(--muted)}
 </style>
@@ -107,6 +131,79 @@
 
 <footer class="lesson">Rendered {{RENDER_DATE}} · {{COURSE_NAME}} lesson {{LESSON_NUMBER}} · self-contained, no external dependencies</footer>
 </div>
+<script>
+  // Marking a quiz and the done marks. Both work with the page alone; recording
+  // needs the study server, which supplies window.bristolStudy.
+  (function(){
+    function record(kind, present, item, score){
+      var study = window.bristolStudy;
+      if (study) study.record(kind, present, item, score);
+    }
+    var quiz = document.querySelector(".quiz");
+    var answered = {};
+    var scoreLine = null;
+    if (quiz){
+      var total = parseInt(quiz.getAttribute("data-count"), 10) || 0;
+      scoreLine = document.createElement("p");
+      scoreLine.className = "quiz-score";
+      scoreLine.hidden = true;
+      quiz.appendChild(scoreLine);
+      quiz.addEventListener("click", function(event){
+        var button = event.target.closest && event.target.closest(".quiz-opt");
+        if (!button) return;
+        var block = button.closest(".quiz-q");
+        var right = button.getAttribute("data-opt") === block.getAttribute("data-answer");
+        var options = block.querySelectorAll(".quiz-opt");
+        for (var i = 0; i < options.length; i++){
+          options[i].classList.remove("right", "wrong");
+        }
+        button.classList.add(right ? "right" : "wrong");
+        var verdict = block.querySelector(".quiz-verdict");
+        verdict.textContent = right ? "Correct." : "Not this one.";
+        verdict.className = "quiz-verdict " + (right ? "right" : "wrong");
+        verdict.hidden = false;
+        var why = block.querySelector(".quiz-why");
+        if (why) why.hidden = false;
+        answered[block.getAttribute("data-q")] = right;
+        var done = 0, correct = 0;
+        for (var key in answered){ done++; if (answered[key]) correct++; }
+        if (total && done >= total){
+          var score = correct + "/" + total;
+          scoreLine.textContent = "Quiz complete \u2014 " + score + ".";
+          scoreLine.hidden = false;
+          record("quiz", true, "", score);
+        }
+      });
+    }
+    var marks = document.querySelectorAll(".mark-done");
+    for (var i = 0; i < marks.length; i++){
+      marks[i].addEventListener("change", function(){
+        record("exercise", this.checked, this.getAttribute("data-item"));
+      });
+    }
+    // The server's own script is appended after this one, so what it recorded
+    // before is read once everything on the page has run.
+    window.addEventListener("load", function(){
+      var study = window.bristolStudy;
+      if (!study) return;
+      fetch("/api/marks?course=" + encodeURIComponent(study.course) + "&lesson=" + study.lesson)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var rows = data.marks || [];
+          for (var i = 0; i < rows.length; i++){
+            if (rows[i].kind === "exercise"){
+              var box = document.querySelector(
+                '.mark-done[data-item="' + rows[i].item + '"]');
+              if (box) box.checked = true;
+            } else if (rows[i].kind === "quiz" && rows[i].score && scoreLine){
+              scoreLine.textContent = "Last recorded result \u2014 " + rows[i].score + ".";
+              scoreLine.hidden = false;
+            }
+          }
+        });
+    });
+  })();
+</script>
 <script>
   // Progress flag persists locally when opened from disk; degrades silently if blocked.
   (function(){

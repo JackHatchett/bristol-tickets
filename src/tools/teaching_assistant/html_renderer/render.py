@@ -47,6 +47,9 @@ section is auto-collapsed behind a single reveal.
 import sys, os, re, html, json, datetime, glob
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import quiz  # noqa: E402  (the sibling that reads a quiz's answers)
+
 TEMPLATE_PATH = os.path.join(HERE, "template.html")
 TODAY = datetime.date.today().isoformat()
 
@@ -127,6 +130,7 @@ def _drill(title, body):
                 '    <pre><code>%s</code></pre></details>' % html.escape("\n".join(expected))]
     if verify:
         out.append('  <p class="verify">✓ Verify: %s</p>' % _inline(" ".join(verify)))
+    out.append("  " + quiz.DRILL_MARK)
     out.append('</div>')
     return "\n".join(out)
 
@@ -283,6 +287,26 @@ def render_answers_section(md):
             + '<div class="answer-content">\n%s\n</div></details>' % md_to_html(after))
 
 
+MARK = ('<label class="marked"><input type="checkbox" class="mark-done" '
+        'data-item="%s"> %s</label>')
+
+
+def number_marks(page):
+    """Give each drill on the finished page its own done mark, in page order.
+
+    The mark is placed here rather than where a drill is rendered, because the
+    number has to be unique across the lesson, the exercises and the quiz, and
+    only the assembled page knows all three.
+    """
+    count = [0]
+
+    def one(_match):
+        count[0] += 1
+        return MARK % ("drill-%d" % count[0], "Done")
+
+    return re.sub(re.escape(quiz.DRILL_MARK), one, page)
+
+
 # ---------------------------------------------------------------- driver
 def load_progress(course_dir):
     with open(os.path.join(course_dir, "syllabus", "progress.json")) as f:
@@ -324,9 +348,14 @@ def render_lesson(base, course, number):
         .replace("{{LESSON_NUMBER}}", nn)
         .replace("{{LESSON_TITLE}}", html.escape(title))
         .replace("{{CONTENT_WITH_CHECKPOINTS}}", md_to_html(lesson_md) if lesson_md else "<p><em>Lesson not yet generated.</em></p>")
-        .replace("{{EXERCISES}}", render_answers_section(ex_md) if ex_md else "<p><em>No exercises generated.</em></p>")
-        .replace("{{QUIZ}}", render_answers_section(qz_md) if qz_md else "<p><em>No quiz generated.</em></p>")
+        .replace("{{EXERCISES}}",
+                 (render_answers_section(ex_md) + "\n" + MARK % ("exercises", "Mark the exercises done"))
+                 if ex_md else "<p><em>No exercises generated.</em></p>")
+        .replace("{{QUIZ}}",
+                 quiz.render(qz_md, md_to_html, _inline, render_answers_section)
+                 if qz_md else "<p><em>No quiz generated.</em></p>")
         .replace("{{RENDER_DATE}}", TODAY))
+    out_html = number_marks(out_html)
 
     hdir = os.path.join(cdir, "html")
     os.makedirs(hdir, exist_ok=True)

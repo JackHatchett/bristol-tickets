@@ -176,6 +176,32 @@ def check_bristol() -> list[str]:
     theme.set_scheme(theme.resolve_choice(theme.DEFAULT_CHOICE, False))
     ok.append("a card paints under every scheme")
 
+    # The Courses tab against a courses root that is not there. A root is
+    # declared long before it exists, so the tab that raises on one is the tab
+    # a fresh clone opens on.
+    import os
+
+    from ui.courses_tab import CoursesTab
+
+    was = os.environ.get("TEACHING_ASSISTANT_COURSES_DIR")
+    os.environ["TEACHING_ASSISTANT_COURSES_DIR"] = str(
+        Path(tempfile.gettempdir()) / "smoke_no_courses_here")
+    try:
+        courses = CoursesTab()
+    finally:
+        if was is None:
+            os.environ.pop("TEACHING_ASSISTANT_COURSES_DIR", None)
+        else:
+            os.environ["TEACHING_ASSISTANT_COURSES_DIR"] = was
+    if courses.list.count():
+        raise SmokeFailure("the Courses tab lists a course with no courses root")
+    if not courses.status.text().strip():
+        raise SmokeFailure("the Courses tab says nothing about an absent courses root")
+    if courses.study_btn.isEnabled():
+        raise SmokeFailure("the Courses tab offers Study with nothing to study")
+    courses.shutdown()
+    ok.append("the Courses tab reports an absent courses root and offers nothing")
+
     schema = TOOLS / "bristol" / "schema.sql"
     if schema.exists():
         from PySide6.QtCore import Qt

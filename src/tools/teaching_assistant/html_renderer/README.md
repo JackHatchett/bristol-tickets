@@ -25,6 +25,14 @@ than the course root, so no generated file lands among the sources.
   `{{LESSON_TITLE}}`, `{{CONTENT_WITH_CHECKPOINTS}}`, `{{EXERCISES}}`,
   `{{QUIZ}}`, `{{RENDER_DATE}}`.
 - **`render.py`** — the converter and driver.
+- **`quiz.py`** — a quiz's questions, options and correct letters, read out of
+  the Markdown so the page can mark them.
+
+**The `studied-box` script in the template is browser-local, and the study
+server strips it** — `../study_server/README.md`. A page opened straight off
+disk keeps its checkbox that way; a page served keeps the record in
+`personal.db` instead. The server's self-check fails if that script stops being
+recognizable, so it is where a template change is caught.
 
 ## The courses root
 
@@ -82,6 +90,34 @@ Answer content, hidden behind "Show answer".
 
 A file using no `:::answer` marker gets any `## Answer Key` or `## Answers`
 section collapsed behind a single reveal.
+
+## An answerable quiz
+
+A quiz's multiple-choice questions are rendered as options the learner presses.
+The page says right or wrong at once and reveals the explanation the answer key
+already gives.
+
+- **The correct letter comes out of the source**, from the answer key, from an
+  `**Answer: b**` line under the options, or from a `✓` on the option itself.
+  `quiz.py` owns the shapes it reads.
+- **A question the parse cannot mark keeps the rendering it had.** A
+  short-answer question, a quiz with no key at all, a dialect nobody has written
+  yet: each renders as prose, and no quiz renders worse than before.
+- **The answer key is still rendered**, collapsed as before. It carries the
+  model answers to the short-answer questions, which no machine marks.
+- **Answering again replaces the answer**, and the score is the questions
+  answered correctly out of those the page can mark.
+
+## Marking what a machine cannot
+
+Every `:::drill` on the page and the Exercises section as a whole carry a done
+mark. The marks are numbered over the assembled page rather than where a drill
+is rendered, because the number has to be unique across the lesson, the
+exercises and the quiz.
+
+**Recording needs the study server**, which supplies `window.bristolStudy` —
+`../study_server/README.md`. A page opened straight off disk marks its quiz,
+reveals its explanations and accepts its done marks, and records none of it.
 
 ## Notebook syntax
 
