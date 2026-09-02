@@ -24,6 +24,7 @@ import argparse
 import json
 import re
 import subprocess
+import tempfile
 import sqlite3
 import sys
 from pathlib import Path
@@ -47,7 +48,7 @@ def check_bristol() -> list[str]:
 
     ok: list[str] = []
     tool_on_path("bristol")
-    offscreen_app()
+    app = offscreen_app()
 
     import ui  # bristol/ui
 
@@ -1439,6 +1440,190 @@ def check_bristol() -> list[str]:
             if "Skills" not in names or names.index("Skills") > names.index("Settings"):
                 raise SmokeFailure("no Skills tab before Settings")
             ok.append("the Skills tab stands in the header")
+
+            # The Agents tab: where it sits, what it lists, and that its form
+            # holds every property an agent has. The writes are the agent_tools
+            # target's; what is checked here is that nothing an agent is goes
+            # missing between the reader and the form.
+            from PySide6.QtCore import Qt as _Qt
+
+            import config_file as _config
+
+            from ui.agents_tab import AgentDialog
+            from ui.theme import LAYOUT as _LAYOUT
+
+            if "Agents" not in names:
+                raise SmokeFailure("no Agents tab in the header")
+            if not (names.index("Archive") < names.index("Agents")
+                    < names.index("Skills")):
+                raise SmokeFailure(
+                    f"Agents does not sit between Archive and Skills: {names}")
+
+            agents_page = skills_win.agents_tab
+            listed = [agents_page.list.item(i).data(_Qt.UserRole)
+                      for i in range(agents_page.list.count())]
+            configured = _config.agent_slugs()
+            if listed != configured:
+                raise SmokeFailure(
+                    f"the Agents tab lists {listed}, config has {configured}")
+            ok.append("the Agents tab stands between Archive and Skills and "
+                      "lists the configured agents")
+
+            # The detail pane reads and edits a card, and these three pages
+            # have none to select.
+            # isHidden rather than isVisible: the window is never shown here,
+            # so isVisible is False for every widget in it either way.
+            for name in ("Agents", "Skills", "Settings"):
+                skills_win._show_page(names.index(name))
+                if not skills_win.detail_pane.isHidden():
+                    raise SmokeFailure(f"the detail pane shows on {name}")
+            skills_win._show_page(names.index("Board"))
+            if skills_win.detail_pane.isHidden():
+                raise SmokeFailure("the detail pane did not come back on Board")
+            if skills_win._pane_collapsed:
+                raise SmokeFailure(
+                    "leaving a card page collapsed the pane rather than hiding it")
+            ok.append("the detail pane belongs to the card views and returns "
+                      "to the Board as it was left")
+
+            record = agents_page._agents[0]
+            filled = AgentDialog(None, record, agents_page._run, set(listed),
+                                 agents_page._skills)
+            values = filled.values()
+            if filled.slug.text() != record["slug"] or filled.slug.isEnabled():
+                raise SmokeFailure("an existing agent's name is wrong or retypable")
+            if values["charter"] != record["charter"]:
+                raise SmokeFailure("the form does not hold the charter verbatim")
+            for key in ("description", "identity", "key_data_paths",
+                        "key_context_files", "notebook_access", "env"):
+                if values[key] != record[key]:
+                    raise SmokeFailure(
+                        f"the form does not hold {key}: "
+                        f"{values[key]!r} against {record[key]!r}")
+            if sorted(values["skills"]) != sorted(record["skills"]):
+                raise SmokeFailure(
+                    f"the form does not hold the attached skills: "
+                    f"{values['skills']} against {record['skills']}")
+            for field in (filled.charter, filled.description, filled.identity):
+                if field.isReadOnly():
+                    raise SmokeFailure("a field on the agent form is read-only")
+            if not filled.data_paths.add_btn.isEnabled() or \
+                    not filled.context_files.add_btn.isEnabled() or \
+                    not filled.env.add_btn.isEnabled() or \
+                    not filled.identity_btn.isEnabled():
+                raise SmokeFailure("a list on the agent form cannot be added to")
+            if filled.missing():
+                raise SmokeFailure(
+                    f"a pre-filled form reports empty fields: {filled.missing()}")
+            with tempfile.TemporaryDirectory() as _tmp:
+                blank_file = Path(_tmp) / "x"
+                blank_file.write_text("{}")
+                if filled._edit_args(values, filled.extra.values(), blank_file,
+                                     blank_file) != [record["slug"]]:
+                    raise SmokeFailure("an untouched form would still have written")
+            # Each kind of property gets its own kind of control, and every
+            # zone an agent holds has a box, including one this build predates.
+            if set(filled.zone_boxes) < set(record["notebook_access"]
+                                            .get("write_zones") or []):
+                raise SmokeFailure(
+                    f"a write zone {record['slug']} holds has no box: "
+                    f"{sorted(filled.zone_boxes)}")
+            if filled.notebook_read.isChecked() != bool(
+                    record["notebook_access"].get("read")):
+                raise SmokeFailure("the Read box disagrees with the entry")
+            if filled.archive_moves.isChecked() != bool(
+                    record["notebook_access"].get("archive_moves")):
+                raise SmokeFailure("the Archive box disagrees with the entry")
+            if filled.extra.isVisibleTo(filled) != bool(record["extra"]):
+                raise SmokeFailure(
+                    "the Other Keys section shows for an agent with no such keys"
+                    if not record["extra"] else
+                    "an agent with an unknown key gets no field for it")
+            ok.append("opening an agent holds its charter, every key of its "
+                      "entry and its skills, all of them editable")
+
+            blank = AgentDialog(None, None, agents_page._run, set(listed),
+                                agents_page._skills)
+            if not blank.creating or blank.slug.text():
+                raise SmokeFailure("New Agent did not open a blank form")
+            if not blank.slug.isEnabled():
+                raise SmokeFailure("a new agent cannot be named")
+            if "Agent Charter" not in blank.charter.toPlainText():
+                raise SmokeFailure("a new agent does not start from a charter")
+            if sorted(blank.missing()) != sorted(
+                    ["charter", "description", "slug"]):
+                if blank.missing() != ["slug", "description"]:
+                    raise SmokeFailure(
+                        f"a blank form requires the wrong fields: {blank.missing()}")
+            blank.charter.setPlainText("")
+            blank._save()
+            for field in ("Name", "Description", "Charter"):
+                if field not in blank.problem.text():
+                    raise SmokeFailure(
+                        f"a refused save does not name {field}: "
+                        f"{blank.problem.text()!r}")
+            if blank.status:
+                raise SmokeFailure("a refused save reported a write")
+            ok.append("New Agent opens on a starting charter and refuses a save "
+                      "naming every empty field")
+
+            # Cramping is a geometry fault, which is the one thing an offscreen
+            # render settles honestly: every field tall enough for what it
+            # holds, both columns wide enough to read, and the fields column
+            # scrolling rather than squeezing.
+            for agent in agents_page._agents:
+                sized = AgentDialog(None, agent, agents_page._run, set(listed),
+                                    agents_page._skills)
+                # A stated size rather than whatever screen this runs on, so
+                # the check means the same thing everywhere.
+                sized.resize(1280, 980)
+                sized.show()
+                app.processEvents()
+                needed = sized.description.document().size().height()
+                if sized.description.height() + 1 < needed:
+                    raise SmokeFailure(
+                        f"{agent['slug']}: the Description field is "
+                        f"{sized.description.height()}px for {needed:.0f}px of text")
+                if not sized.scroll.widgetResizable():
+                    raise SmokeFailure("the agent form's fields do not scroll")
+                fields = sized.scroll.viewport().width()
+                charter = sized.charter.width()
+                if fields < _LAYOUT["agent_fields_min_w"] - 40:
+                    raise SmokeFailure(
+                        f"the agent form's field column is {fields}px wide")
+                if charter < _LAYOUT["charter_min_w"] - 40:
+                    raise SmokeFailure(
+                        f"the charter column is {charter}px wide")
+                if sized.charter.height() < 400:
+                    raise SmokeFailure(
+                        f"the charter editor is {sized.charter.height()}px tall")
+                # An agent with several folders and variables is taller than
+                # any column, so what is guarded is that nothing is squeezed
+                # away and the last field can be reached — at the size the form
+                # opens at and at the smallest it allows.
+                last = sized.extra if sized.extra.isVisibleTo(sized) \
+                    else sized.skills
+                for width, height in ((1280, 980),
+                                      (sized.minimumWidth(),
+                                       sized.minimumHeight())):
+                    sized.resize(width, height)
+                    app.processEvents()
+                    inner = sized.scroll.widget()
+                    if inner.height() < inner.minimumSizeHint().height():
+                        raise SmokeFailure(
+                            f"{agent['slug']}: the form squeezes its fields at "
+                            f"{width}x{height}")
+                    reach = (sized.scroll.viewport().height()
+                             + sized.scroll.verticalScrollBar().maximum())
+                    below = last.y() + last.height()
+                    if below > reach:
+                        raise SmokeFailure(
+                            f"{agent['slug']}: the last field ends {below}px "
+                            f"down but only {reach}px can be reached at "
+                            f"{width}x{height}")
+                sized.hide()
+            ok.append("every field on the agent form is tall enough for what it "
+                      "holds, and the form scrolls rather than squeezing")
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok
@@ -1801,8 +1986,196 @@ def check_config_resolution() -> list[str]:
     return ok
 
 
+def check_agent_tools() -> list[str]:
+    """Creating and editing an agent, and what an edit carries through.
+
+    An agent is a charter document and a config entry, and the property worth
+    guarding is that they cannot drift apart: one call writes both, a refused
+    call writes neither, and every key an entry holds survives an edit — the one
+    this build knows nothing about included, because a form that silently drops
+    what it does not recognize is worse than one that refuses.
+    """
+    import json
+    import shutil
+    import subprocess
+    import tempfile
+
+    ok: list[str] = []
+    root = TOOLS.parent.parent
+    agent_tools = TOOLS / "agent_tools"
+
+    def run(script: str, *args: str, cwd: Path):
+        done = subprocess.run(
+            [sys.executable, str(cwd / "src" / "tools" / "agent_tools" / script),
+             *args],
+            capture_output=True, text=True, cwd=str(cwd))
+        return done.returncode, done.stdout, done.stderr
+
+    sys.path.insert(0, str(agent_tools))
+    import agents as agent_reader
+
+    # A charter is read whole, so what the reader returns is the file. Nothing
+    # is parsed, so no charter can be one the tool declines to handle.
+    configured = agent_reader.list_agents()
+    if not configured:
+        raise SmokeFailure("this installation configures no agents")
+    for agent in configured:
+        on_disk = (root / agent["identity"]).read_text(encoding="utf-8")
+        if agent["charter"] != on_disk:
+            raise SmokeFailure(
+                f"{agent['slug']}'s charter did not read back as its file")
+        if agent["charter_error"]:
+            raise SmokeFailure(
+                f"{agent['slug']}'s charter is unreadable: {agent['charter_error']}")
+    ok.append(f"all {len(configured)} charters read back as the files they are")
+
+    # Every key an entry holds reaches the reader, under a name of its own or
+    # in `extra`. A key that reached neither would be one an edit could drop.
+    import read_config as config_reader
+
+    for slug, entry in config_reader.get("agents", {}).items():
+        if slug == "_notes":
+            continue
+        read = agent_reader.read_agent(slug)
+        for key in entry:
+            named = {"identity", "description", "key_data_paths",
+                     "key_context_files", "notebook_access", "skills", "env"}
+            if key not in named and key not in read["extra"]:
+                raise SmokeFailure(
+                    f"{slug}'s '{key}' reaches neither a field nor extra")
+        if read["notebook_access"] != (entry.get("notebook_access") or {}):
+            raise SmokeFailure(f"{slug}'s notebook access was not read verbatim")
+    ok.append("every key every entry holds reaches a field of its own or extra")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        scratch = Path(tmp) / "clone"
+        (scratch / "src").mkdir(parents=True)
+        shutil.copytree(TOOLS, scratch / "src" / "tools")
+        shutil.copytree(root / "src" / "templates", scratch / "src" / "templates")
+        shutil.copy(root / "src" / "app.md", scratch / "src" / "app.md")
+        (scratch / "src" / "agent_identities").mkdir()
+        (scratch / "config").mkdir()
+        config_file_path = scratch / "config" / "config.local.json"
+        config_file_path.write_text(
+            json.dumps({"active_agent": "chief_of_staff", "agents": {}}))
+        slug = "smoke_agent"
+
+        # The starting charter comes from the template that owns the shape.
+        code, body, err = run("agents.py", "skeleton", slug, cwd=scratch)
+        if code != 0 or "Agent Charter" not in body:
+            raise SmokeFailure(f"no starting charter: {(err or body).strip()}")
+        if "{{" in body:
+            raise SmokeFailure("the starting charter carries template braces")
+        written = Path(tmp) / "charter.md"
+        typed = body + "\n## 4. A section the template never had\n\nProse.\n"
+        written.write_text(typed)
+
+        code, out, err = run(
+            "create_agent.py", slug,
+            "--description", "A scratch agent, made by the smoke check.",
+            "--charter-file", str(written),
+            "--env", "SMOKE_HOME=/nowhere",
+            "--notebook", "read", "--no-epic", cwd=scratch)
+        if code != 0:
+            raise SmokeFailure(f"creating an agent failed: {(err or out).strip()}")
+        charter = scratch / "src" / "agent_identities" / f"{slug}.md"
+        if charter.read_text() != typed:
+            raise SmokeFailure("the charter was not written as it was typed")
+        stored = json.loads(config_file_path.read_text())
+        if slug not in stored.get("agents", {}):
+            raise SmokeFailure("an agent was created with no config entry")
+        if stored["agents"][slug].get("env") != {"SMOKE_HOME": "/nowhere"}:
+            raise SmokeFailure("the environment did not reach the config entry")
+        ok.append("create writes the charter verbatim and the config entry "
+                  "beside it")
+
+        # A key this build knows nothing about, planted by hand the way an
+        # older or newer build would leave one.
+        stored["agents"][slug]["lesson_pipeline"] = {"stages": 4}
+        config_file_path.write_text(json.dumps(stored, indent=2))
+        code, out, _ = run("agents.py", "read", slug, "--json", cwd=scratch)
+        if json.loads(out)["extra"] != {"lesson_pipeline": {"stages": 4}}:
+            raise SmokeFailure("an unknown key did not reach extra")
+
+        was_charter = charter.read_text()
+        was_config = config_file_path.read_text()
+        code, _, err = run("agents.py", "edit", slug, "--description", "",
+                           cwd=scratch)
+        if code == 0:
+            raise SmokeFailure("an agent was left with no description")
+        if charter.read_text() != was_charter or \
+                config_file_path.read_text() != was_config:
+            raise SmokeFailure("a refused edit still wrote")
+        ok.append("a refused edit leaves both the charter and the entry as "
+                  "they were")
+
+        edited = typed.replace("Prose.", "Prose, revised.")
+        written.write_text(edited)
+        code, out, err = run(
+            "agents.py", "edit", slug,
+            "--description", "A scratch agent, renamed.",
+            "--charter-file", str(written),
+            "--data-path", "data/scratch",
+            "--notebook-read", "yes", "--write-zone", "workspace",
+            "--archive-moves", "yes",
+            "--env", "SMOKE_HOME=/elsewhere", cwd=scratch)
+        if code != 0:
+            raise SmokeFailure(f"editing an agent failed: {(err or out).strip()}")
+        code, out, _ = run("agents.py", "read", slug, "--json", cwd=scratch)
+        after = json.loads(out)
+        if after["charter"] != edited:
+            raise SmokeFailure("the edited charter is not what was supplied")
+        if after["description"] != "A scratch agent, renamed.":
+            raise SmokeFailure("the description did not reach the entry")
+        if after["notebook_access"] != {"read": True,
+                                        "write_zones": ["workspace"],
+                                        "archive_moves": True}:
+            raise SmokeFailure(
+                f"notebook access is not what was set: {after['notebook_access']}")
+        if after["env"] != {"SMOKE_HOME": "/elsewhere"}:
+            raise SmokeFailure("the environment did not survive the edit")
+        if after["extra"] != {"lesson_pipeline": {"stages": 4}}:
+            raise SmokeFailure("an unknown key was dropped by an edit")
+        ok.append("one edit reaches the charter and every key of the entry, "
+                  "and carries an unknown key through untouched")
+
+        moved = "src/agent_identities/moved_smoke_agent.md"
+        code, out, err = run("agents.py", "edit", slug, "--identity", moved,
+                             cwd=scratch)
+        if code != 0:
+            raise SmokeFailure(f"moving a charter failed: {(err or out).strip()}")
+        if charter.exists():
+            raise SmokeFailure("a moved charter was left behind at its old path")
+        if (scratch / moved).read_text() != edited:
+            raise SmokeFailure("a moved charter did not arrive whole")
+        ok.append("the charter file can be moved, and the old path is gone")
+
+        code, out, _ = run("agents.py", "list", "--json", cwd=scratch)
+        again = json.loads(out)
+        if [a["slug"] for a in again] != [slug] or \
+                again[0]["charter"] != edited or \
+                again[0]["identity"] != moved:
+            raise SmokeFailure("a fresh read did not find what was entered")
+        ok.append("a fresh read finds the agent and everything entered into it")
+
+    # Neither tool can reach a network or a model: the whole point of the form
+    # is that an agent can be made with the machine offline.
+    reaches_out = ("socket", "urllib", "http.client", "requests", "ssl",
+                   "anthropic", "openai")
+    for script in ("create_agent.py", "agents.py"):
+        source = (agent_tools / script).read_text()
+        for name in reaches_out:
+            if re.search(rf"^\s*(?:import|from)\s+{re.escape(name)}\b",
+                         source, re.M):
+                raise SmokeFailure(f"{script} imports {name}")
+    ok.append("neither agent tool imports anything that reaches a network or "
+              "a model")
+    return ok
+
+
 TARGETS = {
     "bristol": check_bristol,
+    "agent_tools": check_agent_tools,
     "payload": check_payload,
     "config_resolution": check_config_resolution,
     "test_control": check_test_control,

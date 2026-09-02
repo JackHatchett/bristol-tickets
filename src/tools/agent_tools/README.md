@@ -59,68 +59,48 @@ Nothing else needs editing afterwards. The agent picker reads the `agents` block
 directly, so the new agent is selectable at once, and a session started as it
 loads the charter and the board epic and takes direction from the user.
 
-## The agent file
-
-`<slug>.agent.json` is the whole of an agent that can travel. One JSON document,
-four keys:
-
-| Key | Holds |
-| --- | --- |
-| `bristol_agent` | The format number. A build reads the one it knows and refuses the rest. |
-| `slug` | The agent's name. |
-| `charter` | The charter, in full, as Markdown. |
-| `entry` | The config entry, minus `identity` and `skills`, with every local value taken out. |
-| `skills` | One record per attached skill: its `name`, and `source` — `native`, or `address` with the web address of the exact commit and folder it was installed from. |
-
-- **A value belonging to the exporter never crosses.** An absolute path and an
-  environment variable's value become `<supply>`, which the importer fills; the
-  instance slug becomes `<instance>` and the notebook's folder name becomes
-  `<notebook>`, which the importer resolves to its own.
-- **No skill's bytes travel with an agent** — only its address, and the importer
-  fetches from the source. What a skill records about itself, and what happens to
-  a borrowed one on the way out, is `src/tools/skill_tools/README.md` §What a
-  skill records about itself.
-- **The specification covers the skills and nothing else.** A skill is named by
-  the address `skills.py install` already takes, so a skill in an agent file and
-  a skill anyone installs by hand are the same object. The charter and the
-  config entry have no equivalent in the specification, and are the whole of
-  what this format invents.
-- **`<supply>` survives into config where the importer has not filled it.** An
-  unset value is visible and inert rather than silently resolved, and the import
-  prints the exact `write_config.py` line for each one.
-
-## export_agent.py
+## agents.py
 
 ```
-python3 export_agent.py <slug> [--out PATH]
+python3 agents.py list [--json]
+python3 agents.py read <slug> [--json]
+python3 agents.py skeleton <slug>
+python3 agents.py edit <slug> [--identity …] [--description "…"]
+                              [--charter-file <path>]
+                              [--data-path …]... [--context-file …]...
+                              [--notebook-read yes|no] [--write-zone …]...
+                              [--archive-moves yes|no] [--env NAME=VALUE]...
+                              [--extra-file <json>]
 ```
 
-Writes `<slug>.agent.json`. A skill installed before provenance records existed
-carries no address, so it is recorded as unaddressed and the output names it:
-the importer is told the capability is missing rather than handed a fetch that
-cannot work.
+Reads the agents that exist and changes what one says. `create_agent.py` writes
+an agent that is not there yet; this one requires that it is, which is why they
+are two commands rather than one with a flag.
 
-## import_agent.py
+- **One call writes both files.** The charter and the config entry cannot land
+  separately, and every change is checked before the first write, so a refused
+  edit leaves both exactly as they were.
+- **The charter is read and written whole.** Nothing here parses it into
+  fields. A charter is prose a person wrote, and a tool that recognized only
+  the shapes it generates itself would refuse to edit the ones that matter most.
+  `--charter-file` supplies the document; `skeleton` prints the starting one,
+  taken from `src/templates/identity_template.md` §The skeleton, which owns it.
+- **Every key an entry holds travels through an edit.** The ones with options of
+  their own are written from those options; every other key is carried
+  untouched, and `--extra-file` is how they are replaced as a set. A key this
+  build predates is never dropped.
+- **A repeatable option replaces its whole list.** Its `--no-…` partner empties
+  one.
+- **`--identity` moves the charter**, writing it at the new path and removing
+  the old one, and refuses a path outside the repository or one already taken.
+- **Skills are `skill_tools/skills.py`'s.** Attaching and detaching go through
+  its own commands, here as everywhere.
+- **Notebook access is written one part at a time** — `--notebook-read`,
+  `--write-zone` and `--archive-moves` — because `config`'s markdown_notebook
+  §ZONES grants them separately: the notebook is read whole or not at all, and
+  writing is granted a zone at a time. `create_agent.py` takes the same three,
+  and its `--notebook` shorthand sets all three at once.
 
-```
-python3 import_agent.py <file.agent.json>
-python3 import_agent.py <file.agent.json> --accept
-```
-
-Two runs, because a file that arrives carrying a mandate is a stranger's
-statement of what an agent may do — `src/templates/identity_template.md` §What
-of an agent can be imported, and `src/skills/importing-an-agent/SKILL.md` for
-the judgment.
-
-- **The first run writes nothing.** It prints the agent's mandate and its
-  guardrails, and fetches every addressed skill through `skills.py install`, so
-  each lands in the same quarantine as any other and none is trusted.
-- **The file is the only place a pending agent lives.** Nothing is staged, so
-  there is no half-imported agent to clean up and nothing to keep in step.
-- **A skill that cannot be fetched does not stop the import.** It is named, the
-  agent still arrives, and the missing capability stays unattached — `attach`
-  refuses a name that is not loadable, which is what keeps a quarantined skill
-  out of an agent's entry.
-- **`--accept` writes the charter, the config entry and the board epic**, by the
-  same calls `create_agent.py` makes, so an imported agent and one created here
-  are the same object.
+Bristol Tickets' Agents tab is a front end to these two commands and to
+`skills.py`, and writes nothing itself —
+`src/tools/bristol/ui/agents_tab.py`.

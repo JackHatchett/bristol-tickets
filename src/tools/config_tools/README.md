@@ -54,6 +54,12 @@ Resolves declared locations and creates them at the moment of a write.
   directory does not exist.
 - `ensure_db(path, schema)` — a database with its schema applied, created if
   either is absent.
+- `declare(actual)` — `resolve` in reverse: the spelling config stores for a
+  path just picked from a file dialog. Inside the project it is
+  project-relative, inside the Markdown notebook it is written from the
+  notebook's folder name down, and anywhere else it stays absolute. Whatever
+  writes a picked path into config calls this, so the two directions cannot
+  drift apart.
 - `agent_data_paths(slug)` / `ensure_agent_data_paths(slug)` — the
   `agents.<slug>.key_data_paths` an agent declares in config.
 

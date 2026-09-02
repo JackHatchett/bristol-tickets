@@ -47,6 +47,7 @@ CLI
     python3 data_paths.py --agent career_coach --ensure
     python3 data_paths.py --key important_paths.personal_db
     python3 data_paths.py --path data/<instance>/system/logs --ensure
+    python3 data_paths.py --declare /an/absolute/path/just/picked
     python3 data_paths.py --data-root
     python3 data_paths.py --instance
 
@@ -175,6 +176,31 @@ def resolve(declared: str | Path) -> Path:
     return project_root() / text
 
 
+def declare(actual: str | Path) -> str:
+    """The declaration that resolves back to `actual` — resolve, in reverse.
+
+    A path picked from a file dialog is absolute and machine-specific. Config
+    stores the spelling that survives a move to another machine, so this turns
+    one into the other: inside the project it is project-relative, inside the
+    Markdown notebook it is written from the notebook's own folder name down,
+    and anywhere else it stays absolute. Whoever writes a picked path into
+    config calls this, so the two spellings cannot drift apart.
+    """
+    path = Path(os.path.expanduser(str(actual))).resolve()
+    try:
+        return str(path.relative_to(project_root().resolve()))
+    except ValueError:
+        pass
+    notebook = notebook_root()
+    if notebook is not None:
+        for base in {notebook, notebook.resolve()}:
+            try:
+                return str(Path(notebook.name) / path.relative_to(base))
+            except ValueError:
+                continue
+    return str(path)
+
+
 def ensure_dir(declared: str | Path) -> Path:
     """The resolved directory, created with its parents if absent.
 
@@ -291,6 +317,11 @@ def _main(argv: list[str]) -> int:
     declared = flag("--path")
     if declared:
         print(ensure_dir(declared) if ensure else resolve(declared))
+        return 0
+
+    picked = flag("--declare")
+    if picked:
+        print(declare(picked))
         return 0
 
     sys.stderr.write(__doc__.split("CLI\n---\n", 1)[1].split("\nImport")[0])

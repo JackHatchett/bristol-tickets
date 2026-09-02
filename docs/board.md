@@ -30,8 +30,12 @@ that judgment is a read and the app cannot read. A skill opens into a view of
 its own — its text, its files, its source and a tick box per agent — and that is
 where a skill is attached to an agent; the row of controls under the list
 narrows the list instead, by text, by whether a skill came with Bristol or was
-downloaded, and by which agent holds it. **Settings** holds every choice
-this installation makes, the agent your next session runs as included.
+downloaded, and by which agent holds it. **Agents** lists the agents this
+installation configures and creates or edits any of them through a form holding
+everything an agent is, charter included, so an agent can be made and corrected
+with no AI and no text editor; it is described in `docs/agents.md`.
+**Settings** holds every choice this installation makes, the agent your next
+session runs as included.
 
 ## The three columns
 

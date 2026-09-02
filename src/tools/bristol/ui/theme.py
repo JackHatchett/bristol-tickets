@@ -98,6 +98,15 @@ LAYOUT = {
     "wizard_min_w": 720,
     "wizard_min_h": 480,
     "dialog_min_w": 760,        # the record dialog
+    "agent_dialog_min_w": 1180,  # the agent form: two columns, side by side
+    "agent_dialog_min_h": 820,
+    "agent_fields_min_w": 480,   # its left column, the entry's own fields
+    "charter_min_w": 520,        # its right column, the charter document
+    "skill_list_min_h": 170,     # its tick list of skills
+    "path_list_min_h": 92,       # a list of declared paths, with its picker
+    "env_name_w": 210,           # an environment variable's name box
+    "env_choose_w": 34,          # the pick and remove buttons beside its value
+    "extra_min_h": 90,           # its JSON field for keys this build predates
     "small_dialog_min_w": 420,  # a single-purpose modal: add link
     "preview_min_w": 480,       # the image preview modal
     "preview_min_h": 360,

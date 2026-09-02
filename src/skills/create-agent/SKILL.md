@@ -35,7 +35,10 @@ registration. For converting an existing pre-framework bundle, use
 2. **Run `src/tools/agent_tools/create_agent.py`**, which writes the charter,
    the config entry, the skill attachments and the board epic in one go and
    refuses a name already in use. Its arguments and what each writes are
-   `src/tools/agent_tools/README.md`.
+   `src/tools/agent_tools/README.md`. Bristol Tickets' Agents tab is a front end
+   to the same command and produces the same object, which is what the user
+   reaches for when no session is running; `agents.py` is how an agent that
+   already exists is changed.
 
 3. **Scaffold only what has real content to hold.** Most new agents start with
    none of it and add as needs appear.
