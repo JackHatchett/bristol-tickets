@@ -10,13 +10,19 @@ may import from here, and this module imports from none of them.
 What each scheme key means and which token governs which element is the styling
 contract in ``ui/README.md``.
 
-Schemes
+Themes and modes
 --------------------------------
-A scheme is one complete palette under a name. Schemes are grouped into
-families, each a light member and a dark member, so naming the family selects
-"follow the OS" and naming a member pins one appearance. ``resolve_choice()``
-turns either kind of name plus the OS state into one scheme name, and
-``set_scheme(name)`` makes it live.
+A scheme is one complete palette under a name. A **theme** is a pair of them, a
+light member and a dark member, and a **mode** is which of the two is drawn:
+``light``, ``dark``, or ``system`` to follow the OS. The two are separate
+choices, so a picker names themes rather than every combination of theme and
+mode. ``resolve_scheme()`` turns a theme, a mode and the OS state into one
+scheme name, and ``set_scheme(name)`` makes it live.
+
+A theme with no dark member is a theme: ``theme_has_dark()`` says which, and
+``resolve_scheme()`` draws its light palette whatever the mode and the OS say.
+An older build stored the two choices collapsed into one value;
+``appearance_choice()`` reads that value back as the theme and mode it named.
 
 One scheme is not written here: ``custom``, the palette the user builds in the
 theme builder. It is stored in the configuration rather than in this module and
@@ -341,9 +347,9 @@ SCHEMES: dict[str, dict[str, str]] = {
     "cool_dark": COOL_DARK,
 }
 
-# A family is a (light, dark) pair. Naming a family means "follow the OS within
-# it", so the two ways of choosing share one namespace and one config key.
-FAMILIES: dict[str, tuple[str, str]] = {
+# A theme is a (light, dark) pair of scheme names. A theme whose dark member is
+# None goes dark nowhere, and every resolver draws its light palette instead.
+THEMES: dict[str, tuple[str, str | None]] = {
     "warm": ("warm_light", "warm_dark"),
     "cool": ("cool_light", "cool_dark"),
 }
@@ -351,21 +357,46 @@ FAMILIES: dict[str, tuple[str, str]] = {
 # The scheme whose key set defines a complete palette, and the fallback for a
 # name the config asks for and this build does not have.
 REFERENCE_SCHEME = "warm_light"
-DEFAULT_CHOICE = "warm"
+DEFAULT_THEME = "warm"
+
+# Which half of a theme is drawn. SYSTEM_MODE follows the OS; the other two pin
+# one half whatever the OS is set to.
+LIGHT_MODE = "light"
+DARK_MODE = "dark"
+SYSTEM_MODE = "system"
+DEFAULT_MODE = SYSTEM_MODE
 
 # What the Settings tab offers, in the order it offers it. The value is what is
-# stored and names the palette; the caption is what this product calls it. The
-# two are deliberately separate — a family can be renamed on screen without
-# migrating a stored choice.
-CHOICES: list[tuple[str, str]] = [
-    ("warm_light", "Pumpkin Light"),
-    ("warm_dark", "Pumpkin Dark"),
-    ("warm", "Pumpkin System"),
-    ("cool_light", "Frosty Light"),
-    ("cool_dark", "Frosty Dark"),
-    ("cool", "Frosty System"),
+# stored and names the theme or the mode; the caption is what this product calls
+# it. The two are deliberately separate — a theme can be renamed on screen
+# without migrating a stored choice.
+THEME_CHOICES: list[tuple[str, str]] = [
+    ("warm", "Pumpkin"),
+    ("cool", "Frosty"),
     ("custom", "Custom"),
 ]
+
+MODE_CHOICES: list[tuple[str, str]] = [
+    (LIGHT_MODE, "Light"),
+    (DARK_MODE, "Dark"),
+    (SYSTEM_MODE, "Follow System"),
+]
+
+# What a mode the theme in force cannot offer says when the pointer rests on it.
+NO_DARK_HALF = "This theme has no dark colours yet."
+
+# What a build before the theme and the mode were separate controls stored in
+# one key, and the theme and mode each of its values named. A configuration
+# written by such a build comes up as the appearance it named.
+LEGACY_APPEARANCE: dict[str, tuple[str, str]] = {
+    "warm": ("warm", SYSTEM_MODE),
+    "warm_light": ("warm", LIGHT_MODE),
+    "warm_dark": ("warm", DARK_MODE),
+    "cool": ("cool", SYSTEM_MODE),
+    "cool_light": ("cool", LIGHT_MODE),
+    "cool_dark": ("cool", DARK_MODE),
+    "custom": ("custom", LIGHT_MODE),
+}
 
 # The name a palette the user built himself is registered and stored under. It
 # is an ordinary scheme once ``register_custom()`` has installed it, so every
@@ -450,16 +481,41 @@ C: dict[str, str] = dict(SCHEMES[REFERENCE_SCHEME])
 _current_scheme = REFERENCE_SCHEME
 
 
-def resolve_choice(choice: str | None, dark: bool) -> str:
-    """The scheme name a stored choice means right now.
+def theme_has_dark(theme: str | None) -> bool:
+    """True when this theme has a dark half to draw."""
+    return bool(THEMES.get(theme or "", (None, None))[1])
 
-    A family name resolves against the OS state; a scheme name resolves to
-    itself; anything else falls back to the default family.
+
+def resolve_scheme(theme: str | None, mode: str | None, dark: bool) -> str:
+    """The scheme name a theme and a mode mean right now.
+
+    ``system`` resolves against the OS state and the other two modes pin one
+    half. A theme with no dark half draws its light one whatever either says,
+    which is what makes such a theme an ordinary choice rather than a broken
+    one. An unknown theme falls back to the default.
     """
-    if choice in SCHEMES:
-        return choice
-    pair = FAMILIES.get(choice or "", FAMILIES[DEFAULT_CHOICE])
-    return pair[1] if dark else pair[0]
+    if theme == CUSTOM_SCHEME and CUSTOM_SCHEME in SCHEMES:
+        return CUSTOM_SCHEME
+    light, dark_member = THEMES.get(theme or "", THEMES[DEFAULT_THEME])
+    if dark_member and (mode == DARK_MODE or (mode == SYSTEM_MODE and dark)):
+        return dark_member
+    return light
+
+
+def appearance_choice(theme, mode, legacy) -> tuple[str, str]:
+    """The theme and mode in force, from the three values config can hold.
+
+    The two current keys win where they name something this build offers. Where
+    they do not, the one key an older build wrote is read for the theme and mode
+    it named. Where neither answers, the default.
+    """
+    known = {name for name, _caption in THEME_CHOICES}
+    modes = {name for name, _caption in MODE_CHOICES}
+    if isinstance(theme, str) and theme in known:
+        return theme, mode if isinstance(mode, str) and mode in modes else DEFAULT_MODE
+    if isinstance(legacy, str) and legacy in LEGACY_APPEARANCE:
+        return LEGACY_APPEARANCE[legacy]
+    return DEFAULT_THEME, DEFAULT_MODE
 
 
 def set_scheme(name: str) -> None:
@@ -478,20 +534,22 @@ def set_scheme(name: str) -> None:
     C.update(scheme)
 
 
-def apply_scheme(app, choice: str | None, custom: dict | None = None) -> None:
-    """Resolve ``choice`` against the OS state, make it live, and style ``app``.
+def apply_scheme(app, theme: str | None, mode: str | None,
+                 custom: dict | None = None) -> None:
+    """Resolve a theme and a mode against the OS state, make the scheme live,
+    and style ``app``.
 
     Every window the application opens is styled by this one call, so it runs
     before the first window is built rather than inside any of them.
 
     ``custom`` is the palette the user built, as it is stored. It is registered
-    first, so a stored choice of ``custom`` resolves to a scheme rather than
-    falling back — and a choice of ``custom`` with nothing stored falls back,
+    first, so a stored theme of ``custom`` resolves to a scheme rather than
+    falling back — and a theme of ``custom`` with nothing stored falls back,
     which is what an installation that has never opened the builder has.
     """
     register_custom(custom)
-    set_scheme(resolve_choice(
-        choice, is_dark_scheme(app) if app is not None else False))
+    set_scheme(resolve_scheme(
+        theme, mode, is_dark_scheme(app) if app is not None else False))
     if app is not None:
         app.setStyleSheet(build_style_sheet())
 
@@ -625,10 +683,10 @@ def check_schemes() -> list[str]:
         missing = sorted(every_key - set(SCHEMES[name]))
         if missing:
             complaints.append(f"{name} is missing: {', '.join(missing)}")
-    for name, pair in sorted(FAMILIES.items()):
+    for name, pair in sorted(THEMES.items()):
         for member in pair:
-            if member not in SCHEMES:
-                complaints.append(f"family {name} names {member}, which is not a scheme")
+            if member is not None and member not in SCHEMES:
+                complaints.append(f"theme {name} names {member}, which is not a scheme")
     return complaints
 
 

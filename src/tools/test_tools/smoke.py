@@ -105,9 +105,9 @@ def check_bristol() -> list[str]:
     # and complete afterwards however partial what was stored is.
     if theme.CUSTOM_SCHEME in theme.SCHEMES:
         raise SmokeFailure("the custom scheme exists before anything registers one")
-    if theme.resolve_choice(theme.CUSTOM_SCHEME, False) \
-            != theme.FAMILIES[theme.DEFAULT_CHOICE][0]:
-        raise SmokeFailure("an unregistered custom choice does not fall back")
+    if theme.resolve_scheme(theme.CUSTOM_SCHEME, theme.LIGHT_MODE, False) \
+            != theme.THEMES[theme.DEFAULT_THEME][0]:
+        raise SmokeFailure("an unregistered custom theme does not fall back")
     if theme.register_custom({"INK": "#101010"}) is not True:
         raise SmokeFailure("a partial custom palette does not register")
     if theme.check_schemes():
@@ -178,24 +178,67 @@ def check_bristol() -> list[str]:
         raise SmokeFailure("the notice is not drawn to stay readable on the canvas")
     ok.append("the theme builder seeds, validates and names what fails")
 
-    theme.set_scheme(theme.resolve_choice(theme.DEFAULT_CHOICE, False))
+    theme.set_scheme(theme.resolve_scheme(
+        theme.DEFAULT_THEME, theme.DEFAULT_MODE, False))
 
-    for value, _caption in theme.CHOICES:
-        for dark in (False, True):
-            name = theme.resolve_choice(value, dark)
-            if name not in theme.SCHEMES:
-                raise SmokeFailure(f"choice {value!r} resolves to no scheme")
-            theme.set_scheme(name)
-            if theme.current_scheme() != name or not theme.build_style_sheet():
-                raise SmokeFailure(f"scheme {name!r} does not become live")
-    if theme.resolve_choice("a_scheme_from_a_newer_build", False) \
-            != theme.FAMILIES[theme.DEFAULT_CHOICE][0]:
-        raise SmokeFailure("an unrecognised scheme name does not fall back")
+    # Every theme against every mode, in both OS states: each pair names a
+    # complete scheme that goes live and renders a sheet.
+    for value, _caption in theme.THEME_CHOICES:
+        for mode, _mode_caption in theme.MODE_CHOICES:
+            for dark in (False, True):
+                name = theme.resolve_scheme(value, mode, dark)
+                if name not in theme.SCHEMES:
+                    raise SmokeFailure(
+                        f"theme {value!r} in {mode!r} resolves to no scheme")
+                theme.set_scheme(name)
+                if theme.current_scheme() != name or not theme.build_style_sheet():
+                    raise SmokeFailure(f"scheme {name!r} does not become live")
+    if theme.resolve_scheme("a_theme_from_a_newer_build", theme.LIGHT_MODE, False) \
+            != theme.THEMES[theme.DEFAULT_THEME][0]:
+        raise SmokeFailure("an unrecognised theme name does not fall back")
+    ok.append("every theme and mode pair resolves, applies and renders a stylesheet")
+
+    # A theme with no dark half is an ordinary theme: it offers Light alone and
+    # draws its light palette whatever the mode and the OS say.
+    light_only = "dark_half_none"
+    theme.THEMES[light_only] = (theme.REFERENCE_SCHEME, None)
+    try:
+        if theme.theme_has_dark(light_only):
+            raise SmokeFailure("a theme with no dark member reports one")
+        if not theme.theme_has_dark(theme.DEFAULT_THEME):
+            raise SmokeFailure("a theme with both halves reports no dark member")
+        for mode, _caption in theme.MODE_CHOICES:
+            for dark in (False, True):
+                if theme.resolve_scheme(light_only, mode, dark) \
+                        != theme.REFERENCE_SCHEME:
+                    raise SmokeFailure(
+                        f"a theme with no dark half went dark in {mode!r}")
+    finally:
+        theme.THEMES.pop(light_only, None)
+    ok.append("a theme with no dark half refuses Dark and Follow System")
+
+    # Every value the one older key could hold comes up as the appearance it
+    # named, and the two current keys win wherever they say anything.
+    for legacy, expected in theme.LEGACY_APPEARANCE.items():
+        if theme.appearance_choice(None, None, legacy) != expected:
+            raise SmokeFailure(f"stored appearance {legacy!r} did not migrate")
+    if theme.appearance_choice("cool", theme.DARK_MODE, "warm_light") \
+            != ("cool", theme.DARK_MODE):
+        raise SmokeFailure("a stored theme and mode lost to the older key")
+    if theme.appearance_choice(None, None, "a_scheme_from_a_newer_build") \
+            != (theme.DEFAULT_THEME, theme.DEFAULT_MODE):
+        raise SmokeFailure("an unreadable stored appearance does not default")
+    if theme.appearance_choice("warm", "sideways", None) \
+            != ("warm", theme.DEFAULT_MODE):
+        raise SmokeFailure("an unreadable stored mode does not default")
+    ok.append(f"all {len(theme.LEGACY_APPEARANCE)} older appearance values "
+              "migrate to the appearance they named")
+
     if theme.register_custom(None) is not False \
             or theme.CUSTOM_SCHEME in theme.SCHEMES:
         raise SmokeFailure("registering no palette leaves a custom scheme behind")
-    theme.set_scheme(theme.resolve_choice(theme.DEFAULT_CHOICE, False))
-    ok.append("every offered choice resolves, applies and renders a stylesheet")
+    theme.set_scheme(theme.resolve_scheme(
+        theme.DEFAULT_THEME, theme.DEFAULT_MODE, False))
 
     for scale in (theme.SPACE, theme.RADIUS, theme.TYPE):
         if not all(isinstance(step, int) and step > 0 for step in scale.values()):
@@ -263,7 +306,8 @@ def check_bristol() -> list[str]:
             CardDelegate(show_checkbox=True).paint(painter, option, cell)
         finally:
             painter.end()
-    theme.set_scheme(theme.resolve_choice(theme.DEFAULT_CHOICE, False))
+    theme.set_scheme(theme.resolve_scheme(
+        theme.DEFAULT_THEME, theme.DEFAULT_MODE, False))
     ok.append("a card paints under every scheme")
 
     # The Courses tab against a courses root that is not there. A root is
@@ -1234,16 +1278,51 @@ def check_bristol() -> list[str]:
                 tab.work_scope.setCurrentIndex(tab.work_scope.findData(False))
                 if config_file.get(config_file.WORK_WHOLE_QUEUE) is not False:
                     raise SmokeFailure("Settings did not write the work scope")
-                if tab.appearance.currentData() != \
-                        config_file.APPEARANCE_SCHEME_DEFAULT:
-                    raise SmokeFailure("Settings did not load the stored scheme")
-                previewed: list[str] = []
-                tab._on_appearance_changed = previewed.append
-                tab.appearance.setCurrentIndex(tab.appearance.findData("cool_dark"))
-                if previewed != ["cool_dark"]:
-                    raise SmokeFailure("picking a scheme did not apply it live")
-                if config_file.get(config_file.APPEARANCE_SCHEME) != "cool_dark":
-                    raise SmokeFailure("picking a scheme did not write it")
+                # Theme and Light & Dark are two rows writing two keys, and the
+                # older single key is what an installation predating them has.
+                from PySide6.QtCore import Qt
+
+                from ui.theme import DARK_MODE, LIGHT_MODE, SYSTEM_MODE
+                if (tab.theme.currentData(), tab.mode.currentData()) != \
+                        ("warm", SYSTEM_MODE):
+                    raise SmokeFailure(
+                        "Settings did not load the stored appearance")
+                previewed: list[tuple[str, str]] = []
+                tab._on_appearance_changed = \
+                    lambda theme, mode: previewed.append((theme, mode))
+                tab.theme.setCurrentIndex(tab.theme.findData("cool"))
+                if previewed[-1:] != [("cool", SYSTEM_MODE)]:
+                    raise SmokeFailure("picking a theme did not apply it live")
+                if config_file.get(config_file.APPEARANCE_THEME) != "cool":
+                    raise SmokeFailure("picking a theme did not write it")
+                tab.mode.setCurrentIndex(tab.mode.findData(DARK_MODE))
+                if previewed[-1:] != [("cool", DARK_MODE)]:
+                    raise SmokeFailure("picking a mode did not apply it live")
+                if config_file.get(config_file.APPEARANCE_MODE) != DARK_MODE:
+                    raise SmokeFailure("picking a mode did not write it")
+                # A theme with no dark half: the two dark rows are unclickable,
+                # they carry the reason, and the row sits on Light.
+                tab.theme.setCurrentIndex(tab.theme.findData("custom"))
+                for index in range(tab.mode.count()):
+                    value = tab.mode.itemData(index)
+                    item = tab.mode.model().item(index)
+                    if (value == LIGHT_MODE) is not item.isEnabled():
+                        raise SmokeFailure(
+                            f"mode {value!r} is offered against its theme")
+                    hover = tab.mode.itemData(index, Qt.ToolTipRole)
+                    if item.isEnabled() != (not hover):
+                        raise SmokeFailure(
+                            f"mode {value!r} does not say why on hover")
+                if tab.mode.currentData() != LIGHT_MODE:
+                    raise SmokeFailure(
+                        "a theme with no dark half did not sit on Light")
+                if config_file.get(config_file.APPEARANCE_MODE) != DARK_MODE:
+                    raise SmokeFailure(
+                        "seating Light over an unofferable mode overwrote it")
+                tab.theme.setCurrentIndex(tab.theme.findData("cool"))
+                if tab.mode.currentData() != DARK_MODE:
+                    raise SmokeFailure(
+                        "returning to a theme with both halves lost the mode")
                 if hasattr(tab, "save_btn"):
                     raise SmokeFailure("a Save button still stands on Settings")
                 tab.suggested_commit.setChecked(
@@ -1252,12 +1331,12 @@ def check_bristol() -> list[str]:
                         tab.suggested_commit.isChecked():
                     raise SmokeFailure("toggling the commit box did not write it")
                 # Seating a stored value is not a choice, so reload writes nothing.
-                marker = config_file.get(config_file.APPEARANCE_SCHEME)
-                config_file.update({config_file.APPEARANCE_SCHEME: "warm_light"})
+                marker = config_file.get(config_file.APPEARANCE_THEME)
+                config_file.update({config_file.APPEARANCE_THEME: "warm"})
                 tab.reload()
-                if config_file.get(config_file.APPEARANCE_SCHEME) != "warm_light":
+                if config_file.get(config_file.APPEARANCE_THEME) != "warm":
                     raise SmokeFailure("reloading Settings wrote a value back")
-                config_file.update({config_file.APPEARANCE_SCHEME: marker})
+                config_file.update({config_file.APPEARANCE_THEME: marker})
                 # The next-session agent is a field on this page like every
                 # other: it loads from the configuration, moves only on a
                 # deliberate choice, and reaches the file on that choice.
@@ -1273,7 +1352,7 @@ def check_bristol() -> list[str]:
 
                 # A wheel gesture and an arrow key while it holds focus leave
                 # the value and write nothing.
-                from PySide6.QtCore import QEvent, QPoint, QPointF, Qt
+                from PySide6.QtCore import QEvent, QPoint, QPointF
                 from PySide6.QtGui import QKeyEvent, QWheelEvent
                 before = picker.currentText()
                 chosen: list[str] = []

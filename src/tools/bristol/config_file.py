@@ -35,13 +35,19 @@ SUGGESTED_COMMIT_DEFAULT = True
 WORK_WHOLE_QUEUE = "session.work_whole_queue"
 WORK_WHOLE_QUEUE_DEFAULT = True
 
-# Which colour scheme the app draws with. The value is a scheme name or a family
-# name from ``ui/theme.py``; a family means "follow the OS within it".
+# Which theme the app draws with, and which half of it. The theme names a pair
+# of palettes in ``ui/theme.py``; the mode is light, dark, or system to follow
+# the OS. They are two keys because they are two choices on the page.
+APPEARANCE_THEME = "appearance.theme"
+APPEARANCE_MODE = "appearance.mode"
+
+# The one key a build before those two wrote, holding a theme and a mode
+# collapsed into a single value. Nothing writes it now; ``theme`` reads it back
+# as the appearance it named, through ``ui.theme.appearance_choice``.
 APPEARANCE_SCHEME = "appearance.scheme"
-APPEARANCE_SCHEME_DEFAULT = "warm"
 
 # The palette the user built in the theme builder, as a key-to-colour mapping.
-# It is what ``appearance.scheme`` of "custom" names, and it sits beside that
+# It is what ``appearance.theme`` of "custom" names, and it sits beside that
 # choice rather than in ``ui/theme.py``, because it belongs to this
 # installation rather than to the build.
 APPEARANCE_CUSTOM = "appearance.custom_scheme"

@@ -11,17 +11,6 @@ which one to reach for.
   number.** `space("md")`, `radius("lg")`, `type_size("title")`.
 - **Read `C` and the token functions at paint time, not at import time.** A name
   bound once at import holds the value the app started with.
-- **Check a visible change against Bristol running on the user's machine**, with
-  whatever the runtime offers for seeing a window there. Say so and stop where it
-  offers nothing, rather than substituting a render of a different platform. A
-  change nothing can see — storage, a migration, which card is next — is checked
-  by the smoke target and no further.
-- **Change the user's own settings to test one, and put them back.** Proving a
-  choice survives a restart takes a real write to the real configuration, and the
-  session that made the change is the one that restores it and says so.
-- **Never install Qt into the session's own sandbox to look at the app.** An
-  offscreen render settles geometry at most, and draws the wrong control set,
-  fonts and pixel ratio. // The install has cost more sessions than it has saved.
 
 ## Scheme keys
 
@@ -52,9 +41,12 @@ scheme carries every key below; `check_schemes()` names any that does not.
 | `NEUTRAL_BG` / `NEUTRAL_TX` | A pill carrying a fact that ranks nothing: effort. |
 | `SHADOW` | The soft drop shadow that makes a card the raised surface on a flat canvas. Written `#AARRGGBB`, so it carries its own alpha. |
 
-Families pair a light scheme with a dark one, so `appearance.scheme` in
-`config/config.local.json` names either a family (follow the OS) or one scheme
-(pinned). `resolve_choice()` collapses the two into a scheme name.
+A theme pairs a light scheme with a dark one, and a mode says which half is
+drawn: `appearance.theme` and `appearance.mode` in `config/config.local.json`
+are the two, and `resolve_scheme()` collapses them and the OS state into one
+scheme name. A theme whose dark half is `None` draws its light scheme whatever
+either says, and `theme_has_dark()` is what a control asks before offering Dark.
+`appearance_choice()` reads a configuration written before the two keys existed.
 
 ## Tokens
 
@@ -193,9 +185,10 @@ Two surfaces write a card, and each has its own job.
 ## Adding a scheme
 
 Copy an existing palette in `theme.py`, change the values, register it in
-`SCHEMES`, and pair it in `FAMILIES` if it has a light and dark member. Add its
-name to `CHOICES` to offer it in Settings. `check_schemes()` reports any key the
-new palette is missing; the smoke check runs it.
+`SCHEMES`, and pair it in `THEMES` under the theme it is a half of — `None` for
+a dark half that does not exist yet. Add the theme's name to `THEME_CHOICES` to
+offer it in Settings. `check_schemes()` reports any key the new palette is
+missing; the smoke check runs it.
 
 **A key added to one scheme is added to every one of them, and to
 `KEY_CAPTIONS`.** The theme builder offers a field per key the reference scheme
@@ -208,8 +201,10 @@ key — a caption, a swatch that opens the platform colour picker, and the hex
 value — seeded from the theme in force.
 
 - **The palette is stored in the configuration, not in `theme.py`.** It is
-  `appearance.custom_scheme`, and `appearance.scheme` of `custom` is what names
+  `appearance.custom_scheme`, and `appearance.theme` of `custom` is what names
   it. A build ships schemes; an installation holds this one.
+- **Custom is a theme with no dark half**, so it is absent from `THEMES` and the
+  Light & Dark row offers Light alone while it is in force.
 - **`register_custom()` is what makes it a scheme**, filling any key it lacks
   from the reference scheme, so it is complete for `check_schemes()` and live
   for `set_scheme()` exactly as a shipped one is. Every path that applies a
