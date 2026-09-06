@@ -73,10 +73,11 @@ from .skills_tab import SkillsTab
 from .theme import (
     COLUMNS,
     LAYOUT,
+    appearance_choice,
     apply_scheme,
     build_style_sheet,
     is_dark_scheme,
-    resolve_choice,
+    resolve_scheme,
     set_scheme,
     space,
     _fmt_dt,
@@ -688,22 +689,25 @@ class MainWindow(QMainWindow):
         system' and a pinned scheme come down the same path.
         """
         app = QApplication.instance()
-        choice = config_file.get(config_file.APPEARANCE_SCHEME,
-                                 config_file.APPEARANCE_SCHEME_DEFAULT)
+        theme, mode = appearance_choice(
+            config_file.get(config_file.APPEARANCE_THEME),
+            config_file.get(config_file.APPEARANCE_MODE),
+            config_file.get(config_file.APPEARANCE_SCHEME))
         # Applied app-wide so child dialogs and message boxes inherit; fall back
         # to the window itself if there's somehow no application object. The
-        # stored custom palette goes down with it, so a choice of 'custom'
+        # stored custom palette goes down with it, so a theme of 'custom'
         # resolves to the palette the user built rather than falling back.
-        apply_scheme(app, choice, config_file.get(config_file.APPEARANCE_CUSTOM))
+        apply_scheme(app, theme, mode,
+                     config_file.get(config_file.APPEARANCE_CUSTOM))
         if app is None:
             self.setStyleSheet(build_style_sheet())
 
-    def _preview_appearance(self, choice: str) -> None:
-        """Draw the app in a scheme the Settings tab is offering, before the
-        configuration says so. Settings' Save is what makes the choice stick."""
+    def _preview_appearance(self, theme: str, mode: str) -> None:
+        """Draw the app in the theme and mode the Settings tab is offering,
+        before the configuration says so."""
         app = QApplication.instance()
-        set_scheme(resolve_choice(
-            choice, is_dark_scheme(app) if app is not None else False))
+        set_scheme(resolve_scheme(
+            theme, mode, is_dark_scheme(app) if app is not None else False))
         sheet = build_style_sheet()
         if app is not None:
             app.setStyleSheet(sheet)
@@ -737,7 +741,7 @@ class MainWindow(QMainWindow):
 
     def _on_color_scheme_changed(self, *args) -> None:
         """OS switched between light and dark. It reaches the app only while the
-        stored choice names a family; a pinned scheme resolves to itself."""
+        mode is Follow System; a pinned mode resolves the same either way."""
         self.refresh_appearance()
 
     # ----- Sweeping the Done column to the Archive -------------------------

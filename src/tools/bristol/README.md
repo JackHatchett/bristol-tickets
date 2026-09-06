@@ -67,7 +67,8 @@ in the UI holds a hex value or a pixel count of its own, so a new palette is a
 data change and a density change is one edit. `ui/README.md` is the contract an
 agent styles from: what each key means, which token governs which element, and
 how to answer an instruction given as intent. The scheme in force is
-`appearance.scheme` in the configuration, picked in the Settings tab.
+`appearance.theme` and `appearance.mode` in the configuration, picked in the
+Settings tab.
 
 ## How it finds the database (`app.py`)
 
@@ -152,9 +153,12 @@ keys, and this app only writes them.
   Backlog. It governs every card `add-task` creates without an explicit
   `--stage`, whoever files it and whoever it is for.
   `ticket_tools/ticket_write.py` reads the same key.
-- **Theme** — `appearance.scheme`, applied live as it is picked so it can be
-  compared against the board it themes. The stored value names the palette
-  family; the caption is what this product calls it.
+- **Theme** — `appearance.theme`, applied live as it is picked so it can be
+  compared against the board it themes. The stored value names a pair of
+  palettes; the caption is what this product calls it.
+- **Light & Dark** — `appearance.mode`, which half of the theme is drawn:
+  Light, Dark, or Follow System. A theme with no dark half offers Light alone
+  and says why the other two are unclickable.
 
 **Agent Sessions**
 

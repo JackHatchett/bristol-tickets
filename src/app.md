@@ -63,7 +63,6 @@ orthogonal to its column, `status`. Precedence, identical for every agent:
 - **Pass over a card with an unmet blocker, take the next in order, and return
   to it in place once every blocker is done.** Never work its unblocked part in
   passing.
-- **Where a script and this list disagree, the script is the bug.**
 
 **3. Pressure means nothing across assignees**, and moves nothing in your own
 queue either — `src/tools/ticket_tools/README.md` §Board conventions.
@@ -150,6 +149,7 @@ you write:
   or "just in case" snapshots, anywhere, `/data` included. Safety copies go in
   the session scratchpad, and you delete your own intermediates. Where this and
   a charter's safety gate conflict, the charter wins.
+- **A declared staging location is a container, not a file left behind.**
 
 **Every file is written for a person to read.** Only one already shaped like
 configuration — a list, a mapping, a table of values — may be terse.

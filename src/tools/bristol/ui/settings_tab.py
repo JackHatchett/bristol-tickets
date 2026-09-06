@@ -13,6 +13,11 @@ Both sections share one form, so every label starts at the same left edge and
 every control at the same one — a section heading is a row that spans both
 columns rather than a form of its own.
 
+Theme and Light & Dark are two rows because they are two choices: the first
+names a theme, the second which half of it is drawn. A theme with no dark half
+leaves Dark and Follow System unclickable and says why on hover, rather than
+hiding them — an option nobody can find is not an invitation to build one.
+
 The theme applies the moment it is picked, so it can be compared against the
 board it themes, and each control writes its own key as it is moved. Custom is
 the one option that is a door rather than a value: it opens the theme builder,
@@ -35,8 +40,17 @@ from PySide6.QtWidgets import (
 import config_file  # bristol-local; see module docstring
 
 from .settled_combo import SettledComboBox, fill_words
-from .theme import CHOICES as THEME_CHOICES
-from .theme import CUSTOM_SCHEME, register_custom, space
+from .theme import (
+    CUSTOM_SCHEME,
+    LIGHT_MODE,
+    MODE_CHOICES,
+    NO_DARK_HALF,
+    THEME_CHOICES,
+    appearance_choice,
+    register_custom,
+    space,
+    theme_has_dark,
+)
 from .theme_builder import ThemeBuilderDialog
 
 # What each stored value is called on screen. A caption names the column a card
@@ -79,12 +93,18 @@ class SettingsTab(QWidget):
         self.new_ticket.setToolTip(
             "Where a new card lands when the agent filing it names no tab.")
 
-        self.appearance = fill_words(QComboBox(), THEME_CHOICES)
-        self.appearance.currentIndexChanged.connect(self._appearance_chosen)
+        self.theme = fill_words(QComboBox(), THEME_CHOICES)
+        self.theme.currentIndexChanged.connect(self._theme_chosen)
         # Custom is a door rather than a value, so it opens on the click and not
         # on the index: choosing it while it is already current has to open the
         # builder too, and only `activated` fires then.
-        self.appearance.activated.connect(self._appearance_activated)
+        self.theme.activated.connect(self._theme_activated)
+        self.theme.setToolTip("The pair of palettes the board is drawn from.")
+
+        self.mode = fill_words(QComboBox(), MODE_CHOICES)
+        self.mode.currentIndexChanged.connect(self._mode_chosen)
+        self.mode.setToolTip(
+            "Which half of the theme is drawn, or the one the OS is set to.")
 
         # Which agent the next session runs as: the one field here that decides
         # what a session is rather than how it behaves. It is a settled combo
@@ -126,7 +146,10 @@ class SettingsTab(QWidget):
 
         form.addRow(_heading("Bristol Tickets"))
         form.addRow("Ticket Destination", self.new_ticket)
-        form.addRow("Theme", self.appearance)
+        form.addRow("Theme", self.theme)
+        # // A form row's label is a QLabel with mnemonics on, so a literal
+        # // ampersand has to be doubled or Qt eats it and underlines the D.
+        form.addRow("Light && Dark", self.mode)
         form.addRow(_heading("Agent Sessions"))
         form.addRow("Agent", self.next_agent)
         form.addRow("Work Scope", self.work_scope)
@@ -152,25 +175,57 @@ class SettingsTab(QWidget):
         self._loading = False
         self.reload()
 
-    def _appearance_chosen(self) -> None:
-        """Re-theme the running app, then keep the choice.
+    def _theme_chosen(self) -> None:
+        """Offer the modes the new theme can draw, re-theme, and keep the choice.
 
-        Custom is left to ``_appearance_activated``: there is nothing to keep
-        until the builder has been through, and a palette the user then cancels
-        must not have been written on the way in.
+        Custom is left to ``_theme_activated``: there is nothing to keep until
+        the builder has been through, and a palette the user then cancels must
+        not have been written on the way in.
         """
-        if self.appearance.currentData() == CUSTOM_SCHEME:
+        self._seat_modes()
+        if self.theme.currentData() == CUSTOM_SCHEME:
             return
-        if self._on_appearance_changed is not None:
-            self._on_appearance_changed(self.appearance.currentData())
-        self._write(config_file.APPEARANCE_SCHEME,
-                    self.appearance.currentData(), "Theme")
+        self._redraw()
+        self._write(config_file.APPEARANCE_THEME,
+                    self.theme.currentData(), "Theme")
 
-    def _appearance_activated(self, _index: int) -> None:
+    def _theme_activated(self, _index: int) -> None:
         """Open the theme builder when Custom is the option chosen."""
-        if self._loading or self.appearance.currentData() != CUSTOM_SCHEME:
+        if self._loading or self.theme.currentData() != CUSTOM_SCHEME:
             return
         self._build_theme()
+
+    def _mode_chosen(self) -> None:
+        """Re-theme the running app, then keep the mode."""
+        self._redraw()
+        self._write(config_file.APPEARANCE_MODE,
+                    self.mode.currentData(), "Light & Dark")
+
+    def _redraw(self) -> None:
+        """Draw the running app in the theme and mode the page is showing."""
+        if self._on_appearance_changed is not None:
+            self._on_appearance_changed(self.theme.currentData(),
+                                        self.mode.currentData())
+
+    def _seat_modes(self) -> None:
+        """Offer only the modes the theme in force can draw.
+
+        A theme with no dark half leaves Dark and Follow System unclickable
+        carrying the reason, and the row sits on Light, which is what the app
+        draws for such a theme whatever is stored. The stored mode is left
+        alone, so returning to a theme that has both halves returns to it.
+        """
+        has_dark = theme_has_dark(self.theme.currentData())
+        model = self.mode.model()
+        for index in range(self.mode.count()):
+            allowed = has_dark or self.mode.itemData(index) == LIGHT_MODE
+            model.item(index).setEnabled(allowed)
+            self.mode.setItemData(index, "" if allowed else NO_DARK_HALF,
+                                  Qt.ToolTipRole)
+        if not has_dark:
+            self._seat(self.mode, LIGHT_MODE)
+        else:
+            self._seat(self.mode, self._stored_appearance()[1])
 
     def _build_theme(self) -> None:
         """Build a palette, keep it, and make it the theme in force.
@@ -180,8 +235,7 @@ class SettingsTab(QWidget):
         opens on something that already works. A cancelled build restores the
         theme the page was showing and leaves the configuration untouched.
         """
-        was = config_file.get(config_file.APPEARANCE_SCHEME,
-                              config_file.APPEARANCE_SCHEME_DEFAULT)
+        was_theme, was_mode = self._stored_appearance()
         stored = config_file.get(config_file.APPEARANCE_CUSTOM)
         builder = ThemeBuilderDialog(
             seed=stored if isinstance(stored, dict) else None,
@@ -190,30 +244,37 @@ class SettingsTab(QWidget):
         )
         if not builder.exec():
             register_custom(stored if isinstance(stored, dict) else None)
-            if self._on_appearance_changed is not None:
-                self._on_appearance_changed(was)
-            self._seat_appearance(was)
+            self._seat(self.theme, was_theme)
+            self._seat_modes()
+            self._redraw()
             return
         palette = builder.palette()
         register_custom(palette)
         self._write(config_file.APPEARANCE_CUSTOM, palette, "Theme")
-        self._write(config_file.APPEARANCE_SCHEME, CUSTOM_SCHEME, "Theme")
-        if self._on_appearance_changed is not None:
-            self._on_appearance_changed(CUSTOM_SCHEME)
+        self._write(config_file.APPEARANCE_THEME, CUSTOM_SCHEME, "Theme")
+        self._redraw()
 
     def _preview_custom(self, palette: dict) -> None:
         """Draw the running app in a palette the builder is still holding."""
         register_custom(palette)
         if self._on_appearance_changed is not None:
-            self._on_appearance_changed(CUSTOM_SCHEME)
+            self._on_appearance_changed(CUSTOM_SCHEME, self.mode.currentData())
 
-    def _seat_appearance(self, choice: str | None) -> None:
-        """Put the Theme picker on a choice without it reading as one made."""
+    def _stored_appearance(self) -> tuple[str, str]:
+        """The theme and mode the configuration currently says, migrating the
+        one key a build before these two wrote."""
+        return appearance_choice(
+            config_file.get(config_file.APPEARANCE_THEME),
+            config_file.get(config_file.APPEARANCE_MODE),
+            config_file.get(config_file.APPEARANCE_SCHEME))
+
+    def _seat(self, combo: QComboBox, value) -> None:
+        """Put a picker on a value without it reading as a choice made."""
         was = self._loading
         self._loading = True
         try:
-            index = self.appearance.findData(choice)
-            self.appearance.setCurrentIndex(index if index >= 0 else 0)
+            index = combo.findData(value)
+            combo.setCurrentIndex(index if index >= 0 else 0)
         finally:
             self._loading = was
 
@@ -277,10 +338,10 @@ class SettingsTab(QWidget):
         self.suggested_commit.setChecked(bool(config_file.get(
             config_file.SUGGESTED_COMMIT, config_file.SUGGESTED_COMMIT_DEFAULT
         )))
-        scheme = config_file.get(
-            config_file.APPEARANCE_SCHEME, config_file.APPEARANCE_SCHEME_DEFAULT
-        )
-        self._seat_appearance(scheme)
+        theme, mode = self._stored_appearance()
+        self._seat(self.theme, theme)
+        self._seat(self.mode, mode)
+        self._seat_modes()
         self.setEnabled(placed)
         # An unplaced clone has nothing to write to, and says so where a save
         # result would otherwise appear.

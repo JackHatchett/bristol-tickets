@@ -131,10 +131,12 @@ def main() -> None:
     # Style the application before the first window exists, so a run that
     # opens the wizard draws it in the same scheme as the board.
     import config_file
-    from ui.theme import apply_scheme
-    apply_scheme(app, config_file.get(config_file.APPEARANCE_SCHEME,
-                                      config_file.APPEARANCE_SCHEME_DEFAULT),
-                 config_file.get(config_file.APPEARANCE_CUSTOM))
+    from ui.theme import appearance_choice, apply_scheme
+    theme, mode = appearance_choice(
+        config_file.get(config_file.APPEARANCE_THEME),
+        config_file.get(config_file.APPEARANCE_MODE),
+        config_file.get(config_file.APPEARANCE_SCHEME))
+    apply_scheme(app, theme, mode, config_file.get(config_file.APPEARANCE_CUSTOM))
 
     # An app newer than the installation it opens updates it first, so a user
     # who downloads a release gets the machinery that release ships with. Only
