@@ -21,7 +21,8 @@ pieces it composes live in sibling modules:
     setup_wizard.py  first-run setup, also reachable from File → Setup…
     settings_tab.py  SettingsTab (the next-session agent, board behaviour,
                      appearance — all stored in config.local.json)
-    theme_builder.py ThemeBuilderDialog (a whole palette, built by hand)
+    theme_manager.py ThemeManagerDialog (the themes on offer, edited)
+    palette_form.py  PaletteForm (one palette, a row per colour)
     skills_tab.py    SkillsTab (what a session can load, and importing one)
     courses_tab.py   CoursesTab (every course, and the control that opens one)
     agents_tab.py    AgentsTab (who is in the fleet, created and edited by form)
@@ -695,9 +696,10 @@ class MainWindow(QMainWindow):
             config_file.get(config_file.APPEARANCE_SCHEME))
         # Applied app-wide so child dialogs and message boxes inherit; fall back
         # to the window itself if there's somehow no application object. The
-        # stored custom palette goes down with it, so a theme of 'custom'
-        # resolves to the palette the user built rather than falling back.
+        # collection goes down with it, so a stored choice naming a theme the
+        # user added resolves to that theme rather than falling back.
         apply_scheme(app, theme, mode,
+                     config_file.get(config_file.APPEARANCE_THEMES),
                      config_file.get(config_file.APPEARANCE_CUSTOM))
         if app is None:
             self.setStyleSheet(build_style_sheet())

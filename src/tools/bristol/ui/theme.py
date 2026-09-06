@@ -24,11 +24,20 @@ A theme with no dark member is a theme: ``theme_has_dark()`` says which, and
 An older build stored the two choices collapsed into one value;
 ``appearance_choice()`` reads that value back as the theme and mode it named.
 
-One scheme is not written here: ``custom``, the palette the user builds in the
-theme builder. It is stored in the configuration rather than in this module and
-``register_custom()`` installs it, filling any key it lacks from the reference
-scheme — so from the moment it is registered every resolver, the completeness
-check and the stylesheet treat it as one more shipped scheme.
+The collection
+--------------------------------
+Which themes an installation offers is not this module's to decide. It ships
+the ones under ``THEME_CHOICES``; the configuration carries the differences —
+themes the user added, names he deleted, a palette stored under a shipped
+theme's name where he changed one — and ``resolve_collection()`` puts the two
+together. ``install_collection()`` then rewrites ``SCHEMES`` and ``THEMES``
+from the result, so a theme the user built is an ordinary theme from that point
+and no resolver has a case for it. Storing differences rather than the whole
+collection is what lets the themes a later release ships reach an installation
+that has already been used.
+
+``collection_differences()`` is the inverse, and what the manage-themes dialog
+hands back to be stored.
 
 Every consumer reads the current palette out of the single mutable dict ``C``
 rather than binding colour names at import time, which could not be re-pointed
@@ -50,6 +59,7 @@ apart two things sit.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -122,11 +132,12 @@ LAYOUT = {
     "small_dialog_min_w": 420,  # a single-purpose modal: add link
     "preview_min_w": 480,       # the image preview modal
     "preview_min_h": 360,
-    "builder_min_w": 620,       # the theme builder: a caption, a swatch, a hex
-    "builder_min_h": 620,
-    "builder_caption_w": 210,   # what a row is called, wide enough for the longest
-    "builder_swatch_w": 44,     # the block of colour a row opens the picker from
-    "builder_hex_w": 110,       # its hex value, wide enough for #AARRGGBB
+    "theme_dialog_min_w": 1000,  # manage themes: the list, and a palette beside it
+    "theme_dialog_min_h": 700,
+    "theme_list_min_w": 230,     # its left column, wide enough for a theme's name
+    "palette_caption_w": 210,    # what a colour row is called, at its longest
+    "palette_swatch_w": 44,      # the block of colour a row opens the picker from
+    "palette_hex_w": 110,        # its hex value, wide enough for #AARRGGBB
 }
 
 # What a stored value is called on screen. The database keeps the value and a
@@ -1859,6 +1870,11 @@ THEMES: dict[str, tuple[str, str | None]] = {
 REFERENCE_SCHEME = "warm_light"
 DEFAULT_THEME = "warm"
 
+# The palette every other one is completed against. It is a copy rather than a
+# lookup into ``SCHEMES``, because deleting Pumpkin takes ``warm_light`` out of
+# ``SCHEMES`` and every completion after that would have nothing to read.
+REFERENCE_PALETTE: dict[str, str] = dict(WARM_LIGHT)
+
 # Which half of a theme is drawn. SYSTEM_MODE follows the OS; the other two pin
 # one half whatever the OS is set to.
 LIGHT_MODE = "light"
@@ -1866,10 +1882,11 @@ DARK_MODE = "dark"
 SYSTEM_MODE = "system"
 DEFAULT_MODE = SYSTEM_MODE
 
-# What the Settings tab offers, in the order it offers it. The value is what is
-# stored and names the theme or the mode; the caption is what this product calls
-# it. The two are deliberately separate — a theme can be renamed on screen
-# without migrating a stored choice.
+# What this build calls each theme it ships. The value is the theme's id, which
+# is what a stored choice names; the caption is the name on screen. The two are
+# deliberately separate — a theme can be renamed without migrating a stored
+# choice. What the Settings picker offers is the collection rather than this
+# list: ``theme_choices()`` is what builds it.
 THEME_CHOICES: list[tuple[str, str]] = [
     ("ayu", "Ayu"),
     ("blue_topaz", "Blue Topaz"),
@@ -1894,8 +1911,15 @@ THEME_CHOICES: list[tuple[str, str]] = [
     ("solarized", "Solarized"),
     ("tokyo_night", "Tokyo Night"),
     ("wikipedia", "Wikipedia"),
-    ("custom", "Custom"),
 ]
+
+# What this build ships, held apart from the live SCHEMES and THEMES, which the
+# collection rewrites. Restore Shipped Themes reads these, so an edit the user
+# makes can always be undone against what the build actually defines.
+_SHIPPED_SCHEMES: dict[str, dict[str, str]] = {
+    name: dict(palette) for name, palette in SCHEMES.items()
+}
+_SHIPPED_THEMES: dict[str, tuple[str, str | None]] = dict(THEMES)
 
 MODE_CHOICES: list[tuple[str, str]] = [
     (LIGHT_MODE, "Light"),
@@ -1919,14 +1943,15 @@ LEGACY_APPEARANCE: dict[str, tuple[str, str]] = {
     "custom": ("custom", LIGHT_MODE),
 }
 
-# The name a palette the user built himself is registered and stored under. It
-# is an ordinary scheme once ``register_custom()`` has installed it, so every
-# resolver, the completeness check and the stylesheet treat it as one.
-CUSTOM_SCHEME = "custom"
+# The id and the name a palette built when the picker offered one Custom option
+# comes back as. Such a palette joins the collection as an ordinary theme, so
+# nothing about it is a special case once it is there.
+LEGACY_CUSTOM_THEME = "custom"
+LEGACY_CUSTOM_NAME = "Custom"
 
-# The theme builder's form, in the order it offers it: a heading, then the keys
+# A palette form's rows, in the order it offers them: a heading, then the keys
 # it groups. A key the reference scheme carries and no group names still gets a
-# field, under the last heading — ``builder_rows()`` is what places it.
+# field, under the last heading — ``palette_rows()`` is what places it.
 KEY_GROUPS: list[tuple[str, list[str]]] = [
     ("Text", ["INK", "INK_SOFT"]),
     ("Surfaces", ["CANVAS", "SURFACE", "LIST_BG", "BORDER", "SHADOW"]),
@@ -1939,7 +1964,7 @@ KEY_GROUPS: list[tuple[str, list[str]]] = [
                  "DISABLED_BG", "DISABLED_TX", "MISSING"]),
 ]
 
-# What each key is called on the theme builder's rows. A caption names the thing
+# What each key is called on a palette form's rows. A caption names the thing
 # the colour lands on, so a row can be read without the styling contract open.
 KEY_CAPTIONS: dict[str, str] = {
     "INK": "Primary Text",
@@ -1997,7 +2022,7 @@ CONTRAST_MIN = 4.5
 # The single live palette every consumer reads from. Starts at the reference
 # scheme; the app calls set_scheme() at startup, on every OS colour-scheme
 # change, and whenever the choice is edited in Settings.
-C: dict[str, str] = dict(SCHEMES[REFERENCE_SCHEME])
+C: dict[str, str] = dict(REFERENCE_PALETTE)
 
 _current_scheme = REFERENCE_SCHEME
 
@@ -2005,6 +2030,18 @@ _current_scheme = REFERENCE_SCHEME
 def theme_has_dark(theme: str | None) -> bool:
     """True when this theme has a dark half to draw."""
     return bool(THEMES.get(theme or "", (None, None))[1])
+
+
+def default_theme() -> str:
+    """The theme a choice falls back to.
+
+    This build's default where the collection still holds it, and the first
+    theme in the collection where it does not: a user who deletes Pumpkin is
+    left with a fallback rather than with none.
+    """
+    if DEFAULT_THEME in THEMES:
+        return DEFAULT_THEME
+    return next(iter(THEMES), DEFAULT_THEME)
 
 
 def resolve_scheme(theme: str | None, mode: str | None, dark: bool) -> str:
@@ -2015,9 +2052,8 @@ def resolve_scheme(theme: str | None, mode: str | None, dark: bool) -> str:
     which is what makes such a theme an ordinary choice rather than a broken
     one. An unknown theme falls back to the default.
     """
-    if theme == CUSTOM_SCHEME and CUSTOM_SCHEME in SCHEMES:
-        return CUSTOM_SCHEME
-    light, dark_member = THEMES.get(theme or "", THEMES[DEFAULT_THEME])
+    fallback = THEMES.get(default_theme(), (REFERENCE_SCHEME, None))
+    light, dark_member = THEMES.get(theme or "", fallback)
     if dark_member and (mode == DARK_MODE or (mode == SYSTEM_MODE and dark)):
         return dark_member
     return light
@@ -2026,89 +2062,275 @@ def resolve_scheme(theme: str | None, mode: str | None, dark: bool) -> str:
 def appearance_choice(theme, mode, legacy) -> tuple[str, str]:
     """The theme and mode in force, from the three values config can hold.
 
-    The two current keys win where they name something this build offers. Where
-    they do not, the one key an older build wrote is read for the theme and mode
-    it named. Where neither answers, the default.
+    The two current keys win where they name a theme the collection holds.
+    Where they do not, the one key an older build wrote is read for the theme
+    and mode it named. Where neither answers, the default.
     """
-    known = {name for name, _caption in THEME_CHOICES}
     modes = {name for name, _caption in MODE_CHOICES}
-    if isinstance(theme, str) and theme in known:
+    if isinstance(theme, str) and theme in THEMES:
         return theme, mode if isinstance(mode, str) and mode in modes else DEFAULT_MODE
     if isinstance(legacy, str) and legacy in LEGACY_APPEARANCE:
-        return LEGACY_APPEARANCE[legacy]
-    return DEFAULT_THEME, DEFAULT_MODE
+        named, named_mode = LEGACY_APPEARANCE[legacy]
+        if named in THEMES:
+            return named, named_mode
+    return default_theme(), DEFAULT_MODE
 
 
 def set_scheme(name: str) -> None:
     """Point the live palette ``C`` at a named scheme, in place, so existing
     ``from .theme import C`` references keep seeing current values.
 
-    A key the named scheme is missing is filled from the reference scheme, so an
-    incomplete palette shows the wrong colour rather than raising mid-paint.
+    A key the named scheme is missing is filled from the reference palette, so
+    an incomplete palette shows the wrong colour rather than raising mid-paint.
     ``check_schemes()`` is what names such a gap.
     """
     global _current_scheme
-    scheme = SCHEMES.get(name) or SCHEMES[REFERENCE_SCHEME]
-    _current_scheme = name if name in SCHEMES else REFERENCE_SCHEME
+    scheme = SCHEMES.get(name)
+    if scheme is None:
+        name = resolve_scheme(default_theme(), LIGHT_MODE, False)
+        scheme = SCHEMES.get(name, REFERENCE_PALETTE)
+    _current_scheme = name
     C.clear()
-    C.update(SCHEMES[REFERENCE_SCHEME])
+    C.update(REFERENCE_PALETTE)
     C.update(scheme)
 
 
 def apply_scheme(app, theme: str | None, mode: str | None,
-                 custom: dict | None = None) -> None:
-    """Resolve a theme and a mode against the OS state, make the scheme live,
-    and style ``app``.
+                 stored: dict | None = None,
+                 legacy_custom: dict | None = None) -> None:
+    """Install the collection, resolve a theme and a mode against the OS state,
+    make the scheme live, and style ``app``.
 
     Every window the application opens is styled by this one call, so it runs
     before the first window is built rather than inside any of them.
 
-    ``custom`` is the palette the user built, as it is stored. It is registered
-    first, so a stored theme of ``custom`` resolves to a scheme rather than
-    falling back — and a theme of ``custom`` with nothing stored falls back,
-    which is what an installation that has never opened the builder has.
+    ``stored`` is the differences the configuration carries and ``legacy_custom``
+    the palette a build that offered one Custom option wrote. Both go in first,
+    because a stored choice can name a theme only the collection has.
     """
-    register_custom(custom)
+    register_collection(stored, legacy_custom)
     set_scheme(resolve_scheme(
         theme, mode, is_dark_scheme(app) if app is not None else False))
     if app is not None:
         app.setStyleSheet(build_style_sheet())
 
 
-def register_custom(palette: dict | None) -> bool:
-    """Install ``palette`` as the ``custom`` scheme, or remove it when there is
-    none. True when a scheme is registered afterwards.
+# ---------------------------------------------------------------------------
+# The collection: which themes this installation offers
+#
+# A theme is a record — a name, a light palette, and a dark palette or None —
+# under an id that never changes. The configuration carries only the
+# differences from what the build ships: the themes the user added, the names
+# he deleted, and a palette stored under a shipped theme's name where he
+# changed one. An installation that has touched nothing stores nothing, which
+# is what lets a later release's new themes reach it.
+# ---------------------------------------------------------------------------
 
-    A key the palette does not carry is filled from the reference scheme, so a
-    palette stored by an older build gains the keys a newer one draws with and
-    ``check_schemes()`` passes on it exactly as it does on a shipped scheme. A
-    value that is not a colour string is dropped for the same reason.
-    """
-    usable = {
-        key: value for key, value in (palette or {}).items()
-        if isinstance(key, str) and isinstance(value, str) and value.strip()
-    }
-    if not usable:
-        SCHEMES.pop(CUSTOM_SCHEME, None)
-        return False
-    complete = dict(SCHEMES[REFERENCE_SCHEME])
+def _complete(palette: dict | None) -> dict[str, str]:
+    """``palette`` with every key the reference palette defines, its own values
+    winning. A value that is not a colour string is dropped, so nothing
+    unpaintable reaches a scheme."""
+    usable = {key: value for key, value in (palette or {}).items()
+              if isinstance(key, str) and isinstance(value, str) and value.strip()}
+    complete = dict(REFERENCE_PALETTE)
     complete.update({key: value for key, value in usable.items()
                      if key in complete})
-    SCHEMES[CUSTOM_SCHEME] = complete
-    return True
+    return complete
 
 
-def builder_rows() -> list[tuple[str, list[str]]]:
-    """The theme builder's form: a heading and the keys under it, covering every
-    key the reference scheme defines.
+def shipped_collection() -> dict[str, dict]:
+    """Every theme this build ships, as records. Restore Shipped Themes puts
+    exactly this back."""
+    captions = dict(THEME_CHOICES)
+    return {
+        theme_id: {
+            "name": captions.get(theme_id, theme_id.replace("_", " ").title()),
+            "light": dict(_SHIPPED_SCHEMES[light]),
+            "dark": dict(_SHIPPED_SCHEMES[dark]) if dark else None,
+        }
+        for theme_id, (light, dark) in _SHIPPED_THEMES.items()
+    }
+
+
+def _baseline(legacy_custom: dict | None = None) -> dict[str, dict]:
+    """What the differences are measured against: the shipped themes, and the
+    one palette an older build stored outside them."""
+    collection = shipped_collection()
+    if (isinstance(legacy_custom, dict) and legacy_custom
+            and LEGACY_CUSTOM_THEME not in collection):
+        collection[LEGACY_CUSTOM_THEME] = {
+            "name": LEGACY_CUSTOM_NAME,
+            "light": _complete(legacy_custom),
+            "dark": None,
+        }
+    return collection
+
+
+def _stored_record(raw, fallback_name: str) -> dict | None:
+    """One stored theme as a record, or None where it is not one."""
+    if not isinstance(raw, dict):
+        return None
+    name = raw.get("name")
+    dark = raw.get("dark")
+    return {
+        "name": name.strip() if isinstance(name, str) and name.strip()
+                else fallback_name,
+        "light": _complete(raw.get("light")),
+        "dark": _complete(dark) if isinstance(dark, dict) and dark else None,
+    }
+
+
+def resolve_collection(stored: dict | None = None,
+                       legacy_custom: dict | None = None) -> dict[str, dict]:
+    """The themes on offer: what this build ships, with the differences the
+    configuration carries applied, ordered by name.
+
+    A collection that came out empty is the shipped one, because an app with no
+    theme has nothing to draw.
+    """
+    stored = stored if isinstance(stored, dict) else {}
+    deleted = {name for name in stored.get("deleted", [])
+               if isinstance(name, str)}
+    edited = stored.get("edited")
+    edited = edited if isinstance(edited, dict) else {}
+    added = stored.get("added")
+    added = added if isinstance(added, dict) else {}
+
+    collection: dict[str, dict] = {}
+    for theme_id, record in _baseline(legacy_custom).items():
+        if theme_id in deleted:
+            continue
+        change = edited.get(theme_id)
+        if isinstance(change, dict):
+            name = change.get("name")
+            if isinstance(name, str) and name.strip():
+                record["name"] = name.strip()
+            if isinstance(change.get("light"), dict):
+                record["light"] = _complete(change["light"])
+            if "dark" in change:
+                half = change["dark"]
+                record["dark"] = (_complete(half) if isinstance(half, dict)
+                                  and half else None)
+        collection[theme_id] = record
+
+    for theme_id, raw in added.items():
+        if not isinstance(theme_id, str) or theme_id in collection:
+            continue
+        record = _stored_record(raw, theme_id.replace("_", " ").title())
+        if record is not None:
+            collection[theme_id] = record
+
+    if not collection:
+        collection = _baseline(legacy_custom)
+    return order_collection(collection)
+
+
+def order_collection(collection: dict[str, dict]) -> dict[str, dict]:
+    """The collection by name, which is the order a picker holding two dozen of
+    them is read in: scan to the letter."""
+    return {theme_id: collection[theme_id] for theme_id in sorted(
+        collection, key=lambda key: (collection[key]["name"].casefold(), key))}
+
+
+def collection_differences(collection: dict[str, dict],
+                           legacy_custom: dict | None = None) -> dict:
+    """What the configuration stores for ``collection``: the themes added, the
+    changes to shipped ones, and the shipped names deleted. A theme nobody has
+    touched appears in none of them."""
+    baseline = _baseline(legacy_custom)
+    added: dict[str, dict] = {}
+    edited: dict[str, dict] = {}
+    for theme_id, record in collection.items():
+        base = baseline.get(theme_id)
+        if base is None:
+            added[theme_id] = {
+                "name": record["name"],
+                "light": dict(record["light"]),
+                "dark": dict(record["dark"]) if record["dark"] else None,
+            }
+            continue
+        change: dict = {}
+        if record["name"] != base["name"]:
+            change["name"] = record["name"]
+        if record["light"] != base["light"]:
+            change["light"] = dict(record["light"])
+        if record["dark"] != base["dark"]:
+            change["dark"] = dict(record["dark"]) if record["dark"] else None
+        if change:
+            edited[theme_id] = change
+    deleted = sorted(theme_id for theme_id in baseline
+                     if theme_id not in collection)
+    difference: dict = {}
+    if added:
+        difference["added"] = added
+    if edited:
+        difference["edited"] = edited
+    if deleted:
+        difference["deleted"] = deleted
+    return difference
+
+
+def install_collection(collection: dict[str, dict]) -> dict[str, dict]:
+    """Make ``collection`` the themes this app draws from: one scheme per half,
+    named for the theme it belongs to, and one ``THEMES`` pair per theme.
+
+    Every resolver, the completeness check and the stylesheet read ``SCHEMES``
+    and ``THEMES``, so a theme the user built is one of them from here on and
+    no path has a case for it.
+    """
+    SCHEMES.clear()
+    THEMES.clear()
+    for theme_id, record in collection.items():
+        light_name = f"{theme_id}_light"
+        SCHEMES[light_name] = _complete(record["light"])
+        dark_name = None
+        if record.get("dark"):
+            dark_name = f"{theme_id}_dark"
+            SCHEMES[dark_name] = _complete(record["dark"])
+        THEMES[theme_id] = (light_name, dark_name)
+    return collection
+
+
+def register_collection(stored: dict | None = None,
+                        legacy_custom: dict | None = None) -> dict[str, dict]:
+    """Resolve the stored differences and install what they come to."""
+    return install_collection(resolve_collection(stored, legacy_custom))
+
+
+def theme_choices(collection: dict[str, dict]) -> list[tuple[str, str]]:
+    """What the Theme picker offers: each theme's id and its name, in the
+    collection's own order."""
+    return [(theme_id, record["name"])
+            for theme_id, record in collection.items()]
+
+
+def theme_id_for(name: str, taken) -> str:
+    """A stable id for a theme just named, unused among ``taken``.
+
+    The name changes afterwards and this does not: what the configuration
+    stores as the theme in force is the id, so a rename never has to migrate a
+    stored choice.
+    """
+    base = re.sub(r"[^a-z0-9]+", "_", name.strip().casefold()).strip("_")
+    candidate = base or "theme"
+    suffix = 2
+    while candidate in taken:
+        candidate = f"{base or 'theme'}_{suffix}"
+        suffix += 1
+    return candidate
+
+
+def palette_rows() -> list[tuple[str, list[str]]]:
+    """A palette form: a heading and the keys under it, covering every key the
+    reference palette defines.
 
     A key no group names is appended to the last heading rather than left out,
     so a palette gaining a key gains a field with no edit here.
     """
     grouped = {key for _, keys in KEY_GROUPS for key in keys}
-    rows = [(heading, [key for key in keys if key in SCHEMES[REFERENCE_SCHEME]])
+    rows = [(heading, [key for key in keys if key in REFERENCE_PALETTE])
             for heading, keys in KEY_GROUPS]
-    loose = [key for key in SCHEMES[REFERENCE_SCHEME] if key not in grouped]
+    loose = [key for key in REFERENCE_PALETTE if key not in grouped]
     if loose:
         rows[-1] = (rows[-1][0], rows[-1][1] + loose)
     return rows
@@ -2151,10 +2373,10 @@ def contrast_ratio(foreground: str, background: str) -> float:
 def readable_on(background: str) -> str:
     """Black or white, whichever reads further from ``background``.
 
-    The one colour in this product not taken from a scheme. The theme builder
-    previews the palette being edited, so the line naming what is unreadable is
-    drawn in the palette that broke it; this is what keeps that one line
-    legible. Falls back to the live ink for a value that is not a colour.
+    The one colour in this product not taken from a scheme. A palette being
+    edited is previewed live, so the line naming what is unreadable is drawn in
+    the palette that broke it; this is what keeps that one line legible. Falls
+    back to the live ink for a value that is not a colour.
     """
     try:
         light = contrast_ratio("#ffffff", background)
@@ -2459,7 +2681,7 @@ QWidget#facetRow {{ border-radius: {r_md}px; }}
 QWidget#facetRow:hover {{ background-color: {C['HOVER_BG']}; }}
 QLabel#facetCount {{ color: {C['INK_SOFT']}; }}
 QScrollArea#filterScroll, QScrollArea#filterScroll > QWidget > QWidget,
-QScrollArea#builderScroll, QScrollArea#builderScroll > QWidget > QWidget {{
+QScrollArea#paletteScroll, QScrollArea#paletteScroll > QWidget > QWidget {{
     background: transparent;
     border: none;
 }}
@@ -2531,19 +2753,20 @@ QWizardPage > QLabel {{ font-size: {type_size('body')}pt; }}
 
 QListWidget::item {{ border: none; }}
 QListWidget::item:selected {{ background: transparent; }}
-/* Search results are plain text items (not delegate-painted cards), so the
-   transparent-selection rule above would leave them with the palette's
-   highlighted-text colour on a light fill — near-invisible. Give this list a
-   visible selected fill and the brightest accent the board uses for text. */
-QListWidget#searchResults::item {{
+/* Search results and the theme list are plain text items (not
+   delegate-painted cards), so the transparent-selection rule above would leave
+   them with the palette's highlighted-text colour on a light fill —
+   near-invisible. Give these lists a visible selected fill and the brightest
+   accent the board uses for text. */
+QListWidget#searchResults::item, QListWidget#themeList::item {{
     padding: {s_md}px {s_lg}px;
     border-radius: {r_md}px;
 }}
-QListWidget#searchResults::item:selected {{
+QListWidget#searchResults::item:selected, QListWidget#themeList::item:selected {{
     background: {C['SEL_BG']};
     color: {C['ACCENT_DK']};
 }}
-QListWidget#searchResults::item:hover {{
+QListWidget#searchResults::item:hover, QListWidget#themeList::item:hover {{
     background: {C['HOVER_BG']};
 }}
 QComboBox, QLineEdit, QSpinBox, QTextEdit {{

@@ -186,13 +186,23 @@ Two surfaces write a card, and each has its own job.
 
 Copy an existing palette in `theme.py`, change the values, register it in
 `SCHEMES`, and pair it in `THEMES` under the theme it is a half of — `None` for
-a dark half that does not exist yet. Add the theme's name to `THEME_CHOICES` to
-offer it in Settings. `check_schemes()` reports any key the new palette is
-missing; the smoke check runs it.
+a dark half that does not exist yet. Add the theme's name to `THEME_CHOICES`,
+which is what this build calls each theme it ships. `check_schemes()` reports
+any key the new palette is missing; the smoke check runs it.
 
-**`THEME_CHOICES` is ordered alphabetically by caption, with Custom last.** A
-picker holding two dozen names is read by scanning to the letter, so a theme
-seated anywhere else in the list is one nobody finds.
+**`SCHEMES` and `THEMES` are rewritten at every launch** by
+`install_collection()`, from the collection an installation actually offers.
+The module-level values are what the build ships and what the shipped snapshot
+holds; nothing may read either dict expecting a particular theme to be in it.
+
+**A theme's schemes are named for the theme**: `<id>_light` and `<id>_dark`.
+The pairing is mechanical, so a theme the user adds and a theme this build
+ships have schemes named the same way.
+
+**`THEME_CHOICES` is ordered alphabetically by caption.** A picker holding two
+dozen names is read by scanning to the letter, so a theme seated anywhere else
+in the list is one nobody finds — and the collection is ordered by name for the
+same reason, which is what `order_collection()` does.
 
 **A borrowed scheme takes its source's own name and its source's own colours.**
 The grounds, the text and the signal colours are that scheme's; the fills, the
@@ -203,26 +213,56 @@ member that moves is the one carrying the text, and it moves the least distance
 that clears the floor.
 
 **A key added to one scheme is added to every one of them, and to
-`KEY_CAPTIONS`.** The theme builder offers a field per key the reference scheme
+`KEY_CAPTIONS`.** A palette form offers a field per key the reference palette
 defines, and a key with no caption is offered under its own name.
 
-## The custom scheme
+**`REFERENCE_PALETTE` is the key set and the fill, not `SCHEMES[REFERENCE_SCHEME]`.**
+A user who deletes Pumpkin takes `warm_light` out of `SCHEMES`, so a completion
+that read it there would have nothing left to read.
 
-The Theme picker's Custom option opens `theme_builder.py`: one row per palette
-key — a caption, a swatch that opens the platform colour picker, and the hex
-value — seeded from the theme in force.
+## The collection
 
-- **The palette is stored in the configuration, not in `theme.py`.** It is
-  `appearance.custom_scheme`, and `appearance.theme` of `custom` is what names
-  it. A build ships schemes; an installation holds this one.
-- **Custom is a theme with no dark half**, so it is absent from `THEMES` and the
-  Light & Dark row offers Light alone while it is in force.
-- **`register_custom()` is what makes it a scheme**, filling any key it lacks
-  from the reference scheme, so it is complete for `check_schemes()` and live
-  for `set_scheme()` exactly as a shipped one is. Every path that applies a
-  stored choice passes the stored palette down with it.
-- **`KEY_GROUPS` is the order the builder offers the keys in**, and
-  `builder_rows()` places a key no group names rather than dropping it.
+Which themes an installation offers is not the build's to decide. `theme.py`
+ships the ones in `THEME_CHOICES`; `config/config.local.json` carries the
+difference under `appearance.themes`, and `resolve_collection()` puts the two
+together into records — a name, a light palette, and a dark palette or `None` —
+under ids that never change.
+
+- **The configuration stores differences, never the collection.** A theme
+  nobody has touched appears in no key, which is what lets the themes a later
+  release ships reach an installation already in use. Copying the shipped
+  themes into the configuration on first run would seal that installation
+  against every theme added afterwards.
+- **The three differences are `added`, `edited` and `deleted`**, and
+  `collection_differences()` is what computes them. Restore Shipped Themes
+  drops the last two and keeps the first.
+- **A shipped theme is edited in the configuration, never in `theme.py`.** A
+  personal deletion written into a tracked file would leave every clone
+  different and `git status` never clean, and `payload.refresh()` replaces
+  `src/` whenever a newer app opens an installation, so it would be undone by
+  the next release without a word.
+- **A theme's id is stable and its name is not.** What a stored choice names is
+  the id, so renaming a theme migrates nothing. `theme_id_for()` mints one.
+- **A palette built when the picker offered one Custom option is an ordinary
+  theme.** `appearance.custom_scheme` is read, never written, and joins the
+  collection under the id `custom` that the old choice stored.
+
+## Managing themes
+
+Settings' Manage Themes button opens `theme_manager.py`: every theme listed
+down the left, and the selected one's name and colours on the right, in the
+rows `palette_form.py` draws.
+
+- **The collection goes behind a door and the choice does not.** A control sits
+  on the narrowest surface its effect reaches; the theme is picked every
+  session and the collection is touched rarely.
+- **Nothing reaches the configuration until Save.** The window holds a working
+  copy, previews the running app as it is edited, and a Cancel puts the
+  installed collection and the theme in force back.
+- **The last theme cannot be deleted**, and deleting the theme in force moves
+  the app to the one that takes its place in the list.
+- **`KEY_GROUPS` is the order a palette form offers the keys in**, and
+  `palette_rows()` places a key no group names rather than dropping it.
 
 ## Contrast
 
@@ -233,11 +273,11 @@ AA for body text. Every shipped scheme clears every pair, and the smoke check
 asserts it.
 
 - **Name a failure; never refuse one.** A palette the user built is his to
-  choose, so the builder says which pair falls short and asks once before
+  choose, so the window says which pair falls short and asks once before
   saving. Silence and refusal are both wrong.
 - **The unclickable pair is deliberately absent from the set.** Text a control
   greys out is meant to be hard to read.
-- **`readable_on()` is the one colour not taken from a scheme.** The builder
-  previews the palette live, so the notice naming what cannot be read is drawn
-  in the palette that broke it; that one line takes black or white against the
-  canvas instead. Nothing else in the app derives a colour this way.
+- **`readable_on()` is the one colour not taken from a scheme.** A palette is
+  previewed live, so the notice naming what cannot be read is drawn in the
+  palette that broke it; that one line takes black or white against the canvas
+  instead. Nothing else in the app derives a colour this way.

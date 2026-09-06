@@ -101,31 +101,16 @@ def check_bristol() -> list[str]:
             raise SmokeFailure(f"shipped scheme {name!r} — " + "; ".join(unreadable))
     ok.append("every shipped scheme clears the contrast floor on every text pair")
 
-    # The custom scheme: stored outside this module, registered like any other,
-    # and complete afterwards however partial what was stored is.
-    if theme.CUSTOM_SCHEME in theme.SCHEMES:
-        raise SmokeFailure("the custom scheme exists before anything registers one")
-    if theme.resolve_scheme(theme.CUSTOM_SCHEME, theme.LIGHT_MODE, False) \
-            != theme.THEMES[theme.DEFAULT_THEME][0]:
-        raise SmokeFailure("an unregistered custom theme does not fall back")
-    if theme.register_custom({"INK": "#101010"}) is not True:
-        raise SmokeFailure("a partial custom palette does not register")
-    if theme.check_schemes():
-        raise SmokeFailure("a partial custom palette is registered incomplete")
-    if theme.SCHEMES[theme.CUSTOM_SCHEME]["INK"] != "#101010":
-        raise SmokeFailure("the registered custom palette dropped what it carried")
-    ok.append("a partial custom palette registers complete and resolves")
-
     # Every key a palette defines gets a field, and every field a caption.
-    placed = [key for _heading, keys in theme.builder_rows() for key in keys]
-    if sorted(placed) != sorted(theme.SCHEMES[theme.REFERENCE_SCHEME]):
-        raise SmokeFailure("the theme builder does not offer one field per colour")
+    placed = [key for _heading, keys in theme.palette_rows() for key in keys]
+    if sorted(placed) != sorted(theme.REFERENCE_PALETTE):
+        raise SmokeFailure("a palette form does not offer one field per colour")
     if len(placed) != len(set(placed)):
-        raise SmokeFailure("the theme builder offers a colour twice")
+        raise SmokeFailure("a palette form offers a colour twice")
     uncaptioned = [key for key in placed if key not in theme.KEY_CAPTIONS]
     if uncaptioned:
         raise SmokeFailure("no caption for " + ", ".join(uncaptioned))
-    ok.append(f"the theme builder offers all {len(placed)} colours, each captioned")
+    ok.append(f"a palette form offers all {len(placed)} colours, each captioned")
 
     # The contrast reader, against the two ends of the scale and a palette built
     # to fail one named pair.
@@ -136,7 +121,7 @@ def check_bristol() -> list[str]:
     if theme.contrast_ratio("#80ffffff", "#000000") != theme.contrast_ratio(
             "#ffffff", "#000000"):
         raise SmokeFailure("an alpha channel changed a contrast reading")
-    washed = dict(theme.SCHEMES[theme.REFERENCE_SCHEME])
+    washed = dict(theme.REFERENCE_PALETTE)
     washed["INK_SOFT"] = washed["CANVAS"]
     named = theme.contrast_complaints(washed)
     if not any("Secondary Text" in line and "Window Background" in line
@@ -146,44 +131,174 @@ def check_bristol() -> list[str]:
         raise SmokeFailure("the deliberately grey pair is being checked")
     ok.append("the contrast reader names the pair that fails, by its caption")
 
-    # The builder itself: seeded from the theme in force, refusing to hand back
-    # a value that is not a colour, and saying what it finds rather than nothing.
-    from ui.theme_builder import ThemeBuilderDialog
+    # The collection: what this build ships, plus the differences an
+    # installation carries. A theme nobody has touched is in no stored key,
+    # which is what lets the themes a later release ships reach an installation
+    # already in use.
+    shipped = theme.shipped_collection()
+    collection = theme.register_collection(None, None)
+    if set(collection) != set(shipped):
+        raise SmokeFailure("an untouched installation does not get every shipped theme")
+    if any(collection[name] != shipped[name] for name in shipped):
+        raise SmokeFailure("an untouched installation alters a shipped theme")
+    if theme.collection_differences(collection):
+        raise SmokeFailure("an untouched collection stores a difference")
+    names = [record["name"] for record in collection.values()]
+    if names != sorted(names, key=str.casefold):
+        raise SmokeFailure("the collection is not ordered by name")
+    used = theme.resolve_collection({"edited": {theme.DEFAULT_THEME: {"name": "Mine"}}})
+    if set(used) != set(shipped):
+        raise SmokeFailure("a configuration in use does not receive a shipped theme")
+    if used[theme.DEFAULT_THEME]["name"] != "Mine":
+        raise SmokeFailure("a stored rename did not reach the collection")
+    ok.append(f"the collection resolves all {len(collection)} shipped themes and "
+              "stores only what differs")
 
-    theme.set_scheme("cool_dark")
-    builder = ThemeBuilderDialog()
-    if builder.rows["INK"].value() != theme.SCHEMES["cool_dark"]["INK"]:
-        raise SmokeFailure("the theme builder did not seed from the theme in force")
-    if sorted(builder.palette()) != sorted(theme.SCHEMES[theme.REFERENCE_SCHEME]):
-        raise SmokeFailure("the theme builder hands back an incomplete palette")
-    if builder.unreadable():
-        raise SmokeFailure("a shipped scheme seeds a builder that complains")
-    builder.rows["INK_SOFT"].set_value("not a colour")
-    if builder.rows["INK_SOFT"].valid():
-        raise SmokeFailure("the theme builder accepts a value that is not a colour")
-    if "INK_SOFT" in builder.palette():
+    # A palette built when the picker offered one Custom option is an ordinary
+    # theme in the collection, deletable like any other.
+    if any(value == theme.LEGACY_CUSTOM_THEME
+           for value, _caption in theme.THEME_CHOICES):
+        raise SmokeFailure("the Theme picker still offers a Custom entry")
+    migrated = theme.resolve_collection(None, {"INK": "#101010"})
+    record = migrated.get(theme.LEGACY_CUSTOM_THEME)
+    if record is None or record["light"]["INK"] != "#101010" \
+            or record["dark"] is not None:
+        raise SmokeFailure("a palette from the one Custom option did not migrate")
+    theme.install_collection(migrated)
+    if theme.appearance_choice(None, None, theme.LEGACY_CUSTOM_THEME) \
+            != (theme.LEGACY_CUSTOM_THEME, theme.LIGHT_MODE):
+        raise SmokeFailure("a stored Custom choice does not name the migrated theme")
+    if theme.LEGACY_CUSTOM_THEME in theme.resolve_collection(
+            {"deleted": [theme.LEGACY_CUSTOM_THEME]}, {"INK": "#101010"}):
+        raise SmokeFailure("the migrated Custom theme cannot be deleted")
+    collection = theme.register_collection(None, None)
+    ok.append("a palette from the one Custom option becomes a theme like any other")
+
+    # The manage-themes window, driven by its own methods: a theme added,
+    # renamed, edited and deleted, a shipped theme's edit living only in the
+    # configuration, a restore putting the shipped values back, and the last
+    # theme refusing to go.
+    from ui.theme_manager import ThemeManagerDialog
+
+    manager = ThemeManagerDialog(collection, theme.DEFAULT_THEME)
+    if manager.form.rows["INK"].value() \
+            != collection[theme.DEFAULT_THEME]["light"]["INK"]:
+        raise SmokeFailure("manage themes did not open on the theme in force")
+    added = manager.add("Test Theme")
+    if manager.themes()[added]["light"] \
+            != collection[theme.DEFAULT_THEME]["light"]:
+        raise SmokeFailure("a theme added is not seeded from the theme in hand")
+    manager.rename("Test Theme Renamed")
+    if manager.themes()[added]["name"] != "Test Theme Renamed":
+        raise SmokeFailure("a theme renamed did not take the name")
+    if manager.selected() != added or added not in manager.themes():
+        raise SmokeFailure("a rename moved the theme it renamed")
+    # A theme added takes its id from the name it is saved under, so the
+    # configuration reads as the list it holds.
+    named = ThemeManagerDialog(collection, theme.DEFAULT_THEME)
+    fresh = named.add()
+    named.rename("Sea Glass")
+    named.accept()
+    if "sea_glass" not in named.themes():
+        raise SmokeFailure("a theme added is not stored under its own name")
+    if fresh in named.themes() and fresh != "sea_glass":
+        raise SmokeFailure("a theme added is stored under its placeholder too")
+    if named.selected() != "sea_glass":
+        raise SmokeFailure("renaming a fresh theme lost the selection")
+    manager.rename(collection[theme.DEFAULT_THEME]["name"])
+    if not manager.name_problem():
+        raise SmokeFailure("a name already in the list is not refused")
+    manager.rename("")
+    if not manager.name_problem():
+        raise SmokeFailure("an empty name is not refused")
+    manager.rename("Test Theme Renamed")
+    if manager.name_problem():
+        raise SmokeFailure("a name in neither fault is refused")
+
+    manager.select(theme.DEFAULT_THEME)
+    manager.form.rows["INK"].set_value("#123456")
+    stored = theme.collection_differences(manager.themes())
+    if stored.get("edited", {}).get(theme.DEFAULT_THEME, {}) \
+            .get("light", {}).get("INK") != "#123456":
+        raise SmokeFailure("an edit to a shipped theme is not stored as a difference")
+    if added not in stored.get("added", {}):
+        raise SmokeFailure("a theme added is not stored")
+    if set(stored.get("edited", {})) != {theme.DEFAULT_THEME}:
+        raise SmokeFailure("a theme nobody edited is stored as edited")
+    if theme._SHIPPED_SCHEMES[theme.REFERENCE_SCHEME]["INK"] == "#123456":
+        raise SmokeFailure("an edit reached what the build ships")
+    if theme.shipped_collection()[theme.DEFAULT_THEME]["light"]["INK"] \
+            == "#123456":
+        raise SmokeFailure("an edit reached the shipped collection")
+
+    if not manager.delete():
+        raise SmokeFailure("a theme refused to be deleted")
+    if theme.DEFAULT_THEME in manager.themes():
+        raise SmokeFailure("a theme deleted is still in the list")
+    in_force = manager.theme_in_force()
+    if in_force == theme.DEFAULT_THEME or in_force not in manager.themes():
+        raise SmokeFailure("deleting the theme in force left the app on it")
+
+    manager.restore_shipped()
+    after = manager.themes()
+    if after.get(theme.DEFAULT_THEME, {}).get("light") \
+            != shipped[theme.DEFAULT_THEME]["light"]:
+        raise SmokeFailure("Restore Shipped Themes did not put the shipped values back")
+    if added not in after:
+        raise SmokeFailure("Restore Shipped Themes removed a theme the user added")
+    restored = theme.collection_differences(after)
+    if restored.get("edited") or restored.get("deleted"):
+        raise SmokeFailure("a restored collection still stores a shipped difference")
+
+    solo_id = theme.DEFAULT_THEME
+    solo = ThemeManagerDialog({solo_id: shipped[solo_id]}, solo_id)
+    if solo.delete():
+        raise SmokeFailure("the last theme was deleted")
+    if solo_id not in solo.themes():
+        raise SmokeFailure("the last theme left the list")
+    if "The last theme cannot be deleted." not in solo.complaints():
+        raise SmokeFailure("the last theme's refusal is not said out loud")
+    ok.append("manage themes adds, renames, edits, deletes and restores, and "
+              "keeps the last theme")
+
+    # The palette form under it: a value that is not a colour never reaches a
+    # palette, and what fails is named rather than silently saved.
+    cool = collection["cool"]
+    form_check = ThemeManagerDialog(collection, "cool")
+    if form_check.form.rows["INK"].value() != cool["light"]["INK"]:
+        raise SmokeFailure("the palette form did not seed from the theme selected")
+    if sorted(form_check.form.palette()) != sorted(theme.REFERENCE_PALETTE):
+        raise SmokeFailure("the palette form hands back an incomplete palette")
+    if form_check.form.complaints():
+        raise SmokeFailure("a shipped palette seeds a form that complains")
+    form_check.form.rows["INK_SOFT"].set_value("not a colour")
+    if form_check.form.rows["INK_SOFT"].valid():
+        raise SmokeFailure("the palette form accepts a value that is not a colour")
+    if "INK_SOFT" in form_check.form.palette():
         raise SmokeFailure("a value that is not a colour reaches the palette")
-    if "Secondary Text" not in builder.notice.text():
-        raise SmokeFailure("the theme builder does not name the field it cannot read")
-    builder.rows["INK_SOFT"].set_value(theme.SCHEMES["cool_dark"]["CANVAS"])
-    if not any("Secondary Text" in line for line in builder.unreadable()):
-        raise SmokeFailure("the theme builder does not name a pair that fails contrast")
-    if "Secondary Text" not in builder.notice.text():
-        raise SmokeFailure("the theme builder's notice does not carry the failure")
-    builder.rows["CANVAS"].set_value("#000000")
+    if "Secondary Text" not in form_check.notice.text():
+        raise SmokeFailure("the field that cannot be read is not named")
+    form_check.form.rows["INK_SOFT"].set_value(cool["light"]["CANVAS"])
+    if not any("Secondary Text" in line
+               for line in form_check.form.unreadable()):
+        raise SmokeFailure("a pair that fails contrast is not named")
+    if "Secondary Text" not in form_check.notice.text():
+        raise SmokeFailure("the notice does not carry the failure")
+    form_check.form.rows["CANVAS"].set_value("#000000")
     if theme.readable_on("#000000") != "#ffffff" \
             or theme.readable_on("#ffffff") != "#000000":
         raise SmokeFailure("readable_on does not turn with the ground under it")
-    if "#ffffff" not in builder.notice.styleSheet():
+    if "#ffffff" not in form_check.notice.styleSheet():
         raise SmokeFailure("the notice is not drawn to stay readable on the canvas")
-    ok.append("the theme builder seeds, validates and names what fails")
+    ok.append("the palette form seeds, validates and names what fails")
 
+    theme.register_collection(None, None)
     theme.set_scheme(theme.resolve_scheme(
         theme.DEFAULT_THEME, theme.DEFAULT_MODE, False))
 
     # Every theme against every mode, in both OS states: each pair names a
     # complete scheme that goes live and renders a sheet.
-    for value, _caption in theme.THEME_CHOICES:
+    for value, _caption in theme.theme_choices(collection):
         for mode, _mode_caption in theme.MODE_CHOICES:
             for dark in (False, True):
                 name = theme.resolve_scheme(value, mode, dark)
@@ -197,6 +312,21 @@ def check_bristol() -> list[str]:
             != theme.THEMES[theme.DEFAULT_THEME][0]:
         raise SmokeFailure("an unrecognised theme name does not fall back")
     ok.append("every theme and mode pair resolves, applies and renders a stylesheet")
+
+    # A collection that has lost the default still has a fallback, so deleting
+    # Pumpkin is an ordinary deletion rather than the one that breaks the app.
+    without_default = theme.resolve_collection(
+        {"deleted": [theme.DEFAULT_THEME]})
+    theme.install_collection(without_default)
+    if theme.default_theme() not in theme.THEMES:
+        raise SmokeFailure("a collection without the default has no fallback")
+    theme.set_scheme("a_scheme_that_is_gone")
+    if theme.current_scheme() not in theme.SCHEMES or not theme.build_style_sheet():
+        raise SmokeFailure("a scheme that is gone does not fall back to a live one")
+    if theme.check_schemes():
+        raise SmokeFailure("a collection without the default is incomplete")
+    collection = theme.register_collection(None, None)
+    ok.append("a collection that has lost the default theme still resolves and draws")
 
     # A theme with no dark half is an ordinary theme: it offers Light alone and
     # draws its light palette whatever the mode and the OS say.
@@ -219,6 +349,7 @@ def check_bristol() -> list[str]:
 
     # Every value the one older key could hold comes up as the appearance it
     # named, and the two current keys win wherever they say anything.
+    theme.install_collection(theme.resolve_collection(None, {"INK": "#101010"}))
     for legacy, expected in theme.LEGACY_APPEARANCE.items():
         if theme.appearance_choice(None, None, legacy) != expected:
             raise SmokeFailure(f"stored appearance {legacy!r} did not migrate")
@@ -231,12 +362,13 @@ def check_bristol() -> list[str]:
     if theme.appearance_choice("warm", "sideways", None) \
             != ("warm", theme.DEFAULT_MODE):
         raise SmokeFailure("an unreadable stored mode does not default")
+    if theme.appearance_choice("a_theme_that_was_deleted", theme.DARK_MODE, None) \
+            != (theme.DEFAULT_THEME, theme.DEFAULT_MODE):
+        raise SmokeFailure("a stored choice naming a deleted theme does not default")
     ok.append(f"all {len(theme.LEGACY_APPEARANCE)} older appearance values "
               "migrate to the appearance they named")
 
-    if theme.register_custom(None) is not False \
-            or theme.CUSTOM_SCHEME in theme.SCHEMES:
-        raise SmokeFailure("registering no palette leaves a custom scheme behind")
+    theme.register_collection(None, None)
     theme.set_scheme(theme.resolve_scheme(
         theme.DEFAULT_THEME, theme.DEFAULT_MODE, False))
 
@@ -1282,6 +1414,7 @@ def check_bristol() -> list[str]:
                 # older single key is what an installation predating them has.
                 from PySide6.QtCore import Qt
 
+                import ui.theme as theme
                 from ui.theme import DARK_MODE, LIGHT_MODE, SYSTEM_MODE
                 if (tab.theme.currentData(), tab.mode.currentData()) != \
                         ("warm", SYSTEM_MODE):
@@ -1300,9 +1433,23 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure("picking a mode did not apply it live")
                 if config_file.get(config_file.APPEARANCE_MODE) != DARK_MODE:
                     raise SmokeFailure("picking a mode did not write it")
+                # The collection is what the picker offers, so a theme
+                # stored in the configuration is one of its entries and no
+                # Custom door stands among them.
+                if not tab.manage.isEnabled():
+                    raise SmokeFailure("Settings offers no way to manage themes")
+                if tab.theme.findData(theme.LEGACY_CUSTOM_THEME) >= 0:
+                    raise SmokeFailure("the Theme picker still offers Custom")
+                config_file.update({config_file.APPEARANCE_THEMES: {"added": {
+                    "light_only": {"name": "Light Only",
+                                   "light": dict(theme.REFERENCE_PALETTE),
+                                   "dark": None}}}})
+                tab.reload()
+                if tab.theme.findData("light_only") < 0:
+                    raise SmokeFailure("a theme in the configuration is not offered")
                 # A theme with no dark half: the two dark rows are unclickable,
                 # they carry the reason, and the row sits on Light.
-                tab.theme.setCurrentIndex(tab.theme.findData("custom"))
+                tab.theme.setCurrentIndex(tab.theme.findData("light_only"))
                 for index in range(tab.mode.count()):
                     value = tab.mode.itemData(index)
                     item = tab.mode.model().item(index)
@@ -1323,6 +1470,11 @@ def check_bristol() -> list[str]:
                 if tab.mode.currentData() != DARK_MODE:
                     raise SmokeFailure(
                         "returning to a theme with both halves lost the mode")
+                config_file.update({config_file.APPEARANCE_THEMES: {}})
+                tab.reload()
+                if tab.theme.findData("light_only") >= 0:
+                    raise SmokeFailure("a theme taken out of the configuration "
+                                       "is still offered")
                 if hasattr(tab, "save_btn"):
                     raise SmokeFailure("a Save button still stands on Settings")
                 tab.suggested_commit.setChecked(

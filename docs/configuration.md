@@ -71,28 +71,41 @@ the next session that reaches that point.
 ### `appearance`
 
 **Required. Default `warm`.** How Bristol Tickets looks. Edited in its Settings
-tab, where the choice applies as it is picked and is written here as it is made.
+tab, where the choice applies as it is picked and is written here as it is made,
+and in the Manage Themes window that tab opens.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `scheme` | `warm` | The colour scheme, as a family or a scheme name. |
-| `custom_scheme` | absent | The palette built in the theme builder, as a mapping of colour key to hex value. |
+| `theme` | `warm` | Which theme the board is drawn in, by its id. |
+| `mode` | `system` | Which half of it: `light`, `dark`, or `system` to follow the OS. |
+| `themes` | absent | Which themes this installation offers, as the difference from what the build ships. |
+| `detail_width` | absent | The detail pane's width in device-independent pixels. |
+| `detail_collapsed` | absent | Whether the detail pane is collapsed to the window edge. |
+| `scheme` | absent | What a build before `theme` and `mode` wrote, holding both in one value. Read, never written. |
+| `custom_scheme` | absent | What a build that offered one Custom option wrote, as a mapping of colour key to hex value. Read, never written. |
 
-A family means "follow the OS light/dark setting within it":
+`themes` carries only what differs from the build, under three keys:
 
-| Value | Meaning |
+| Key | Holds |
 | --- | --- |
-| `warm` | The warm orange family, following the OS. |
-| `cool` | The cool neutral family, following the OS. |
-| `warm_light` / `warm_dark` | Warm orange, pinned. |
-| `cool_light` / `cool_dark` | Cool neutral, pinned. |
-| `custom` | The palette in `custom_scheme`, built in the theme builder. |
+| `added` | Each theme you added, whole: a `name`, a `light` palette, and a `dark` palette or `null`. |
+| `edited` | Each shipped theme you changed, under its id: the `name`, the `light` palette, the `dark` palette, or any of them. |
+| `deleted` | The ids of the shipped themes you removed. |
 
-An unrecognised value falls back to `warm`, and so does `custom` with no
-`custom_scheme` beside it. A key `custom_scheme` does not carry is filled from
-the warm light scheme, so a palette stored by an older build stays complete.
-Adding a scheme is a data change in `src/tools/bristol/ui/theme.py`; what each
-key in one means is `src/tools/bristol/ui/README.md`.
+A theme you have not touched appears in none of them, which is what lets the
+themes a later release ships arrive in your list beside your own. A theme id is
+what `theme` names, and it never changes: renaming a theme changes what you see
+and nothing that is stored.
+
+An unrecognised `theme` falls back to the default, and so does one naming a
+theme you deleted. A key a stored palette does not carry is filled from the warm
+light palette, so a palette written by an older build stays complete. The
+palette in `custom_scheme` joins the collection as an ordinary theme named
+Custom, under the id `custom`.
+
+Adding a theme to the build is a data change in
+`src/tools/bristol/ui/theme.py`; what each key in a palette means is
+`src/tools/bristol/ui/README.md`.
 
 ### `sizing`
 
