@@ -196,10 +196,16 @@ and a **status** (which board column):
   - `archive` — retired. The Archive tab is a stripped chronological list,
     most-recently-modified first.
 - `status` — the board column, meaningful for active-stage tasks:
-  - `todo` — queued and intended for the current push.
-  - `doing` — in progress in the literal sense: partway through executing a
-    chained series of actions. If resuming means "continue a sequence already
-    underway," it is `doing`.
+  - `todo` — written, and not yet returned to. A card is `todo` however
+    complete it is: writing one well is the ticketing, never a return to it.
+  - `doing` — a card some session has come back to since it was written:
+    researched, commented on, re-linked, rewritten, part-executed, or blocking a
+    card already in this column. Never "someone is typing right now" — one agent
+    runs at a time and nothing here limits work in progress. What the column
+    buys is that a card carrying thought never reads as fresh intake, which is
+    what makes `doing` outrank every `todo` in the queue. How far along it is,
+    and whether anything is half-written on disk, is the card's own handoff
+    comment.
   - `done` — finished; `closed_at` is set.
 
 `backlog` is not a *status* value; it lives on the stage axis, and the CLI
@@ -240,12 +246,9 @@ Phase 3.3 states the rule). Their storage:
   worth asking, and a comparison across assignees is meaningless. Only the user
   sequences work across agents.
 
-**The operational tell for `doing`:** if you have read into a ticket and left a
-comment on it, it is `doing`. At session end every card you engaged resolves to
-`done` or `doing` — never `todo`. Leaving worked tickets in `todo` is the single
-most common board-hygiene failure. (Broader than the chained-execution sense
-above: that sense governs what you *carry forward*, this governs the working
-state of anything you touched.)
+**At session end every card you engaged is `done` or `doing`, never `todo`.**
+Leaving a worked ticket in `todo` is the single most common board-hygiene
+failure, and it costs the next session the work this one already did.
 
 **A card is the handoff.** There is no `add-handoff` subcommand, no `handoff`
 table, and no Handoff tab; `schema_guard._drop_retired_handoff` drops the table

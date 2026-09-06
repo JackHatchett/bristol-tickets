@@ -134,9 +134,9 @@ def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
     silently sank a blocked `doing` card below every `todo` and made the script
     contradict the precedence it documents — the agent then executed the wrong
     ticket in good faith. A dependency annotates the queue and never reorders
-    it: the card keeps its position wearing its blocker, and the agent stops
-    there and says what would clear it rather than moving on to the card
-    below."""
+    it: the card keeps its position wearing its blocker. Which card the agent
+    then takes is `print_queue`'s, and the rule it follows is `src/app.md`
+    Phase 3.2."""
     return sorted(
         rows,
         key=lambda r: (STATUS_RANK.get(r["status"], 9), r["sort_order"], r["id"]),
@@ -519,14 +519,26 @@ def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
 
     The precedence is `src/app.md` Phase 3.2 and is computed in `queue_sort`;
     nothing here re-derives it. `label` is the front end's own wording.
+
+    The next action is the first card in that order carrying no unmet blocker —
+    Phase 3.2 passes over a blocked card and takes the next, and the blocked one
+    keeps its printed position so it is returned to in place. A queue whose
+    cards are all blocked has no next action, and says which cards would clear
+    the way rather than naming one that cannot be started.
     """
     if mine_q:
-        nxt = mine_q[0]
-        print(f"▶ {label} ({me}, active board): "
-              f"[{nxt['epic']}] {nxt['title']}  (pressure {nxt['pressure']}, {nxt['estimate'] or '?'})")
-        print("\nYOUR QUEUE (active board, doing→todo, board order):")
-        print("  Work it top to bottom. A `doing` card outranks every `todo`.")
         blockers = unmet_blockers(conn, board)
+        ready = [r for r in mine_q if not blockers.get(r["id"])]
+        if ready:
+            nxt = ready[0]
+            print(f"▶ {label} ({me}, active board): "
+                  f"[{nxt['epic']}] {nxt['title']}  (pressure {nxt['pressure']}, {nxt['estimate'] or '?'})")
+        else:
+            waiting = sorted({b for r in mine_q for b in blockers.get(r["id"], [])})
+            print(f"▶ {label} ({me}, active board): none — every card in your "
+                  f"queue is waiting on {', '.join(f'#{b}' for b in waiting)}.")
+        print("\nYOUR QUEUE (active board, doing→todo, board order):")
+        print("  Work it top to bottom, passing over a card with an unmet blocker.")
         for n, r in enumerate(mine_q, start=1):
             print(fmt(r, blockers, position=n, show_owner=show_owner))
         return

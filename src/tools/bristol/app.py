@@ -133,7 +133,8 @@ def main() -> None:
     import config_file
     from ui.theme import apply_scheme
     apply_scheme(app, config_file.get(config_file.APPEARANCE_SCHEME,
-                                      config_file.APPEARANCE_SCHEME_DEFAULT))
+                                      config_file.APPEARANCE_SCHEME_DEFAULT),
+                 config_file.get(config_file.APPEARANCE_CUSTOM))
 
     # An app newer than the installation it opens updates it first, so a user
     # who downloads a release gets the machinery that release ships with. Only

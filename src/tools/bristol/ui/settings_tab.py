@@ -14,8 +14,9 @@ every control at the same one — a section heading is a row that spans both
 columns rather than a form of its own.
 
 The theme applies the moment it is picked, so it can be compared against the
-board it themes. Save is what commits every field on the page, the theme
-included.
+board it themes, and each control writes its own key as it is moved. Custom is
+the one option that is a door rather than a value: it opens the theme builder,
+and what that builds is stored beside the choice that names it.
 """
 
 from __future__ import annotations
@@ -35,7 +36,8 @@ import config_file  # bristol-local; see module docstring
 
 from .settled_combo import SettledComboBox, fill_words
 from .theme import CHOICES as THEME_CHOICES
-from .theme import space
+from .theme import CUSTOM_SCHEME, register_custom, space
+from .theme_builder import ThemeBuilderDialog
 
 # What each stored value is called on screen. A caption names the column a card
 # lands in, which is what the user sees happen.
@@ -79,6 +81,10 @@ class SettingsTab(QWidget):
 
         self.appearance = fill_words(QComboBox(), THEME_CHOICES)
         self.appearance.currentIndexChanged.connect(self._appearance_chosen)
+        # Custom is a door rather than a value, so it opens on the click and not
+        # on the index: choosing it while it is already current has to open the
+        # builder too, and only `activated` fires then.
+        self.appearance.activated.connect(self._appearance_activated)
 
         # Which agent the next session runs as: the one field here that decides
         # what a session is rather than how it behaves. It is a settled combo
@@ -147,11 +153,69 @@ class SettingsTab(QWidget):
         self.reload()
 
     def _appearance_chosen(self) -> None:
-        """Re-theme the running app, then keep the choice."""
+        """Re-theme the running app, then keep the choice.
+
+        Custom is left to ``_appearance_activated``: there is nothing to keep
+        until the builder has been through, and a palette the user then cancels
+        must not have been written on the way in.
+        """
+        if self.appearance.currentData() == CUSTOM_SCHEME:
+            return
         if self._on_appearance_changed is not None:
             self._on_appearance_changed(self.appearance.currentData())
         self._write(config_file.APPEARANCE_SCHEME,
                     self.appearance.currentData(), "Theme")
+
+    def _appearance_activated(self, _index: int) -> None:
+        """Open the theme builder when Custom is the option chosen."""
+        if self._loading or self.appearance.currentData() != CUSTOM_SCHEME:
+            return
+        self._build_theme()
+
+    def _build_theme(self) -> None:
+        """Build a palette, keep it, and make it the theme in force.
+
+        The stored custom palette is the seed where there is one and the theme
+        currently drawn is the seed where there is not, so the builder always
+        opens on something that already works. A cancelled build restores the
+        theme the page was showing and leaves the configuration untouched.
+        """
+        was = config_file.get(config_file.APPEARANCE_SCHEME,
+                              config_file.APPEARANCE_SCHEME_DEFAULT)
+        stored = config_file.get(config_file.APPEARANCE_CUSTOM)
+        builder = ThemeBuilderDialog(
+            seed=stored if isinstance(stored, dict) else None,
+            parent=self,
+            on_preview=self._preview_custom,
+        )
+        if not builder.exec():
+            register_custom(stored if isinstance(stored, dict) else None)
+            if self._on_appearance_changed is not None:
+                self._on_appearance_changed(was)
+            self._seat_appearance(was)
+            return
+        palette = builder.palette()
+        register_custom(palette)
+        self._write(config_file.APPEARANCE_CUSTOM, palette, "Theme")
+        self._write(config_file.APPEARANCE_SCHEME, CUSTOM_SCHEME, "Theme")
+        if self._on_appearance_changed is not None:
+            self._on_appearance_changed(CUSTOM_SCHEME)
+
+    def _preview_custom(self, palette: dict) -> None:
+        """Draw the running app in a palette the builder is still holding."""
+        register_custom(palette)
+        if self._on_appearance_changed is not None:
+            self._on_appearance_changed(CUSTOM_SCHEME)
+
+    def _seat_appearance(self, choice: str | None) -> None:
+        """Put the Theme picker on a choice without it reading as one made."""
+        was = self._loading
+        self._loading = True
+        try:
+            index = self.appearance.findData(choice)
+            self.appearance.setCurrentIndex(index if index >= 0 else 0)
+        finally:
+            self._loading = was
 
     def _write(self, key: str, value, caption: str) -> None:
         """Persist one choice at the moment it is made.
@@ -216,8 +280,7 @@ class SettingsTab(QWidget):
         scheme = config_file.get(
             config_file.APPEARANCE_SCHEME, config_file.APPEARANCE_SCHEME_DEFAULT
         )
-        scheme_index = self.appearance.findData(scheme)
-        self.appearance.setCurrentIndex(scheme_index if scheme_index >= 0 else 0)
+        self._seat_appearance(scheme)
         self.setEnabled(placed)
         # An unplaced clone has nothing to write to, and says so where a save
         # result would otherwise appear.

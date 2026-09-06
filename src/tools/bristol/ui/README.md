@@ -11,9 +11,14 @@ which one to reach for.
   number.** `space("md")`, `radius("lg")`, `type_size("title")`.
 - **Read `C` and the token functions at paint time, not at import time.** A name
   bound once at import holds the value the app started with.
-- **Check what you changed against Bristol running on the user's machine**, with
+- **Check a visible change against Bristol running on the user's machine**, with
   whatever the runtime offers for seeing a window there. Say so and stop where it
-  offers nothing, rather than substituting a render of a different platform.
+  offers nothing, rather than substituting a render of a different platform. A
+  change nothing can see — storage, a migration, which card is next — is checked
+  by the smoke target and no further.
+- **Change the user's own settings to test one, and put them back.** Proving a
+  choice survives a restart takes a real write to the real configuration, and the
+  session that made the change is the one that restores it and says so.
 - **Never install Qt into the session's own sandbox to look at the app.** An
   offscreen render settles geometry at most, and draws the wrong control set,
   fonts and pixel ratio. // The install has cost more sessions than it has saved.
@@ -191,3 +196,41 @@ Copy an existing palette in `theme.py`, change the values, register it in
 `SCHEMES`, and pair it in `FAMILIES` if it has a light and dark member. Add its
 name to `CHOICES` to offer it in Settings. `check_schemes()` reports any key the
 new palette is missing; the smoke check runs it.
+
+**A key added to one scheme is added to every one of them, and to
+`KEY_CAPTIONS`.** The theme builder offers a field per key the reference scheme
+defines, and a key with no caption is offered under its own name.
+
+## The custom scheme
+
+The Theme picker's Custom option opens `theme_builder.py`: one row per palette
+key — a caption, a swatch that opens the platform colour picker, and the hex
+value — seeded from the theme in force.
+
+- **The palette is stored in the configuration, not in `theme.py`.** It is
+  `appearance.custom_scheme`, and `appearance.scheme` of `custom` is what names
+  it. A build ships schemes; an installation holds this one.
+- **`register_custom()` is what makes it a scheme**, filling any key it lacks
+  from the reference scheme, so it is complete for `check_schemes()` and live
+  for `set_scheme()` exactly as a shipped one is. Every path that applies a
+  stored choice passes the stored palette down with it.
+- **`KEY_GROUPS` is the order the builder offers the keys in**, and
+  `builder_rows()` places a key no group names rather than dropping it.
+
+## Contrast
+
+`TEXT_PAIRS` is every run of text and the surface it is read on;
+`contrast_ratio()` reads a pair on the WCAG 1:1–21:1 scale and
+`contrast_complaints()` names each one under `CONTRAST_MIN`, which is 4.5:1,
+AA for body text. Every shipped scheme clears every pair, and the smoke check
+asserts it.
+
+- **Name a failure; never refuse one.** A palette the user built is his to
+  choose, so the builder says which pair falls short and asks once before
+  saving. Silence and refusal are both wrong.
+- **The unclickable pair is deliberately absent from the set.** Text a control
+  greys out is meant to be hard to read.
+- **`readable_on()` is the one colour not taken from a scheme.** The builder
+  previews the palette live, so the notice naming what cannot be read is drawn
+  in the palette that broke it; that one line takes black or white against the
+  canvas instead. Nothing else in the app derives a colour this way.

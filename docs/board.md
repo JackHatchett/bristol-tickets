@@ -58,9 +58,11 @@ session runs as included.
 Only Board-stage cards have a meaningful column. A card's **status** is its
 column:
 
-- **To Do** — queued and intended for the current push.
-- **Doing** — partway through. For an agent this is literal: reading into a
-  ticket and commenting on it puts it in Doing, before the work starts.
+- **To Do** — written, and not yet come back to. A card stays here however
+  complete it is; writing one well is not the same as returning to it.
+- **Doing** — a card someone has come back to since it was written. Reading
+  into a ticket, commenting on it or relinking it puts it in Doing, before any
+  work starts, so a card carrying thought never reads as a fresh one.
 - **Done** — finished. The card records when it closed.
 
 Drag a card to reorder it within a column or move it across. Position matters:
@@ -228,7 +230,14 @@ command-line writer reads the same setting, so both surfaces agree.
 
 **Colour scheme** — a warm orange or a cool neutral appearance, each either
 following your system's light/dark setting or pinned to one of the two. The
-board redraws as you pick, so you can compare; Save is what keeps it.
+board redraws as you pick it, and the choice is kept as you make it.
+
+**Custom** — the same picker's last option opens a theme builder: every colour
+the board draws with, one row each, seeded from the theme you are looking at.
+Click a swatch for the colour picker or type the hex. The board follows each
+change, so you judge the palette against the board it colours. Where text would
+land too close to what it sits on to read, the builder names the pair — it says
+so and lets you save anyway, because the colours are yours to choose.
 
 Settings are stored in your configuration file, the same one the setup wizard
 fills in. Saving round-trips the whole file, so a key this build does not

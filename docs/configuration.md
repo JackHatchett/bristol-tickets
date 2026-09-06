@@ -71,11 +71,12 @@ the next session that reaches that point.
 ### `appearance`
 
 **Required. Default `warm`.** How Bristol Tickets looks. Edited in its Settings
-tab, where the choice applies as it is picked and Save writes it here.
+tab, where the choice applies as it is picked and is written here as it is made.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `scheme` | `warm` | The colour scheme, as a family or a scheme name. |
+| `custom_scheme` | absent | The palette built in the theme builder, as a mapping of colour key to hex value. |
 
 A family means "follow the OS light/dark setting within it":
 
@@ -85,10 +86,13 @@ A family means "follow the OS light/dark setting within it":
 | `cool` | The cool neutral family, following the OS. |
 | `warm_light` / `warm_dark` | Warm orange, pinned. |
 | `cool_light` / `cool_dark` | Cool neutral, pinned. |
+| `custom` | The palette in `custom_scheme`, built in the theme builder. |
 
-An unrecognised value falls back to `warm`. Adding a scheme is a data change in
-`src/tools/bristol/ui/theme.py`; what each key in one means is
-`src/tools/bristol/ui/README.md`.
+An unrecognised value falls back to `warm`, and so does `custom` with no
+`custom_scheme` beside it. A key `custom_scheme` does not carry is filled from
+the warm light scheme, so a palette stored by an older build stays complete.
+Adding a scheme is a data change in `src/tools/bristol/ui/theme.py`; what each
+key in one means is `src/tools/bristol/ui/README.md`.
 
 ### `sizing`
 

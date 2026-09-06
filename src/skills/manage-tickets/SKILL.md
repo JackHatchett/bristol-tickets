@@ -105,9 +105,10 @@ the board renders under the Log, and the only rule on them is
 Before wrapping up any session that changed state (skip only for pure Q&A),
 reflect the true state into the board.
 
-**1. Put every task you touched in the column that reflects reality.** `done`
-when finished, `doing` for anything else you touched. Per `src/app.md` Phase 3.5
-that move already happened when you first touched the card; this is the check.
+**1. Put every task you came back to in the column that reflects reality.**
+`done` when finished, `doing` for anything else. Per `src/app.md` Phase 3.5 that
+move already happened when you first returned to the card; this is the check. A
+card written this session is `todo`: writing it is the ticketing, not a return.
 **A finished task stays on the active board in `done`** — archiving is the
 user's board-tidy call, not part of marking work done.
 
