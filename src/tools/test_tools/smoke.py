@@ -93,6 +93,93 @@ def check_bristol() -> list[str]:
         raise SmokeFailure("incomplete colour scheme — " + "; ".join(gaps))
     ok.append(f"all {len(theme.SCHEMES)} colour schemes carry the same keys")
 
+    # Every shipped scheme clears the readable ratio on every pair the builder
+    # checks, so a palette that does not is the user's rather than this build's.
+    for name, palette in theme.SCHEMES.items():
+        unreadable = theme.contrast_complaints(palette)
+        if unreadable:
+            raise SmokeFailure(f"shipped scheme {name!r} — " + "; ".join(unreadable))
+    ok.append("every shipped scheme clears the contrast floor on every text pair")
+
+    # The custom scheme: stored outside this module, registered like any other,
+    # and complete afterwards however partial what was stored is.
+    if theme.CUSTOM_SCHEME in theme.SCHEMES:
+        raise SmokeFailure("the custom scheme exists before anything registers one")
+    if theme.resolve_choice(theme.CUSTOM_SCHEME, False) \
+            != theme.FAMILIES[theme.DEFAULT_CHOICE][0]:
+        raise SmokeFailure("an unregistered custom choice does not fall back")
+    if theme.register_custom({"INK": "#101010"}) is not True:
+        raise SmokeFailure("a partial custom palette does not register")
+    if theme.check_schemes():
+        raise SmokeFailure("a partial custom palette is registered incomplete")
+    if theme.SCHEMES[theme.CUSTOM_SCHEME]["INK"] != "#101010":
+        raise SmokeFailure("the registered custom palette dropped what it carried")
+    ok.append("a partial custom palette registers complete and resolves")
+
+    # Every key a palette defines gets a field, and every field a caption.
+    placed = [key for _heading, keys in theme.builder_rows() for key in keys]
+    if sorted(placed) != sorted(theme.SCHEMES[theme.REFERENCE_SCHEME]):
+        raise SmokeFailure("the theme builder does not offer one field per colour")
+    if len(placed) != len(set(placed)):
+        raise SmokeFailure("the theme builder offers a colour twice")
+    uncaptioned = [key for key in placed if key not in theme.KEY_CAPTIONS]
+    if uncaptioned:
+        raise SmokeFailure("no caption for " + ", ".join(uncaptioned))
+    ok.append(f"the theme builder offers all {len(placed)} colours, each captioned")
+
+    # The contrast reader, against the two ends of the scale and a palette built
+    # to fail one named pair.
+    if round(theme.contrast_ratio("#ffffff", "#000000"), 1) != 21.0:
+        raise SmokeFailure("black on white does not read as 21:1")
+    if round(theme.contrast_ratio("#808080", "#808080"), 1) != 1.0:
+        raise SmokeFailure("a colour on itself does not read as 1:1")
+    if theme.contrast_ratio("#80ffffff", "#000000") != theme.contrast_ratio(
+            "#ffffff", "#000000"):
+        raise SmokeFailure("an alpha channel changed a contrast reading")
+    washed = dict(theme.SCHEMES[theme.REFERENCE_SCHEME])
+    washed["INK_SOFT"] = washed["CANVAS"]
+    named = theme.contrast_complaints(washed)
+    if not any("Secondary Text" in line and "Window Background" in line
+               for line in named):
+        raise SmokeFailure("a failing pair is not named by contrast_complaints")
+    if any("Unclickable" in line for line in theme.contrast_complaints(washed)):
+        raise SmokeFailure("the deliberately grey pair is being checked")
+    ok.append("the contrast reader names the pair that fails, by its caption")
+
+    # The builder itself: seeded from the theme in force, refusing to hand back
+    # a value that is not a colour, and saying what it finds rather than nothing.
+    from ui.theme_builder import ThemeBuilderDialog
+
+    theme.set_scheme("cool_dark")
+    builder = ThemeBuilderDialog()
+    if builder.rows["INK"].value() != theme.SCHEMES["cool_dark"]["INK"]:
+        raise SmokeFailure("the theme builder did not seed from the theme in force")
+    if sorted(builder.palette()) != sorted(theme.SCHEMES[theme.REFERENCE_SCHEME]):
+        raise SmokeFailure("the theme builder hands back an incomplete palette")
+    if builder.unreadable():
+        raise SmokeFailure("a shipped scheme seeds a builder that complains")
+    builder.rows["INK_SOFT"].set_value("not a colour")
+    if builder.rows["INK_SOFT"].valid():
+        raise SmokeFailure("the theme builder accepts a value that is not a colour")
+    if "INK_SOFT" in builder.palette():
+        raise SmokeFailure("a value that is not a colour reaches the palette")
+    if "Secondary Text" not in builder.notice.text():
+        raise SmokeFailure("the theme builder does not name the field it cannot read")
+    builder.rows["INK_SOFT"].set_value(theme.SCHEMES["cool_dark"]["CANVAS"])
+    if not any("Secondary Text" in line for line in builder.unreadable()):
+        raise SmokeFailure("the theme builder does not name a pair that fails contrast")
+    if "Secondary Text" not in builder.notice.text():
+        raise SmokeFailure("the theme builder's notice does not carry the failure")
+    builder.rows["CANVAS"].set_value("#000000")
+    if theme.readable_on("#000000") != "#ffffff" \
+            or theme.readable_on("#ffffff") != "#000000":
+        raise SmokeFailure("readable_on does not turn with the ground under it")
+    if "#ffffff" not in builder.notice.styleSheet():
+        raise SmokeFailure("the notice is not drawn to stay readable on the canvas")
+    ok.append("the theme builder seeds, validates and names what fails")
+
+    theme.set_scheme(theme.resolve_choice(theme.DEFAULT_CHOICE, False))
+
     for value, _caption in theme.CHOICES:
         for dark in (False, True):
             name = theme.resolve_choice(value, dark)
@@ -104,6 +191,9 @@ def check_bristol() -> list[str]:
     if theme.resolve_choice("a_scheme_from_a_newer_build", False) \
             != theme.FAMILIES[theme.DEFAULT_CHOICE][0]:
         raise SmokeFailure("an unrecognised scheme name does not fall back")
+    if theme.register_custom(None) is not False \
+            or theme.CUSTOM_SCHEME in theme.SCHEMES:
+        raise SmokeFailure("registering no palette leaves a custom scheme behind")
     theme.set_scheme(theme.resolve_choice(theme.DEFAULT_CHOICE, False))
     ok.append("every offered choice resolves, applies and renders a stylesheet")
 
@@ -1693,6 +1783,18 @@ def check_governing_docs() -> list[str]:
             f"(src/templates/identity_template.md, the style contract)."
         )
     ok.append(f"resident core is {words} words, within the {RESIDENT_CORE_CAP} cap")
+
+    # The entry files are one text under two names, because two hosts read two
+    # different names. Two copies of a rule are two rules the moment one is
+    # edited, and nothing else would catch the edit that reached only one.
+    entries = {name: (root / name).read_text(encoding="utf-8")
+               for name in ("AGENTS.md", "CLAUDE.md")}
+    if len(set(entries.values())) != 1:
+        raise SmokeFailure(
+            "AGENTS.md and CLAUDE.md have drifted apart — they are one text "
+            "under the two names different hosts read."
+        )
+    ok.append("the entry files AGENTS.md and CLAUDE.md are one text")
     return ok
 
 

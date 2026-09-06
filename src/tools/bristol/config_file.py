@@ -40,6 +40,12 @@ WORK_WHOLE_QUEUE_DEFAULT = True
 APPEARANCE_SCHEME = "appearance.scheme"
 APPEARANCE_SCHEME_DEFAULT = "warm"
 
+# The palette the user built in the theme builder, as a key-to-colour mapping.
+# It is what ``appearance.scheme`` of "custom" names, and it sits beside that
+# choice rather than in ``ui/theme.py``, because it belongs to this
+# installation rather than to the build.
+APPEARANCE_CUSTOM = "appearance.custom_scheme"
+
 # Where the detail pane sits: its width in device-independent pixels, and
 # whether it is collapsed to the window edge. The main window writes these as
 # the user moves the splitter or toggles the pane, so both survive a restart.

@@ -72,10 +72,10 @@ queue either — `src/tools/ticket_tools/README.md` §Board conventions.
 text alone is deliberately incomplete. A note a document links is the exception:
 open it only when the work needs the concept it explains.
 
-**5. Touching a card puts it in `doing` — immediately, before the work.**
-Executing, investigating, commenting or linking all count:
-`update-task-status --id N --status doing` is your first write to that card,
-unless the same session takes it to `done`.
+**5. Coming back to a card puts it in `doing` — before the work.** Executing,
+investigating, commenting, linking and rewriting count; writing the card does
+not. `update-task-status --id N --status doing` is your first write, unless the
+same session takes it to `done`.
 
 **6. Work the queue through, top to bottom, in one go**, to the scope 3.7
 resolves. Do not stop after one ticket, leave the rest for next session, or ask

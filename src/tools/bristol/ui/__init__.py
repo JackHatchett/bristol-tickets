@@ -6,6 +6,7 @@ Import graph (bottom-up, no cycles):
     schema_guard     (on-launch migration)             ← imported by main_window
     card_delegate    → theme
     record_dialog    → theme
+    theme_builder    → theme, dialogs
     kanban_column    → theme, card_delegate, record_dialog
     main_window      → theme, schema_guard, kanban_column, record_dialog
 

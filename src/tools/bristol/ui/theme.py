@@ -18,6 +18,12 @@ families, each a light member and a dark member, so naming the family selects
 turns either kind of name plus the OS state into one scheme name, and
 ``set_scheme(name)`` makes it live.
 
+One scheme is not written here: ``custom``, the palette the user builds in the
+theme builder. It is stored in the configuration rather than in this module and
+``register_custom()`` installs it, filling any key it lacks from the reference
+scheme — so from the moment it is registered every resolver, the completeness
+check and the stylesheet treat it as one more shipped scheme.
+
 Every consumer reads the current palette out of the single mutable dict ``C``
 rather than binding colour names at import time, which could not be re-pointed
 live. ``set_scheme()`` swaps ``C``'s contents in place, and
@@ -110,6 +116,11 @@ LAYOUT = {
     "small_dialog_min_w": 420,  # a single-purpose modal: add link
     "preview_min_w": 480,       # the image preview modal
     "preview_min_h": 360,
+    "builder_min_w": 620,       # the theme builder: a caption, a swatch, a hex
+    "builder_min_h": 620,
+    "builder_caption_w": 210,   # what a row is called, wide enough for the longest
+    "builder_swatch_w": 44,     # the block of colour a row opens the picker from
+    "builder_hex_w": 110,       # its hex value, wide enough for #AARRGGBB
 }
 
 # What a stored value is called on screen. The database keeps the value and a
@@ -353,7 +364,83 @@ CHOICES: list[tuple[str, str]] = [
     ("cool_light", "Frosty Light"),
     ("cool_dark", "Frosty Dark"),
     ("cool", "Frosty System"),
+    ("custom", "Custom"),
 ]
+
+# The name a palette the user built himself is registered and stored under. It
+# is an ordinary scheme once ``register_custom()`` has installed it, so every
+# resolver, the completeness check and the stylesheet treat it as one.
+CUSTOM_SCHEME = "custom"
+
+# The theme builder's form, in the order it offers it: a heading, then the keys
+# it groups. A key the reference scheme carries and no group names still gets a
+# field, under the last heading — ``builder_rows()`` is what places it.
+KEY_GROUPS: list[tuple[str, list[str]]] = [
+    ("Text", ["INK", "INK_SOFT"]),
+    ("Surfaces", ["CANVAS", "SURFACE", "LIST_BG", "BORDER", "SHADOW"]),
+    ("Accent", ["ACCENT", "ACCENT_DK", "ON_ACCENT"]),
+    ("Cards", ["SEL_BG", "HOVER_BG"]),
+    ("Badges", ["AMBER_BG", "AMBER_TX", "BUILD_BG", "BUILD_TX",
+                "FIX_BG", "FIX_TX", "NEUTRAL_BG", "NEUTRAL_TX"]),
+    ("Buttons", ["BTN_BG", "BTN_BORDER", "BTN_HOVER", "BTN_PRESSED",
+                 "CREATE_HOVER", "DELETE_BG", "DELETE_HOVER",
+                 "DISABLED_BG", "DISABLED_TX", "MISSING"]),
+]
+
+# What each key is called on the theme builder's rows. A caption names the thing
+# the colour lands on, so a row can be read without the styling contract open.
+KEY_CAPTIONS: dict[str, str] = {
+    "INK": "Primary Text",
+    "INK_SOFT": "Secondary Text",
+    "CANVAS": "Window Background",
+    "SURFACE": "Card Surface",
+    "LIST_BG": "Recessed List",
+    "BORDER": "Hairline Border",
+    "SHADOW": "Card Shadow",
+    "ACCENT": "Accent",
+    "ACCENT_DK": "Accent Text",
+    "ON_ACCENT": "Text on Accent",
+    "SEL_BG": "Selected Card",
+    "HOVER_BG": "Hovered Card",
+    "AMBER_BG": "Epic Badge",
+    "AMBER_TX": "Epic Badge Text",
+    "BUILD_BG": "Build Pill",
+    "BUILD_TX": "Build Pill Text",
+    "FIX_BG": "Fix Pill",
+    "FIX_TX": "Fix Pill Text",
+    "NEUTRAL_BG": "Quiet Pill",
+    "NEUTRAL_TX": "Quiet Pill Text",
+    "BTN_BG": "Button",
+    "BTN_BORDER": "Button Border",
+    "BTN_HOVER": "Button Hovered",
+    "BTN_PRESSED": "Button Pressed",
+    "CREATE_HOVER": "Primary Button Hovered",
+    "DELETE_BG": "Delete Button",
+    "DELETE_HOVER": "Delete Button Hovered",
+    "DISABLED_BG": "Unclickable Button",
+    "DISABLED_TX": "Unclickable Button Text",
+    "MISSING": "Empty Required Field",
+}
+
+# Text that has to be read, over the surface it is read on. Every shipped scheme
+# clears CONTRAST_MIN on every pair here, so a palette that does not is one the
+# builder names rather than one this product ships.
+#
+# The unclickable pair is deliberately absent: text a control greys out is meant
+# to be hard to read, and every shipped scheme puts it near 2:1.
+TEXT_PAIRS: list[tuple[str, str]] = [
+    ("INK", "CANVAS"), ("INK", "SURFACE"), ("INK", "LIST_BG"),
+    ("INK", "SEL_BG"), ("INK", "HOVER_BG"),
+    ("INK", "BTN_BG"), ("INK", "BTN_HOVER"), ("INK", "BTN_PRESSED"),
+    ("INK_SOFT", "CANVAS"), ("INK_SOFT", "SURFACE"), ("INK_SOFT", "LIST_BG"),
+    ("ON_ACCENT", "ACCENT"), ("ON_ACCENT", "DELETE_BG"),
+    ("ACCENT_DK", "SURFACE"), ("ACCENT_DK", "CANVAS"),
+    ("AMBER_TX", "AMBER_BG"), ("BUILD_TX", "BUILD_BG"), ("FIX_TX", "FIX_BG"),
+    ("NEUTRAL_TX", "NEUTRAL_BG"),
+]
+
+# The ratio a pair above has to reach. WCAG AA for body text.
+CONTRAST_MIN = 4.5
 
 # The single live palette every consumer reads from. Starts at the reference
 # scheme; the app calls set_scheme() at startup, on every OS colour-scheme
@@ -391,16 +478,133 @@ def set_scheme(name: str) -> None:
     C.update(scheme)
 
 
-def apply_scheme(app, choice: str | None) -> None:
+def apply_scheme(app, choice: str | None, custom: dict | None = None) -> None:
     """Resolve ``choice`` against the OS state, make it live, and style ``app``.
 
     Every window the application opens is styled by this one call, so it runs
     before the first window is built rather than inside any of them.
+
+    ``custom`` is the palette the user built, as it is stored. It is registered
+    first, so a stored choice of ``custom`` resolves to a scheme rather than
+    falling back — and a choice of ``custom`` with nothing stored falls back,
+    which is what an installation that has never opened the builder has.
     """
+    register_custom(custom)
     set_scheme(resolve_choice(
         choice, is_dark_scheme(app) if app is not None else False))
     if app is not None:
         app.setStyleSheet(build_style_sheet())
+
+
+def register_custom(palette: dict | None) -> bool:
+    """Install ``palette`` as the ``custom`` scheme, or remove it when there is
+    none. True when a scheme is registered afterwards.
+
+    A key the palette does not carry is filled from the reference scheme, so a
+    palette stored by an older build gains the keys a newer one draws with and
+    ``check_schemes()`` passes on it exactly as it does on a shipped scheme. A
+    value that is not a colour string is dropped for the same reason.
+    """
+    usable = {
+        key: value for key, value in (palette or {}).items()
+        if isinstance(key, str) and isinstance(value, str) and value.strip()
+    }
+    if not usable:
+        SCHEMES.pop(CUSTOM_SCHEME, None)
+        return False
+    complete = dict(SCHEMES[REFERENCE_SCHEME])
+    complete.update({key: value for key, value in usable.items()
+                     if key in complete})
+    SCHEMES[CUSTOM_SCHEME] = complete
+    return True
+
+
+def builder_rows() -> list[tuple[str, list[str]]]:
+    """The theme builder's form: a heading and the keys under it, covering every
+    key the reference scheme defines.
+
+    A key no group names is appended to the last heading rather than left out,
+    so a palette gaining a key gains a field with no edit here.
+    """
+    grouped = {key for _, keys in KEY_GROUPS for key in keys}
+    rows = [(heading, [key for key in keys if key in SCHEMES[REFERENCE_SCHEME]])
+            for heading, keys in KEY_GROUPS]
+    loose = [key for key in SCHEMES[REFERENCE_SCHEME] if key not in grouped]
+    if loose:
+        rows[-1] = (rows[-1][0], rows[-1][1] + loose)
+    return rows
+
+
+def key_caption(key: str) -> str:
+    """What a palette key is called on screen. A key with no caption reads as
+    itself, so a palette gaining a key is still editable."""
+    return KEY_CAPTIONS.get(key, key.replace("_", " ").title())
+
+
+def _relative_luminance(colour: str) -> float:
+    """The WCAG relative luminance of a ``#RRGGBB`` or ``#AARRGGBB`` colour.
+
+    An alpha channel is ignored: what a translucent colour actually reads
+    against depends on what is behind it, and the pairs checked here are opaque.
+    """
+    digits = colour.strip().lstrip("#")
+    if len(digits) == 8:
+        digits = digits[2:]
+    if len(digits) != 6:
+        raise ValueError(f"not a colour: {colour!r}")
+    channels = []
+    for start in (0, 2, 4):
+        value = int(digits[start:start + 2], 16) / 255
+        channels.append(value / 12.92 if value <= 0.03928
+                        else ((value + 0.055) / 1.055) ** 2.4)
+    red, green, blue = channels
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+
+
+def contrast_ratio(foreground: str, background: str) -> float:
+    """How far apart two colours read, on the WCAG 1:1 to 21:1 scale."""
+    first = _relative_luminance(foreground)
+    second = _relative_luminance(background)
+    lighter, darker = max(first, second), min(first, second)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def readable_on(background: str) -> str:
+    """Black or white, whichever reads further from ``background``.
+
+    The one colour in this product not taken from a scheme. The theme builder
+    previews the palette being edited, so the line naming what is unreadable is
+    drawn in the palette that broke it; this is what keeps that one line
+    legible. Falls back to the live ink for a value that is not a colour.
+    """
+    try:
+        light = contrast_ratio("#ffffff", background)
+        dark = contrast_ratio("#000000", background)
+    except ValueError:
+        return C["INK"]
+    return "#ffffff" if light > dark else "#000000"
+
+
+def contrast_complaints(palette: dict) -> list[str]:
+    """Every pair in ``TEXT_PAIRS`` that ``palette`` puts under ``CONTRAST_MIN``,
+    as readable lines naming both sides and the ratio.
+
+    Empty means every pair reads. A pair either side of which is missing or
+    unparseable is skipped: an incomplete palette is ``check_schemes()``'s to
+    name, and a field mid-edit is the form's.
+    """
+    complaints = []
+    for foreground, background in TEXT_PAIRS:
+        try:
+            ratio = contrast_ratio(palette[foreground], palette[background])
+        except (KeyError, ValueError):
+            continue
+        if ratio < CONTRAST_MIN:
+            complaints.append(
+                f"{key_caption(foreground)} on {key_caption(background)} "
+                f"reads at {ratio:.1f}:1, under {CONTRAST_MIN}:1"
+            )
+    return complaints
 
 
 def current_scheme() -> str:
@@ -675,7 +879,8 @@ QLabel#facetHeading {{
 QWidget#facetRow {{ border-radius: {r_md}px; }}
 QWidget#facetRow:hover {{ background-color: {C['HOVER_BG']}; }}
 QLabel#facetCount {{ color: {C['INK_SOFT']}; }}
-QScrollArea#filterScroll, QScrollArea#filterScroll > QWidget > QWidget {{
+QScrollArea#filterScroll, QScrollArea#filterScroll > QWidget > QWidget,
+QScrollArea#builderScroll, QScrollArea#builderScroll > QWidget > QWidget {{
     background: transparent;
     border: none;
 }}

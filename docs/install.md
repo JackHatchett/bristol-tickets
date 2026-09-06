@@ -43,9 +43,11 @@ so the host finds `src/app.md` on its own:
 | `CLAUDE.md` | Claude Code |
 | pasted project instructions | Cowork — see `src/host_notes/cowork.md` for the text |
 
-Each says the same two lines: read `src/app.md`, and read the note in
-`src/host_notes/` that matches the host you are in. A host with a quirk worth
-recording gets a note there; `src/host_notes/README.md` lists them.
+Each says the same thing: read `src/app.md`, read the note in
+`src/host_notes/` that matches the host you are in, and skip both where the
+session will only read something — a scheduled job that reports a number, a
+question answered out of a file. A host with a quirk worth recording gets a
+note there; `src/host_notes/README.md` lists them.
 
 ## 3. The app
 

@@ -218,12 +218,19 @@ instructions below. Everything else this system needs is in the repository.
 
 Cowork takes its per-project instructions as text you paste into the project,
 not as a file it reads from the folder, so `AGENTS.md` and `CLAUDE.md` at the
-root go unread here. Paste this, with `<folder>` replaced by the name of the
-connected folder:
+root go unread here. Paste this — the entry file's own text, with `<folder>`
+replaced by the name of the connected folder, and kept in step with it:
 
 ```
 Read <folder>/src/app.md, then the note in <folder>/src/host_notes/ that
 matches the host you are running under.
+
+A session that will only read is exempt from both, and from the identity and
+the queue they lead to - a scheduled briefing, a lookup, a question answered
+out of a file. Read what was asked for, answer, and stop. A session that turns
+out to need a write starts over at the top of these instructions, before the
+write.
+
 agent_override: none
 ```
 
