@@ -190,6 +190,18 @@ a dark half that does not exist yet. Add the theme's name to `THEME_CHOICES` to
 offer it in Settings. `check_schemes()` reports any key the new palette is
 missing; the smoke check runs it.
 
+**`THEME_CHOICES` is ordered alphabetically by caption, with Custom last.** A
+picker holding two dozen names is read by scanning to the letter, so a theme
+seated anywhere else in the list is one nobody finds.
+
+**A borrowed scheme takes its source's own name and its source's own colours.**
+The grounds, the text and the signal colours are that scheme's; the fills, the
+pills and the button states are those colours tinted onto that scheme's own
+ground. Where a source palette puts a pair under `CONTRAST_MIN` — an accent too
+pale for the text on a primary button, a comment grey too dim to read — the
+member that moves is the one carrying the text, and it moves the least distance
+that clears the floor.
+
 **A key added to one scheme is added to every one of them, and to
 `KEY_CAPTIONS`.** The theme builder offers a field per key the reference scheme
 defines, and a key with no caption is offered under its own name.
