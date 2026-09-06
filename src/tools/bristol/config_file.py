@@ -46,10 +46,16 @@ APPEARANCE_MODE = "appearance.mode"
 # as the appearance it named, through ``ui.theme.appearance_choice``.
 APPEARANCE_SCHEME = "appearance.scheme"
 
-# The palette the user built in the theme builder, as a key-to-colour mapping.
-# It is what ``appearance.theme`` of "custom" names, and it sits beside that
-# choice rather than in ``ui/theme.py``, because it belongs to this
-# installation rather than to the build.
+# Which themes this installation offers, as the difference from what the build
+# ships: the themes the user added, the shipped names he deleted, and a palette
+# stored under a shipped theme's name where he changed one. An installation
+# that has touched nothing stores nothing here, which is what lets the themes a
+# later release ships reach an installation already in use.
+APPEARANCE_THEMES = "appearance.themes"
+
+# The one palette a build that offered a single Custom option wrote. Nothing
+# writes it now; it joins the collection as an ordinary theme named Custom,
+# through ``ui.theme.resolve_collection``.
 APPEARANCE_CUSTOM = "appearance.custom_scheme"
 
 # Where the detail pane sits: its width in device-independent pixels, and

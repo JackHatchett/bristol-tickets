@@ -228,16 +228,25 @@ different work. Pick the agent, then Save, as with everything else on the page.
 the Board, where the other agent will see it in its queue, or the Backlog. The
 command-line writer reads the same setting, so both surfaces agree.
 
-**Colour scheme** — a warm orange or a cool neutral appearance, each either
-following your system's light/dark setting or pinned to one of the two. The
-board redraws as you pick it, and the choice is kept as you make it.
+**Theme** and **Light & Dark** — which theme the board is drawn in, and which
+half of it: pinned to light, pinned to dark, or following your system. A theme
+with no dark colours yet offers Light alone and says so on hover. The board
+redraws as you pick, and the choice is kept as you make it.
 
-**Custom** — the same picker's last option opens a theme builder: every colour
-the board draws with, one row each, seeded from the theme you are looking at.
-Click a swatch for the colour picker or type the hex. The board follows each
-change, so you judge the palette against the board it colours. Where text would
-land too close to what it sits on to read, the builder names the pair — it says
-so and lets you save anyway, because the colours are yours to choose.
+**Manage Themes** — the themes on offer are yours to change. The window lists
+every one down the left and puts the selected theme's name and colours on the
+right: click a swatch for the colour picker or type the hex, and the board
+follows each change so you judge a palette against the board it colours. Add
+makes a new theme seeded from the one you are looking at, so a variation of
+Pumpkin leaves Pumpkin alone. Delete removes a theme — the last one stays, and
+deleting the one in force moves the board to another. Restore Shipped Themes
+puts every theme this build ships back as it ships it and leaves the ones you
+added alone. Where text would land too close to what it sits on to read, the
+window names the pair — it says so and lets you save anyway, because the colours
+are yours to choose.
+
+Everything here is stored in your own configuration file, so editing a shipped
+theme changes it on this installation and touches nothing in the repository.
 
 Settings are stored in your configuration file, the same one the setup wizard
 fills in. Saving round-trips the whole file, so a key this build does not

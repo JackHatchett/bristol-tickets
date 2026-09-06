@@ -19,9 +19,12 @@ leaves Dark and Follow System unclickable and says why on hover, rather than
 hiding them — an option nobody can find is not an invitation to build one.
 
 The theme applies the moment it is picked, so it can be compared against the
-board it themes, and each control writes its own key as it is moved. Custom is
-the one option that is a door rather than a value: it opens the theme builder,
-and what that builds is stored beside the choice that names it.
+board it themes, and each control writes its own key as it is moved.
+
+Which themes the picker offers is a third thing, and it sits behind the Manage
+Themes button: the choice is made every session and the collection is touched
+rarely, so the collection is what goes behind a door. What that window hands
+back is the difference from what this build ships, stored under one key.
 """
 
 from __future__ import annotations
@@ -33,6 +36,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -41,17 +45,18 @@ import config_file  # bristol-local; see module docstring
 
 from .settled_combo import SettledComboBox, fill_words
 from .theme import (
-    CUSTOM_SCHEME,
     LIGHT_MODE,
     MODE_CHOICES,
     NO_DARK_HALF,
-    THEME_CHOICES,
     appearance_choice,
-    register_custom,
+    collection_differences,
+    install_collection,
+    register_collection,
     space,
+    theme_choices,
     theme_has_dark,
 )
-from .theme_builder import ThemeBuilderDialog
+from .theme_manager import ThemeManagerDialog
 
 # What each stored value is called on screen. A caption names the column a card
 # lands in, which is what the user sees happen.
@@ -93,13 +98,22 @@ class SettingsTab(QWidget):
         self.new_ticket.setToolTip(
             "Where a new card lands when the agent filing it names no tab.")
 
-        self.theme = fill_words(QComboBox(), THEME_CHOICES)
+        # The collection this installation offers, as it currently stands. The
+        # picker is filled from it rather than from what the build ships, so a
+        # theme added, renamed or deleted is in the list the moment it is.
+        self._collection = register_collection(
+            config_file.get(config_file.APPEARANCE_THEMES),
+            config_file.get(config_file.APPEARANCE_CUSTOM))
+
+        self.theme = fill_words(QComboBox(), theme_choices(self._collection))
         self.theme.currentIndexChanged.connect(self._theme_chosen)
-        # Custom is a door rather than a value, so it opens on the click and not
-        # on the index: choosing it while it is already current has to open the
-        # builder too, and only `activated` fires then.
-        self.theme.activated.connect(self._theme_activated)
         self.theme.setToolTip("The pair of palettes the board is drawn from.")
+
+        self.manage = QPushButton("Manage Themes…")
+        self.manage.setToolTip(
+            "Add a theme, rename one, change any theme's colours, or delete "
+            "the ones you do not want.")
+        self.manage.clicked.connect(self._manage_themes)
 
         self.mode = fill_words(QComboBox(), MODE_CHOICES)
         self.mode.currentIndexChanged.connect(self._mode_chosen)
@@ -150,6 +164,7 @@ class SettingsTab(QWidget):
         # // A form row's label is a QLabel with mnemonics on, so a literal
         # // ampersand has to be doubled or Qt eats it and underlines the D.
         form.addRow("Light && Dark", self.mode)
+        form.addRow("Themes", self.manage)
         form.addRow(_heading("Agent Sessions"))
         form.addRow("Agent", self.next_agent)
         form.addRow("Work Scope", self.work_scope)
@@ -176,24 +191,12 @@ class SettingsTab(QWidget):
         self.reload()
 
     def _theme_chosen(self) -> None:
-        """Offer the modes the new theme can draw, re-theme, and keep the choice.
-
-        Custom is left to ``_theme_activated``: there is nothing to keep until
-        the builder has been through, and a palette the user then cancels must
-        not have been written on the way in.
-        """
+        """Offer the modes the new theme can draw, re-theme, and keep the
+        choice."""
         self._seat_modes()
-        if self.theme.currentData() == CUSTOM_SCHEME:
-            return
         self._redraw()
         self._write(config_file.APPEARANCE_THEME,
                     self.theme.currentData(), "Theme")
-
-    def _theme_activated(self, _index: int) -> None:
-        """Open the theme builder when Custom is the option chosen."""
-        if self._loading or self.theme.currentData() != CUSTOM_SCHEME:
-            return
-        self._build_theme()
 
     def _mode_chosen(self) -> None:
         """Re-theme the running app, then keep the mode."""
@@ -227,38 +230,55 @@ class SettingsTab(QWidget):
         else:
             self._seat(self.mode, self._stored_appearance()[1])
 
-    def _build_theme(self) -> None:
-        """Build a palette, keep it, and make it the theme in force.
+    def _manage_themes(self) -> None:
+        """Edit the collection, keep the difference, and re-offer what it comes
+        to.
 
-        The stored custom palette is the seed where there is one and the theme
-        currently drawn is the seed where there is not, so the builder always
-        opens on something that already works. A cancelled build restores the
-        theme the page was showing and leaves the configuration untouched.
+        A window closed on Cancel puts the installed collection and the theme
+        in force back, so a preview the user then declined leaves nothing
+        behind.
         """
-        was_theme, was_mode = self._stored_appearance()
-        stored = config_file.get(config_file.APPEARANCE_CUSTOM)
-        builder = ThemeBuilderDialog(
-            seed=stored if isinstance(stored, dict) else None,
-            parent=self,
-            on_preview=self._preview_custom,
-        )
-        if not builder.exec():
-            register_custom(stored if isinstance(stored, dict) else None)
+        was_theme, _was_mode = self._stored_appearance()
+        dialog = ThemeManagerDialog(self._collection, was_theme, parent=self,
+                                    on_preview=self._preview_themes)
+        if not dialog.exec():
+            install_collection(self._collection)
             self._seat(self.theme, was_theme)
             self._seat_modes()
             self._redraw()
             return
-        palette = builder.palette()
-        register_custom(palette)
-        self._write(config_file.APPEARANCE_CUSTOM, palette, "Theme")
-        self._write(config_file.APPEARANCE_THEME, CUSTOM_SCHEME, "Theme")
+        self._collection = install_collection(dialog.themes())
+        self._write(
+            config_file.APPEARANCE_THEMES,
+            collection_differences(self._collection,
+                                   config_file.get(config_file.APPEARANCE_CUSTOM)),
+            "Themes")
+        self._offer_themes()
+        theme = dialog.theme_in_force()
+        if theme != was_theme:
+            self._write(config_file.APPEARANCE_THEME, theme, "Theme")
+        self._seat(self.theme, theme)
+        self._seat_modes()
         self._redraw()
 
-    def _preview_custom(self, palette: dict) -> None:
-        """Draw the running app in a palette the builder is still holding."""
-        register_custom(palette)
+    def _offer_themes(self) -> None:
+        """Re-fill the Theme picker from the collection, keeping the theme it
+        is sitting on where that theme is still in it."""
+        was = self.theme.currentData()
+        seating, self._loading = self._loading, True
+        try:
+            self.theme.clear()
+            fill_words(self.theme, theme_choices(self._collection))
+        finally:
+            self._loading = seating
+        self._seat(self.theme, was)
+
+    def _preview_themes(self, theme: str, collection: dict) -> None:
+        """Draw the running app in a theme the manage-themes window is still
+        holding."""
+        install_collection(collection)
         if self._on_appearance_changed is not None:
-            self._on_appearance_changed(CUSTOM_SCHEME, self.mode.currentData())
+            self._on_appearance_changed(theme, self.mode.currentData())
 
     def _stored_appearance(self) -> tuple[str, str]:
         """The theme and mode the configuration currently says, migrating the
@@ -325,6 +345,10 @@ class SettingsTab(QWidget):
     def _reload(self) -> None:
         target = config_file.path()
         placed = target is not None and target.exists()
+        self._collection = register_collection(
+            config_file.get(config_file.APPEARANCE_THEMES),
+            config_file.get(config_file.APPEARANCE_CUSTOM))
+        self._offer_themes()
         self._load_agents()
         stored = config_file.get(
             config_file.NEW_TICKET_STAGE, config_file.NEW_TICKET_STAGE_DEFAULT

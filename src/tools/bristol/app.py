@@ -136,7 +136,9 @@ def main() -> None:
         config_file.get(config_file.APPEARANCE_THEME),
         config_file.get(config_file.APPEARANCE_MODE),
         config_file.get(config_file.APPEARANCE_SCHEME))
-    apply_scheme(app, theme, mode, config_file.get(config_file.APPEARANCE_CUSTOM))
+    apply_scheme(app, theme, mode,
+                 config_file.get(config_file.APPEARANCE_THEMES),
+                 config_file.get(config_file.APPEARANCE_CUSTOM))
 
     # An app newer than the installation it opens updates it first, so a user
     # who downloads a release gets the machinery that release ships with. Only
