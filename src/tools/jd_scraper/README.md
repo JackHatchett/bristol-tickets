@@ -55,10 +55,8 @@ walls — so each posting routes by source to the cheapest method that reaches i
 Needs LinkedIn open and logged in in the user's own Chrome, approved for the
 Chrome extension, and the extension's JavaScript tool.
 
-- **Go straight to the JavaScript tool.** The navigate, read-page and screenshot
-  tools time out on LinkedIn.
-  // Those tools wait for a load-settled signal LinkedIn's single-page app never
-  // emits cleanly.
+- **Go straight to the JavaScript tool**, never the navigate, read-page or
+  screenshot tools.
 
 1. **Take the job ID** — the `currentJobId` query parameter on a search or
    detail URL, or the path segment of a `/jobs/view/{id}/` URL.

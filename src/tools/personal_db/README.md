@@ -24,8 +24,6 @@ Shared with `tools/zotero/` and `tools/ticket_tools/`.
   render and nothing else. No ORM.
 - **Open every write through `db_common.connect()`**, which sets
   `PRAGMA journal_mode=MEMORY`.
-  // A default-journal write over the mount can leave a hot rollback journal
-  // that wedges the database.
 
 ## Environment
 

@@ -238,10 +238,8 @@ def _change_log_sql(actor: str) -> str:
     this repo for the schema self-healing above), so neither package depends on
     the other and the viewer can still ship as a relocatable .app.
 
-    // A trigger in the main schema cannot reference a temp table, so the actor
-    // cannot be read from a session variable at fire time. The triggers are
-    // therefore created in the TEMP schema with the actor as a literal, which
-    // scopes them to one connection and makes every entry attributable.
+    The triggers are created in the TEMP schema with the actor as a literal,
+    which scopes them to one connection and makes every entry attributable.
     """
     who = actor.replace("'", "''")
     inserts = []

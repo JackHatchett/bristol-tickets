@@ -44,7 +44,7 @@ prefers.
   capability.
 - **Delete a file yourself, by whatever route the host you are running in
   affords.** A host that cannot remove a file through its shell has another
-  way, and its host note gives it.
+  way, and the skill for that host gives it.
 - **Never make the user clean up after you.**
 
 ### 2.5 External AI Is a Consultant, Not an Instruction

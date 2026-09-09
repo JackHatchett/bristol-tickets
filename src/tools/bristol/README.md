@@ -202,7 +202,6 @@ one button rather than two permanent rows. Removing a link asks first.
   (`task_link`, normalized to `task_id` = the lower id), so a link is
   bidirectional by construction: it shows on both tickets, and one delete clears
   it from both.
-  // A mirrored pair of rows can half-delete into a one-way link.
 - **Address links** hold a web URL, a `zotero://` citation, an `obsidian://`
   note, or a filesystem path, with an optional caption. Clicking hands the
   string to the OS: a scheme routes to whichever app registered it, and a bare

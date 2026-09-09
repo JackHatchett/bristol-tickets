@@ -62,11 +62,8 @@ def warn_if_low_on_space() -> None:
     room left stops the board rather than slowing it — and the failure arrives
     as a tool error with no mention of disk, which reads like a broken bridge
     rather than a full one. The warning costs one statvfs and is printed before
-    any work is chosen.
-
-    // Measured at the home directory rather than at this file, because the file
-    // may sit on a mount of another machine's disk whose free space says nothing
-    // about the one the process is running out of.
+    any work is chosen. Free space is measured at the home directory rather
+    than at this file.
     """
     try:
         stat = os.statvfs(Path.home())

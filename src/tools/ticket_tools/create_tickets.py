@@ -313,10 +313,6 @@ def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
     hand and never cleared, and had to be trusted against the depended-on
     ticket's real status. Each row that named a dependency becomes the link that
     says the same thing, and the columns go.
-
-    // ALTER TABLE ... DROP COLUMN needs SQLite 3.35; on an older library the
-    // drop is skipped and the columns are left in place at their defaults,
-    // unread and unwritten by anything.
     """
     cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
     if "depends_on" not in cols and "blocked" not in cols:

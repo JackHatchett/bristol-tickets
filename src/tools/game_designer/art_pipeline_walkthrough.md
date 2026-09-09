@@ -8,8 +8,6 @@ is a finished asset in the engine's format.
   reference, palette, aspect-ratio conventions. Check its actual name rather
   than assuming one. This file holds the steps and never a project's look.
 - **Trust a tool's on-screen labels over the wording here.**
-  // Each stage's concept — style reference, layered cleanup,
-  // character-consistency training — outlives the button names.
 
 ## Stage 1 — generation
 

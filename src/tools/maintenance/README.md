@@ -29,4 +29,3 @@ its arguments through.
 
 A launchd job may drive `run_diagrams.sh` on a cadence, logging to
 `data/<instance>/system/logs/`. Point the job at a path that exists.
-// launchd fails silently when a job's target script has moved.

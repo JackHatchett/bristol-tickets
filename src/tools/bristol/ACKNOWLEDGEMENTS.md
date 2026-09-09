@@ -20,9 +20,6 @@ replace them with their own build. To do so:
    that copy.
 3. Re-launch the bundle.
 
-// Replacing the libraries invalidates any code signature on the bundle; macOS
-// asks the user to approve the modified copy on its next launch.
-
 Qt for Python's own source is at <https://code.qt.io/cgit/pyside/pyside-setup.git/>.
 
 ## Python

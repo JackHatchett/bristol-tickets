@@ -16,14 +16,18 @@ theme back exactly as this build defines it.
 A theme's id never changes. The name on screen is free to, because what a
 stored choice names is the id, so a rename migrates nothing.
 
-The dark half of a theme is carried through untouched: this window edits the
-light palette, which is the one every theme has.
+A dark half is optional and goes on whole. The Light and Dark switch says which
+half the colours below belong to, and the button beside it gives a light-only
+theme a dark half — every colour of it seeded at once — or takes one away. A
+half filled a key at a time takes the rest from the light reference, which
+draws a half-lit board the first time the OS goes dark.
 """
 
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QHBoxLayout,
@@ -36,9 +40,13 @@ from PySide6.QtWidgets import (
 
 from .dialogs import confirm
 from .palette_form import PaletteForm, complete_palette
+from .settled_combo import fill_words
 from .theme import (
     CONTRAST_MIN,
+    DARK_MODE,
     LAYOUT,
+    LIGHT_MODE,
+    NO_DARK_HALF,
     order_collection,
     readable_on,
     shipped_collection,
@@ -50,14 +58,27 @@ from .theme import (
 # left empty.
 NEW_THEME_NAME = "New Theme"
 
+# The two halves a theme can hold, as the switch offers them. Follow System is
+# not among them: this window edits palettes, and a palette is one half or the
+# other whatever the OS is doing.
+HALF_CHOICES: list[tuple[str, str]] = [
+    (LIGHT_MODE, "Light"),
+    (DARK_MODE, "Dark"),
+]
+
+# What the button beside the switch says, in each of its two states.
+ADD_DARK_HALF = "Add Dark Half"
+REMOVE_DARK_HALF = "Remove Dark Half"
+
 
 class ThemeManagerDialog(QDialog):
     """The collection, edited. ``themes()`` is what was built and
     ``theme_in_force()`` the theme the app should be on afterwards.
 
-    ``on_preview`` is called with the theme in hand and the working collection
-    every time something changes, so the running app draws in the theme being
-    edited while the window is open.
+    ``on_preview`` is called with the theme in hand, the working collection and
+    the half on screen every time something changes, so the running app draws
+    in the theme being edited, in the half being edited, while the window is
+    open.
     """
 
     def __init__(self, collection: dict[str, dict], current: str,
@@ -81,6 +102,9 @@ class ThemeManagerDialog(QDialog):
         # here takes its id from the name it is saved under rather than from
         # the placeholder it was created with.
         self._fresh: set[str] = set()
+        # Which half of the selected theme the colours below belong to. A theme
+        # with no dark half has only the one to be on.
+        self._half = LIGHT_MODE
         self._seating = False
 
         heading = QLabel("Manage Themes")
@@ -138,11 +162,29 @@ class ThemeManagerDialog(QDialog):
         name_row.addWidget(name_label)
         name_row.addWidget(self.name, 1)
 
+        self.half = fill_words(QComboBox(), HALF_CHOICES)
+        self.half.setToolTip(
+            "Which half of this theme the colours below belong to.")
+        self.half.currentIndexChanged.connect(self._half_chosen)
+
+        self.dark_half = QPushButton(ADD_DARK_HALF)
+        self.dark_half.clicked.connect(self._dark_half_clicked)
+
+        half_row = QHBoxLayout()
+        half_row.setSpacing(space("lg"))
+        half_label = QLabel("Light and Dark")
+        half_label.setMinimumWidth(LAYOUT["palette_caption_w"])
+        half_row.addWidget(half_label)
+        half_row.addWidget(self.half)
+        half_row.addWidget(self.dark_half)
+        half_row.addStretch(1)
+
         self.form = PaletteForm(on_change=self._palette_typed)
 
         right = QVBoxLayout()
         right.setSpacing(space("lg"))
         right.addLayout(name_row)
+        right.addLayout(half_row)
         right.addWidget(self.form, 1)
 
         columns = QHBoxLayout()
@@ -186,7 +228,8 @@ class ThemeManagerDialog(QDialog):
         if self._selected in collection:
             record = collection[self._selected]
             record["name"] = self.name.text().strip() or record["name"]
-            record["light"] = complete_palette(self.form.palette())
+            record[self._half] = complete_palette(
+                self.form.palette(), self._half == DARK_MODE)
         return order_collection(collection)
 
     def theme_in_force(self) -> str:
@@ -196,6 +239,15 @@ class ThemeManagerDialog(QDialog):
     def selected(self) -> str | None:
         """The theme whose name and colours are on the right."""
         return self._selected
+
+    def showing(self) -> str:
+        """Which half of it the colours below are."""
+        return self._half
+
+    def has_dark(self) -> bool:
+        """Whether the selected theme has a dark half at all."""
+        record = self._collection.get(self._selected)
+        return bool(record and record.get("dark"))
 
     # ----- the collection --------------------------------------------------
 
@@ -230,7 +282,8 @@ class ThemeManagerDialog(QDialog):
         self._collection[theme_id] = {
             "name": self._unused_name(name),
             "light": complete_palette(seed["light"] if seed else None),
-            "dark": dict(seed["dark"]) if seed and seed.get("dark") else None,
+            "dark": complete_palette(seed["dark"], True)
+                    if seed and seed.get("dark") else None,
         }
         self._collection = order_collection(self._collection)
         self._fresh.add(theme_id)
@@ -239,6 +292,52 @@ class ThemeManagerDialog(QDialog):
         self.name.setFocus()
         self.name.selectAll()
         return theme_id
+
+    def set_half(self, half: str) -> bool:
+        """Put the colours on one half of the selected theme. False where the
+        theme has no such half to show."""
+        record = self._collection.get(self._selected)
+        if record is None or half not in (LIGHT_MODE, DARK_MODE):
+            return False
+        if half == DARK_MODE and not record.get("dark"):
+            return False
+        self._keep_edits()
+        self._half = half
+        self._seat_half()
+        self._preview()
+        return True
+
+    def add_dark_half(self) -> bool:
+        """Give the selected theme a dark half and show it. False where it
+        already has one.
+
+        Every colour of the half is seeded at once, from the dark palette this
+        build completes a dark half against. A half filled a few keys at a time
+        would take the rest from the light reference, so there is no partial
+        state to be in rather than a threshold to check for.
+        """
+        record = self._collection.get(self._selected)
+        if record is None or record.get("dark"):
+            return False
+        self._keep_edits()
+        record["dark"] = complete_palette(None, True)
+        self._half = DARK_MODE
+        self._seat_half()
+        self._preview()
+        return True
+
+    def remove_dark_half(self) -> bool:
+        """Take the dark half away: the theme is light-only again and draws its
+        light palette whatever mode is stored. False where it has none."""
+        record = self._collection.get(self._selected)
+        if record is None or not record.get("dark"):
+            return False
+        self._keep_edits()
+        record["dark"] = None
+        self._half = LIGHT_MODE
+        self._seat_half()
+        self._preview()
+        return True
 
     def rename(self, name: str) -> None:
         """Call the selected theme something else."""
@@ -324,6 +423,27 @@ class ThemeManagerDialog(QDialog):
         self.add()
         self._preview()
 
+    def _half_chosen(self, _index: int) -> None:
+        if self._seating:
+            return
+        if not self.set_half(self.half.currentData()):
+            self._seat_half()
+
+    def _dark_half_clicked(self) -> None:
+        if self._selected not in self._collection:
+            return
+        if not self.has_dark():
+            self.add_dark_half()
+            return
+        name = self._collection[self._selected]["name"]
+        if not confirm(self, f"Remove {name}'s dark half?",
+                       f"{name} goes back to light only, and the colours in "
+                       f"its dark half are gone. Dark and Follow System stop "
+                       f"being offered for it.",
+                       "Remove", destructive=True):
+            return
+        self.remove_dark_half()
+
     def _delete_clicked(self) -> None:
         if self._selected not in self._collection:
             return
@@ -373,7 +493,8 @@ class ThemeManagerDialog(QDialog):
             return
         record = self._collection[self._selected]
         record["name"] = self.name.text().strip() or record["name"]
-        record["light"] = complete_palette(self.form.palette())
+        record[self._half] = complete_palette(self.form.palette(),
+                                              self._half == DARK_MODE)
 
     def _fill_list(self) -> None:
         was, self._seating = self._seating, True
@@ -396,10 +517,46 @@ class ThemeManagerDialog(QDialog):
         was, self._seating = self._seating, True
         try:
             self.name.setText(record["name"])
-            self.form.set_palette(record["light"])
         finally:
             self._seating = was
         self._mark_name()
+        self._seat_half()
+
+    def _seat_half(self) -> None:
+        """Show the half the window is on: the switch, what the button beside
+        it does, and the colours themselves.
+
+        A theme with no dark half leaves Dark unclickable carrying the reason,
+        rather than hiding it — the way Settings offers a mode such a theme
+        cannot draw.
+        """
+        record = self._collection.get(self._selected)
+        if record is None:
+            return
+        has_dark = bool(record.get("dark"))
+        if not has_dark:
+            self._half = LIGHT_MODE
+        was, self._seating = self._seating, True
+        try:
+            model = self.half.model()
+            for index in range(self.half.count()):
+                allowed = has_dark or self.half.itemData(index) == LIGHT_MODE
+                model.item(index).setEnabled(allowed)
+                self.half.setItemData(index, "" if allowed else NO_DARK_HALF,
+                                      Qt.ToolTipRole)
+            index = self.half.findData(self._half)
+            self.half.setCurrentIndex(index if index >= 0 else 0)
+            self.dark_half.setText(
+                REMOVE_DARK_HALF if has_dark else ADD_DARK_HALF)
+            self.dark_half.setToolTip(
+                "This theme goes back to light only."
+                if has_dark else
+                "Give this theme a dark half, every colour of it at once.")
+            self.form.set_palette(record["dark"] if self._half == DARK_MODE
+                                  else record["light"],
+                                  self._half == DARK_MODE)
+        finally:
+            self._seating = was
         self._read_notice()
 
     def _mark_name(self) -> None:
@@ -424,7 +581,7 @@ class ThemeManagerDialog(QDialog):
             return
         collection = self.themes()
         theme = self._selected if self._selected in collection else self._current
-        self._on_preview(theme, collection)
+        self._on_preview(theme, collection, self._half)
 
     def accept(self) -> None:
         """Save, having said what fails rather than refusing quietly.

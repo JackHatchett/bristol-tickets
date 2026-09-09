@@ -37,8 +37,8 @@ check is when the thing changed is Bristol Tickets.
   headless environment, installing PySide6 and the GL libraries Qt needs where
   they are absent, and passes its arguments to `smoke.py`.
 - **Choose the shell before the install, never after.** `run_smoke.sh` installs
-  into whichever shell invokes it, so a shell that must not gain PySide6 — its
-  host note says whether it is one — is a shell that never calls it.
+  into whichever shell invokes it, so a shell that must not gain PySide6 is a
+  shell that never calls it.
 - **A shell that must not or cannot install takes the archive route.**
 
 ## The archive route
@@ -64,7 +64,8 @@ output, from a shell that has Qt.
    container rather than a file left behind — `src/app.md` §What a file may say.
 
 3. **Carry the archive to a shell that has PySide6 or may install one.** How a
-   file crosses between two shells is the host's, and its note says.
+   file crosses between two shells is the host's, and the skill for that host
+   says.
 
 4. **Extract it there, install, and call `smoke.py` directly.**
 
@@ -94,8 +95,6 @@ output, from a shell that has Qt.
 - **An offscreen render settles geometry at most.** It draws the wrong control
   set, fonts and pixel ratio, so a Qt target passing says the widgets build and
   says nothing about how they look.
-  // The install chased for a look at the app has cost more sessions than it
-  // has saved.
 - **A change nothing can see — storage, a migration, which card is next — is
   checked by the smoke targets and no further.**
 - **Change the user's own settings to test one, and put them back.** Proving a

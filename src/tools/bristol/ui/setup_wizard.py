@@ -289,9 +289,6 @@ class InstancePage(QWizardPage):
 
     def _on_input_rejected(self) -> None:
         """Show what the field will accept, once a key has been refused.
-
-        // A validator drops a disallowed keystroke with no signal to the
-        // typist, so the field looks unresponsive rather than strict.
         """
         self.rejected_hint.setVisible(True)
 
@@ -932,9 +929,7 @@ def connect_instructions(root: Path) -> str:
     instructions, written from the folder name down the way a host that sees
     several folders at once resolves it."""
     return (
-        f"Read {root.name}/src/app.md, then the note in "
-        f"{root.name}/src/host_notes/ that matches the host you are running "
-        f"under.\nagent_override: none"
+        f"Read {root.name}/src/app.md.\nagent_override: none"
     )
 
 

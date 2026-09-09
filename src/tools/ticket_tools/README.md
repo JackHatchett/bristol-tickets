@@ -26,19 +26,10 @@ contract for both: `src/templates/identity_template.md`.
   under `data/<agent>/tickets/`. First-glob-match discovery is safe precisely
   because exactly one `tickets.db` exists per instance.
 - **Use Python's built-in `sqlite3` module, never a `sqlite3` CLI subprocess.**
-  // A sandboxed runtime often carries no `sqlite3` binary, and the module is
-  // always there. This binds ad-hoc DB inspection too.
 - **Open every write with `PRAGMA journal_mode=MEMORY`** (see `ticket_write.py`).
-  // Where the database is reached across a file bridge rather than on the
-  // running machine, a default-journal write can fail mid-write and leave a
-  // stuck rollback-journal file that blocks all further access, reads included,
-  // until it is cleared by hand. MEMORY mode writes no on-disk journal.
 - **Write the database in place, never by replacing the file.** A copy
   delivered over a file bridge unlinks the old inode, and a viewer already
   holding it goes on reading the dead one.
-  // Refresh in Bristol Tickets re-queries that handle, so a stale board
-  // survives every refresh and reads as writes that never landed. Relaunching
-  // the viewer shows them all at once.
 - **Keep the schema in step with Bristol Tickets.** Any inline migration the
   viewer performs is reflected in `create_tickets.py`.
 - **These are not user-facing commands.** They are internal mechanisms for
@@ -152,13 +143,9 @@ anyone narrating it.
   carrying prose has become the narration the change log exists to replace.
 - **The append lives at the database layer**, so a drag, a Clear Done sweep, a
   record-dialog edit and a CLI call are all recorded identically.
-  // Bristol Tickets writes to tickets.db directly, so a hook inside
-  // ticket_write.py would miss every board move made by hand.
 - **Actor** is `user` from Bristol Tickets and the `--actor` write signature
   from the CLI. Each connection installs the triggers in its own TEMP schema
   with its actor baked in.
-  // A trigger in the main schema cannot read a temp table, so the actor cannot
-  // come from a session variable at fire time.
 - **Title and description record only that they changed** (`to_value` is
   `(changed)`) — never the old text, the new text, or a diff.
 - **Repeated moves each get their own entry.** Back-and-forth is recorded as-is.

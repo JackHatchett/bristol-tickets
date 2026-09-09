@@ -1875,6 +1875,11 @@ DEFAULT_THEME = "warm"
 # ``SCHEMES`` and every completion after that would have nothing to read.
 REFERENCE_PALETTE: dict[str, str] = dict(WARM_LIGHT)
 
+# The palette a dark half is seeded and completed against. A dark half filled
+# from the light reference is the half-lit palette a dark half is turned on
+# whole to avoid, so each half completes against its own kind.
+REFERENCE_DARK_PALETTE: dict[str, str] = dict(WARM_DARK)
+
 # Which half of a theme is drawn. SYSTEM_MODE follows the OS; the other two pin
 # one half whatever the OS is set to.
 LIGHT_MODE = "light"
@@ -2126,13 +2131,14 @@ def apply_scheme(app, theme: str | None, mode: str | None,
 # is what lets a later release's new themes reach it.
 # ---------------------------------------------------------------------------
 
-def _complete(palette: dict | None) -> dict[str, str]:
+def _complete(palette: dict | None, dark: bool = False) -> dict[str, str]:
     """``palette`` with every key the reference palette defines, its own values
     winning. A value that is not a colour string is dropped, so nothing
-    unpaintable reaches a scheme."""
+    unpaintable reaches a scheme. A dark half is completed against the dark
+    reference, so a key it does not carry comes back dark."""
     usable = {key: value for key, value in (palette or {}).items()
               if isinstance(key, str) and isinstance(value, str) and value.strip()}
-    complete = dict(REFERENCE_PALETTE)
+    complete = dict(REFERENCE_DARK_PALETTE if dark else REFERENCE_PALETTE)
     complete.update({key: value for key, value in usable.items()
                      if key in complete})
     return complete
@@ -2176,7 +2182,8 @@ def _stored_record(raw, fallback_name: str) -> dict | None:
         "name": name.strip() if isinstance(name, str) and name.strip()
                 else fallback_name,
         "light": _complete(raw.get("light")),
-        "dark": _complete(dark) if isinstance(dark, dict) and dark else None,
+        "dark": (_complete(dark, dark=True)
+                 if isinstance(dark, dict) and dark else None),
     }
 
 
@@ -2209,8 +2216,8 @@ def resolve_collection(stored: dict | None = None,
                 record["light"] = _complete(change["light"])
             if "dark" in change:
                 half = change["dark"]
-                record["dark"] = (_complete(half) if isinstance(half, dict)
-                                  and half else None)
+                record["dark"] = (_complete(half, dark=True)
+                                  if isinstance(half, dict) and half else None)
         collection[theme_id] = record
 
     for theme_id, raw in added.items():
@@ -2286,7 +2293,7 @@ def install_collection(collection: dict[str, dict]) -> dict[str, dict]:
         dark_name = None
         if record.get("dark"):
             dark_name = f"{theme_id}_dark"
-            SCHEMES[dark_name] = _complete(record["dark"])
+            SCHEMES[dark_name] = _complete(record["dark"], dark=True)
         THEMES[theme_id] = (light_name, dark_name)
     return collection
 
@@ -2447,10 +2454,6 @@ def chevron_image(colour: str, direction: str = "down") -> str | None:
     cached image file the stylesheet can point a combo box's or spin box's
     arrow at. Returns None when nothing can be written, in which case the
     arrow rule is left out.
-
-    // Qt stops drawing the style's own drop-down arrow as soon as the combo is
-    // styled at all, and a stylesheet has no way to draw a triangle: a
-    // zero-sized box with borders renders here as a solid block.
     """
     try:
         from PySide6.QtCore import QDir
