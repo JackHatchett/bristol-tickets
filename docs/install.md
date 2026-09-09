@@ -41,30 +41,23 @@ so the host finds `src/app.md` on its own:
 | --- | --- |
 | `AGENTS.md` | Most coding agents and desktop AI apps |
 | `CLAUDE.md` | Claude Code |
-| pasted project instructions | Cowork — the text is below |
+| typed project instructions | A host that takes them, Cowork among them |
 
 Each says the same thing: read `src/app.md`, and skip it where the session will
 only read something — a scheduled job that reports a number, a question
 answered out of a file.
 
-Cowork takes its per-project instructions as text you paste into the project
-rather than as a file it reads from the folder, so `AGENTS.md` and `CLAUDE.md`
-at the root go unread there. Paste this, with `<folder>` replaced by the name of
-the connected folder, and keep it in step with `AGENTS.md`:
+A host that takes typed project instructions wants two lines, with `<folder>`
+replaced by the name of the connected folder. `agent_override` has nowhere else
+to live, which is why it goes here rather than in an entry file:
 
 ```
-Read <folder>/src/app.md.
-
-A session that will only read is exempt from it, and from the identity and the
-queue it leads to - a scheduled briefing, a lookup, a question answered out of
-a file. Read what was asked for, answer, and stop. A session that turns out to
-need a write starts over at the top of these instructions, before the write.
-
+Read <folder>/src/app.md
 agent_override: none
 ```
 
-A session sees every connected folder at once, which is why the paths are
-written from the folder name down rather than from the project root.
+Write the path from the folder name down rather than from the project root: a
+session may see several connected folders at once.
 
 ## 3. The app
 
