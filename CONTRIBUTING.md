@@ -63,7 +63,7 @@ and writes a folder you choose, and runs `python3` in it. It has been run on
 one; the rest are untested, and a report either way is worth having.
 
 Nothing in `/src` names a vendor. Each host reads whichever entry file it is
-built to read — `AGENTS.md`, `CLAUDE.md` — and each says the same two lines.
-Support for a host is: an entry file if it reads one no other host reads, and a
-note in `src/host_notes/` only where something about that host surprised you.
-That folder's README states what belongs in a note and what never does.
+built to read — `AGENTS.md`, `CLAUDE.md` — and each says the same thing. Support
+for a host is: an entry file if it reads one no other host reads, and a skill
+for that host only where a route a session takes there differs from the route
+everywhere else. `src/skills/working-in-cowork/SKILL.md` is the one such skill.

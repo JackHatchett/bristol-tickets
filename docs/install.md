@@ -41,13 +41,30 @@ so the host finds `src/app.md` on its own:
 | --- | --- |
 | `AGENTS.md` | Most coding agents and desktop AI apps |
 | `CLAUDE.md` | Claude Code |
-| pasted project instructions | Cowork — see `src/host_notes/cowork.md` for the text |
+| pasted project instructions | Cowork — the text is below |
 
-Each says the same thing: read `src/app.md`, read the note in
-`src/host_notes/` that matches the host you are in, and skip both where the
-session will only read something — a scheduled job that reports a number, a
-question answered out of a file. A host with a quirk worth recording gets a
-note there; `src/host_notes/README.md` lists them.
+Each says the same thing: read `src/app.md`, and skip it where the session will
+only read something — a scheduled job that reports a number, a question
+answered out of a file.
+
+Cowork takes its per-project instructions as text you paste into the project
+rather than as a file it reads from the folder, so `AGENTS.md` and `CLAUDE.md`
+at the root go unread there. Paste this, with `<folder>` replaced by the name of
+the connected folder, and keep it in step with `AGENTS.md`:
+
+```
+Read <folder>/src/app.md.
+
+A session that will only read is exempt from it, and from the identity and the
+queue it leads to - a scheduled briefing, a lookup, a question answered out of
+a file. Read what was asked for, answer, and stop. A session that turns out to
+need a write starts over at the top of these instructions, before the write.
+
+agent_override: none
+```
+
+A session sees every connected folder at once, which is why the paths are
+written from the folder name down rather than from the project root.
 
 ## 3. The app
 

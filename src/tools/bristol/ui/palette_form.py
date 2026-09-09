@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 from .theme import (
     C,
     LAYOUT,
+    REFERENCE_DARK_PALETTE,
     REFERENCE_PALETTE,
     palette_rows,
     contrast_complaints,
@@ -144,7 +145,7 @@ class PaletteForm(QWidget):
     """
 
     def __init__(self, palette: dict | None = None, on_change=None,
-                 parent=None) -> None:
+                 parent=None, dark: bool = False) -> None:
         super().__init__(parent)
         self._on_change = on_change
         self._seating = True
@@ -161,7 +162,7 @@ class PaletteForm(QWidget):
         grid.setColumnMinimumWidth(0, LAYOUT["palette_caption_w"])
         grid.setColumnStretch(3, 1)
 
-        base = complete_palette(palette)
+        base = complete_palette(palette, dark)
         line = 0
         for group, keys in palette_rows():
             label = QLabel(group)
@@ -197,12 +198,14 @@ class PaletteForm(QWidget):
         return {key: row.value() for key, row in self.rows.items()
                 if row.valid()}
 
-    def set_palette(self, palette: dict | None) -> None:
-        """Show ``palette``, without any of it reading as an edit."""
+    def set_palette(self, palette: dict | None, dark: bool = False) -> None:
+        """Show ``palette``, without any of it reading as an edit. ``dark`` is
+        which half it is, which is what a key it does not carry is filled
+        from."""
         was = self._seating
         self._seating = True
         try:
-            base = complete_palette(palette)
+            base = complete_palette(palette, dark)
             for key, row in self.rows.items():
                 row.set_value(base[key])
         finally:
@@ -244,10 +247,17 @@ class PaletteForm(QWidget):
         self._on_change()
 
 
-def complete_palette(palette: dict | None) -> dict[str, str]:
+def complete_palette(palette: dict | None, dark: bool = False) -> dict[str, str]:
     """``palette`` with a value for every key the reference palette defines, so
-    a form always opens on something complete."""
-    base = dict(REFERENCE_PALETTE)
-    base.update({key: value for key, value in (palette or C).items()
-                 if key in base})
+    a form always opens on something complete.
+
+    ``dark`` is which half is being completed. A dark half completes against
+    the reference dark palette, because a dark palette wearing light values for
+    the keys it lacks is the half-lit state a dark half is turned on whole to
+    avoid. A light half with nothing in it opens on the live palette, which is
+    the theme in front of the user.
+    """
+    base = dict(REFERENCE_DARK_PALETTE if dark else REFERENCE_PALETTE)
+    source = palette or (REFERENCE_DARK_PALETTE if dark else C)
+    base.update({key: value for key, value in source.items() if key in base})
     return base

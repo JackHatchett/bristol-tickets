@@ -25,8 +25,6 @@ bash run_smoke.sh bristol         # one or more named targets
   function
   returning a list of failure strings and registering it. Each target runs in its
   own subprocess.
-  // Every GUI ships a top-level `ui` package, and two of them cannot coexist in
-  // one interpreter.
 - **`governing_docs` asserts what a reader cannot count**: the resident core
   against its word cap, stated in `src/templates/identity_template.md`'s style
   contract. It touches no GUI, so it runs without Qt.

@@ -61,8 +61,9 @@ Capture only these:
 - **An unresolved failure written up as a workflow**, which presents a sequence
   of dead ends as validated guidance.
 
-A durable technical constraint that survives all five is a `//` note in the file
-that owns the mechanism — `src/app.md` §What a file may say — and writing it is
+No file records a technical constraint that survives all five — `src/app.md`
+§What a file may say bans an observed technical fact in any form. What a later
+session can act on is a step in the skill that owns the task, and writing it is
 chief_of_staff's like any other behaviour change.
 
 ## Procedure

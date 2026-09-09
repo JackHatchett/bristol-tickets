@@ -261,6 +261,84 @@ def check_bristol() -> list[str]:
     ok.append("manage themes adds, renames, edits, deletes and restores, and "
               "keeps the last theme")
 
+    # The dark half: turned on whole, edited as its own set of rows, stored and
+    # resolved back, and removed without leaving the theme half-lit.
+    halves = ThemeManagerDialog(collection, theme.DEFAULT_THEME)
+    seeded_from = collection[theme.DEFAULT_THEME]
+    half_id = halves.add("Half Test")
+    if not halves.remove_dark_half():
+        raise SmokeFailure("a theme with a dark half refused to drop it")
+    if halves.has_dark() or halves.showing() != theme.LIGHT_MODE:
+        raise SmokeFailure("a dark half removed is still on the theme")
+    if halves.set_half(theme.DARK_MODE):
+        raise SmokeFailure("a light-only theme showed a dark half")
+    if halves.form.rows["CANVAS"].value() != seeded_from["light"]["CANVAS"]:
+        raise SmokeFailure("a light-only theme does not show its light half")
+    if not halves.add_dark_half():
+        raise SmokeFailure("a light-only theme refused a dark half")
+    if halves.showing() != theme.DARK_MODE:
+        raise SmokeFailure("a dark half turned on is not the half on screen")
+    dark = halves.themes()[half_id]["dark"]
+    if sorted(dark) != sorted(theme.REFERENCE_PALETTE):
+        raise SmokeFailure("a dark half was seeded short of a colour")
+    if [key for key, value in dark.items() if not str(value).strip()]:
+        raise SmokeFailure("a dark half was seeded with a colour left empty")
+    if dark != theme.REFERENCE_DARK_PALETTE:
+        raise SmokeFailure("a dark half was seeded from something not dark")
+    if halves.form.rows["CANVAS"].value() != theme.REFERENCE_DARK_PALETTE["CANVAS"]:
+        raise SmokeFailure("the rows do not show the half that is on screen")
+    if halves.form.complaints():
+        raise SmokeFailure("a dark half seeded whole opens a form that complains")
+    # The dark half's own canvas as its own text colour: unreadable against the
+    # half it belongs to, and perfectly readable against the light one, so a
+    # notice reading the wrong half says nothing here.
+    halves.form.rows["INK"].set_value(theme.REFERENCE_DARK_PALETTE["CANVAS"])
+    if not any("Primary Text" in line for line in halves.form.unreadable()):
+        raise SmokeFailure("the dark half is not read against itself")
+    if "Primary Text" not in halves.notice.text():
+        raise SmokeFailure("the notice does not carry the dark half's failure")
+    halves.form.rows["INK"].set_value("#fedcba")
+    if not halves.set_half(theme.LIGHT_MODE):
+        raise SmokeFailure("a theme with both halves refused its light one")
+    both = halves.themes()[half_id]
+    if both["dark"]["INK"] != "#fedcba":
+        raise SmokeFailure("an edit to the dark half did not stay on it")
+    if both["light"]["INK"] == "#fedcba":
+        raise SmokeFailure("an edit to the dark half reached the light one")
+    if halves.form.rows["CANVAS"].value() != seeded_from["light"]["CANVAS"]:
+        raise SmokeFailure("the light half did not come back to the rows")
+    # A half stored is a half resolved: what the configuration carries comes
+    # back as the same palette rather than as one completed from the light.
+    kept = theme.resolve_collection(
+        theme.collection_differences(halves.themes()))
+    if kept[half_id]["dark"] != both["dark"]:
+        raise SmokeFailure("a dark half stored does not resolve back whole")
+    theme.install_collection(halves.themes())
+    if not theme.theme_has_dark(half_id):
+        raise SmokeFailure("a theme given a dark half reports none")
+    if theme.resolve_scheme(half_id, theme.DARK_MODE, False) \
+            != f"{half_id}_dark":
+        raise SmokeFailure("a theme with a dark half does not draw it in Dark")
+    if not halves.remove_dark_half():
+        raise SmokeFailure("a dark half edited refused to be removed")
+    if halves.themes()[half_id]["dark"] is not None:
+        raise SmokeFailure("a dark half removed is still stored")
+    if theme.collection_differences(halves.themes())["added"][half_id]["dark"]:
+        raise SmokeFailure("a theme stores a dark half it no longer has")
+    theme.install_collection(halves.themes())
+    if theme.theme_has_dark(half_id):
+        raise SmokeFailure("a theme reports a dark half it no longer has")
+    for mode in (theme.DARK_MODE, theme.SYSTEM_MODE):
+        for os_dark in (False, True):
+            if theme.resolve_scheme(half_id, mode, os_dark) \
+                    != f"{half_id}_light":
+                raise SmokeFailure(
+                    f"a stored mode of {mode!r} did not fall back to Light "
+                    "when the half it named was gone")
+    collection = theme.register_collection(None, None)
+    ok.append("a dark half is seeded whole, edited on its own, stored and "
+              "resolved back, and removed without leaving a half-lit theme")
+
     # The palette form under it: a value that is not a colour never reaches a
     # palette, and what fails is named rather than silently saved.
     cool = collection["cool"]

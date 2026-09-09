@@ -77,5 +77,3 @@ back, then exits. It fails on a page that answers with a raw `{{TOKEN}}`, a page
 that arrives without its progress layer or still carrying browser-local
 progress, a refused write, or a write that does not read back.
 
-// The throwaway root is why the check can run against the live installation
-// without leaving a row in it.

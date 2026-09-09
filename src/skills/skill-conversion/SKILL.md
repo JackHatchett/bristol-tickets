@@ -34,7 +34,6 @@ and name the files that are not skills at all. The specification is at
 | a folder `README.md` | not a skill; a skill's index is its own `description` |
 | `src/agent_identities/*.md` | not a skill |
 | `src/app.md` | not a skill |
-| `src/host_notes/*.md` | not a skill |
 
 ### A charter is authority, not procedure
 
@@ -92,8 +91,6 @@ Two fields are required and carry the whole routing surface.
   - **Prefer a readable sentence to a short one.** The specification's ceiling
     is 1024 characters and a description written this way comes nowhere near
     it; compression is what produces the coined verbs.
-  // One consuming client's always-loaded index was seen to truncate a
-  // description past sixty characters. Bristol's own reader prints it whole.
 
 Three optional fields are used, and one is not.
 

@@ -71,8 +71,6 @@ def schema_path(start: Path | None = None) -> Path | None:
 
     Searched upward from ``start`` (this module by default), because the two
     layouts put it at different depths.
-    // A build lands the ui package under Resources/lib/pythonX.Y/ and a data
-    // file at Resources/, so no single relative step finds both.
     """
     here = (start or Path(__file__)).resolve()
     for parent in here.parents:

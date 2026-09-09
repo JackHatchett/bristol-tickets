@@ -57,7 +57,8 @@ Session steps, run before `src/VERSION` is raised.
       skill_declarations payload config_resolution agent_tools
   ```
 
-  `src/host_notes/` says where the Qt targets run when a host cannot.
+  `src/skills/checking-a-bristol-change/SKILL.md` owns where the Qt targets run
+  when the shell in hand cannot.
 
 - **Scan the history, not only the tree.** A file removed from `HEAD` is still
   in a clone, and `published_files` reads the tree alone.
@@ -180,9 +181,6 @@ Against the artifact a stranger actually gets, on the user's own machine.
    mkdir -p ~/Downloads/bristol_check
    git -C <repo> archive HEAD | tar -x -C ~/Downloads/bristol_check
    ```
-
-   // Downloads is a mounted folder and the home directory is not, so the copy
-   // goes there rather than beside the repo.
 
 4. **Install the dependencies against the copy.** A user step, in Terminal.
 

@@ -40,10 +40,6 @@ OPEN_STAGES = ("active", "backlog")
 
 def board() -> sqlite3.Connection:
     """A read connection to the shared board.
-
-    // A mounted-folder bridge has wedged a database whose rollback journal was
-    // written to disk, so every connection this system opens keeps the journal
-    // out of the mount.
     """
     conn = sqlite3.connect(str(create_tickets.locate_or_provision()), timeout=10)
     conn.execute("PRAGMA busy_timeout=5000")

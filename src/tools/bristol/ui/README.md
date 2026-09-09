@@ -179,8 +179,6 @@ Two surfaces write a card, and each has its own job.
   selected one marked by weight and an `ACCENT` underline rather than a fill.
 - **A combo box carries a chevron drawn by `chevron_image()`**, cached under the
   system temp folder in the colour it is asked for.
-  // Qt stops drawing the style's own drop-down arrow as soon as the combo is
-  // styled, and a stylesheet cannot draw a triangle.
 
 ## Adding a scheme
 
@@ -219,6 +217,11 @@ defines, and a key with no caption is offered under its own name.
 **`REFERENCE_PALETTE` is the key set and the fill, not `SCHEMES[REFERENCE_SCHEME]`.**
 A user who deletes Pumpkin takes `warm_light` out of `SCHEMES`, so a completion
 that read it there would have nothing left to read.
+
+**A dark half completes against `REFERENCE_DARK_PALETTE`**, the light one
+against `REFERENCE_PALETTE`. A dark palette wearing light values for the keys
+it lacks draws a half-lit board that shows itself only once the OS goes dark,
+which is hard to attribute to the theme it came from.
 
 ## The collection
 
@@ -261,6 +264,14 @@ rows `palette_form.py` draws.
   installed collection and the theme in force back.
 - **The last theme cannot be deleted**, and deleting the theme in force moves
   the app to the one that takes its place in the list.
+- **A dark half is turned on whole or not at all.** Add Dark Half seeds every
+  colour of it at once, so there is no partial half to define a minimum for,
+  and Remove Dark Half makes the theme light-only again. The Light and Dark
+  switch says which half the rows hold; on a light-only theme Dark is
+  unclickable and carries the reason, the way Settings offers a mode a theme
+  cannot draw.
+- **The half being edited is the half the board previews**, whatever mode is
+  stored, and the stored mode comes back when the window closes.
 - **`KEY_GROUPS` is the order a palette form offers the keys in**, and
   `palette_rows()` places a key no group names rather than dropping it.
 

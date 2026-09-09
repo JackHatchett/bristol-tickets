@@ -273,12 +273,18 @@ class SettingsTab(QWidget):
             self._loading = seating
         self._seat(self.theme, was)
 
-    def _preview_themes(self, theme: str, collection: dict) -> None:
+    def _preview_themes(self, theme: str, collection: dict,
+                        half: str | None = None) -> None:
         """Draw the running app in a theme the manage-themes window is still
-        holding."""
+        holding, in the half it is showing.
+
+        The half wins over the stored mode while that window is open, so the
+        colours being edited are the colours on the board. Closing it draws the
+        stored mode again, whichever way it closed.
+        """
         install_collection(collection)
         if self._on_appearance_changed is not None:
-            self._on_appearance_changed(theme, self.mode.currentData())
+            self._on_appearance_changed(theme, half or self.mode.currentData())
 
     def _stored_appearance(self) -> tuple[str, str]:
         """The theme and mode the configuration currently says, migrating the

@@ -194,10 +194,8 @@ def _change_log_sql(actor: str) -> str:
     their own copy of shared DB logic so neither depends on the other's package
     (the viewer also ships as a relocatable .app).
 
-    // A trigger in the main schema cannot reference a temp table, so the actor
-    // cannot be read from a session variable at fire time. The triggers are
-    // therefore created in the TEMP schema with the actor as a literal, which
-    // scopes them to one connection and makes every entry attributable.
+    The triggers are created in the TEMP schema with the actor as a literal,
+    which scopes them to one connection and makes every entry attributable.
     """
     who = actor.replace("'", "''")
     inserts = []
@@ -332,10 +330,6 @@ def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
     says the same thing, and the columns go. Mirrors
     create_tickets._retire_blocked_columns; runs before the change-log triggers
     are installed, since they name the task columns.
-
-    // ALTER TABLE ... DROP COLUMN needs SQLite 3.35; on an older library the
-    // drop is skipped and the columns are left in place at their defaults,
-    // unread and unwritten by anything.
     """
     cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
     if "depends_on" not in cols and "blocked" not in cols:

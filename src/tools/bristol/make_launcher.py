@@ -10,9 +10,6 @@ repointed.
 The generated script resolves the repo at *launch* time from the per-machine
 instance pointer (``~/Library/Application Support/BristolTickets/instance.json``,
 see ``instance.py``), falling back to the path baked in when it was generated.
-// A launcher that only hard-codes a path stops working the moment the repo
-// folder is renamed, and the failure is silent — the Dock tile bounces once and
-// nothing opens.
 
 The bundle it writes is a per-machine artifact holding absolute paths, so it is
 never committed; it lives in ``~/Applications``, outside the repo.
@@ -51,10 +48,6 @@ def app_path() -> Path:
 
 def find_python() -> str:
     """The interpreter that actually has PySide6.
-
-    // A Finder-launched app inherits a minimal PATH, so a bare `python3` in the
-    // launcher often resolves to a system Python without PySide6 and the app
-    // dies before it draws a window. The absolute path is baked in instead.
     """
     candidates = [sys.executable]
     which = shutil.which("python3")
@@ -125,10 +118,6 @@ INFO_PLIST = f"""<?xml version="1.0" encoding="UTF-8"?>
 def build() -> Path:
     """Write the bundle, replacing any existing one and removing any bundle
     built under a retired name.
-
-    // Leaving the retired bundle in place leaves two Dock tiles that both open
-    // the same board, and the stale one keeps whatever repo path it was built
-    // with.
     """
     python_exe = find_python()
     bundle = app_path()

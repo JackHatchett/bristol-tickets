@@ -10,10 +10,6 @@ context, so it assists one; it is never a copy of one.
 
 No assistant is defined yet.
 
-// A small local model handles agent-mode file navigation slowly and
-// unreliably; the RAG/upload variant is fast but low quality. Weigh both
-// against the cloud agent doing the work directly before building one.
-
 ## Invariants
 
 These specialize `src/skills/external-ai-bridge/SKILL.md`; an assistant's own

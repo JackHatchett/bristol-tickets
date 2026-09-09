@@ -6,8 +6,6 @@ the style contract in `src/templates/identity_template.md`.
 
 ## Phase 1 — Configuration
 
-- **Read your host's note in `src/host_notes/`, where it has one** — a rule
-  says what to do, its note says how on that host.
 - **Query the git-ignored `config/config.local.json` one field at a time** —
   `python3 src/tools/config_tools/read_config.py <dotted.key>`; never whole.
 - **Name user data in `/src` only by generic relative path**
@@ -141,6 +139,10 @@ you write:
   dated change notes, rationale-for-existence preambles, rule-history asides,
   claims that one file outranks another, and any reference to an AI session,
   agent or model as the origin of a decision.
+- **An observed technical fact** — what an error meant, why a call failed, how
+  a tool behaved. Commenting it out changes nothing: a later session acts on it
+  unverified. A procedure's steps are not one; they belong in the skill that
+  owns them.
 - **Deferral** — "later," "next pass," "TODO," in a file or a ticket body.
   Either it is this ticket's scope or it is another card. A plan's phases are
   its subject.
@@ -154,11 +156,7 @@ you write:
 **Every file is written for a person to read.** Only one already shaped like
 configuration — a list, a mapping, a table of values — may be terse.
 
-Write the current state as plain assertion and stop. **One exception: a note
-about a non-obvious technical constraint, commented out with `//`**, in any file
-type. The prefix marks it as behaviour observed once, to be re-verified rather
-than trusted. Present tense; never a date, a ticket number, a plan, or a
-future-change instruction.
+Write the current state as plain assertion and stop.
 
 ## Content is yours; behavior is chief_of_staff's
 

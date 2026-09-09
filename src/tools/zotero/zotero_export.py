@@ -5,10 +5,7 @@ zotero_export.py — read book data out of Zotero, safely, while Zotero is open.
 Zotero is the source of truth for books. Everything downstream — the
 library.xlsx snapshot, the archival citation file — reads through here.
 
-WHY A COPY.
-// Zotero holds zotero.sqlite open and keeps state in memory. Reading the live
-// file behind a running Zotero can return a torn page mid-transaction, and any
-// *write* is silently lost or corrupts the database.
+THE COPY.
 The writers in this folder refuse to run while Zotero is open
 (`require_zotero_closed`).
 A reader has no such excuse to be unavailable: this module copies the database
