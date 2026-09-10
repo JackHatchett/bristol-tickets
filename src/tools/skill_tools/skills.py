@@ -39,6 +39,7 @@ CLI
     python3 skills.py trust <name>
     python3 skills.py attach <name> --agent SLUG
     python3 skills.py detach <name> --agent SLUG
+    python3 skills.py package <name> [--out DIR]
 """
 
 from __future__ import annotations
@@ -51,6 +52,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
@@ -994,6 +996,75 @@ def cmd_trust(args) -> int:
     return 0
 
 
+def cmd_package(args) -> int:
+    """Write a loadable skill out as a zip another host can take.
+
+    The archive's root is the skill's own directory, which is the shape every
+    reader of the specification expects. Nothing about how a skill arrives
+    changes here: this is a second door, facing out.
+
+    A quarantined skill is refused. Quarantine is the state of not having been
+    read, and passing an unread skill to somebody else is the one thing the
+    quarantine exists to stop.
+    """
+    found = find_skill(args.name)
+    if found is None:
+        staged = [d for d in _skill_dirs(quarantine_root()) if d.name == args.name]
+        if staged:
+            print(f"'{args.name}' is quarantined. A skill nobody here has read "
+                  f"is not a skill to hand to somebody else.", file=sys.stderr)
+            return 1
+        print(f"No skill named '{args.name}'.", file=sys.stderr)
+        return 1
+    skill_dir, origin = found
+
+    if args.out:
+        out_dir = Path(args.out).expanduser()
+        out_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        declared = read_config.get("bristol_data.folders.staging", None)
+        if not declared:
+            print("No output directory: pass --out, or declare "
+                  "bristol_data.folders.staging in config.", file=sys.stderr)
+            return 1
+        out_dir = data_paths.ensure_dir(declared)
+
+    archive = out_dir / f"{args.name}.zip"
+    inventory = [entry for entry in _inventory(skill_dir)
+                 if str(entry[0]) != ORIGIN_FILE]
+    record = read_origin(skill_dir)
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
+        for rel, _, _ in inventory:
+            zf.write(skill_dir / rel, str(Path(args.name) / rel))
+        if record:
+            zf.write(skill_dir / ORIGIN_FILE, str(Path(args.name) / ORIGIN_FILE))
+
+    fields = read_frontmatter(skill_dir / "SKILL.md")
+    print(f"Packaged at {archive}")
+    print(f"Root of the archive: {args.name}/, holding {_spell(len(inventory))} "
+          f"file{'' if len(inventory) == 1 else 's'}.")
+    if record:
+        print(f"Written by {record.get('repo', ABSENT)} at "
+              f"{record.get('path', ABSENT)}, commit "
+              f"{record.get('commit', ABSENT)[:12]}. Bristol installed it and "
+              f"is not its source.")
+        print(f"Licence: {record.get('license', ABSENT)} "
+              f"(from {record.get('license_source', ABSENT)}). It travels under "
+              f"that source's own terms.")
+    elif origin == "native":
+        print("Written for Bristol and published with it.")
+        print(f"Licence: {fields.get('license', ABSENT)}, from the skill's own "
+              f"frontmatter.")
+    else:
+        print("Installed before origins were recorded, so where it came from is "
+              "not known here. Say so to whoever receives it.")
+        print(f"Licence: {fields.get('license', ABSENT)}, from the skill's own "
+              f"frontmatter.")
+    print("A person loads this in the receiving host themselves. Nothing here "
+          "reaches that host, and nothing here can tell you it arrived.")
+    return 0
+
+
 def cmd_remove(args) -> int:
     """Delete an installed or quarantined skill, and detach it everywhere.
 
@@ -1079,11 +1150,19 @@ def main(argv: list[str]) -> int:
         "remove", help="delete an installed or quarantined skill and detach it")
     p_remove.add_argument("name")
 
+    p_package = sub.add_parser(
+        "package", help="write a loadable skill out as a zip another host can take")
+    p_package.add_argument("name")
+    p_package.add_argument(
+        "--out", help="where to write the archive (default: the declared "
+                      "staging location)")
+
     args = parser.parse_args(argv)
     return {
         "list": cmd_list, "view": cmd_view, "install": cmd_install,
         "convert": cmd_convert, "audit": cmd_audit, "trust": cmd_trust,
         "attach": cmd_attach, "detach": cmd_detach, "remove": cmd_remove,
+        "package": cmd_package,
     }[args.command](args)
 
 

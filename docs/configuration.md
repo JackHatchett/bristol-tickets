@@ -185,6 +185,7 @@ Which zones a given agent reaches is its `notebook_access`.
 | `agent_output_dir` | Where agents drop drafts for you to review. |
 | `reports_dir` | Where Clear Done writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
 | `plans_dir` | Where a planning document goes. |
+| `explainers_dir` | Where `teaching_assistant` writes explainers, one folder per topic. |
 
 ### `zotero`
 
