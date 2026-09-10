@@ -28,6 +28,17 @@ its own `agents.<slug>.notebook_access`.
   novel, the game, the recipes, the templates, the zettels. The user authors
   those; read them and never write into them.
 
+## What a note an agent writes looks like
+
+- **Name the file in snake case** — lowercase, words joined by underscores, no
+  spaces, and the same for a folder holding a set of them.
+- **Tag it `ai/answer`.** That is the notebook's tag for a note an agent wrote
+  in answer to something the user asked, and it is the only tag an agent applies
+  on its own.
+- **Tag a note that tells the user what to do the same way.** `ai/advice` is the
+  notebook's tag for pulling those out for closer reading, and putting it into
+  use is the user's.
+
 ## Procedure
 
 1. **Receive it** — from chat, or from the envelope the dispatch ticket names.
