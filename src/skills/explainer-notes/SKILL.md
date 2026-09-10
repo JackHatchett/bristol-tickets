@@ -50,12 +50,21 @@ them wants a course.
 
 - **One idea, and the note is named for it.** Depth belongs to the note that
   owns the concept — `src/skills/splitting-an-explanation/SKILL.md`.
-- **The filename is lowercase with underscores**, matching the notebook's own
-  notes; the heading above the text is written for a person and need not match
-  it.
-- **The frontmatter is the notebook's own header** — `aliases`, `tags`,
-  `created`, `status`, `source_url` — and every alias a reader might link the
-  note by goes in `aliases`.
+- **Name the file and tag the note** per
+  `src/skills/notebook-proposal/SKILL.md` §What a note an agent writes looks
+  like. The heading above the text is written for a person and need not match
+  the filename.
+- **The frontmatter is these three keys and no others:**
+
+  ```
+  ---
+  aliases:
+    - the note's title
+  tags:
+    - ai/answer
+  created: YYYY-MM-DD HH:MM
+  ---
+  ```
 - **At least two outbound links**, to the hub and to at least one sibling or an
   existing notebook note. A note nothing links to and that links nothing is
   invisible.
