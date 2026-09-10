@@ -144,6 +144,29 @@ fact from a blank.
 else and each of its skills travels as the address it came from, under that
 source's own terms; the person importing fetches it themselves.
 
+## Sending one somewhere else
+
+Other assistants read the same format. A skill you have here — one Bristol
+ships, or one you installed from a hub — can be written out as a single file
+another one will take:
+
+```bash
+python3 src/tools/skill_tools/skills.py package <name>
+```
+
+What comes back is a zip whose root is the skill's own folder, and a short
+statement of who wrote the skill, what its licence says and where that was read
+from. A skill you installed from somebody else leaves here naming them, never
+Bristol. Loading it at the other end is a step you take in that assistant's own
+settings; nothing here reaches it, and nothing here can tell you it arrived.
+
+**A skill still in quarantine is refused.** Quarantine means nobody here has
+read it, and handing an unread skill to someone else is the thing quarantine
+exists to prevent.
+
+This changes nothing about how a skill arrives. Install, quarantine and trust
+work exactly as they did; this is a second door, facing out.
+
 ## Removing one
 
 ```bash

@@ -79,6 +79,7 @@ python3 skills.py trust <name>
 python3 skills.py attach <name> --agent <slug>
 python3 skills.py detach <name> --agent <slug>
 python3 skills.py remove <name>
+python3 skills.py package <name> [--out DIR]
 ```
 
 - **`list`** — every loadable skill as name, origin and description, plus a
@@ -147,6 +148,19 @@ python3 skills.py remove <name>
   leaving an agent naming a skill that is gone. It refuses a native skill: those
   are source under version control, and removing one is an edit to the
   repository.
+- **`package`** — write a loadable skill out as a zip whose root is the skill's
+  own directory, which is the shape a reader of the specification expects, into
+  the declared staging location or a directory named with `--out`. The origin
+  record travels inside it, and the output states in words who wrote the skill,
+  what its licence says and where that was read: a skill installed from
+  elsewhere leaves here naming that source, never this one. **A quarantined
+  skill is refused**, because quarantine is the state of not having been read
+  and passing an unread skill to somebody else is what the quarantine exists to
+  stop. **Nothing about how a skill arrives changes here.** This is a second
+  door facing outward, and it shares no mechanism with `install`, `trust` or
+  the judgment between them. What a receiving host does with the archive is
+  that host's and that person's: nothing here reaches it and nothing here can
+  report that it arrived.
 - **`attach` / `detach`** — add or remove one skill name in
   `agents.<slug>.skills`, written through `config_tools/write_config.py`. The
   attachment is a name in the agent's config entry and never a copy of the

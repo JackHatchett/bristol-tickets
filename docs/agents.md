@@ -101,6 +101,13 @@ mathematics, a trade skill, a spoken language. It renders any lesson to a
 readable HTML page. It is the sole author of coursework; no other agent writes
 into a course.
 
+A course is not the only shape it makes. For a topic you want to understand
+rather than be examined on — often something current — it writes an explainer:
+one hub note and three to seven single-idea notes in your notebook, linked to
+each other and to the notes you already keep, the whole set one sitting's
+reading. Ask it about a topic without saying which you want and it offers you
+both, alongside simply answering in the chat.
+
 **Needs** a Markdown notebook, where courses live as one folder each. Its
 lesson-production stages can optionally be routed to an external AI tool; left
 alone, it does every stage itself.
