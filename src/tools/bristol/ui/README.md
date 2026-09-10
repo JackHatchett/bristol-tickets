@@ -149,8 +149,8 @@ Two surfaces write a card, and each has its own job.
 
 - **Ask a yes/no question with `dialogs.confirm()`, a question with other
   answers with `dialogs.choose()`, and state something unanswerable with
-  `dialogs.notify()`.** Never a `QMessageBox`: the platform's box arrives with
-  its own glyph, its own button ranks and its own palette.
+  `dialogs.notify()`.** Never a `QMessageBox`: every question this app asks is
+  drawn in this app's palette, with its own button ranks.
 - **Give the action a label that names it** — "Delete", "Move to Archive" —
   rather than Yes, and pass `destructive=True` where it cannot be undone, which
   is what puts it at the `DELETE_BG` rank.

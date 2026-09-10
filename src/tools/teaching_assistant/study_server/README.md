@@ -46,12 +46,10 @@ learning domain's own vocabulary — `opened`, `reading`, `quiz`, `exercise` —
 - **The rendered file on disk is never edited.** The progress layer is added to
   the response, so re-rendering a lesson cannot lose it and nothing on disk
   depends on the server having run.
-- **The page's browser-local progress is removed as it is served.** The
-  template's `localStorage` checkbox is per-browser and dies with the site data;
-  the served page's checkbox reads and writes `personal.db` instead.
+- **The page's browser-local progress is removed as it is served.** The served
+  page's checkbox reads and writes `personal.db` instead.
 - **Serving a lesson page records `opened`**, which is what `resume` and the
-  course list read. It is the server's write rather than the page's, so the
-  place is kept whether or not the browser runs the script.
+  course list read. It is the server's write rather than the page's.
 - **The nav offers the previous and next lesson**, so moving on records the new
   position by loading it.
 - **`window.bristolStudy.record(kind, present, item, score)`** is the same write

@@ -80,9 +80,9 @@ lands in, the audit and what it does not check, and where to browse.
 1. **Download** `BristolTickets-<version>.zip` from
    [the releases page](https://github.com/JackHatchett/bristol-tickets/releases),
    unzip it, and drag Bristol Tickets to your Applications folder.
-2. **Open it.** The app is unsigned, so macOS blocks the first launch: click
-   Done, then **System Settings → Privacy & Security → Open Anyway**. Once,
-   ever. [install.md](docs/install.md) has the exact wording.
+2. **Open it.** The app is unsigned, so the first launch takes an extra step:
+   click Done, then **System Settings → Privacy & Security → Open Anyway**.
+   Once, ever. [install.md](docs/install.md) has the steps.
 3. **Answer setup.** It asks where Bristol should live (`~/Bristol` by
    default), what to call this installation, which agents you want, and
    optionally a notebook and a Zotero folder. Finish writes the whole system

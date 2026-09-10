@@ -31,9 +31,9 @@ committing.
   for all three; where it is absent, the repository's own Actions and Releases
   pages do the same work in a browser and nothing needs installing to finish a
   release.
-- **A failed run's logs reach a session only through the user.** Downloading
-  them takes repository admin rights, so `gh run view --log-failed` is what puts
-  the failing output where it can be read.
+- **A failed run's logs reach a session only through the user.**
+  `gh run view --log-failed` is what puts the failing output where it can be
+  read.
 - **Give each user command on its own, in a copy-paste block, with what it
   does**, and wait for what it printed before giving the next.
 

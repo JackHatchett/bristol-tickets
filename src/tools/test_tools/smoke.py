@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """smoke.py — runtime-error smoke checks for the fleet's PySide6 GUI tools.
 
-What it is: a fast "does it still build and run" check that goes beyond
-``py_compile``. It constructs each GUI's real widgets on Qt's offscreen platform
-and reports any import error, signal/slot mismatch, or construction-time
-exception. What it is NOT: a visual check — offscreen paints nothing, so how a
-window *looks* still needs a real display (the packaged Mac app).
+What it is: a fast "does it still build and run" check. It constructs each
+GUI's real widgets on Qt's offscreen platform and reports any import error,
+signal/slot mismatch, or construction-time exception. What it is NOT: a visual
+check — offscreen paints nothing, so how a window *looks* still needs a real
+display (the packaged Mac app).
 
 Targets live in ``TARGETS`` below. Each is checked in its OWN subprocess because
 every GUI tool ships a top-level package named ``ui`` (and its own ``app.py``),
@@ -455,8 +455,8 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("a token scale holds something that is not a size")
     ok.append("the spacing, radius and type scales are whole sizes")
 
-    # Every question and every notice comes from ui/dialogs.py, so none of them
-    # arrives as the platform's own box with its glyph and its button ranks.
+    # Every question and every notice comes from ui/dialogs.py, so no module
+    # in the package names QMessageBox.
     import ui.dialogs as dialogs
 
     strays = sorted(
@@ -2083,6 +2083,25 @@ def check_governing_docs() -> list[str]:
     ok: list[str] = []
     root = Path(__file__).resolve().parents[3]
 
+    # The line a host is told to type names the entry point, and nothing in the
+    # application reads it back. Composed here and resolved against the tree, a
+    # renamed entry point fails a check rather than shipping an instruction
+    # that points at nothing.
+    tool_on_path("bristol")
+    import payload
+
+    typed = payload.connect_instructions(root)
+    named = typed.splitlines()[0].strip().rstrip(".").split(maxsplit=1)[-1]
+    relative = named.split("/", 1)[1] if "/" in named else named
+    if not (root / relative).is_file():
+        raise SmokeFailure(
+            "the typed project instructions name a file that is not there:\n"
+            f"    {typed}\n"
+            f"  {relative!r} resolves to nothing under {root}. "
+            "payload.connect_instructions composes that text."
+        )
+    ok.append(f"the typed project instructions name {relative}, which is there")
+
     core = root / "src" / "app.md"
     words = len(core.read_text().split())
     if words > RESIDENT_CORE_CAP:
@@ -2326,9 +2345,6 @@ def check_payload() -> list[str]:
     with tempfile.TemporaryDirectory() as tmp:
         # Resolved, because schema_path resolves what it is given and the
         # comparison below is against a path this test built.
-        # // macOS hands out temp directories under /var, which is a symlink to
-        # // /private/var, so an unresolved expectation never matches there while
-        # // it matches everywhere /tmp is a real directory.
         root = Path(tmp).resolve()
         source_ui = root / "bristol" / "ui"
         source_ui.mkdir(parents=True)

@@ -204,10 +204,8 @@ one button rather than two permanent rows. Removing a link asks first.
   it from both.
 - **Address links** hold a web URL, a `zotero://` citation, an `obsidian://`
   note, or a filesystem path, with an optional caption. Clicking hands the
-  string to the OS: a scheme routes to whichever app registered it, and a bare
-  path opens with whatever owns that file type. Bristol Tickets therefore knows
-  nothing about schemes, vault names or user paths — the mechanism-only rule
-  holds.
+  string to the OS. Bristol Tickets therefore knows nothing about schemes, vault
+  names or user paths — the mechanism-only rule holds.
 
 Links may be added while a ticket is still being *created*: they buffer in the
 widget (shown as "on save") and are written once the INSERT yields an id.
@@ -261,8 +259,8 @@ that runs this folder's source directly while iterating.
 
 Runtime-error checking lives in `../test_tools` (the fleet's testing harness):
 `bash ../test_tools/run_smoke.sh bristol` builds this tool's widgets on
-Qt's `offscreen` platform, catching errors `py_compile` can't (bad imports,
-signal/slot mismatches, widget construction that throws). It is **not** a visual
+Qt's `offscreen` platform, catching bad imports, signal/slot mismatches and
+widget construction that throws. It is **not** a visual
 check — how things look still needs a real display (the packaged Mac app).
 
 ## Invariants

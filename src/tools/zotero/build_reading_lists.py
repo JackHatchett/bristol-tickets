@@ -96,8 +96,8 @@ def split_author(author: str):
     if "," in author:
         last, first = author.split(",", 1)
         return first.strip(), last.strip(), 0
-    # No comma: a mononym or an institution. Zotero's fieldMode 1 stores it whole
-    # in lastName, which is how Zotero itself represents "Anonymous" or "Ovid".
+    # No comma: a mononym or an institution — "Anonymous", "Ovid". fieldMode 1
+    # is the single-field form, and it holds the whole name in lastName.
     return "", author, 1
 
 

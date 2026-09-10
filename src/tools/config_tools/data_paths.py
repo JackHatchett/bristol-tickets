@@ -264,9 +264,8 @@ def ensure_db(path: str | Path, schema: str | Path) -> Path:
     conn = sqlite3.connect(str(target), timeout=10)
     try:
         conn.execute("PRAGMA busy_timeout=5000")
-        # // A mounted-folder bridge has wedged a database whose rollback
-        # // journal was written to disk; MEMORY keeps the journal out of the
-        # // mount. Same reasoning as personal_db.db_common.connect.
+        # Every writer takes the same journal rule —
+        # src/tools/ticket_tools/README.md §Invariants.
         conn.execute("PRAGMA journal_mode=MEMORY")
         conn.executescript(sql)
         conn.commit()

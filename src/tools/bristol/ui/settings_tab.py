@@ -161,8 +161,6 @@ class SettingsTab(QWidget):
         form.addRow(_heading("Bristol Tickets"))
         form.addRow("Ticket Destination", self.new_ticket)
         form.addRow("Theme", self.theme)
-        # // A form row's label is a QLabel with mnemonics on, so a literal
-        # // ampersand has to be doubled or Qt eats it and underlines the D.
         form.addRow("Light && Dark", self.mode)
         form.addRow("Themes", self.manage)
         form.addRow(_heading("Agent Sessions"))

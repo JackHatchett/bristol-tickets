@@ -51,9 +51,8 @@ class GrowingTextEdit(QTextEdit):
     def _fit(self) -> None:
         line = QFontMetrics(self.font()).lineSpacing()
         # The border, the padding the stylesheet sets and the document's own
-        # margin are whatever the field's height exceeds its viewport by.
-        # // Reading them off the widget keeps the fit correct under a
-        # // stylesheet that changes padding.
+        # margin are whatever the field's height exceeds its viewport by, and
+        # they are read off the widget rather than assumed.
         chrome = max(self.height() - self.viewport().height(),
                      int(self.document().documentMargin() * 2) + 2)
         content = self.document().size().height()

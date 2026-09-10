@@ -27,9 +27,7 @@ contract for both: `src/templates/identity_template.md`.
   because exactly one `tickets.db` exists per instance.
 - **Use Python's built-in `sqlite3` module, never a `sqlite3` CLI subprocess.**
 - **Open every write with `PRAGMA journal_mode=MEMORY`** (see `ticket_write.py`).
-- **Write the database in place, never by replacing the file.** A copy
-  delivered over a file bridge unlinks the old inode, and a viewer already
-  holding it goes on reading the dead one.
+- **Write the database in place, never by replacing the file.**
 - **Keep the schema in step with Bristol Tickets.** Any inline migration the
   viewer performs is reflected in `create_tickets.py`.
 - **These are not user-facing commands.** They are internal mechanisms for

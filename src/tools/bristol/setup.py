@@ -73,17 +73,16 @@ DATA_FILES += stage_payload()
 
 OPTIONS = {
     "argv_emulation": False,
-    # Bundle the ui/ and reports/ packages (py2app's import scanner can miss
-    # relative-imported submodules, and reports/ is only reached through a
-    # guarded import inside Clear Done, so name both explicitly).
+    # Bundle the ui/ and reports/ packages, named explicitly: reports/ is
+    # reached only through a guarded import inside Clear Done.
     "packages": ["ui", "reports"],
     "includes": ["sqlite3"],
     # A board draws no Tk windows and installs no packages at runtime.
     "excludes": ["tkinter", "setuptools", "pip", "pkg_resources", "py2app",
                  "pydoc_data", "test"],
     "plist": {
-        # CFBundleName drives the bundle directory and the executable, so it
-        # holds no space; the display name is what Finder and the menu bar show.
+        # CFBundleName holds no space; CFBundleDisplayName carries the name
+        # with one.
         "CFBundleName": "BristolTickets",
         "CFBundleDisplayName": "Bristol Tickets",
         "CFBundleIdentifier": "local.bristoltickets.app",
@@ -106,7 +105,6 @@ setup(
     setup_requires=["py2app"],
 )
 
-# py2app copies the PySide6 package whole, which is every Qt module Qt ships.
 # The bundle is slimmed to what the app imports once the build has written it.
 if "py2app" in sys.argv:
     import slim  # noqa: E402  (bristol-local; owns what a bundle keeps)

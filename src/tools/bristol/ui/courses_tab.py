@@ -6,10 +6,9 @@ Every fact on this page comes from one call to
 program that then serves the pages, so the tab and the server cannot disagree
 about which courses exist or where one was left.
 
-Study starts that server as a child process and hands the browser the address it
-prints. The lesson is drawn by the browser rather than by Qt: a built bundle
-carries no browser engine — ``bristol/slim.py`` — so a page rendered inside the
-window would lose the styling the renderer already gave it.
+Study starts that server as a child process and hands the browser the address
+it prints. The lesson is drawn by the browser rather than by Qt: a built bundle
+carries nothing that draws a web page — ``bristol/slim.py``.
 
 The server outlives no window. It is stopped when the tab is torn down, so
 closing Bristol Tickets leaves nothing listening.

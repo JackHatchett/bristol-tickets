@@ -95,15 +95,13 @@ with it.
 - **A second application costs a second release pipeline** — its own build, its
   own signing, its own version file — bought for one icon.
 - **A page opened straight off the filesystem costs the progress record.**
-  Browser storage on a `file://` page is per-browser and per-origin, and
-  clearing site data clears the course with it.
+  Nothing writes to `personal.db` without the server behind the page.
 
 **A lesson is drawn by the browser, not by Qt.** `src/tools/bristol/slim.py`
-keeps `QtCore`, `QtGui` and `QtWidgets` in the built bundle and removes Qt's
-browser engine, so a lesson drawn inside the app would be re-rendered into Qt's
-rich-text subset and lose the styling the renderer already gives it. Two things
-follow: the tab starts a local server and hands the browser a URL, and that
-server uses the standard library alone, as the renderer does.
+keeps `QtCore`, `QtGui` and `QtWidgets` in the built bundle and nothing that
+draws a web page. Two things follow: the tab starts a local server and hands
+the browser a URL, and that server uses the standard library alone, as the
+renderer does.
 
 **Progress lives in the `learning` domain of `personal.db`.** One store, on the
 user's own disk, carried by the same backup as the rest of `/data`, and readable
