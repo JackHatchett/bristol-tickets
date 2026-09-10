@@ -65,9 +65,8 @@ SIGNED_TAG = "Signed copy"
 # iff it is in the read collection or carries an ownership tag; a list-only
 # title has neither.
 #
-# Item types: the library is not all `book` either. 89 magazines were imported
-# as `magazineArticle`, 82 of them shelved. Filtering on typeName='book' alone
-# silently dropped them and under-reported the shelved count by 82.
+# Item types: the library is not all `book` either. A magazine is held as a
+# `magazineArticle`, so LIBRARY_TYPES names every type the library counts.
 LIBRARY_TYPES = ("book", "magazineArticle")
 
 # Tags that say something other than genre, so the genre fallback does not
@@ -170,8 +169,8 @@ def read_books(conn=None) -> list[dict]:
         extra = _parse_extra(f.get("extra"))
         genre = extra.get("genre") or ", ".join(
             sorted(it["tags"] - NON_GENRE_TAGS)) or None
-        # A magazineArticle has no numPages — Zotero gives that type `pages`
-        # instead. Reading only numPages dropped 92 magazines' page counts.
+        # A page count is `numPages` on a book and `pages` on a
+        # magazineArticle.
         pages = f.get("numPages") or f.get("pages")
         rows.append({
             "author": "; ".join(it["author"]) or None,

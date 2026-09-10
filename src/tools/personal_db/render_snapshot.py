@@ -152,9 +152,8 @@ SPECS = {
 
 
 def _num(value):
-    """'$5.00' -> 5.0, '1963' -> 1963, anything else unchanged. Zotero stores
-    every field as text; the snapshot's numeric columns were numbers before the
-    move and the Stats formulas sum them, so they have to stay numbers."""
+    """'$5.00' -> 5.0, '1963' -> 1963, anything else unchanged. The snapshot's
+    numeric columns hold numbers, which is what the Stats formulas sum."""
     if not isinstance(value, str):
         return value
     text = value.strip().lstrip("$").replace(",", "")

@@ -26,23 +26,19 @@ shipped default names; a user who renames one records the new name in
 
 ## Why direct SQLite
 
-Zotero exposes no local write API — the local HTTP server is read-only and the
-Web API needs a key and a round trip through zotero.org. So `zotero_common.py`
-opens `zotero.sqlite` directly.
+`zotero_common.py` opens `zotero.sqlite` directly rather than through an API.
 
-That is safe only when Zotero is not running. Zotero holds the database open and
-keeps state in memory, so a write behind a live Zotero is silently lost or
-corrupted. Every writer here calls `require_zotero_closed()` and exits with an
-instruction rather than risking it. **Quit Zotero (Cmd-Q) before running.**
+Every writer here calls `require_zotero_closed()` and exits with an instruction
+rather than writing behind a running Zotero. **Quit Zotero (Cmd-Q) before
+running.**
 
 **The gate reads a file rather than a process list.** `zotero.sqlite-journal`
-beside the database exists for as long as Zotero holds the library and goes when
-it closes, so it is the signal wherever the tools run; a process check finds
-Zotero only where the shell is the machine's own.
+beside the database is the signal, and it is read the same way wherever the
+tools run.
 
-Rows written here carry `version=0, synced=0` — exactly what Zotero records for
-a local edit it has not yet pushed. The next sync uploads them. Never invent a
-version number; that is the server's to assign.
+Rows written here carry `version=0, synced=0`, the values a local edit not yet
+pushed carries. Never invent a version number; that is the server's to
+assign.
 
 ## Configuration
 

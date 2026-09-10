@@ -22,6 +22,9 @@ from pathlib import Path
 
 PAYLOAD_DIR_NAME = "payload"
 
+# The file an agent host is pointed at, and the marker of an installed tree.
+ENTRY_DOC = "src/app.md"
+
 # What a release carries: the machinery and the manual, and no instance of it.
 PUBLISHED_DIRS = ("src", "docs")
 PUBLISHED_FILES = (
@@ -167,7 +170,14 @@ def unmake(created: list[Path], placed: list[Path]) -> None:
 
 def installed_at(target: Path) -> bool:
     """True when ``target`` already holds a Bristol project tree."""
-    return (target / "src" / "app.md").is_file()
+    return (target / ENTRY_DOC).is_file()
+
+
+def connect_instructions(root: Path) -> str:
+    """The line a user pastes into an agent host that takes project
+    instructions, written from the folder name down the way a host that sees
+    several folders at once resolves it."""
+    return f"Read {root.name}/{ENTRY_DOC}.\nagent_override: none"
 
 
 def refresh(target: Path) -> str | None:

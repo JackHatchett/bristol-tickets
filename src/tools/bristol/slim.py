@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """slim.py — leave a built bundle carrying only the Qt the board loads.
 
-PySide6 ships every Qt module Qt has, and py2app copies the package whole, so an
-untouched build carries a browser engine, a 3D renderer and three developer
-tools to draw a Kanban board. This removes what the app never imports.
+A built bundle arrives carrying the whole PySide6 package. This removes every
+module, framework, plugin and support folder the app never imports.
 
 Usage:
 
@@ -25,13 +24,11 @@ from pathlib import Path
 # What the board imports. Every other PySide6 module goes.
 MODULES = ("QtCore", "QtGui", "QtWidgets")
 
-# The Qt frameworks those three load through on macOS. QtSvg and QtSvgWidgets
-# carry the icon engine, QtNetwork and QtDBus are linked by the platform
-# plugin, and QtPrintSupport is linked by QtWidgets.
+# The Qt frameworks the bundle keeps beside those three.
 FRAMEWORKS = MODULES + ("QtDBus", "QtNetwork", "QtPrintSupport",
                         "QtSvg", "QtSvgWidgets")
 
-# The plugin folders a windowed widget app loads from.
+# The plugin folders the bundle keeps.
 PLUGINS = ("platforms", "styles", "imageformats", "iconengines", "tls",
            "generic")
 

@@ -6,9 +6,8 @@ manual-QA database and its GUI are `test_control/`.
 ## Runtime smoke checker
 
 Builds each PySide6 GUI's real widgets on Qt's `offscreen` platform, catching
-import errors, signal/slot mismatches and construction-time exceptions that
-`py_compile` cannot see. It paints nothing, so layout and appearance still need a
-real display.
+import errors, signal/slot mismatches and construction-time exceptions. It
+paints nothing, so layout and appearance still need a real display.
 
 ```
 bash run_smoke.sh                 # every target

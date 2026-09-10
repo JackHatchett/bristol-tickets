@@ -30,8 +30,7 @@ there. On every later launch, an app whose payload is newer than the folder it
 opens refreshes that folder first.
 
 `slim.py` runs at the end of the build and removes the Qt the board never
-imports — py2app copies the PySide6 package whole, and that package carries a
-browser engine, a 3D renderer and Qt's own developer tools. `MODULES`,
+imports, from a bundle that arrives carrying the whole package. `MODULES`,
 `FRAMEWORKS` and `PLUGINS` at the top of that file are what a bundle keeps;
 `python3 slim.py --report <bundle.app>` says what would go without removing it.
 
@@ -39,9 +38,9 @@ browser engine, a 3D renderer and Qt's own developer tools. `MODULES`,
 
 ## Signing
 
-The release is unsigned and not notarized, so macOS blocks the first launch and
-the user allows it once in System Settings → Privacy & Security.
-`docs/install.md` §The first launch carries the wording they see.
+The release is unsigned and not notarized, and the first launch is allowed
+once in System Settings → Privacy & Security. `docs/install.md` §The first
+launch carries the steps the user takes.
 
 Removing that step means an Apple Developer Program membership and a Developer
 ID certificate: `codesign --deep --options runtime`, `notarytool submit --wait`,
@@ -62,18 +61,18 @@ executable is a shell script that runs this repo's `app.py`. Editing any
 `ui/*.py` or `app.py` takes effect on the next launch; there is nothing to
 rebuild. It carries no payload, so it installs nothing and updates nothing.
 
-Trade-off: the running process is Python, so the macOS **menu-bar name reads
-"Python"** (the window title and Dock icon are still Bristol Tickets).
+Trade-off: the running process is Python rather than a built bundle, and the
+**menu-bar name reads "Python"** where a built bundle's reads Bristol
+Tickets.
 
 Run the same command again after moving or renaming the folder, or after
 switching to a different Python.
 
 What the tool handles for you:
 
-- **The Python that actually has PySide6.** A Finder-launched app gets a
-  minimal `PATH`, so a bare `python3` often resolves to a system Python
-  without PySide6. The tool tests candidates and bakes in the absolute path of
-  one that imports it.
+- **The Python that actually has PySide6.** The tool tests candidates and
+  bakes in the absolute path of one that imports it, rather than leaving a bare
+  `python3` to be resolved at launch.
 - **Surviving a folder move.** The generated script resolves the project at
   launch from the instance pointer (`instance.py`), falling back to the path
   baked in when it was generated, and shows an alert naming this command if
@@ -116,14 +115,13 @@ clears both before building; doing it by hand means `rm -rf build dist` first.
 
 ## Troubleshooting
 
-- **"App can't be opened" / "Apple could not verify"** — expected on an
-  unsigned build. See §Signing, and `docs/install.md` for the steps a user
-  takes.
+- **"App can't be opened" / "Apple could not verify"** — the build is
+  unsigned. See §Signing, and `docs/install.md` for the steps a user takes.
 - **App launches then quits** — run the binary directly to see the error:
-  `"dist/BristolTickets.app/Contents/MacOS/BristolTickets"`. Most often a
-  missing Qt plugin (reinstall PySide6 and rebuild clean), or a wrong path in
-  the instance pointer (`python3 ../config_tools/instance_pointer.py` prints
-  it).
+  `"dist/BristolTickets.app/Contents/MacOS/BristolTickets"`. Two things to
+  check: the Qt plugins the bundle kept (reinstall PySide6 and rebuild clean),
+  and the path in the instance pointer (`python3
+  ../config_tools/instance_pointer.py` prints it).
 - **Setup opens on an app that should already be installed** — the payload did
   not stage. `make_release.py` fails the build on this rather than shipping it;
   a bare `setup.py py2app` does not check.

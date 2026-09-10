@@ -553,8 +553,8 @@ class SetupWizard(QWizard):
         self.setWindowTitle("Bristol Tickets — Setup")
         self.setWizardStyle(QWizard.ModernStyle)
         self.setTitleFormat(Qt.RichText)
-        # // The wizard's header band is painted by the style from the palette's
-        # // Base role, which no stylesheet rule reaches.
+        # The wizard's header band takes its ground from the palette's Base
+        # role rather than from the stylesheet.
         palette = self.palette()
         palette.setColor(QPalette.Base, QColor(C["CANVAS"]))
         self.setPalette(palette)
@@ -576,8 +576,8 @@ class SetupWizard(QWizard):
             button = self.button(role)
             if button is not None:
                 button.setObjectName("globalCreateBtn")
-                # // A stylesheet rule keyed to an object name only reaches a
-                # // widget that already existed if its style is re-polished.
+                # Re-polished, so the rule keyed to the new object name is the
+                # one the button is drawn with.
                 button.style().unpolish(button)
                 button.style().polish(button)
 
@@ -798,9 +798,8 @@ def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
             conn = sqlite3.connect(str(db_path), timeout=10)
             try:
                 conn.execute("PRAGMA busy_timeout=5000")
-                # // A mounted-folder bridge has wedged a database whose
-                # // rollback journal was written to disk; MEMORY keeps it off
-                # // the mount.
+                # Every writer takes the same journal rule —
+                # src/tools/ticket_tools/README.md §Invariants.
                 conn.execute("PRAGMA journal_mode=MEMORY")
                 conn.executescript(schema)
                 conn.commit()
@@ -924,15 +923,6 @@ def place_project(parent=None) -> tuple[Path | None, bool]:
     return dialog.chosen, dialog.placed
 
 
-def connect_instructions(root: Path) -> str:
-    """The line a user pastes into an agent host that takes project
-    instructions, written from the folder name down the way a host that sees
-    several folders at once resolves it."""
-    return (
-        f"Read {root.name}/src/app.md.\nagent_override: none"
-    )
-
-
 class ConnectDialog(QDialog):
     """Where the installation went, and how to point an agent at it."""
 
@@ -955,7 +945,7 @@ class ConnectDialog(QDialog):
         )
         body.setWordWrap(True)
 
-        self.instructions = QLabel(connect_instructions(root))
+        self.instructions = QLabel(payload.connect_instructions(root))
         self.instructions.setWordWrap(True)
         self.instructions.setObjectName("formCaption")
         self.instructions.setTextInteractionFlags(Qt.TextSelectableByMouse)

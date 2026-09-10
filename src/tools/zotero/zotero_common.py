@@ -2,10 +2,8 @@
 """
 zotero_common.py — shared data layer for writing into a local Zotero library.
 
-Zotero exposes no local write API, so these tools write zotero.sqlite directly.
-That is safe only when Zotero is not running: Zotero holds the database open and
-keeps unflushed state in memory, so a write behind its back is silently lost or
-corrupted. Every writer here refuses to run while Zotero is up.
+These tools write zotero.sqlite directly, and every writer here refuses to run
+while Zotero is up.
 
 Path resolution (no hardcoded user paths in /src):
   - ZOTERO_DATA_DIR : absolute path to the Zotero data directory (contains
@@ -13,9 +11,9 @@ Path resolution (no hardcoded user paths in /src):
                       `zotero.env` block, or the ZOTERO_DATA_DIR env var.
     Falls back to ~/Zotero, which is Zotero's own default.
 
-Sync model: rows written here carry version=0, synced=0 — exactly what Zotero
-records for a local edit it has not yet pushed. The next sync uploads them.
-Never invent a version number; that is the server's to assign.
+Sync model: rows written here carry version=0, synced=0, the values a local
+edit not yet pushed carries. Never invent a version number; that is the
+server's to assign.
 """
 
 import json
@@ -81,15 +79,9 @@ def db_path() -> Path:
 def zotero_is_running() -> bool:
     """True if Zotero holds the library open.
 
-    The signal is the file rather than the process, because a shell that is not
-    the machine's own shell reads a process table the desktop is not in, and
-    answers "no Zotero" whatever Zotero is doing. The database and the files
-    beside it are on the real disk and are read the same way from anywhere.
+    The journal file beside the library is the signal; a process check is the
+    fallback behind it.
     """
-    # // Zotero keeps the library in PERSIST journal mode, so
-    # // zotero.sqlite-journal exists for as long as Zotero holds the database
-    # // and goes when it closes. Its header is zeroed between transactions,
-    # // which is a committed journal rather than a stale file.
     if (data_dir() / "zotero.sqlite-journal").exists():
         return True
     try:

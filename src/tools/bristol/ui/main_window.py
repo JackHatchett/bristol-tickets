@@ -102,9 +102,8 @@ class MainWindow(QMainWindow):
         ensure_schema_up_to_date(self.conn)
 
         self.setWindowTitle("Bristol Tickets")
-        # App icon on the window (Dock/taskbar when launched as a script; the
-        # built .app gets its icon from setup.py's iconfile). The PNG sits at the
-        # package root next to app.py.
+        # The window's own icon; a built .app takes its icon from setup.py's
+        # iconfile instead. The PNG sits at the package root next to app.py.
         _icon_path = Path(__file__).resolve().parent.parent / "icon.png"
         if _icon_path.exists():
             self.setWindowIcon(QIcon(str(_icon_path)))
@@ -114,11 +113,8 @@ class MainWindow(QMainWindow):
         self.resize(LAYOUT["window_w"], LAYOUT["window_h"])
 
         # Follow the OS light/dark setting with a warm orange palette in both
-        # modes, and re-theme live when the OS flips (macOS auto-appearance
-        # timer). Applied at the QApplication level so every modal dialog and
-        # message box is themed too — the old code styled only the main window,
-        # which is why dialogs fell through to the black system dark palette and
-        # became unreadable.
+        # modes, and re-theme live when it flips. Applied at the QApplication
+        # level, so every modal dialog is drawn in the palette too.
         self._apply_theme()
         app = QApplication.instance()
         if app is not None:
@@ -661,8 +657,8 @@ class MainWindow(QMainWindow):
     def _build_menu_bar(self) -> None:
         """The window's one menu: re-running first-run setup."""
         setup_action = QAction("Setup…", self)
-        # // Qt reads "setup" as a preferences item and moves it into the macOS
-        # // application menu unless the role is pinned.
+        # Setup is an ordinary item of the File menu, and its pinned role is
+        # what keeps it there.
         setup_action.setMenuRole(QAction.NoRole)
         setup_action.triggered.connect(self._open_setup_wizard)
         self.menuBar().addMenu("File").addAction(setup_action)

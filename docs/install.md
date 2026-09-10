@@ -69,21 +69,16 @@ to clone and nothing to install.
 
 Requires **macOS**. Other platforms have not been run.
 
-### The first launch, and what macOS says about it
+### The first launch
 
 Bristol Tickets is not signed with an Apple developer certificate, so the first
-time you open it macOS says:
+launch is four steps rather than one:
 
-> **"BristolTickets" Not Opened.** Apple could not verify "BristolTickets" is
-> free of malware that may harm your Mac or compromise your privacy.
-
-That is macOS reporting that nobody has paid Apple to vouch for this app — not
-that anything was found in it. To open it anyway:
-
-1. Click **Done** on that message.
+1. Double-click the app, and click **Done** on the message that appears.
 2. Open **System Settings → Privacy & Security** and scroll to the Security
-   section. It says *"BristolTickets" was blocked to protect your Mac.*
+   section, where Bristol Tickets is named.
 3. Click **Open Anyway**, and confirm with your password or Touch ID.
+4. Open the app again.
 
 You do this once. Every launch after it is an ordinary double-click.
 
@@ -187,9 +182,9 @@ pip install -r requirements.txt
 python3 src/tools/bristol/app.py
 ```
 
-That is PySide6, and it covers the board and the agents. On a Homebrew-managed
-Python, `pip` may refuse a system-wide install; either add
-`--break-system-packages`, or make a virtual environment first:
+That is PySide6, and it covers the board and the agents. Where `pip` refuses a
+system-wide install, either add `--break-system-packages`, or make a virtual
+environment first:
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate

@@ -571,9 +571,8 @@ def render(f, slug, previous_slug=None, source_note=None):
         "",
         "---",
         "",
-        # // A wiki-link resolves only against a note the reader's own notebook
-        # // holds, so the only ones written here are to notes this package
-        # // writes itself.
+        # The only wiki-links written here are to notes this package writes
+        # itself.
         f"*Generated automatically by Bristol Tickets' Clear Done, from the "
         f"board it swept. "
         f"Source: `{source_note or 'src/tools/bristol/reports/'}`.*",

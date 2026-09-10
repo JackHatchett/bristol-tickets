@@ -205,7 +205,8 @@
   })();
 </script>
 <script>
-  // Progress flag persists locally when opened from disk; degrades silently if blocked.
+  // The progress flag is per-browser, and every read and write of it is
+  // guarded so the page works without one.
   (function(){
     var key="studied:{{COURSE_NAME}}:{{LESSON_NUMBER}}";
     var box=document.getElementById("studied-box");

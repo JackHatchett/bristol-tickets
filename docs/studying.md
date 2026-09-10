@@ -44,8 +44,8 @@ The page does four things the Markdown cannot.
   where you left it, and the mark you ticked last week is still ticked.
 
 Where your place is kept matters: it is a database on your own disk, alongside
-the rest of your records, not storage inside a browser. Clearing your browsing
-data does not clear your course, and the same place comes back in whichever
+the rest of your records, rather than storage inside a browser. Your course is
+no part of your browsing data, and the same place comes back in whichever
 browser you open next.
 
 Press **Stop serving** when you are done, or just close the app — it stops the

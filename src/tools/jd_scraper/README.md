@@ -117,10 +117,10 @@ ahead of any morning briefing, logging into
 
 - **`No module named google.auth` or `playwright`** — the dependency step did
   not complete. Re-run it, and `playwright install chromium` with it.
-- **The OAuth browser window never opens** — the terminal has no display
-  access. Run it from a plain terminal window.
-- **A scrape returns a few hundred characters** — the page is client-rendered
-  and the job is marked `fetch_failed`. Add the host to `skip_hosts` where it
-  fails consistently; it falls to manual paste.
-- **A scheduled run never fires** — macOS withholds Full Disk Access from
-  `/usr/sbin/cron` until it is granted in System Settings.
+- **The OAuth browser window never opens** — run it from a plain terminal
+  window.
+- **A scrape returns a few hundred characters** — the job is marked
+  `fetch_failed`. Add the host to `skip_hosts` where it fails consistently; it
+  falls to manual paste.
+- **A scheduled run never fires** — grant Full Disk Access to `/usr/sbin/cron`
+  in System Settings.

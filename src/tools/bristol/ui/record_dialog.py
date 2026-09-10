@@ -455,9 +455,7 @@ class UnifiedRecordDialog(QDialog):
         self._baseline_signature = self._field_signature()
 
     def showEvent(self, event):  # noqa: N802 (Qt override)
-        """Open tall enough to show the whole ticket, capped at the screen. Qt's
-        default would size the dialog to a squat sizeHint and make you scroll
-        through content that would have fitted."""
+        """Open tall enough to show the whole ticket, capped at the screen."""
         super().showEvent(event)
         body = self._scroll.widget()
         if body is not None:
@@ -583,9 +581,8 @@ class UnifiedRecordDialog(QDialog):
 
     @staticmethod
     def _set_missing(widget, missing: bool) -> None:
-        """Flip the dynamic ``fieldMissing`` property and force a restyle. Qt does
-        not re-evaluate property selectors on its own, so without the
-        unpolish/polish the red border would never appear or never clear."""
+        """Flip the dynamic ``fieldMissing`` property and force a restyle, so
+        the field's border follows the property."""
         if widget.property("fieldMissing") == missing:
             return
         widget.setProperty("fieldMissing", missing)

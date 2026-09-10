@@ -147,8 +147,7 @@ def split_creator(name: str):
 def sql_date(value: str) -> str:
     """Zotero's stored date: '<sqldate> <what the user typed>'.
 
-    An absent month or day is '00', which is how Zotero records a year-only
-    date and how its own reader gets the year back out.
+    An absent month or day is '00'.
     """
     raw = str(value).strip()
     m = re.match(r"^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$", raw)

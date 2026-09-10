@@ -1,6 +1,6 @@
 ---
 name: checking-a-bristol-change
-description: What a change to Bristol Tickets has to pass before its card may close — the smoke targets that run wherever the session is, the route for the two that build Qt widgets, and the change that has to be looked at on the machine the app runs on. Use when a change to Bristol Tickets is being checked.
+description: What a change to Bristol Tickets has to pass before its card may close — the smoke targets that run wherever the session is, the route for the two that build Qt widgets, and the handover that puts a visible change in front of the user. Use when a change to Bristol Tickets is being checked.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3, and for the two Qt targets a shell that has PySide6 or can install it.
 metadata:
@@ -88,18 +88,22 @@ output, from a shell that has Qt.
 
 ## What a visible change additionally needs
 
-- **Check a visible change against Bristol Tickets running on the user's own
-  machine**, with whatever the runtime offers for seeing a window there. Say so
-  and stop where it offers nothing, rather than substituting a render of a
-  different platform.
-- **An offscreen render settles geometry at most.** It draws the wrong control
-  set, fonts and pixel ratio, so a Qt target passing says the widgets build and
-  says nothing about how they look.
+- **Hand a visible change to the user to look at.** Run every check above, put
+  what each run produced on the card, then `update-task-status --id N
+  --assignee user --actor <you>`, with a comment naming what to open, what to
+  do in it, and what would fail the card.
+- **Never open Bristol Tickets to look at it yourself.** The look is the user's,
+  and a session that reaches for the application spends his attention on
+  answering for it instead of on the change.
+- **Name the unchecked criteria one at a time in that comment**, so what is
+  being asked for is a short list rather than the whole card read again.
+- **An offscreen render is not the look.** It draws the wrong control set, fonts
+  and pixel ratio, so a Qt target passing says the widgets build and nothing
+  further; never offer one as what a change looks like.
 - **A change nothing can see — storage, a migration, which card is next — is
-  checked by the smoke targets and no further.**
-- **Change the user's own settings to test one, and put them back.** Proving a
-  choice survives a restart takes a real write to the real configuration, and
-  the session that made the write is the one that reverses it and says so.
+  checked by the smoke targets and no further**, and closes without a handover.
+- **Put back any of the user's own settings a run changed**, in the session that
+  changed them, and say so on the card.
 
 ## Failure modes
 
@@ -112,9 +116,13 @@ output, from a shell that has Qt.
 - **The archive written beside the project, or into a folder of the user's own**
   → the staging location is declared so that no run has to choose one.
 - **An offscreen screenshot offered as the look of a change** → it is the wrong
-  platform's controls, and the user's machine is where the answer is.
+  platform's controls, and the user is the one who says.
+- **A visible change closed without a handover** → the criterion the card names
+  was never checked by anyone.
 
 ## Audit
 
-**Whether the two Qt targets ran against the tree as it stands now**, and
-**whether anything a run created sits outside the declared staging location.**
+**Whether the two Qt targets ran against the tree as it stands now**,
+**whether a card carrying a visible criterion was handed over rather than
+closed**, and **whether anything a run created sits outside the declared
+staging location.**

@@ -98,7 +98,7 @@ FLEET_AGENTS = [
 # Three fixed scales. A module needing a gap, a pad, a corner or a font size
 # names a step instead of writing a number, so re-tuning the app's density is an
 # edit here. Steps are in device-independent pixels, except TYPE, which is in
-# points because Qt sizes fonts that way.
+# points.
 SPACE = {"xs": 2, "sm": 4, "md": 7, "lg": 11, "xl": 16, "2xl": 24}
 RADIUS = {"sm": 4, "md": 7, "lg": 10, "xl": 12, "pill": 999}
 TYPE = {"caption": 8, "body": 10, "title": 11, "section": 12, "display": 14}
@@ -2441,8 +2441,8 @@ def check_schemes() -> list[str]:
 
 
 def is_dark_scheme(app) -> bool:
-    """True when the OS/Qt colour scheme is Dark. Guarded so it degrades to
-    light on Qt builds too old to report a scheme (pre-6.5)."""
+    """True when the OS colour scheme is Dark, and False wherever that cannot
+    be read."""
     try:
         return app.styleHints().colorScheme() == Qt.ColorScheme.Dark
     except Exception:
@@ -2793,8 +2793,7 @@ QLineEdit[fieldMissing="true"]:focus, QTextEdit[fieldMissing="true"]:focus {{
     border: 2px solid {C['MISSING']};
 }}
 QLabel[fieldMissing="true"] {{ color: {C['MISSING']}; font-weight: 600; }}
-/* The id selector outranks the attribute rule above, so a formCaption needs
-   its own missing state or it would stay muted over an empty required field. */
+/* A formCaption carries its own missing state. */
 QLabel#formCaption[fieldMissing="true"] {{ color: {C['MISSING']}; font-weight: 600; }}
 QComboBox QAbstractItemView {{
     background-color: {C['SURFACE']};
@@ -2812,7 +2811,7 @@ QComboBox::drop-down {{
 }}
 {arrow_rule}
 /* The spin box steps with the same chevrons every picker carries, drawn
-   inside the field rather than as the platform's clipped marks. */
+   inside the field. */
 QSpinBox::up-button, QSpinBox::down-button {{
     subcontrol-origin: padding;
     width: {s_2xl}px;
@@ -2923,8 +2922,7 @@ QPushButton#deleteBtn:hover {{ background-color: {C['DELETE_HOVER']}; }}
 # ---------------------------------------------------------------------------
 def _mono_font(point_size: int | None = None):
     """A monospace font so mad-lib templates and their fill-in blanks line up in
-    the Description editor. Menlo on macOS (this app's home), with a
-    Monospace style hint so any platform falls back to its fixed-width face."""
+    the Description editor. Menlo, with a Monospace style hint behind it."""
     from PySide6.QtGui import QFont
     f = QFont("Menlo")
     f.setStyleHint(QFont.Monospace)
@@ -2933,10 +2931,8 @@ def _mono_font(point_size: int | None = None):
 
 
 def _is_checked(state) -> bool:
-    """Robustly test a Qt.CheckStateRole value for 'checked' across PySide6
-    versions: the role may come back as a Qt.CheckState enum or as the raw int
-    2. (PySide6 6.11 stores/returns the enum, which is not int()-convertible via
-    the old ``int(Qt.Checked)`` idiom.)"""
+    """True when a Qt.CheckStateRole value is checked, whether it arrives as a
+    Qt.CheckState enum or as the raw int 2."""
     if state is None:
         return False
     val = getattr(state, "value", state)

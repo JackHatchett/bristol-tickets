@@ -16,10 +16,8 @@ path triggers it. The library is Zotero, so these gates are about
 write, whenever `tools/personal_db/render_snapshot.py --domain books` is about
 to run, and whenever a structural change is being considered.
 
-**Zotero must be quit before any write.** Zotero holds the database open and
-keeps state in memory, so a write behind a live Zotero is silently lost or
-corrupts the file. Every writer calls `require_zotero_closed()` and exits with
-an instruction instead. **Never work around that check, disable it, or make an
+**Zotero must be quit before any write.** Every writer calls
+`require_zotero_closed()` and exits with an instruction instead. **Never work around that check, disable it, or make an
 exception.**
 
 ## What is and is not the library
@@ -133,5 +131,4 @@ on the relevant card via `add-issue-log`.
   or whether write scripts are silently skipping it.
 - **Whether the xlsx and Zotero disagree.** The xlsx is generated and never an
   input, so a hand edit to it is already lost.
-- **Whether items are accumulating in Zotero's Duplicate Items pane**, which is
-  where a title-only match that could not merge ends up.
+- **Whether items are accumulating in Zotero's Duplicate Items pane.**

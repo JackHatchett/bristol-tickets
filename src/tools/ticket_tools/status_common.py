@@ -474,9 +474,9 @@ def open_board() -> tuple[Path, sqlite3.Connection, sqlite3.Cursor]:
     db_path = resolve_db_path()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
-    # This reader writes: migrate() below brings a database one schema behind up
-    # to date, and any write over a file bridge takes the same journal rule every
-    # other writer takes — src/tools/ticket_tools/README.md §Invariants.
+    # This reader writes: migrate() below brings a database one schema behind
+    # up to date, and it takes the same journal rule every other writer takes —
+    # src/tools/ticket_tools/README.md §Invariants.
     conn.execute("PRAGMA busy_timeout=5000")
     conn.execute("PRAGMA journal_mode=MEMORY")
     # A snapshot of a database one schema behind would read blockers that are

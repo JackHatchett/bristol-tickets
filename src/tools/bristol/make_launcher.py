@@ -34,15 +34,14 @@ import sys
 from pathlib import Path
 
 APP_NAME = "BristolTickets"          # bundle directory and executable: no space
-DISPLAY_NAME = "Bristol Tickets"     # what Finder and the Dock show
+DISPLAY_NAME = "Bristol Tickets"     # the display name, which carries a space
 RETIRED_APP_NAMES = ("Bristol",)     # bundles removed when this one is built
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]          # src/tools/bristol -> src/tools -> src -> repo
 
 
 def app_path() -> Path:
-    """Where the launcher bundle lives: the user's own Applications folder, which
-    needs no admin rights."""
+    """Where the launcher bundle lives: the user's own Applications folder."""
     return Path.home() / "Applications" / f"{APP_NAME}.app"
 
 
@@ -142,7 +141,6 @@ def build() -> Path:
     if icon.exists():
         shutil.copyfile(icon, resources / "icon.icns")
 
-    # Nudge Finder/Dock to re-read the bundle it just had replaced under it.
     subprocess.run(["/usr/bin/touch", str(bundle)], check=False)
     return bundle
 

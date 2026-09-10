@@ -338,8 +338,8 @@ class Handler(BaseHTTPRequestHandler):
         m = LESSON_FILE.match(name)
         if m:
             number = int(m.group("number"))
-            # Serving the page is the learner opening it, so the place is kept
-            # by the server rather than by a script the browser might not run.
+            # Serving the page is the learner opening it, so the place is
+            # kept by the server rather than by the page.
             store.record(course, number, "opened")
             html = inject(html, course, number, lessons(self.root, course))
         elif name == "index.html":
