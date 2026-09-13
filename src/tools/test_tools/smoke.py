@@ -74,6 +74,43 @@ def check_bristol() -> list[str]:
     bar.set_task(7)  # _refresh over a file that isn't on disk (placeholder path)
     ok.append("AttachmentBar refresh (missing-file placeholder)")
 
+    # A removal asks first, and a declined question removes nothing. The
+    # question is a modal, so the answer is supplied rather than clicked.
+    import ui.attachments as _attachments
+    from PySide6.QtWidgets import QPushButton as _QPushButton
+
+    def _remove_button(widget):
+        for button in widget.findChildren(_QPushButton):
+            if button.objectName() == "attachRemoveBtn":
+                return button
+        raise SmokeFailure("the attachment row has no remove button")
+
+    _asked: list[str] = []
+    _said = [False]
+    _real_confirm = _attachments.confirm
+
+    def _answer(parent, title, body, *args, **kwargs):
+        _asked.append(f"{title} {body}")
+        return _said[0]
+
+    _attachments.confirm = _answer
+    try:
+        _remove_button(bar).click()
+        if not _asked:
+            raise SmokeFailure("removing an attachment asked nothing")
+        if "missing.png" not in _asked[-1]:
+            raise SmokeFailure(
+                f"the question does not name the attachment: {_asked[-1]!r}")
+        if not conn.execute("SELECT COUNT(*) FROM attachment").fetchone()[0]:
+            raise SmokeFailure("a declined question removed the attachment")
+        _said[0] = True
+        _remove_button(bar).click()
+        if conn.execute("SELECT COUNT(*) FROM attachment").fetchone()[0]:
+            raise SmokeFailure("an accepted question left the attachment")
+    finally:
+        _attachments.confirm = _real_confirm
+    ok.append("an attachment's ✕ asks by name, and removes only on an accept")
+
     ImagePreviewDialog(Path("/does/not/exist.png"), "missing.png")
     tmp = Path(tempfile.gettempdir()) / "smoke_real.png"
     pm = QPixmap(320, 200)
@@ -1874,7 +1911,7 @@ def check_bristol() -> list[str]:
 
             import config_file as _config
 
-            from ui.agents_tab import AgentDialog, _grant_option
+            from ui.agents_tab import AgentDialog, _grant_option, folder_grant
             from ui.theme import LAYOUT as _LAYOUT
 
             if "Agents" not in names:
@@ -2056,9 +2093,100 @@ def check_bristol() -> list[str]:
                             f"{agent['slug']}: the last field ends {below}px "
                             f"down but only {reach}px can be reached at "
                             f"{width}x{height}")
+                # A path row is a widget inside a list item, and an item takes
+                # the height its hint asks for rather than growing to what it
+                # holds, so a row whose hint was read before the stylesheet
+                # reached it clips the path, the access and the remove button.
+                sized.resize(1280, 980)
+                app.processEvents()
+                for caption, paths in (("Folders", sized.data_paths),
+                                       ("Context Files", sized.context_files)):
+                    for index in range(paths.list.count()):
+                        item = paths.list.item(index)
+                        holder = paths.list.itemWidget(item)
+                        wanted = holder.minimumSizeHint().height()
+                        if item.sizeHint().height() < wanted:
+                            raise SmokeFailure(
+                                f"{agent['slug']}: a {caption} row is "
+                                f"{item.sizeHint().height()}px for {wanted}px "
+                                f"of content")
+                        line = holder.layout()
+                        for slot in range(line.count()):
+                            child = line.itemAt(slot).widget()
+                            if child is None:
+                                continue
+                            short = child.minimumSizeHint().height()
+                            if child.height() + 1 < short:
+                                raise SmokeFailure(
+                                    f"{agent['slug']}: a {caption} row's "
+                                    f"{type(child).__name__} is "
+                                    f"{child.height()}px for {short}px")
                 sized.hide()
             ok.append("every field on the agent form is tall enough for what it "
-                      "holds, and the form scrolls rather than squeezing")
+                      "holds, a path row for the path and the access it holds, "
+                      "and the form scrolls rather than squeezing")
+
+            # Every ✕ on the form asks before it drops a row, and the question
+            # names what would go. The question is a modal, so the answer is
+            # supplied rather than clicked.
+            import ui.agents_tab as _agents_tab
+            from PySide6.QtWidgets import QPushButton as _Button
+
+            stocked = next((a for a in agents_page._agents
+                            if a.get("key_data_paths") and a.get("env")), None)
+            if stocked is None:
+                raise SmokeFailure(
+                    "no configured agent holds both a folder and a variable")
+            guarded = AgentDialog(None, stocked, agents_page._run, set(listed),
+                                  agents_page._skills)
+            asked: list[str] = []
+            said = [False]
+            real_confirm = _agents_tab.confirm
+
+            def answered(parent, title, body, *args, **kwargs):
+                asked.append(f"{title} {body}")
+                return said[0]
+
+            def cross(widget):
+                for button in widget.findChildren(_Button):
+                    if button.text() == "✕":
+                        return button
+                raise SmokeFailure("a row on the agent form has no ✕")
+
+            _agents_tab.confirm = answered
+            try:
+                for caption, named, button, count in (
+                        ("Folders",
+                         folder_grant(guarded.data_paths.values()[0])["path"],
+                         cross(guarded.data_paths.list.itemWidget(
+                             guarded.data_paths.list.item(0))),
+                         lambda: len(guarded.data_paths.values())),
+                        ("Environment Variables",
+                         guarded.env._rows[0][1].text().strip(),
+                         cross(guarded.env._rows[0][0]),
+                         lambda: len(guarded.env.values()))):
+                    said[0] = False
+                    before = count()
+                    button.click()
+                    if not asked:
+                        raise SmokeFailure(
+                            f"{caption}: the ✕ asked nothing")
+                    if named not in asked[-1]:
+                        raise SmokeFailure(
+                            f"{caption}: the question does not name {named}: "
+                            f"{asked[-1]!r}")
+                    if count() != before:
+                        raise SmokeFailure(
+                            f"{caption}: a declined question dropped the row")
+                    said[0] = True
+                    button.click()
+                    if count() != before - 1:
+                        raise SmokeFailure(
+                            f"{caption}: an accepted question left the row")
+            finally:
+                _agents_tab.confirm = real_confirm
+            ok.append("every ✕ on the agent form asks by name, and drops a row "
+                      "only on an accept")
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok

@@ -327,7 +327,8 @@ class AttachmentBar(QWidget):
             x.setObjectName("attachRemoveBtn")
             x.setFixedWidth(space("2xl"))
             x.setToolTip("Remove attachment (moves the file to images/_trash)")
-            x.clicked.connect(lambda _=False, a=att_id: self._remove(a))
+            x.clicked.connect(
+                lambda _=False, a=att_id, d=display: self._confirm_remove(a, d))
             rl.addWidget(x)
             col.addWidget(row)
 
@@ -337,6 +338,13 @@ class AttachmentBar(QWidget):
         dlg = ImagePreviewDialog(path, display, self)
         dlg.exec()
         if dlg.deleted():
+            self._remove(attachment_id)
+
+    def _confirm_remove(self, attachment_id: int, display: str) -> None:
+        if confirm(self, "Remove this attachment?",
+                   f"{display} is dropped from this card and the file moves "
+                   f"to images/_trash, where it can be recovered.",
+                   "Remove", destructive=True):
             self._remove(attachment_id)
 
     def _remove(self, attachment_id: int) -> None:

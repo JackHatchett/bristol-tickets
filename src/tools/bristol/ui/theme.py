@@ -125,7 +125,8 @@ LAYOUT = {
     "agent_fields_min_w": 480,   # its left column, the entry's own fields
     "charter_min_w": 520,        # its right column, the charter document
     "skill_list_min_h": 170,     # its tick list of skills
-    "path_list_min_h": 92,       # a list of declared paths, with its picker
+    "path_list_min_h": 132,      # a list of declared paths, with its picker
+    "path_row_min_h": 40,        # one row in it: a path, its access, its ✕
     "env_name_w": 210,           # an environment variable's name box
     "env_choose_w": 34,          # the pick and remove buttons beside its value
     "extra_min_h": 90,           # its JSON field for keys this build predates
