@@ -117,7 +117,8 @@ Before wrapping up a session that changed state, leave the board true.
 
 - **Never derive a next action, an ordering, or an in-progress fact from
   anything but the board** — not a folder listing, a JSON status field, "the
-  latest file by name," or this chat.
+  latest file by name," or this chat. Reading whether a document answers its own
+  questions is reading content, never deriving status.
 - **Agents task each other with tickets only.** Never a file, a folder drop, a
   note left to be found, or a request relayed through the user.
 - **Never make the user the transport** — nothing may be designed so the user
