@@ -32,6 +32,10 @@ The third case is why `data/<instance>/career` in config resolves correctly
 whatever the user named the folder they cloned into: the root is found by
 walking up to the `src/app.md` marker, never by folder name.
 
+The notebook's own container is relocated the same way as the first case, so a
+path declared from the notebook's folder name down and the absolute path config
+stores for that same folder resolve to one place on every host.
+
 The first case has a second step, for the same reason. A host may reach the
 user's folders somewhere other than where config names them — a sandbox with the
 chosen folders mounted into it reaches every one of them under a mount root, and
@@ -124,11 +128,21 @@ def instance_slug() -> str:
 
 
 def notebook_root() -> Path | None:
-    """The Markdown notebook's own folder, or None when config declares none."""
+    """The Markdown notebook's own folder, or None when config declares none.
+
+    Relocated the same way an absolute declared path is, so the two spellings
+    of one folder — `obsidian_notes/x` and the absolute path config stores —
+    resolve to the same place on a host that reaches the user's folders
+    somewhere other than where config names them.
+    """
     declared = read_config.get("markdown_notebook.notes_dir", None)
     if not isinstance(declared, str) or not declared.strip():
         return None
-    return Path(os.path.expanduser(declared.strip()))
+    expanded = Path(os.path.expanduser(declared.strip()))
+    if expanded.exists():
+        return expanded
+    relocated = beside_the_project(expanded)
+    return relocated if relocated is not None else expanded
 
 
 def beside_the_project(expanded: Path) -> Path | None:
@@ -172,8 +186,8 @@ def resolve(declared: str | Path) -> Path:
     notebook = notebook_root()
     if notebook is not None:
         head, _, tail = text.partition("/")
-        if head == notebook.name and tail:
-            return notebook / tail
+        if head == notebook.name:
+            return notebook / tail if tail else notebook
     return project_root() / text
 
 
