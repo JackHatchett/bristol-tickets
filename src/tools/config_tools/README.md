@@ -60,8 +60,15 @@ Resolves declared locations and creates them at the moment of a write.
   notebook's folder name down, and anywhere else it stays absolute. Whatever
   writes a picked path into config calls this, so the two directions cannot
   drift apart.
-- `agent_data_paths(slug)` / `ensure_agent_data_paths(slug)` — the
-  `agents.<slug>.key_data_paths` an agent declares in config.
+- `agent_folder_grants(slug)` — the folder grants an agent declares in
+  `agents.<slug>.key_data_paths`, each a declared folder and the access it
+  carries. `folder_grant(entry)` normalizes one: an entry written before access
+  was recorded is a bare string and reads as `write`, and so does one naming an
+  access this build does not know, so a value from a later build never silently
+  revokes a grant. What an agent may then do with a grant is
+  `src/templates/identity_template.md` §Data locations.
+- `agent_data_paths(slug[, access])` / `ensure_agent_data_paths(slug[, access])`
+  — those grants resolved, or only the ones carrying one access.
 
 ## A missing data location is created, never an error
 

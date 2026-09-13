@@ -44,6 +44,7 @@ host it is: the project's own parent answers, whichever host that is.
 CLI
 ---
     python3 data_paths.py --agent career_coach
+    python3 data_paths.py --agent career_coach --access write
     python3 data_paths.py --agent career_coach --ensure
     python3 data_paths.py --key important_paths.personal_db
     python3 data_paths.py --path data/<instance>/system/logs --ensure
@@ -231,20 +232,55 @@ def read_dir(declared: str | Path, pattern: str = "*") -> list[Path]:
     return sorted(path.glob(pattern))
 
 
-def agent_data_paths(slug: str) -> list[Path]:
-    """The resolved `key_data_paths` an agent declares in config."""
-    declared = read_config.get(f"agents.{slug}.key_data_paths", [])
-    if not isinstance(declared, list):
+ACCESS = ("read", "write")
+DEFAULT_ACCESS = "write"
+
+
+def folder_grant(entry) -> dict | None:
+    """One entry of `key_data_paths`, as a declared folder and its access.
+
+    An entry written before access was recorded is a bare string, and it reads
+    as `write`: the key held the folders an agent owned, and owning one is
+    writing in it. An entry naming an access this build does not know reads the
+    same way, so a value from a later build never silently revokes a grant.
+    """
+    if isinstance(entry, str):
+        declared, access = entry, DEFAULT_ACCESS
+    elif isinstance(entry, dict):
+        declared = entry.get("path")
+        access = entry.get("access", DEFAULT_ACCESS)
+    else:
+        return None
+    if not isinstance(declared, str) or not declared.strip():
+        return None
+    if access not in ACCESS:
+        access = DEFAULT_ACCESS
+    return {"path": declared.strip(), "access": access}
+
+
+def folder_grants(entries) -> list[dict]:
+    """Every readable entry of a `key_data_paths` list, normalized."""
+    if not isinstance(entries, list):
         return []
-    return [resolve(p) for p in declared if isinstance(p, str) and p.strip()]
+    grants = [folder_grant(entry) for entry in entries]
+    return [grant for grant in grants if grant is not None]
 
 
-def ensure_agent_data_paths(slug: str) -> list[Path]:
+def agent_folder_grants(slug: str) -> list[dict]:
+    """The folder grants an agent declares in config."""
+    return folder_grants(read_config.get(f"agents.{slug}.key_data_paths", []))
+
+
+def agent_data_paths(slug: str, access: str | None = None) -> list[Path]:
+    """The resolved folders an agent declares, or only the ones it may `access`."""
+    return [resolve(grant["path"]) for grant in agent_folder_grants(slug)
+            if access is None or grant["access"] == access]
+
+
+def ensure_agent_data_paths(slug: str, access: str | None = None) -> list[Path]:
     """Create every directory an agent declares, and return them."""
-    declared = read_config.get(f"agents.{slug}.key_data_paths", [])
-    if not isinstance(declared, list):
-        return []
-    return [ensure_dir(p) for p in declared if isinstance(p, str) and p.strip()]
+    return [ensure_dir(grant["path"]) for grant in agent_folder_grants(slug)
+            if access is None or grant["access"] == access]
 
 
 def ensure_db(path: str | Path, schema: str | Path) -> Path:
@@ -298,7 +334,13 @@ def _main(argv: list[str]) -> int:
 
     slug = flag("--agent")
     if slug:
-        paths = ensure_agent_data_paths(slug) if ensure else agent_data_paths(slug)
+        access = flag("--access")
+        if access is not None and access not in ACCESS:
+            sys.stderr.write(f"data_paths: --access is read or write, not "
+                             f"'{access}'\n")
+            return 1
+        paths = (ensure_agent_data_paths(slug, access) if ensure
+                 else agent_data_paths(slug, access))
         for p in paths:
             print(p)
         return 0

@@ -64,5 +64,5 @@ anything here.**
 ## Where the output goes
 
 Prose, notes and beat sheets go to `markdown_notebook.agent_output_dir` for the
-user to fold in. **Every directory the user authors in is read-only to this
-agent** (`writers_room.md` §Write Authority).
+user to fold in. **A directory the user authors in takes a proposal rather
+than a write** (`writers_room.md` §Write Authority).

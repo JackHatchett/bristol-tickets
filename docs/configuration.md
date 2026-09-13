@@ -144,7 +144,7 @@ The scale itself does not vary per installation.
 | `identity` | Required. Repository-relative path to the charter. Read at every session start. |
 | `description` | The one line the setup wizard's agent list and `docs/agents.md` show. |
 | `key_context_files` | Files this agent reads on sight. Declarative. |
-| `key_data_paths` | The data folders this agent owns. The setup wizard creates these. |
+| `key_data_paths` | The folders this agent reaches, one **folder grant** each: `{ "path": "…", "access": "read" | "write" }`. The setup wizard creates them. Add and remove one in Bristol Tickets' Agents tab rather than by hand. |
 | `env` | Environment variables this agent's tools expect. |
 | `notebook_access` | `{ "read": bool, "write_zones": [ … ], "archive_moves": bool }` — which zones of your notebook this agent reaches. The zone names are `workspace` and `inbox`; an empty list is an agent that reads your notebook and never writes in it. |
 | `skills` | The skills attached to this agent, by name, in the order a session matches them. A skill named by no agent is available to every agent. Set it with `skills.py attach` and `detach` rather than by hand. |
@@ -173,6 +173,11 @@ them and nothing else; every other top-level folder is yours to author, and a
 fact whose home is one of them reaches you as a summary in `agent_output_dir`.
 Which zones a given agent reaches is its `notebook_access`.
 
+A zone is the default, not the last word. A folder grant in an agent's
+`key_data_paths` that names a folder in here decides that folder — so one agent
+can be given write access to your recipes without any other agent gaining it,
+and without the zone model changing.
+
 | Key | Meaning |
 | --- | --- |
 | `notes_dir` | The notebook root. |
@@ -181,7 +186,7 @@ Which zones a given agent reaches is its `notebook_access`.
 | `assistant_prompts_dir` | The notebook assistant's custom-prompt notes. Inside `workspace_dir`, and it must match the assistant's own prompts-folder setting. |
 | `archive_dir` | Where an agent may move a file from a writable zone. |
 | `courses_dir` | Where `teaching_assistant` writes courses. |
-| `recipes_dir` | Where `librarian` keeps recipes. Read-only, like everything you author. |
+| `recipes_dir` | Where `librarian` keeps recipes. Yours to author, so no agent writes here without a folder grant that says so. |
 | `agent_output_dir` | Where agents drop drafts for you to review. |
 | `reports_dir` | Where Clear Done writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
 | `plans_dir` | Where a planning document goes. |

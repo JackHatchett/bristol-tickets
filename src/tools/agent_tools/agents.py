@@ -26,6 +26,10 @@ CLI
     python3 agents.py skeleton <slug>
     python3 agents.py edit <slug> [options]
 
+A folder an agent reaches carries the access it is granted — `--data-path` for
+one it may write in, `--read-path` for one it may only read — and the two
+options fill one list in the order they are given.
+
 `edit` writes only the options given. A repeatable option that is given at all
 replaces that whole list; its `--no-…` partner empties one.
 """
@@ -81,7 +85,8 @@ def read_agent(slug: str) -> dict:
         "charter": charter,
         "charter_error": charter_error,
         "description": entry.get("description", ""),
-        "key_data_paths": list(entry.get("key_data_paths") or []),
+        "key_data_paths": data_paths.folder_grants(
+            entry.get("key_data_paths") or []),
         "key_context_files": list(entry.get("key_context_files") or []),
         "notebook_access": dict(notebook) if isinstance(notebook, dict) else {},
         "skills": list(entry.get("skills") or []),
@@ -164,6 +169,9 @@ def edit(slug: str, changes: dict) -> dict:
             was.unlink()
         entry["identity"] = declared
 
+    if "key_data_paths" in changes:
+        changes["key_data_paths"] = data_paths.folder_grants(
+            changes["key_data_paths"])
     for key in ("description", "key_data_paths", "key_context_files",
                 "notebook_access", "env"):
         if key in changes:
@@ -192,8 +200,8 @@ def _render(agent: dict) -> str:
              f"  {agent['description']}",
              f"  charter    {agent['identity']} "
              f"({len(agent['charter'].splitlines())} lines)"]
-    for declared in agent["key_data_paths"]:
-        lines.append(f"  data       {declared}")
+    for grant in agent["key_data_paths"]:
+        lines.append(f"  data       {grant['path']}  ({grant['access']})")
     for declared in agent["key_context_files"]:
         lines.append(f"  context    {declared}")
     lines.append(f"  notebook   read={bool(notebook.get('read'))} "
@@ -220,6 +228,21 @@ def _pairs(given: list[str]) -> dict:
     return out
 
 
+class _Grant(argparse.Action):
+    """Collect `--data-path` and `--read-path` into one list, in the order given.
+
+    A grant carries its access, so the two options fill one list rather than
+    two: the order the user put the folders in is the order they stay in, and a
+    list rebuilt from two options would not keep it.
+    """
+
+    def __call__(self, parser, namespace, value, option_string=None) -> None:
+        access = "read" if option_string == "--read-path" else "write"
+        grants = list(getattr(namespace, "grants", None) or [])
+        grants.append({"path": value, "access": access})
+        namespace.grants = grants
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     subs = parser.add_subparsers(dest="command", required=True)
@@ -240,8 +263,12 @@ def main(argv: list[str]) -> int:
     editing.add_argument("--description")
     editing.add_argument("--charter-file",
                          help="a file holding the whole charter document")
-    editing.add_argument("--data-path", action="append")
+    editing.add_argument("--data-path", action=_Grant, metavar="PATH",
+                         help="a folder this agent may write in")
+    editing.add_argument("--read-path", action=_Grant, metavar="PATH",
+                         help="a folder this agent may read and not write")
     editing.add_argument("--no-data-paths", action="store_true")
+    editing.set_defaults(grants=None)
     editing.add_argument("--context-file", action="append")
     editing.add_argument("--no-context-files", action="store_true")
     editing.add_argument("--notebook-read", choices=("yes", "no"))
@@ -290,8 +317,8 @@ def main(argv: list[str]) -> int:
         if args.charter_file is not None:
             changes["charter"] = Path(args.charter_file).read_text(
                 encoding="utf-8")
-        if args.data_path:
-            changes["key_data_paths"] = args.data_path
+        if args.grants:
+            changes["key_data_paths"] = args.grants
         elif args.no_data_paths:
             changes["key_data_paths"] = []
         if args.context_file:

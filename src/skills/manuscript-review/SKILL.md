@@ -55,5 +55,5 @@ Four reads. The user's request names one.
 ## Where the output goes
 
 Comments and flags go to the user, and a full write-up to
-`markdown_notebook.agent_output_dir`. **Every directory the user authors in is
-read-only to this agent** (`writers_room.md` §Write Authority).
+`markdown_notebook.agent_output_dir`. **A directory the user authors in takes a
+proposal rather than a write** (`writers_room.md` §Write Authority).

@@ -1874,7 +1874,7 @@ def check_bristol() -> list[str]:
 
             import config_file as _config
 
-            from ui.agents_tab import AgentDialog
+            from ui.agents_tab import AgentDialog, _grant_option
             from ui.theme import LAYOUT as _LAYOUT
 
             if "Agents" not in names:
@@ -1968,6 +1968,12 @@ def check_bristol() -> list[str]:
                     "the Other Keys section shows for an agent with no such keys"
                     if not record["extra"] else
                     "an agent with an unknown key gets no field for it")
+            if (_grant_option({"path": "x", "access": "read"}) != "--read-path"
+                    or _grant_option({"path": "x", "access": "write"})
+                    != "--data-path"):
+                raise SmokeFailure(
+                    "the form does not hand each access to the option that "
+                    "grants it")
             ok.append("opening an agent holds its charter, every key of its "
                       "entry and its skills, all of them editable")
 
@@ -2573,6 +2579,7 @@ def check_agent_tools() -> list[str]:
             "--description", "A scratch agent, renamed.",
             "--charter-file", str(written),
             "--data-path", "data/scratch",
+            "--read-path", "data/reference",
             "--notebook-read", "yes", "--write-zone", "workspace",
             "--archive-moves", "yes",
             "--env", "SMOKE_HOME=/elsewhere", cwd=scratch)
@@ -2595,6 +2602,38 @@ def check_agent_tools() -> list[str]:
             raise SmokeFailure("an unknown key was dropped by an edit")
         ok.append("one edit reaches the charter and every key of the entry, "
                   "and carries an unknown key through untouched")
+
+        # A folder an agent reaches carries the access granted in it, the two
+        # options fill one list in the order given, and an entry written before
+        # access was recorded still reads as the write it was.
+        granted = [{"path": "data/scratch", "access": "write"},
+                   {"path": "data/reference", "access": "read"}]
+        if after["key_data_paths"] != granted:
+            raise SmokeFailure(
+                f"the folder grants are not what was granted: "
+                f"{after['key_data_paths']}")
+        planted = json.loads(config_file_path.read_text())
+        planted["agents"][slug]["key_data_paths"] = ["data/from_an_older_build"]
+        config_file_path.write_text(json.dumps(planted, indent=2))
+        code, out, _ = run("agents.py", "read", slug, "--json", cwd=scratch)
+        if json.loads(out)["key_data_paths"] != [
+                {"path": "data/from_an_older_build", "access": "write"}]:
+            raise SmokeFailure("a bare folder path did not read as a write grant")
+        code, out, err = run("agents.py", "edit", slug, "--no-data-paths",
+                             cwd=scratch)
+        if code != 0:
+            raise SmokeFailure(f"emptying the grants failed: {(err or out).strip()}")
+        code, out, _ = run("agents.py", "read", slug, "--json", cwd=scratch)
+        if json.loads(out)["key_data_paths"]:
+            raise SmokeFailure("--no-data-paths left a grant behind")
+        code, out, err = run(
+            "agents.py", "edit", slug,
+            "--data-path", "data/scratch",
+            "--read-path", "data/reference", cwd=scratch)
+        if code != 0:
+            raise SmokeFailure(f"regranting failed: {(err or out).strip()}")
+        ok.append("a folder grant carries its access, a bare path reads as a "
+                  "write, and the list can be emptied and granted again")
 
         moved = "src/agent_identities/moved_smoke_agent.md"
         code, out, err = run("agents.py", "edit", slug, "--identity", moved,

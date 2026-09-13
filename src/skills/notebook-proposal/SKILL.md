@@ -30,14 +30,8 @@ its own `agents.<slug>.notebook_access`.
 
 ## What a note an agent writes looks like
 
-- **Name the file in snake case** — lowercase, words joined by underscores, no
-  spaces, and the same for a folder holding a set of them.
-- **Tag it `ai/answer`.** That is the notebook's tag for a note an agent wrote
-  in answer to something the user asked, and it is the only tag an agent applies
-  on its own.
-- **Tag a note that tells the user what to do the same way.** `ai/advice` is the
-  notebook's tag for pulling those out for closer reading, and putting it into
-  use is the user's.
+`src/skills/note-formatting/SKILL.md` — the filename, the frontmatter, the
+headings and their spacing, the wikilinks, and the section that closes a note.
 
 ## Procedure
 
