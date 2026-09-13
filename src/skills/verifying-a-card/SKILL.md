@@ -55,9 +55,21 @@ at that means it failed.
 
 ## When it cannot run here
 
+- **Ask the user to clear a blocker only he can clear, and wait.** An
+  application holding a file open, a credential nobody has supplied, a service
+  not granted: each is one sentence to him and a card that stays open, never a
+  reason to run something else. Ask in chat where he is present, or move the
+  card to him — `update-task-status --id N --assignee user` with a comment
+  naming exactly what to clear and what runs the moment it is clear — where he
+  is not.
+- **Never substitute a copy of what the check names.** A snapshot, a scratch
+  database, a duplicate folder: running against one proves the code and not the
+  change, so it is preparation for the verification rather than the
+  verification. Where a copy is what a session had, the comment says the check
+  has not run.
 - **Say where it runs, and stop.** A host without the library, a display the
-  session has not got, a service nobody granted: each is a real answer, and the
-  card stays open carrying it.
+  session has not got: each is a real answer, and the card stays open carrying
+  it.
 - **Never claim a pass from reading the code.** Reading says the code should
   work; a verification says it did. Where only the first happened, the comment
   says so in those words.
@@ -84,6 +96,8 @@ at that means it failed.
   happened, and it could not have failed.
 - **A pass claimed for a run that did not happen** → the one failure this skill
   exists to prevent, and the one nothing downstream can catch.
+- **A closing comment offering the real run as a next step** → the real run was
+  the check, and offering it is closing the card without it.
 
 ## Audit
 

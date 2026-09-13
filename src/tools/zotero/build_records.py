@@ -1,48 +1,39 @@
 #!/usr/bin/env python3
 """
-build_game_records.py — turn reviewed game payloads into Zotero Software items.
+build_records.py — turn a reviewed payload into Zotero items of any mapped type.
 
-A game has no ISBN, so Zotero's Add Item by Identifier cannot reach one and the
-record has to be assembled from published sources by hand. This script is the
-last step of that: it takes a payload the user has already read and writes each
-entry as a `computerProgram` item in a named collection.
+A book has an ISBN, so Zotero's Add Item by Identifier reaches it. Nothing else
+in the library does: a game, a film, an album, a piece of software or an article
+is assembled from published sources by hand. This script is the last step of
+that, for every one of them: it takes a payload the user has already read and
+writes each entry as an item of the type the payload names.
 
-Re-running is safe. An entry whose title already exists as a Software item is
-reused and only added to the collection; nothing is overwritten, so a payload
-can be corrected and replayed.
+Which types exist, and which payload key becomes which Zotero field, is
+`item_types.json` beside this file. Adding a type is an edit to that file and
+none to this one.
 
-FIELD MAP — payload key : Zotero field, and why where a choice was made.
+Re-running is safe. An entry whose title already exists as an item of the same
+type is reused and only added to the collection; nothing is overwritten, so a
+payload can be corrected and replayed.
 
-    title              title
-    short_title        shortTitle
-    series             seriesTitle          the franchise, not the publisher's
-    version            versionNumber        Zotero labels this field "Version"
-    date               date                 YYYY, YYYY-MM or YYYY-MM-DD
-    system             system               the platform this record is about
-    publisher          company              company is Zotero's publisher field
-    place              place                where the publisher published
-    abstract           abstractNote
-    url                url                  the source page the record came from
-    accessed           accessDate           when that page was read
-    catalog            libraryCatalog       which database supplied the record
-    archive            archive              where a playable copy is preserved
-    archive_location   archiveLocation      its identifier inside that archive
-    call_number        callNumber
-    rights             rights
-    developer          creator, programmer  a studio, stored single-field
-    contributors[]     creator, contributor
-    extra{}            extra                one "Key: value" line each
-    tags[]             item tags, manual
+A payload:
 
-`programmingLanguage` is deliberately unmapped: on a Software item it means the
-language a program was written in, not the language it is played in. A natural
-language belongs in `extra` as `Language: en`, which is the line Zotero reads as
-the citation language.
+    {"type": "film", "collection_key": "films", "items": [ ... ]}
+
+`type` names a key of the map. A payload naming none is the type whose
+`payload_key` it carries — which is what keeps a game payload written before
+this file existed running unchanged.
+
+Four keys are the same on every type and are not in the map: `date` and
+`accessed`, which carry Zotero's own date formats; `extra`, one "Key: value"
+line each; and `tags`. A key starting with `_` is a note to a human reader and
+is ignored.
 
 Usage:
-    python3 build_game_records.py <payload.json> [more.json ...]
-    python3 build_game_records.py --all
-    python3 build_game_records.py --dry-run <payload.json>
+    python3 build_records.py <payload.json> [more.json ...]
+    python3 build_records.py --all
+    python3 build_records.py --dry-run <payload.json>
+    python3 build_records.py --types
 """
 
 import argparse
@@ -50,7 +41,6 @@ import json
 import re
 import sys
 import unicodedata
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -59,55 +49,50 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
 import data_paths as dp  # noqa: E402  (the shared declared-path resolver)
 import zotero_common as zc  # noqa: E402
 
-ITEM_TYPE = "computerProgram"
-DEFAULT_COLLECTION = "Point and Click Games"
+TYPE_MAP_PATH = Path(__file__).resolve().parent / "item_types.json"
 
-TEXT_FIELDS = {
-    "title": "title",
-    "short_title": "shortTitle",
-    "series": "seriesTitle",
-    "version": "versionNumber",
-    "system": "system",
-    "publisher": "company",
-    "place": "place",
-    "abstract": "abstractNote",
-    "url": "url",
-    "catalog": "libraryCatalog",
-    "archive": "archive",
-    "archive_location": "archiveLocation",
-    "call_number": "callNumber",
-    "rights": "rights",
-}
+# Keys every type carries, handled here rather than in the map.
+UNIVERSAL_KEYS = {"date", "accessed", "extra", "tags"}
+
+
+def type_map() -> dict:
+    with TYPE_MAP_PATH.open() as fh:
+        return json.load(fh)
 
 
 def payload_dir() -> Path:
-    """The git-ignored directory holding game payloads, beside the book ones."""
+    """The git-ignored directory holding payloads, beside the book ones."""
     root = zc._project_root()
-    matches = sorted(root.glob("data/*/personal/game_records"))
+    matches = sorted(root.glob("data/*/personal/library_records"))
     if matches:
         return matches[0]
     matches = sorted(root.glob("data/*/personal"))
     if matches:
-        return matches[0] / "game_records"
-    return root / "data" / dp.instance_slug() / "personal" / "game_records"
+        return matches[0] / "library_records"
+    return root / "data" / dp.instance_slug() / "personal" / "library_records"
 
 
-DEFAULT_KEY = "point_and_click"
-
-
-def collection_name(payload) -> str:
+def collection_name(payload, spec) -> str:
     """The collection this payload writes into.
 
     A payload names a configuration key rather than a literal name, so a
     collection can be renamed in one place. A literal `collection` still wins
-    where one is given, and a payload naming neither takes the point-and-click
-    key.
+    where one is given, and a payload naming neither takes the type's own
+    default key where it declares one.
     """
     collections = zc._config().get("zotero", {}).get("collections", {})
     literal = str(payload.get("collection", "")).strip()
     if literal:
         return literal
-    key = str(payload.get("collection_key", "")).strip() or DEFAULT_KEY
+    key = (
+        str(payload.get("collection_key", "")).strip()
+        or spec.get("default_collection_key", "")
+    )
+    if not key:
+        sys.exit(
+            "The payload names no collection. Give it a collection_key from "
+            "zotero.collections."
+        )
     name = collections.get(key)
     if not name:
         sys.exit(
@@ -174,13 +159,22 @@ def extra_block(extra) -> str:
     return "\n".join(f"{k}: {v}" for k, v in extra.items() if str(v).strip())
 
 
+def names(value):
+    """A creator slot's names: a string is one, a list is several."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value] if value.strip() else []
+    return [str(v) for v in value if str(v).strip()]
+
+
 # ------------------------------------------------------------------- indexing
 
 
-def load_software_index(conn):
-    """Normalised title -> itemID, over Software items that are not deleted."""
+def load_title_index(conn, zotero_type):
+    """Normalised title -> itemID, over items of one type that are not deleted."""
     title_fid = zc.field_id(conn, "title")
-    type_id = zc.item_type_id(conn, ITEM_TYPE)
+    type_id = zc.item_type_id(conn, zotero_type)
     index = {}
     for r in conn.execute(
         """
@@ -235,7 +229,7 @@ def set_field(conn, item_id, field, value):
     )
 
 
-def create_game(conn, entry, keys):
+def create_item(conn, entry, spec, keys):
     now = zc.now_utc()
     cur = conn.execute(
         """
@@ -245,42 +239,40 @@ def create_game(conn, entry, keys):
         VALUES (?, ?, ?, ?, ?, ?, 0, 0)
         """,
         (
-            zc.item_type_id(conn, ITEM_TYPE),
+            zc.item_type_id(conn, spec["zotero_type"]),
             now, now, now, zc.USER_LIBRARY_ID, zc.new_key(conn, keys),
         ),
     )
     item_id = cur.lastrowid
 
-    for key, field in TEXT_FIELDS.items():
+    for key, field in spec["text_fields"].items():
         set_field(conn, item_id, field, entry.get(key))
-    if entry.get("date"):
-        set_field(conn, item_id, "date", sql_date(entry["date"]))
-    if entry.get("accessed"):
-        set_field(conn, item_id, "accessDate", sql_accessed(entry["accessed"]))
+    if entry.get("date") and spec.get("date_field"):
+        set_field(conn, item_id, spec["date_field"], sql_date(entry["date"]))
+    if entry.get("accessed") and spec.get("accessed_field"):
+        set_field(conn, item_id, spec["accessed_field"], sql_accessed(entry["accessed"]))
     set_field(conn, item_id, "extra", extra_block(entry.get("extra")))
 
     order = 0
-    for name, creator_type in (
-        [(entry.get("developer"), "programmer")]
-        + [(c, "contributor") for c in entry.get("contributors", [])]
-    ):
-        parts = split_creator(name)
-        if not parts:
-            continue
-        first, last, mode = parts
-        conn.execute(
-            """
-            INSERT INTO itemCreators (itemID, creatorID, creatorTypeID, orderIndex)
-            VALUES (?,?,?,?)
-            """,
-            (
-                item_id,
-                zc.creator_id(conn, first, last, mode),
-                zc.creator_type_id(conn, creator_type),
-                order,
-            ),
-        )
-        order += 1
+    for slot in spec.get("creators", []):
+        for name in names(entry.get(slot["key"])):
+            parts = split_creator(name)
+            if not parts:
+                continue
+            first, last, mode = parts
+            conn.execute(
+                """
+                INSERT INTO itemCreators (itemID, creatorID, creatorTypeID, orderIndex)
+                VALUES (?,?,?,?)
+                """,
+                (
+                    item_id,
+                    zc.creator_id(conn, first, last, mode),
+                    zc.creator_type_id(conn, slot["type"]),
+                    order,
+                ),
+            )
+            order += 1
 
     for tag in entry.get("tags", []):
         if not str(tag).strip():
@@ -309,29 +301,76 @@ def add_to_collection(conn, collection_id, item_id, order_index):
 # ---------------------------------------------------------------- the payload
 
 
-REQUIRED = ("title", "developer", "date", "system", "url", "catalog")
+def resolve_type(payload, types, path):
+    """Which mapped type this payload is, and the problem where it is none."""
+    named = str(payload.get("type", "")).strip()
+    if named:
+        if named not in types:
+            return None, (
+                f"{path.name}: type {named!r} is not in item_types.json. "
+                f"Mapped types: {', '.join(sorted(types))}"
+            )
+        return named, None
+    carried = [
+        name for name, spec in types.items()
+        if spec.get("payload_key") and spec["payload_key"] in payload
+    ]
+    if len(carried) == 1:
+        return carried[0], None
+    return None, (
+        f"{path.name}: the payload names no type, and nothing in it identifies "
+        f"one. Give it a \"type\" from: {', '.join(sorted(types))}"
+    )
 
 
-def check(payload, path):
+def entries_of(payload, spec):
+    """The payload's list of entries, and the key it was found under."""
+    if isinstance(payload.get("items"), list):
+        return payload["items"], "items"
+    key = spec.get("payload_key")
+    if key and isinstance(payload.get(key), list):
+        return payload[key], key
+    return None, None
+
+
+def is_filled(value) -> bool:
+    """Whether a payload value says anything — a string, or a list of names."""
+    if isinstance(value, list):
+        return bool(names(value))
+    return bool(str(value if value is not None else "").strip())
+
+
+def check(type_name, spec, entries, path):
     """Refuse a payload that would write a record nobody could check."""
     problems = []
-    games = payload.get("games")
-    if not isinstance(games, list) or not games:
-        problems.append(f"{path.name}: no 'games' list")
+    if not entries:
+        keys = "'items'" + (
+            f" or '{spec['payload_key']}'" if spec.get("payload_key") else ""
+        )
+        problems.append(f"{path.name}: no entry list under {keys}")
         return problems
-    for n, entry in enumerate(games, 1):
-        for key in REQUIRED:
-            if not str(entry.get(key, "")).strip():
-                problems.append(
-                    f"{path.name}: entry {n} ({entry.get('title', 'untitled')}) "
-                    f"has no {key}"
-                )
+    known = (
+        set(spec["text_fields"])
+        | {slot["key"] for slot in spec.get("creators", [])}
+        | UNIVERSAL_KEYS
+    )
+    for n, entry in enumerate(entries, 1):
+        label = entry.get("title", "untitled")
+        for key in spec["required"]:
+            if not is_filled(entry.get(key)):
+                problems.append(f"{path.name}: entry {n} ({label}) has no {key}")
+        for key in entry:
+            if key.startswith("_") or key in known:
+                continue
+            problems.append(
+                f"{path.name}: entry {n} ({label}) has {key!r}, which the "
+                f"{type_name} map does not carry"
+            )
     return problems
 
 
-def build_one(conn, payload, keys, index, dry_run):
-    name = collection_name(payload)
-    games = payload["games"]
+def build_one(conn, payload, spec, entries, keys, index, dry_run):
+    name = collection_name(payload, spec)
 
     if dry_run:
         collection_id, created, start = None, True, 0
@@ -343,7 +382,7 @@ def build_one(conn, payload, keys, index, dry_run):
         ).fetchone()[0] + 1
 
     reused = made = 0
-    for offset, entry in enumerate(games):
+    for offset, entry in enumerate(entries):
         item_id = index.get(norm_title(entry["title"]))
         if item_id is not None:
             reused += 1
@@ -351,12 +390,26 @@ def build_one(conn, payload, keys, index, dry_run):
             made += 1
             if dry_run:
                 continue
-            item_id = create_game(conn, entry, keys)
+            item_id = create_item(conn, entry, spec, keys)
             index.setdefault(norm_title(entry["title"]), item_id)
         if not dry_run:
             add_to_collection(conn, collection_id, item_id, start + offset)
 
     return {"collection": name, "created": created, "reused": reused, "made": made}
+
+
+def print_types(types):
+    for name in sorted(types):
+        spec = types[name]
+        creators = ", ".join(
+            f"{s['key']} → {s['type']}" for s in spec.get("creators", [])
+        )
+        print(f"{name} → Zotero {spec['zotero_type']}")
+        print(f"    required : {', '.join(spec['required'])}")
+        print(f"    fields   : {', '.join(sorted(spec['text_fields']))}")
+        print(f"    creators : {creators}")
+        if spec.get("default_collection_key"):
+            print(f"    default collection key : {spec['default_collection_key']}")
 
 
 def main():
@@ -368,7 +421,16 @@ def main():
         action="store_true",
         help="read-only: report what would be created and reused, safe with Zotero open",
     )
+    ap.add_argument(
+        "--types", action="store_true", help="print the mapped item types and exit"
+    )
     args = ap.parse_args()
+
+    types = type_map()
+
+    if args.types:
+        print_types(types)
+        return
 
     paths = list(args.payloads)
     if args.all:
@@ -384,17 +446,28 @@ def main():
             continue
         with path.open() as fh:
             payload = json.load(fh)
-        problems += check(payload, path)
-        loaded.append((path, payload))
+        type_name, problem = resolve_type(payload, types, path)
+        if problem:
+            problems.append(problem)
+            continue
+        spec = types[type_name]
+        entries, _ = entries_of(payload, spec)
+        problems += check(type_name, spec, entries, path)
+        loaded.append((path, payload, spec, entries))
     if problems:
         sys.exit("Payload refused:\n  " + "\n  ".join(problems))
 
     conn = zc.connect(read_only=args.dry_run)
     try:
         keys = set() if args.dry_run else zc.existing_keys(conn)
-        index = load_software_index(conn)
-        for path, payload in loaded:
-            result = build_one(conn, payload, keys, index, args.dry_run)
+        indexes = {}
+        for path, payload, spec, entries in loaded:
+            zt = spec["zotero_type"]
+            if zt not in indexes:
+                indexes[zt] = load_title_index(conn, zt)
+            result = build_one(
+                conn, payload, spec, entries, keys, indexes[zt], args.dry_run
+            )
             verb = "would create" if args.dry_run else "created"
             print(
                 f"{path.name}: {result['collection']} — {verb} {result['made']}, "

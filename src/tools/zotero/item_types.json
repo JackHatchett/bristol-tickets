@@ -1,0 +1,153 @@
+{
+  "video_game": {
+    "zotero_type": "computerProgram",
+    "payload_key": "games",
+    "default_collection_key": "point_and_click",
+    "required": ["title", "developer", "date", "system", "url", "catalog"],
+    "text_fields": {
+      "title": "title",
+      "short_title": "shortTitle",
+      "series": "seriesTitle",
+      "version": "versionNumber",
+      "system": "system",
+      "publisher": "company",
+      "place": "place",
+      "abstract": "abstractNote",
+      "url": "url",
+      "catalog": "libraryCatalog",
+      "archive": "archive",
+      "archive_location": "archiveLocation",
+      "call_number": "callNumber",
+      "rights": "rights"
+    },
+    "date_field": "date",
+    "accessed_field": "accessDate",
+    "creators": [
+      {"key": "developer", "type": "programmer"},
+      {"key": "contributors", "type": "contributor"}
+    ]
+  },
+
+  "software": {
+    "zotero_type": "computerProgram",
+    "required": ["title", "developer", "date", "url", "catalog"],
+    "text_fields": {
+      "title": "title",
+      "short_title": "shortTitle",
+      "series": "seriesTitle",
+      "version": "versionNumber",
+      "system": "system",
+      "publisher": "company",
+      "place": "place",
+      "abstract": "abstractNote",
+      "url": "url",
+      "catalog": "libraryCatalog",
+      "archive": "archive",
+      "archive_location": "archiveLocation",
+      "call_number": "callNumber",
+      "rights": "rights"
+    },
+    "date_field": "date",
+    "accessed_field": "accessDate",
+    "creators": [
+      {"key": "developer", "type": "programmer"},
+      {"key": "contributors", "type": "contributor"}
+    ]
+  },
+
+  "film": {
+    "zotero_type": "film",
+    "required": ["title", "director", "date", "url", "catalog"],
+    "text_fields": {
+      "title": "title",
+      "short_title": "shortTitle",
+      "abstract": "abstractNote",
+      "distributor": "distributor",
+      "place": "place",
+      "genre": "genre",
+      "format": "videoRecordingFormat",
+      "running_time": "runningTime",
+      "language": "language",
+      "url": "url",
+      "catalog": "libraryCatalog",
+      "archive": "archive",
+      "archive_location": "archiveLocation",
+      "call_number": "callNumber",
+      "rights": "rights"
+    },
+    "date_field": "date",
+    "accessed_field": "accessDate",
+    "creators": [
+      {"key": "director", "type": "director"},
+      {"key": "scriptwriters", "type": "scriptwriter"},
+      {"key": "producers", "type": "producer"},
+      {"key": "cast", "type": "castMember"},
+      {"key": "contributors", "type": "contributor"}
+    ]
+  },
+
+  "album": {
+    "zotero_type": "audioRecording",
+    "required": ["title", "performer", "date", "url", "catalog"],
+    "text_fields": {
+      "title": "title",
+      "short_title": "shortTitle",
+      "abstract": "abstractNote",
+      "series": "seriesTitle",
+      "volume": "volume",
+      "label": "label",
+      "place": "place",
+      "format": "audioRecordingFormat",
+      "running_time": "runningTime",
+      "language": "language",
+      "url": "url",
+      "catalog": "libraryCatalog",
+      "archive": "archive",
+      "archive_location": "archiveLocation",
+      "call_number": "callNumber",
+      "rights": "rights"
+    },
+    "date_field": "date",
+    "accessed_field": "accessDate",
+    "creators": [
+      {"key": "performer", "type": "performer"},
+      {"key": "composers", "type": "composer"},
+      {"key": "contributors", "type": "contributor"}
+    ]
+  },
+
+  "article": {
+    "zotero_type": "journalArticle",
+    "required": ["title", "author", "date", "url", "catalog"],
+    "text_fields": {
+      "title": "title",
+      "short_title": "shortTitle",
+      "abstract": "abstractNote",
+      "publication": "publicationTitle",
+      "publisher": "publisher",
+      "place": "place",
+      "volume": "volume",
+      "issue": "issue",
+      "pages": "pages",
+      "section": "section",
+      "series": "series",
+      "doi": "DOI",
+      "issn": "ISSN",
+      "language": "language",
+      "url": "url",
+      "catalog": "libraryCatalog",
+      "archive": "archive",
+      "archive_location": "archiveLocation",
+      "call_number": "callNumber",
+      "rights": "rights"
+    },
+    "date_field": "date",
+    "accessed_field": "accessDate",
+    "creators": [
+      {"key": "author", "type": "author"},
+      {"key": "editors", "type": "editor"},
+      {"key": "translators", "type": "translator"},
+      {"key": "contributors", "type": "contributor"}
+    ]
+  }
+}

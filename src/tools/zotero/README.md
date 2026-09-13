@@ -77,29 +77,39 @@ It is configured inside Zotero (File → Export Library → Better CSL JSON → 
 updated), and registered in Zotero's prefs, not here. Nothing in this folder
 writes or schedules it; if it ever needs rebuilding, redo that export.
 
-## build_game_records.py
+## build_records.py and item_types.json
 
-Turns a reviewed game payload into Zotero **Software** items (`computerProgram`)
-in a named collection. A game has no ISBN, so Add Item by Identifier cannot
-reach one; the record is assembled from published databases first and written
-here last. The procedure that assembles it is
-`src/skills/cataloguing-a-game/SKILL.md`, and the field-by-field template is
-`references/citation_template.md` inside it.
+Turns a reviewed payload into Zotero items in a named collection. A book has an
+ISBN, so Add Item by Identifier reaches it; nothing else in this library does,
+and everything else is assembled from published sources first and written here
+last. The procedure that assembles one is
+`src/skills/cataloguing-an-item/SKILL.md`, and the field-by-field template for a
+video game is `references/citation_template.md` inside it.
 
 ```
-python3 build_game_records.py <payload.json> [more.json ...]
-python3 build_game_records.py --all
-python3 build_game_records.py --dry-run <payload.json>
+python3 build_records.py <payload.json> [more.json ...]
+python3 build_records.py --all
+python3 build_records.py --dry-run <payload.json>
+python3 build_records.py --types
 ```
 
-Payloads live in `data/*/personal/game_records/`, one file per batch:
+**`item_types.json` beside the script is the whole of what the library can
+catalogue**, one entry per kind of thing. An entry names the Zotero item type,
+the payload keys that become fields, the keys that become creators and with
+which creator type, and which of them are required. Adding a kind is an edit to
+that file and none to the script, and `--types` prints what it currently holds.
+It ships with `video_game` and `software` (both `computerProgram`), `film`,
+`album` (`audioRecording`) and `article` (`journalArticle`).
+
+Payloads live in `data/*/personal/library_records/`, one file per batch:
 
 ```json
 {
-  "collection": "Point and Click Games",
-  "games": [
-    {"title": "...", "developer": "Legend Entertainment", "date": "1993",
-     "system": "DOS", "url": "https://...", "catalog": "..."}
+  "type": "film",
+  "collection_key": "films",
+  "items": [
+    {"title": "...", "director": "Fleming, Victor", "date": "1939",
+     "url": "https://...", "catalog": "..."}
   ]
 }
 ```
@@ -107,24 +117,38 @@ Payloads live in `data/*/personal/game_records/`, one file per batch:
 A payload names its collection by configuration key — `collection_key`, one of
 the keys under `zotero.collections` — so a collection can be renamed in one
 place. A literal `collection` still wins where one is given, and a payload
-naming neither takes `point_and_click`. A key with no name configured is
+naming neither takes the type's own default key where it declares one
+(`video_game` declares `point_and_click`). A key with no name configured is
 refused, because naming a new collection is the user's.
 
 Behaviour worth knowing:
 
-- **Six fields are required and a payload missing any of them is refused** —
-  title, developer, date, system, url, catalog. A record without them is one
-  nobody could check afterwards, which is the only thing the tool is strict
-  about. Everything else is left blank when no source states it.
-- **A title already in the library as a Software item is reused**, and only its
-  collection membership is added. Nothing is overwritten, so a payload can be
-  corrected and replayed.
-- **The developer is a creator, not a field.** It is stored as `programmer`, a
-  studio held as a single-field name, which is what makes a citation render it
-  as the author. `company` holds the publisher.
+- **`type` names an entry of the map, and an unmapped one is refused by name**
+  along with the list of the mapped ones. A payload naming no type is the type
+  whose `payload_key` it carries, which is what keeps a game payload written
+  before the map existed running unchanged: `games` is `video_game`'s.
+- **Each type's required fields are its own and a payload missing any of them
+  is refused** — for a game, title, developer, date, system, url, catalog. A
+  record without them is one nobody could check afterwards. Everything else is
+  left blank when no source states it.
+- **An entry key the type does not carry is refused rather than dropped**, so a
+  field spelled for the wrong kind of thing is caught before it is written. A
+  key starting with `_` is a note to a human reader and is ignored.
+- **Four keys are the same on every type and are not in the map** — `date` and
+  `accessed`, which carry Zotero's own date formats; `extra`, one `Key: value`
+  line each; and `tags`.
+- **A title already in the library as an item of the same type is reused**, and
+  only its collection membership is added. Nothing is overwritten, so a payload
+  can be corrected and replayed.
+- **A creator slot takes one name or a list of them.** `Last, First` is a
+  person; a name with no comma is stored single-field, which is how Zotero holds
+  a studio or a label. A game's `developer` is stored as `programmer`, which is
+  what makes a citation render it as the author, and `company` holds the
+  publisher.
 - **`programmingLanguage` is never written.** On a Software item that field
   means the language the program was written in; the language it is played in is
-  `Language: en` in `extra`.
+  `Language: en` in `extra`. A film, an album and an article have a real
+  `language` field, and the map sends `language` there.
 - `--dry-run` opens the database read-only and reports what it would create and
   what it would reuse, so a payload can be reviewed with Zotero still open.
 
