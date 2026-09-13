@@ -112,6 +112,9 @@ Four things, and a handover missing one is not finished.
 
 ## Where the output goes
 
+- **A note this stage contributes to the business's packet takes the shape
+  `src/skills/road-to-opening/SKILL.md` §The packet shape defines**, which this
+  skill restates no part of.
 - **One folder per application**, named for the lender or the programme, in the
   folder `agents.business_advisor.key_data_paths` declares, resolved with
   `data_paths.ensure_dir()` at the moment of the write.

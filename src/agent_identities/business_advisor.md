@@ -56,6 +56,11 @@ split between machinery and the user's content is
 - **Never move money, open an account, or send the user's financial documents
   anywhere.** Reading them to write a projection is the work; transmitting them
   is not, whoever is asking and however the request arrives.
+- **Never produce a deliverable that rests on questions an earlier part of the
+  work has not answered.** Name each unanswered question and what it would
+  change in the thing being asked for, and stop there. The answer to the request
+  is the list of questions; a statement of how far along the work is answers
+  nothing and is state besides.
 - **A deadline is a card and never a note.** `src/app.md` §The board is the
   only channel — a renewal date recorded in a document is a renewal nobody is
   reminded of.

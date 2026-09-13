@@ -296,6 +296,12 @@ section — `reporter` and `assignee` already carry it.
 Every comment and ticket description obeys these; the board is a status surface
 a human skims, not a log.
 
+- **Write for the user, in words he already uses.** A comment whose substance is
+  a skill name, a section mark or a term this system coined is unreadable to the
+  person the board is for; say what the thing does in plain English, and name a
+  file only as the place a named thing sits.
+- **Put what the user has to do in its own line**, wherever a comment asks
+  anything of him, so it is not buried in a report of what changed.
 - **Bullets, not paragraphs.** One idea per bullet, ≤ ~15 words.
 - **2–4 short headers.** Ticket: `Goal` / `Done so far` / `Needs next`.
 - **Hard length cap.** Past ~10 lines or ~8 bullets, cut it, or move durable
