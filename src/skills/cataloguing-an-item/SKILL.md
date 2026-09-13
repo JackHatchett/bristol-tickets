@@ -35,7 +35,7 @@ shares, is `references/citation_template.md`.
 
 - **`ZOTERO_DATA_DIR` resolves to a real Zotero data directory.** Where it does
   not, stop and report the exact path checked rather than choosing one.
-- **Zotero is quit before the write in step 6.** Steps 1 to 5 write nothing and
+- **Zotero is quit before the write in step 5.** Steps 1 to 4 write nothing and
   run with Zotero open.
 - **The collection is named by a configuration key, never by a literal name.**
   `python3 src/tools/config_tools/read_config.py zotero.collections` lists the
@@ -132,15 +132,7 @@ the first of these that held the thing.
    **Leave a field blank rather than guess it.** A guessed value is read back as
    a fact the next time anyone opens the record.
 
-5. **Have the user read the payload before anything is written.** A dry run
-   reports what would be created and what already exists, and opens the database
-   read-only, so it is safe with Zotero still up:
-
-   ```
-   python3 src/tools/zotero/build_records.py --dry-run <payload.json>
-   ```
-
-6. **Write, with Zotero quit.** The tool creates the collection if it is absent,
+5. **Write, with Zotero quit.** The tool creates the collection if it is absent,
    creates one item per new entry, and adds each to the collection:
 
    ```
@@ -150,9 +142,24 @@ the first of these that held the thing.
    Re-running is safe: a title already in the library as an item of the same
    type is reused and only its collection membership is added.
 
-7. **Say which fields were left blank and what would fill them, and name any
+   **Go straight to the write.** Nothing is shown to the user first and no
+   permission is sought: a payload built from the sources above is either
+   accepted or refused by the tool, and a refusal costs a re-run rather than a
+   bad record.
+
+   **Reach for a dry run only where this batch gives a reason to** — many
+   entries at once, or a title the sources matched loosely. It reports what
+   would be created and what already exists, opens the database read-only so it
+   runs with Zotero still up, and is read by the session rather than handed over:
+
+   ```
+   python3 src/tools/zotero/build_records.py --dry-run <payload.json>
+   ```
+
+6. **Say which fields were left blank and what would fill them, and name any
    required field that was filled without a source separately.** That is the
-   whole handover — the user decides whether a blank is worth chasing, and an
+   whole handover, and it reports what was written rather than what was
+   proposed — the user decides whether a blank is worth chasing, and an
    assumption he cannot see is one he cannot overrule.
 
 **Nothing is regenerated afterwards.** The `library.xlsx` snapshot is the book
@@ -188,8 +195,9 @@ else — and keep to the ones that would be used to find it again.
 
 ## Failure modes
 
-- **A writer exits with "Zotero is running"** → that is the gate working. Ask
-  the user to quit Zotero; never work around it.
+- **A writer exits with "Zotero is running"** → that is the gate working. Say
+  the write did not go through, ask the user to quit Zotero, and run step 5
+  again; never work around it.
 - **No page on the first source** → try the slug rule again on the full title
   including subtitle, then fall back to the next source for identity and name it
   in `catalog`.
@@ -203,7 +211,7 @@ else — and keep to the ones that would be used to find it again.
   which is why those are required everywhere.
 - **A required field has no source** → blank is not an option there: the tool
   refuses the payload, so pick the most defensible value, note it in that entry
-  as an assumption and say what it rests on, and name it in the step-7 handover
+  as an assumption and say what it rests on, and name it in the step-6 handover
   on its own rather than folding it into the blanks. It is one entry's flag, not
   a reason to stop the batch. A game's `system` is where this actually happens —
   a digital-only release or a fan game whose sources name no platform.
