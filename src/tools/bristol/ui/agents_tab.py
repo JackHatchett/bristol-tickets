@@ -33,7 +33,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
@@ -57,6 +57,7 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local; see module docstring
 
+from .dialogs import confirm
 from .growing_edit import GrowingTextEdit
 from .settled_combo import SettledComboBox, fill_words
 from .theme import LAYOUT, space
@@ -130,7 +131,10 @@ class PathList(QWidget):
         self._rows: list[tuple[QListWidgetItem, str, QComboBox | None]] = []
 
         self.list = QListWidget()
-        self.list.setObjectName("searchResults")
+        # Its own name rather than the search list's: that one pads every
+        # item for text a delegate draws, and a row here is a widget, which
+        # such padding shrinks out of the item holding it.
+        self.list.setObjectName("pathRows")
         self.list.setSelectionMode(QListWidget.NoSelection)
         self.list.setMinimumHeight(LAYOUT["path_list_min_h"])
 
@@ -182,21 +186,35 @@ class PathList(QWidget):
         drop.setMaximumWidth(LAYOUT["env_choose_w"])
 
         line = QHBoxLayout(holder)
-        line.setContentsMargins(space("sm"), 0, space("sm"), 0)
+        line.setContentsMargins(space("sm"), space("xs"), space("sm"),
+                                space("xs"))
         line.setSpacing(space("sm"))
         line.addWidget(label, 1)
         if combo is not None:
             line.addWidget(combo)
         line.addWidget(drop)
 
+        # A row is as tall as its own contents once the stylesheet is on them,
+        # and never shorter than one line of them: an unpolished widget reports
+        # a height its padding has not reached yet, and a list item takes the
+        # height it is given rather than growing to what it holds.
+        holder.ensurePolished()
         item = QListWidgetItem()
-        item.setSizeHint(holder.sizeHint())
+        item.setSizeHint(holder.sizeHint().expandedTo(
+            QSize(0, LAYOUT["path_row_min_h"])))
         self.list.addItem(item)
         self.list.setItemWidget(item, holder)
         self._rows.append((item, declared, combo))
         drop.clicked.connect(lambda: self._drop(item))
 
     def _drop(self, item: QListWidgetItem) -> None:
+        declared = next((d for i, d, _ in self._rows if i is item), "")
+        subject = "folder" if self._kind == "dir" else "file"
+        if not confirm(self, f"Remove this {subject}?",
+                       f"{declared} goes off this agent's list. "
+                       f"Nothing on disk is touched.",
+                       "Remove", destructive=True):
+            return
         self._rows = [r for r in self._rows if r[0] is not item]
         self.list.takeItem(self.list.row(item))
 
@@ -256,7 +274,7 @@ class EnvList(QWidget):
 
     def set_values(self, env: dict) -> None:
         while self._rows:
-            self._drop(self._rows[0][0])
+            self._drop(self._rows[0][0], ask=False)
         for name, value in env.items():
             self._add(name, str(value))
 
@@ -281,7 +299,7 @@ class EnvList(QWidget):
         drop = QPushButton("✕")
         drop.setAutoDefault(False)
         drop.setMaximumWidth(LAYOUT["env_choose_w"])
-        drop.clicked.connect(lambda: self._drop(holder))
+        drop.clicked.connect(lambda _=False: self._drop(holder))
         row = QHBoxLayout(holder)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(space("sm"))
@@ -300,7 +318,15 @@ class EnvList(QWidget):
         if picked:
             field.setText(picked)
 
-    def _drop(self, holder: QWidget) -> None:
+    def _drop(self, holder: QWidget, ask: bool = True) -> None:
+        named = next((n.text().strip() for h, n, _ in self._rows
+                      if h is holder), "")
+        if ask and named and not confirm(
+                self, "Remove this variable?",
+                f"{named} goes off this agent's list. The tools that read it "
+                f"run without it afterwards.",
+                "Remove", destructive=True):
+            return
         self._rows = [r for r in self._rows if r[0] is not holder]
         self.rows.removeWidget(holder)
         holder.deleteLater()
