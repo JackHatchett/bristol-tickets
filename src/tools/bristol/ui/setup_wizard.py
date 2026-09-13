@@ -718,7 +718,10 @@ def _declared_dirs(root: Path, config: dict, instance_dir: Path) -> list[Path]:
     for body in config.get("agents", {}).values():
         if not isinstance(body, dict):
             continue
-        for declared in body.get("key_data_paths", []):
+        for entry in body.get("key_data_paths", []):
+            # A folder an agent reaches is a path and the access granted in it;
+            # an entry written before access was recorded is the path alone.
+            declared = entry.get("path") if isinstance(entry, dict) else entry
             if not isinstance(declared, str) or not declared.strip():
                 continue
             path = Path(declared).expanduser()

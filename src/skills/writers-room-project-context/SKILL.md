@@ -27,8 +27,9 @@ snapshot, which happens first.
    second model, which receives them in its brief
    (`src/skills/external-ai-bridge/references/writers_room.md`).
 4. **Never bulk-read wiki files at session start.** On-demand lookup only. The
-   wiki is user-authored and read-only to this agent (`writers_room.md`
-   §Write Authority); there is no canon concept and nothing to re-vet.
+   wiki is user-authored and takes a proposal rather than a write
+   (`writers_room.md` §Write Authority); there is no canon concept and nothing
+   to re-vet.
 5. **Never read a `private/`-equivalent personal-notes folder unless the user
    names a specific file in it.** Never list, scan or summarize that folder
    unprompted.
@@ -45,7 +46,7 @@ under-specified — ask rather than keep reading. Conventions:
 
 On "end of session," "update everything," or the natural end of a content
 session. The project's state file and decision log live in the user-authored
-wiki, which is read-only to this agent, so **prepare these as summaries in
+wiki, which this agent does not write in, so **prepare these as summaries in
 `markdown_notebook.agent_output_dir` for the user to fold in** rather than
 writing the wiki files yourself:
 

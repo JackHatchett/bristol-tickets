@@ -31,6 +31,7 @@ python3 create_agent.py <slug> \
     --role "what this agent is for, written for a stranger" \
     --guardrail "Never ..." [--guardrail ...] \
     [--data-path data/<instance>/<domain>]... \
+    [--read-path <a folder it may read and not write>]... \
     [--context-file <path>]... \
     [--skill <name>]... \
     [--owns tools/<slug>/]... \
@@ -67,7 +68,8 @@ python3 agents.py read <slug> [--json]
 python3 agents.py skeleton <slug>
 python3 agents.py edit <slug> [--identity …] [--description "…"]
                               [--charter-file <path>]
-                              [--data-path …]... [--context-file …]...
+                              [--data-path …]... [--read-path …]...
+                              [--context-file …]...
                               [--notebook-read yes|no] [--write-zone …]...
                               [--archive-moves yes|no] [--env NAME=VALUE]...
                               [--extra-file <json>]
@@ -90,6 +92,12 @@ are two commands rather than one with a flag.
   untouched, and `--extra-file` is how they are replaced as a set. A key this
   build predates is never dropped.
 - **A repeatable option replaces its whole list.** Its `--no-…` partner empties
+  one.
+- **A folder is granted with the access it carries** — `--data-path` for one the
+  agent may write in, `--read-path` for one it may only read. The two fill the
+  one list, in the order they are given, and `--no-data-paths` empties it. What
+  an agent may do with a grant is `src/templates/identity_template.md` §Data
+  locations; Bristol Tickets' Agents tab is where the user adds and removes
   one.
 - **`--identity` moves the charter**, writing it at the new path and removing
   the old one, and refuses a path outside the repository or one already taken.

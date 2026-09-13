@@ -18,6 +18,7 @@ CLI
         --guardrail "Never ..." [--guardrail ...] \\
         [--charter-file <path>] [--env NAME=VALUE]... \\
         [--data-path data/<instance>/<domain>]... \\
+        [--read-path <a folder it may read and not write>]... \\
         [--context-file <path>]... \\
         [--skill <name>]... \\
         [--notebook read|write|none] \\
@@ -116,6 +117,20 @@ def notebook_access(choice: str) -> dict:
     }
 
 
+class _Grant(argparse.Action):
+    """Collect `--data-path` and `--read-path` into one list, in the order given.
+
+    A grant carries its access, so the two options fill one list rather than
+    two — `src/tools/agent_tools/agents.py`, which takes the same pair.
+    """
+
+    def __call__(self, parser, namespace, value, option_string=None) -> None:
+        access = "read" if option_string == "--read-path" else "write"
+        grants = list(getattr(namespace, "grants", None) or [])
+        grants.append({"path": value, "access": access})
+        namespace.grants = grants
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("slug", help="the agent's name, in snake_case")
@@ -132,8 +147,12 @@ def main(argv: list[str]) -> int:
                         metavar="NAME=VALUE",
                         help="an environment variable this agent runs with; "
                              "repeatable")
-    parser.add_argument("--data-path", action="append", default=[],
-                        help="a data folder this agent owns; repeatable")
+    parser.add_argument("--data-path", action=_Grant, metavar="PATH",
+                        help="a folder this agent may write in; repeatable")
+    parser.add_argument("--read-path", action=_Grant, metavar="PATH",
+                        help="a folder this agent may read and not write; "
+                             "repeatable")
+    parser.set_defaults(grants=[])
     parser.add_argument("--context-file", action="append", default=[],
                         help="a file this agent reads on sight; repeatable")
     parser.add_argument("--skill", action="append", default=[],
@@ -214,7 +233,7 @@ def main(argv: list[str]) -> int:
         "identity": f"src/agent_identities/{slug}.md",
         "description": args.description.strip(),
         "key_context_files": args.context_file,
-        "key_data_paths": args.data_path,
+        "key_data_paths": data_paths.folder_grants(args.grants),
         "notebook_access": notebook_access(args.notebook),
     }
     # The three parts stated one at a time win over the shorthand, so the form
@@ -241,10 +260,10 @@ def main(argv: list[str]) -> int:
 
     print(f"Charter   src/agent_identities/{slug}.md")
     print(f"Config    agents.{slug}")
-    for declared in args.data_path:
-        where = data_paths.resolve(declared)
+    for grant in data_paths.folder_grants(args.grants):
+        where = data_paths.resolve(grant["path"])
         state = "exists" if Path(where).is_dir() else "not there yet, which is normal"
-        print(f"Data      {declared} — {state}")
+        print(f"Data      {grant['path']} ({grant['access']}) — {state}")
 
     if not args.no_epic:
         # Through the board's own CLI rather than a second insert, so an agent

@@ -26,10 +26,10 @@ snapshot, which happens first. Where design content lives is
    record and no separate decision log.
 4. **Never bulk-read the notebook or the repo `design/` at session start.**
    On-demand lookup only.
-5. **The notebook wiki is a read-only lookup resource, not a standing context
-   source.** Read a specific note when a request needs that fact, never sweep it,
-   and never write into the wiki directories. Proposing a page or fact goes
-   through `src/skills/design-proposals/SKILL.md`.
+5. **The notebook wiki is a lookup resource, not a standing context source.**
+   Read a specific note when a request needs that fact, never sweep it.
+   Proposing a page or fact goes through
+   `src/skills/design-proposals/SKILL.md`.
 6. **Read a project's own frozen local state file where it has one** (the
    charter's §The Project and the Notebook exception). This is a per-project
    fact to confirm, never a default to assume.

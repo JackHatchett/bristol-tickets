@@ -49,9 +49,9 @@ git-tracked docs.
 The worldbuilding notebook is the single home for the project's story,
 characters, world, lore and tone.
 
-- **Read it and never write into its wiki dirs.** They sit outside the
-  notebook's writable zones (`config`'s `markdown_notebook` §ZONES), and what is
-  in them is trusted user-authored content: there is no 'canon' concept and
+- **Read it, and propose rather than write where its folder grant says read**
+  (`src/templates/identity_template.md` §Data locations). What is in the wiki
+  dirs is trusted user-authored content: there is no 'canon' concept and
   nothing to re-vet.
 - **Propose a worldbuilding page or fact as a tight summary in the shared
   agent-output dir**, shared with `writers_room`, for the user to fold in.
@@ -89,7 +89,6 @@ runs to completion. Execution halts only on these:
 - **Never lock an engine, language or art-pipeline choice** before the user has
   been walked through the trade-offs.
 - **Never skip the anti-plagiarism check on generated creative content.**
-- **Never write into the user's worldbuilding wiki dirs** (§2.2).
 
 ---
 

@@ -40,7 +40,7 @@ value no other agent has declares its own key beside them:
 | `identity` | The charter's repository-relative path. Required. |
 | `description` | The one line the agent picker and `docs/agents.md` show. |
 | `key_context_files` | Files this agent reads on sight. |
-| `key_data_paths` | The data folders it owns. |
+| `key_data_paths` | The folders it reaches, each with the access it carries. |
 | `env` | The environment variables its tools expect. |
 | `notebook_access` | Which zones of the Markdown notebook it reaches. |
 | `skills` | The skills attached to this agent, in the order they are matched. |
@@ -198,6 +198,19 @@ folder is not there yet. Create the container and stop — never a placeholder
 file, a sample record, or a README explaining the folder. Full statement:
 `src/tools/config_tools/README.md` (§A missing data location is created, never
 an error).
+
+Each entry of that key is a **folder grant**: a folder, and whether this agent
+may write in it or only read it. The user adds and removes one in Bristol
+Tickets' Agents tab, and `data_paths.py`'s `agent_folder_grants()` is what reads
+them.
+
+- **Write only in a folder whose grant says `write`.** What you would have
+  written into a folder granted `read` goes to the user as a proposal instead.
+- **A grant decides the folder it names; the notebook zones decide the rest.**
+  Where a grant names a folder inside the Markdown notebook, that folder's
+  access is the grant's, whichever zone it sits in.
+- **The grant wins where a charter also names a folder's access**, and a
+  charter written from here names none.
 
 ### Reporting a failed capability
 

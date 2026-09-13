@@ -14,7 +14,8 @@ file and its config key are named after.
 Each kind of property gets the control its kind deserves. A path is picked, not
 typed, and the picked path is turned back into the spelling config stores by
 ``config_tools/data_paths.py --declare``, which owns that rule in both
-directions. A notebook zone is a tick box per zone. An environment variable is a
+directions. A folder carries the access it is granted beside it, so adding a
+folder and deciding what may be done in it are one gesture. A notebook zone is a tick box per zone. An environment variable is a
 name beside a value. A key this build has no control for keeps its own field,
 named after the key and holding the JSON it holds, so nothing is lost and
 nothing is guessed at.
@@ -37,6 +38,7 @@ from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
+    QComboBox,
     QDialog,
     QFileDialog,
     QFormLayout,
@@ -56,6 +58,7 @@ from PySide6.QtWidgets import (
 import config_file  # bristol-local; see module docstring
 
 from .growing_edit import GrowingTextEdit
+from .settled_combo import SettledComboBox, fill_words
 from .theme import LAYOUT, space
 
 AGENTS_CLI = Path("src") / "tools" / "agent_tools" / "agents.py"
@@ -82,34 +85,62 @@ def _required(label: str) -> str:
     return f"{label} *"
 
 
+def _grant_option(grant: dict) -> str:
+    """The option `agents.py` and `create_agent.py` take for this access."""
+    return "--read-path" if grant["access"] == "read" else "--data-path"
+
+
+ACCESS_CHOICES = [("write", "Read & write"), ("read", "Read only")]
+
+
+def folder_grant(entry) -> dict:
+    """One `key_data_paths` entry as a declared folder and the access it carries.
+
+    An entry written before access was recorded is a bare string, and it reads
+    as `write` — `src/tools/config_tools/data_paths.py`, which owns the rule and
+    is what every session reads through.
+    """
+    if isinstance(entry, dict):
+        declared = str(entry.get("path", ""))
+        access = entry.get("access")
+    else:
+        declared, access = str(entry), None
+    known = [value for value, _ in ACCESS_CHOICES]
+    return {"path": declared,
+            "access": access if access in known else known[0]}
+
+
 class PathList(QWidget):
-    """A list of declared paths, added with a picker and removed with a button.
+    """The folders or files an agent reaches: one row each, added with a picker.
 
     A path is machine-specific when it is picked and portable when it is
     stored, and `data_paths.py --declare` is what turns one into the other.
+
+    A folder row carries the access it is granted beside it, because a grant is
+    a folder and what may be done in it rather than a folder alone. A file row
+    carries none: a context file is read.
     """
 
-    def __init__(self, run, kind: str, add_label: str, parent=None) -> None:
+    def __init__(self, run, kind: str, add_label: str, parent=None, *,
+                 access: bool = False) -> None:
         super().__init__(parent)
         self._run = run
         self._kind = kind
+        self._access = access
+        self._rows: list[tuple[QListWidgetItem, str, QComboBox | None]] = []
 
         self.list = QListWidget()
         self.list.setObjectName("searchResults")
+        self.list.setSelectionMode(QListWidget.NoSelection)
         self.list.setMinimumHeight(LAYOUT["path_list_min_h"])
-        self.list.currentItemChanged.connect(lambda *_: self._sync())
 
         self.add_btn = QPushButton(add_label)
         self.add_btn.setAutoDefault(False)
         self.add_btn.clicked.connect(self._add)
-        self.remove_btn = QPushButton("Remove")
-        self.remove_btn.setAutoDefault(False)
-        self.remove_btn.clicked.connect(self._remove)
 
         row = QHBoxLayout()
         row.setSpacing(space("md"))
         row.addWidget(self.add_btn)
-        row.addWidget(self.remove_btn)
         row.addStretch(1)
 
         column = QVBoxLayout(self)
@@ -117,22 +148,64 @@ class PathList(QWidget):
         column.setSpacing(space("sm"))
         column.addWidget(self.list)
         column.addLayout(row)
-        self._sync()
 
-    def set_values(self, declared: list[str]) -> None:
+    def set_values(self, entries: list) -> None:
         self.list.clear()
-        self.list.addItems(declared)
-        self._sync()
+        self._rows = []
+        for entry in entries:
+            grant = folder_grant(entry)
+            self._row(grant["path"], grant["access"])
 
-    def values(self) -> list[str]:
-        return [self.list.item(i).text() for i in range(self.list.count())]
+    def values(self) -> list:
+        out = []
+        for _, declared, combo in self._rows:
+            if self._access:
+                out.append({"path": declared,
+                            "access": combo.currentData()})
+            else:
+                out.append(declared)
+        return out
 
-    def _sync(self) -> None:
-        self.remove_btn.setEnabled(self.list.currentItem() is not None)
+    def _row(self, declared: str, access: str) -> None:
+        holder = QWidget()
+        label = QLabel(declared)
+        label.setObjectName("pathRow")
+        label.setWordWrap(False)
+        label.setToolTip(declared)
+        combo = None
+        if self._access:
+            combo = fill_words(SettledComboBox(), ACCESS_CHOICES)
+            combo.setCurrentIndex(
+                max(0, combo.findData(access)))
+        drop = QPushButton("✕")
+        drop.setAutoDefault(False)
+        drop.setMaximumWidth(LAYOUT["env_choose_w"])
+
+        line = QHBoxLayout(holder)
+        line.setContentsMargins(space("sm"), 0, space("sm"), 0)
+        line.setSpacing(space("sm"))
+        line.addWidget(label, 1)
+        if combo is not None:
+            line.addWidget(combo)
+        line.addWidget(drop)
+
+        item = QListWidgetItem()
+        item.setSizeHint(holder.sizeHint())
+        self.list.addItem(item)
+        self.list.setItemWidget(item, holder)
+        self._rows.append((item, declared, combo))
+        drop.clicked.connect(lambda: self._drop(item))
+
+    def _drop(self, item: QListWidgetItem) -> None:
+        self._rows = [r for r in self._rows if r[0] is not item]
+        self.list.takeItem(self.list.row(item))
 
     def _start_in(self) -> str:
         root = config_file.project_root()
         return str(root) if root else ""
+
+    def _declared(self) -> list[str]:
+        return [declared for _, declared, _ in self._rows]
 
     def _add(self) -> None:
         if self._kind == "dir":
@@ -145,15 +218,8 @@ class PathList(QWidget):
             return
         code, out, _ = self._run(PATHS_CLI, "--declare", picked)
         declared = out.strip() if code == 0 and out.strip() else picked
-        if declared not in self.values():
-            self.list.addItem(declared)
-        self._sync()
-
-    def _remove(self) -> None:
-        row = self.list.currentRow()
-        if row >= 0:
-            self.list.takeItem(row)
-        self._sync()
+        if declared not in self._declared():
+            self._row(declared, ACCESS_CHOICES[0][0])
 
 
 class EnvList(QWidget):
@@ -327,7 +393,7 @@ class AgentDialog(QDialog):
         self.charter = QPlainTextEdit(record["charter"] if record else "")
         self.charter.setLineWrapMode(QPlainTextEdit.NoWrap)
 
-        self.data_paths = PathList(run, "dir", "Add Folder…")
+        self.data_paths = PathList(run, "dir", "Add Folder…", access=True)
         self.data_paths.set_values(record["key_data_paths"] if record else [])
         self.context_files = PathList(run, "file", "Add File…")
         self.context_files.set_values(
@@ -371,7 +437,7 @@ class AgentDialog(QDialog):
         form.addRow(_required("Name"), self.slug)
         form.addRow(_required("Description"), self.description)
         form.addRow("Charter File", identity_row)
-        form.addRow("Data Folders", self.data_paths)
+        form.addRow("Folders", self.data_paths)
         form.addRow("Context Files", self.context_files)
         form.addRow("Notebook", self._zone_group())
         form.addRow("Environment Variables", self.env)
@@ -609,8 +675,8 @@ class AgentDialog(QDialog):
                 "yes" if notebook["archive_moves"] else "no"]
         for zone in notebook["write_zones"]:
             args += ["--write-zone", zone]
-        for declared in values["key_data_paths"]:
-            args += ["--data-path", declared]
+        for grant in values["key_data_paths"]:
+            args += [_grant_option(grant), grant["path"]]
         for declared in values["key_context_files"]:
             args += ["--context-file", declared]
         for name, value in values["env"].items():
@@ -629,8 +695,8 @@ class AgentDialog(QDialog):
         if values["charter"] != was["charter"]:
             args += ["--charter-file", str(charter_file)]
         if values["key_data_paths"] != was["key_data_paths"]:
-            for declared in values["key_data_paths"]:
-                args += ["--data-path", declared]
+            for grant in values["key_data_paths"]:
+                args += [_grant_option(grant), grant["path"]]
             if not values["key_data_paths"]:
                 args += ["--no-data-paths"]
         if values["key_context_files"] != was["key_context_files"]:
