@@ -22,6 +22,10 @@ rests on.
 - **A plan goes in `markdown_notebook.plans_dir`**, resolved through
   `src/tools/config_tools/data_paths.py`. The location is declared in
   configuration and is never chosen per document.
+- **The standing note for an ongoing project goes in
+  `markdown_notebook.projects_dir` instead** — what the project is, its phases,
+  and how it is worked, linking the plans that belong to it. One project note;
+  a plan for each defined body of work inside it.
 - **An agent whose `notebook_access` reaches the workspace zone writes the file
   itself** — `config`'s `markdown_notebook` §ZONES names the zones, and
   `agents.<slug>.notebook_access` names the ones that agent reaches.
