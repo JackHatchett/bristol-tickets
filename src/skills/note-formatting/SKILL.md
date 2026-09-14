@@ -32,6 +32,14 @@ Two boundaries, both stated here so neither has to be guessed at:
   `src/skills/notebook-prompt-library/SKILL.md` §What a prompt may emit**, which
   takes its shape from the notebook's own templates. This governs what an agent
   writes.
+- **A generated daily page carrying someone's own posts is
+  `src/skills/bluesky-sync/SKILL.md`**, and three rules here do not reach it.
+  Its headings are the handles of the people who wrote the posts, so Title Case
+  never applies to them. It closes with no Related Notes section, because it is
+  a day's record rather than an idea with neighbours. It is produced again from
+  the source records rather than edited, so a correction goes into what
+  generates it. The filename, the frontmatter and the link form below still
+  hold.
 
 ## The file
 
