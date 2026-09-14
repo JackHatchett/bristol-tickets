@@ -14,6 +14,18 @@ Read what a session actually did and propose at most one skill change as a card.
 The pass writes no skill file. The skill format and the folder shape are
 `src/skills/skill-conversion/SKILL.md`; the loader is `src/tools/skill_tools/`.
 
+## Precedence against mining-a-session-for-a-skill
+
+`src/skills/mining-a-session-for-a-skill/SKILL.md` is the heavy pass: it runs on
+request, reads the session itself rather than the board, and may conclude that a
+whole new skill exists. This is the light pass, and it runs at every close.
+
+- **Where both would fire, the heavy pass runs and this one does not.** A
+  session already mined has had its one proposal.
+- **Neither pass runs twice on one session.**
+- **A patch the heavy pass finds comes back here**, because this file owns the
+  patch route and the card it files.
+
 ## Preconditions
 
 - **The session changed something.** A session that only read has no corpus.
