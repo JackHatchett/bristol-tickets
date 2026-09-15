@@ -1,13 +1,15 @@
 # Bluesky Tools
 
 Copy an AT Protocol account's posts into the Markdown notebook, one page per day
-the account posted. The design and the reasoning behind it are the project note
+the account posted, and keep a copy of what was read so that a page outlives the
+posts it was made from. The design and the reasoning behind it are the project note
 the epic's cards link to; this states what the programs are and how they are
 run.
 
-Every call these make is public and unauthenticated. No password, no app
-password, no API key and no developer account is involved, and nothing here
-signs in.
+Every call that reads the account is public and unauthenticated: no password,
+no API key and no developer account is involved. `purge.py` is the one program
+that signs in, because removing a record is a write, and it uses an app
+password created for it and revocable on its own.
 
 ## The programs
 
@@ -26,11 +28,30 @@ python3 src/tools/bluesky/sync.py --all         # the whole history
 - `--budget SECONDS` stops after that long and names the day it stopped at, for
   a host that will not hold a long-running command.
 
+**A run reads the account, adds what it read to the store, and writes the pages
+from the store.** The network decides what the store gains; it never decides
+what a page loses.
+
 **The one-time copy and the recurring copy are the same run.** Only the date
 window differs, so nothing about the backfill can drift from what runs daily.
 
 **A page is written whole, and only when its contents would differ.** An
 interrupted run is restarted rather than repaired.
+
+### store.py
+
+The account's own copy, in `data/<instance>/bluesky/archive.db`: every post
+record the account has been seen to hold, and each pruned conversation as it was
+last seen whole.
+
+**The store only gains.** A post already kept is refreshed in place and never
+removed, and a conversation is replaced only by a newly fetched one holding
+every one of the account's posts the kept copy held. A thread that comes back
+short, for whatever reason, leaves what is kept alone.
+
+**A conversation is kept as the page needs it.** A post as the app view returns
+it also carries avatars, counts, labels and viewer state that no page reads;
+what is stored is the words and whatever the post carried with them.
 
 ### client.py
 
@@ -52,6 +73,29 @@ the account was part of. `conversation` is the one function callers need.
 
 Turns a pruned conversation into Markdown. A solo post is prose; a conversation
 is a nested outline headed by whoever started it.
+
+### purge.py
+
+Empties the account: every post and every repost, and nothing else. Bare, it
+prints what it would remove and removes nothing; `--delete` does it.
+
+**The store is read before the account is written.** Every record the pass is
+about to remove is kept first, and the moment each delete is sent is written
+down before it is sent, so a pass cut off partway says what is already gone and
+resumes from there rather than starting again.
+
+**It holds to the account's write budget** — 5,000 points an hour and 35,000 a
+day, at one point a delete — so the whole corpus goes inside two hours, and
+`--budget SECONDS` stops it early and says what is left.
+
+**Followers are untouched.** A follow is a record in the follower's own
+repository pointing at this account, so nothing the account deletes can reach
+one. The count is read before and after and both are printed.
+
+**What is still served is asked for again.** A data server that has accepted a
+delete and an app view that has not yet seen it disagree, and a reader believes
+the app view, so the check is what the public view serves rather than what the
+delete call returned.
 
 ### install_schedule.py
 
@@ -80,6 +124,7 @@ time.
 | `link_window_days` | how far back a run looks for journal pages written late |
 | `link_into_journal` | whether a journal page gains a link back |
 | `fetch_workers` | how many days are worked at once |
+| `app_password` | the app password `purge.py` signs in with, and nothing else |
 
 **A page's filename carries a prefix.** Obsidian resolves a link by basename, so
 a page named for a date alone would collide with the journal's own note for that
@@ -88,9 +133,18 @@ date and make every link to either one ambiguous.
 ## What is checked
 
 ```
-python3 src/tools/test_tools/smoke.py bluesky_pruning
+python3 src/tools/test_tools/smoke.py bluesky_pruning bluesky_archive bluesky_purge
 ```
 
-Six conversations built by hand: branch pruning, two answered branches arriving
-as one tree, the cap at two values, a deleted post kept as a placeholder, a
-thread the account is not in, and a thread whose root is gone.
+`bluesky_pruning` is six conversations built by hand: branch pruning, two
+answered branches arriving as one tree, the cap at two values, a deleted post
+kept as a placeholder, a thread the account is not in, and a thread whose root
+is gone.
+
+`bluesky_archive` is the store against an account read twice, the second read
+shorter than the first: a post no longer served stays, a day the window opens
+partway through comes back whole, and a conversation is never traded for one
+holding less of what the account said.
+
+`bluesky_purge` is the arithmetic that paces a deletion pass and the record
+that lets a cut-off one resume. It reaches no account.

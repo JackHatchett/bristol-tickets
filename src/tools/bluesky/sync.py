@@ -16,7 +16,6 @@ import json
 import subprocess
 import sys
 import time
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -27,7 +26,7 @@ TOOLS = HERE.parents[1]
 ROOT = HERE.parents[3]
 sys.path.insert(0, str(TOOLS))
 
-from bluesky import client, render, threads  # noqa: E402
+from bluesky import client, render, store, threads  # noqa: E402
 from config_tools import data_paths  # noqa: E402
 
 CONFIG_READER = ROOT / "src" / "tools" / "config_tools" / "read_config.py"
@@ -102,26 +101,29 @@ def link_into_journal(journal_file, page_file):
     return True
 
 
-def build_day(day, records, get_thread, tail_cap, workers=1):
+def build_day(day, records, get_thread, tail_cap, keep, workers=1):
     """Every conversation the account took part in on one day, pruned.
 
     A day is a handful of independent conversations and the time is all spent
-    waiting on the network, so they are fetched together. The order of the
-    finished sections still follows the order of the day's own posts, which is
-    what keeps a page the same on every run.
+    waiting on the network, so they are fetched together. Each fetched
+    conversation goes through `keep`, which answers with the one the page is
+    written from, so what reaches the page comes out of the store rather than
+    off the wire. The order of the finished sections still follows the order of
+    the day's own posts, which is what keeps a page the same on every run.
     """
     grouped = threads.group_by_thread(records)
     work = [(root, {r["uri"] for r in mine}) for root, mine in grouped.items()]
 
     def one(item):
         root, mine = item
-        return threads.conversation(root, mine, get_thread, tail_cap=tail_cap)
+        return root, threads.conversation(root, mine, get_thread, tail_cap=tail_cap)
 
     if workers > 1 and len(work) > 1:
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            kept_trees = list(pool.map(one, work))
+            fetched = list(pool.map(one, work))
     else:
-        kept_trees = [one(item) for item in work]
+        fetched = [one(item) for item in work]
+    kept_trees = [keep(root, tree) for root, tree in fetched]
     return [render.render_section(tree) for tree in kept_trees if tree is not None]
 
 
@@ -140,13 +142,32 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
     since = None
     if window_days is not None:
         since = datetime.now(timezone.utc) - timedelta(days=window_days)
+    conn = store.connect()
     posts = client.read_posts(did, pds, since=since)
     print(f"{len(posts)} post records read")
+    if not dry_run:
+        added = store.keep_posts(conn, posts)
+        print(f"{added} of them the store had not seen; it holds "
+              f"{store.post_count(conn)} posts and "
+              f"{store.thread_count(conn)} conversations")
 
-    by_day = defaultdict(list)
-    for record in posts:
-        by_day[client.created_at(record).astimezone(zone).date()].append(record)
+    # The pages are written from the store, so a post deleted from the account
+    # keeps its place on the day it belongs to.
+    by_day = store.records_by_day(conn, zone, since=since)
+    if dry_run:
+        known = {r.get("uri") for day in by_day.values() for r in day}
+        for record in posts:
+            if record.get("uri") not in known:
+                by_day[client.created_at(record).astimezone(zone).date()].append(record)
+        for day in by_day:
+            by_day[day].sort(key=client.created_at)
     print(f"{len(by_day)} days with posts")
+
+    def keep(root, tree):
+        """The conversation a page is written from, kept where it may be."""
+        if dry_run:
+            return tree if tree is not None else store.load_thread(conn, root)
+        return store.keep_thread(conn, root, tree)
 
     written = 0
     skipped = 0
@@ -167,7 +188,7 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
         """One day, from its posts to its page. Safe to run beside others,
         because every day writes its own file and its own journal page."""
         sections = build_day(day, by_day[day], client.get_thread, tail_cap,
-                             workers=1)
+                             keep, workers=1)
         if not sections:
             return None
         destination = page_path(day, folder, prefix)

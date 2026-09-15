@@ -36,10 +36,20 @@ commands run and what they returned, the files written and their diffs, the
 research read, the corrections the user made, and the board cards the session
 moved with their comments.
 
-- **This pass may read the transcript, and session-review may not.** A method is
-  not work state, so `src/app.md` §The board is the only channel does not reach
-  it; that section governs next actions, ordering and in-progress facts, all of
-  which stay on the board here as everywhere.
+- **The corpus is the session running this pass, and nothing else.** Never a
+  past conversation, a conversation search, a stored memory, or any record that
+  outlives a session. The permission this skill holds is to look at what the
+  session in front of it just did, and it reaches no further whatever a host
+  makes available.
+
+- **This pass may read the session's own conversation, and session-review may
+  not.** A method is not work state, so `src/app.md` §The board is the only
+  channel does not reach it; that section governs next actions, ordering and
+  in-progress facts, all of which stay on the board here as everywhere.
+- **Nothing read here becomes a record of what happened.** Only a method that
+  holds for a class of task leaves this pass, which is why §What is worth
+  keeping tests for one; a skill stating what a session did would be the
+  history the board already owns.
 - **Carry the evidence into the output.** A transcript is gone once the session
   closes, so a proposal states the command line, the sequence or the correction
   in full rather than citing where it was seen. What a later reader cannot check
@@ -52,9 +62,9 @@ A candidate has to pass all four.
 - **It would be re-derived.** A later session facing the same class of task
   would spend real effort working it out again.
 - **It names a class, not this task.** `querying a paginated public API`
-  survives; `fetching Jack's BlueSky posts` does not. A name that only makes
-  sense for one card, error string or feature is the signal that a session
-  narrative is being minted as a skill.
+  survives; `fetching one account's posts from one service` does not. A name
+  that only makes sense for one card, error string or feature is the signal
+  that a session narrative is being minted as a skill.
 - **It is a method, not a decision.** What the user chose belongs to the card
   that carried the choice. How the work was done belongs to a skill.
 - **It holds when the environment changes.** A missing binary, an unmounted

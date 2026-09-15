@@ -46,6 +46,53 @@ def _moment(value):
     return moment.astimezone(timezone.utc)
 
 
+def kept_record(post):
+    """The parts of a fetched post a page is written from.
+
+    A post as the app view returns it also carries avatars, counts, labels and
+    viewer state that no page reads. Keeping the words and whatever the post
+    carried with them, and nothing else, is what makes a stored conversation
+    the size of the page it becomes.
+    """
+    if not post:
+        return {}
+    return {key: post[key] for key in ("record", "embed") if post.get(key) is not None}
+
+
+def to_dict(node):
+    """One pruned conversation as plain data, for keeping."""
+    return {
+        "uri": node.uri,
+        "author": node.author,
+        "text": node.text,
+        "created": node.created.isoformat() if node.created else None,
+        "record": kept_record(node.record),
+        "kind": node.kind,
+        "mine": node.mine,
+        "children": [to_dict(child) for child in node.children],
+    }
+
+
+def from_dict(data):
+    """A conversation read back from what `to_dict` wrote."""
+    node = Node(
+        uri=data.get("uri", ""),
+        author=data.get("author"),
+        text=data.get("text"),
+        created=_moment(data["created"]) if data.get("created") else None,
+        record=data.get("record"),
+        kind=data.get("kind", "post"),
+    )
+    node.mine = bool(data.get("mine"))
+    node.children = [from_dict(child) for child in data.get("children") or []]
+    return node
+
+
+def mine_uris(node):
+    """The addresses of the account's own posts inside a pruned conversation."""
+    return {item.uri for item in node.walk() if item.mine}
+
+
 def root_uri(record):
     """The address of the thread a post record belongs to.
 

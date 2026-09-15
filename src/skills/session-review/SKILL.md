@@ -17,8 +17,9 @@ The pass writes no skill file. The skill format and the folder shape are
 ## Precedence against mining-a-session-for-a-skill
 
 `src/skills/mining-a-session-for-a-skill/SKILL.md` is the heavy pass: it runs on
-request, reads the session itself rather than the board, and may conclude that a
-whole new skill exists. This is the light pass, and it runs at every close.
+request, reads its own session's conversation rather than the board, and may
+conclude that a whole new skill exists. This is the light pass, and it runs at
+every close.
 
 - **Where both would fire, the heavy pass runs and this one does not.** A
   session already mined has had its one proposal.
