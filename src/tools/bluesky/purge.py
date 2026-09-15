@@ -104,8 +104,14 @@ def send_deletes(pds, token, did, collection, uris):
           {"repo": did, "writes": writes}, token=token)
 
 
-def gather(conn, did, pds, already):
-    """What the account still holds, kept, and what of it is still to remove."""
+def gather(conn, did, pds):
+    """What the account still holds, kept, and all of it still to remove.
+
+    What the account returns is what is left, so a record read here is a record
+    to remove whatever an earlier pass wrote down about it. A delete written
+    down before it was sent, and refused by the server, would otherwise exempt
+    the record from every later pass and leave it on the account for good.
+    """
     plan = []
     for collection in PURGED:
         records = client.read_records(did, pds, collection)
@@ -113,7 +119,7 @@ def gather(conn, did, pds, already):
             store.keep_posts(conn, records)
         else:
             store.keep_other_records(conn, collection, records)
-        waiting = [r["uri"] for r in records if r["uri"] not in already]
+        waiting = [r["uri"] for r in records]
         print(f"{collection}: {len(records)} on the account, "
               f"{len(waiting)} still to remove")
         plan.append((collection, waiting))
@@ -133,7 +139,7 @@ def run(delete=False, budget=None):
     print(f"the store holds {store.post_count(conn)} posts and "
           f"{store.thread_count(conn)} conversations")
 
-    plan = gather(conn, did, pds, store.delete_sent(conn))
+    plan = gather(conn, did, pds)
     waiting = sum(len(uris) for _, uris in plan)
     if not delete:
         print(f"would remove {waiting} records, and remove nothing else")
