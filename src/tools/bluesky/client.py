@@ -111,10 +111,15 @@ def read_posts(did, pds, since=None, progress=None):
     daily run walks one page rather than the whole repository. A repost is a
     different record type and never appears here.
     """
+    return read_records(did, pds, POST_COLLECTION, since=since, progress=progress)
+
+
+def read_records(did, pds, collection, since=None, progress=None):
+    """Every record the account holds in one collection, oldest first."""
     collected = []
     cursor = None
     while True:
-        params = {"repo": did, "collection": POST_COLLECTION, "limit": PAGE_SIZE}
+        params = {"repo": did, "collection": collection, "limit": PAGE_SIZE}
         if cursor:
             params["cursor"] = cursor
         page = _get(f"{pds}/xrpc/com.atproto.repo.listRecords", params)
@@ -146,3 +151,20 @@ def get_thread(uri, depth=100, parent_height=100):
     except BlueskyError:
         return None
     return payload.get("thread")
+
+
+def profile(actor):
+    """An account's public profile, which is where its follower count is."""
+    return _get(f"{APPVIEW}/xrpc/app.bsky.actor.getProfile", {"actor": actor})
+
+
+def author_feed(actor, limit=25):
+    """What the app view serves for an account, which is what a reader sees.
+
+    The account's own data server is the authority on what it holds; this is
+    the authority on what anyone else can still read, and the two can disagree
+    for as long as it takes an indexer to catch up.
+    """
+    payload = _get(f"{APPVIEW}/xrpc/app.bsky.feed.getAuthorFeed",
+                   {"actor": actor, "limit": limit})
+    return payload.get("feed") or []
