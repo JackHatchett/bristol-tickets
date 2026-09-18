@@ -8,6 +8,10 @@ a conversation looks like.
 from __future__ import annotations
 
 import json
+import os
+import ssl
+import subprocess
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -28,6 +32,58 @@ class BlueskyError(RuntimeError):
     """A call did not succeed after every retry it was allowed."""
 
 
+KEYCHAIN = "/System/Library/Keychains/SystemRootCertificates.keychain"
+
+_context = None
+
+
+def certificate_authorities():
+    """One TLS context holding whatever certificate authorities this machine
+    has, from the first source that offers any.
+
+    An interpreter is free to ship without a trust store of its own, and one
+    launched by a schedule inherits no shell's environment, so the sources are
+    tried in turn rather than assumed: the interpreter's own store, the certifi
+    package, the paths OpenSSL was built to read, and on macOS the system root
+    keychain, exported as certificates in the form load_verify_locations takes.
+    A context with no authority in it verifies nothing, so the search ends at
+    the first one that has any.
+    """
+    global _context
+    if _context is not None:
+        return _context
+    context = ssl.create_default_context()
+    if not context.cert_store_stats()["x509_ca"]:
+        try:
+            import certifi
+
+            context.load_verify_locations(certifi.where())
+        except Exception:
+            pass
+    if not context.cert_store_stats()["x509_ca"]:
+        paths = ssl.get_default_verify_paths()
+        for candidate in (paths.cafile, paths.openssl_cafile):
+            if candidate and os.path.exists(candidate):
+                try:
+                    context.load_verify_locations(candidate)
+                    break
+                except OSError:
+                    continue
+    if not context.cert_store_stats()["x509_ca"] and sys.platform == "darwin":
+        exported = subprocess.run(
+            ["/usr/bin/security", "find-certificate", "-a", "-p", KEYCHAIN],
+            capture_output=True, text=True)
+        if exported.returncode == 0 and exported.stdout.strip():
+            context.load_verify_locations(cadata=exported.stdout)
+    if not context.cert_store_stats()["x509_ca"]:
+        raise BlueskyError(
+            "this interpreter has no certificate authorities to verify a "
+            "server with; install certifi for it, or run its own certificate "
+            "installer")
+    _context = context
+    return _context
+
+
 def _get(url, params=None, attempts=MAX_ATTEMPTS):
     """One GET returning parsed JSON, retrying a throttle or a server fault.
 
@@ -41,7 +97,9 @@ def _get(url, params=None, attempts=MAX_ATTEMPTS):
     for attempt in range(attempts):
         request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with urllib.request.urlopen(
+                    request, timeout=30,
+                    context=certificate_authorities()) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             last = error
