@@ -38,6 +38,15 @@ window differs, so nothing about the backfill can drift from what runs daily.
 **A page is written whole, and only when its contents would differ.** An
 interrupted run is restarted rather than repaired.
 
+**A page shows the posts the notebook keeps.** The store holds every post the
+account made; `judge.py` says which of them a page leaves out, and the run
+reads that on every pass, so pruning survives a sync and a rebuild alike. A
+post nobody has judged is kept, which is what makes a daily run need no
+reader.
+
+**`--from-store` writes the pages from what the store already holds** and
+reaches no account, which is the rebuild after a judgment changes.
+
 ### store.py
 
 The account's own copy, in `data/<instance>/bluesky/archive.db`: every post
@@ -118,6 +127,7 @@ python3 src/tools/bluesky/judge.py batch --from 0 --count 70
 python3 src/tools/bluesky/judge.py record --file verdicts.txt
 python3 src/tools/bluesky/judge.py sample --count 100 --seed 7
 python3 src/tools/bluesky/judge.py compare
+python3 src/tools/bluesky/judge.py index
 ```
 
 **A post's number is its position in the corpus**, ordered by when it was
@@ -130,6 +140,11 @@ for a reader already holding it.
 **A conversation is printed once, with every post of the account's being
 judged inside it numbered.** `--unjudged` skips posts already judged, which is
 what makes a pass resumable; those posts stay in the conversation as context.
+
+**`index` writes the one note listing what is left undecided**, in the
+notebook's agent workspace, a day at a time with the doubt beside each post,
+and removes that note once nothing is undecided rather than leaving a record
+that something once was.
 
 **`sample` hands back judged posts without their verdicts**, so a second
 reader judges blind; `record --table review` keeps that second reading, and

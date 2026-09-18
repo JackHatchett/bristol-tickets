@@ -17,6 +17,8 @@ second run will not ask for them again.
 from __future__ import annotations
 
 import argparse
+import collections
+import datetime
 import json
 import random
 import re
@@ -83,6 +85,18 @@ def connect(path=None):
     conn.execute("PRAGMA journal_mode=MEMORY")
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def pruned_uris(path=None):
+    """Every post the notebook does not keep.
+
+    The one thing the rest of the pipeline asks of this program. An empty
+    answer, from a verdict file that is not there yet, is the right answer for
+    a notebook nobody has judged.
+    """
+    conn = connect(path)
+    return {row[0] for row in
+            conn.execute("SELECT uri FROM verdict WHERE verdict = 'prune'")}
 
 
 # --- the corpus, in one fixed order ------------------------------------------
@@ -340,6 +354,132 @@ def cmd_compare(args):
         print(f"    {own_lines(by_uri[uri])}")
 
 
+# --- the posts nobody could call --------------------------------------------
+
+NOTE_NAME = "bluesky_posts_awaiting_your_call.md"
+NOTE_TITLE = "Bluesky Posts Awaiting Your Call"
+
+
+def _setting(key, default=None):
+    from bluesky import sync
+    return sync.setting(key, default)
+
+
+def _quote(text):
+    if not text:
+        return "an image with no words"
+    if len(text) <= 100:
+        return f'"{text}"'
+    return '"' + text[:100].rstrip() + '…"'
+
+
+def cmd_index(args):
+    """The one note listing the posts left undecided, or no note at all.
+
+    A list of what is unresolved is the one thing of its kind the notebook
+    holds, and it holds it only while something is unresolved: deciding the
+    last post and running this again takes the note away rather than leaving a
+    record that it once existed.
+    """
+    from zoneinfo import ZoneInfo
+
+    archive = store.connect()
+    conn = connect(args.verdicts)
+    zone = ZoneInfo(_setting("timezone", "UTC"))
+    prefix = _setting("filename_prefix", "bluesky_")
+    pages = data_paths.resolve(_setting("notes_folder"))
+    from config_tools import read_config
+
+    target = data_paths.ensure_dir(
+        read_config.get("markdown_notebook.workspace_dir")) / NOTE_NAME
+
+    undecided = collections.defaultdict(list)
+    count = 0
+    for row in conn.execute(
+            "SELECT uri, reason FROM verdict WHERE verdict = 'unsure'"):
+        found = archive.execute(
+            "SELECT created_at, record FROM post WHERE uri = ?",
+            (row["uri"],)).fetchone()
+        if found is None:
+            continue
+        day = datetime.datetime.fromisoformat(
+            found["created_at"]).astimezone(zone).date()
+        text = render._one_line(render.resolve_links(
+            json.loads(found["record"]).get("value", {})))
+        undecided[day].append((text, row["reason"] or "no reason recorded"))
+        count += 1
+
+    if not count:
+        if target.exists():
+            target.unlink()
+            print(f"every post is decided; removed {target}")
+        else:
+            print("every post is decided; there is no note to remove")
+        return
+
+    lines = []
+    for day in sorted(undecided):
+        name = f"{prefix}{day:%Y-%m-%d}"
+        page = pages / f"{day:%Y}" / f"{day:%m}" / f"{name}.md"
+        alias = f"Bluesky, {day:%A}, {day:%B} {day.day}, {day:%Y}"
+        lines.append(f"- [[{name}|{alias}]]" if page.exists()
+                     else f"- {alias} — no page holds it")
+        for text, reason in undecided[day]:
+            lines.append(f"\t- {_quote(text)} — {reason}")
+
+    note = "\n".join([
+        "---",
+        "aliases:",
+        f"  - {NOTE_TITLE}",
+        "tags:",
+        "  - ai/advice",
+        "created: CREATED",
+        "---",
+        "",
+        f"# {NOTE_TITLE}",
+        "",
+        "Every post you made on Bluesky has been sorted for this notebook: "
+        f"kept, pruned, or left here. These {count} are the ones left here, "
+        f"across {len(undecided)} days. The question about each is whether the "
+        "notebook keeps it, and nothing else — the account is empty, so none "
+        "of this is about what anyone else can see.",
+        "",
+        "Two kinds are on the list. Most are jokes and asides about your own "
+        "death or your own harm, which read one way as dark humour pointed "
+        "outward and another way pointed at yourself, and a reader who is not "
+        "you cannot tell which. The rest are posts a reader could not judge at "
+        "all: an image with no words, a reply whose parent is gone, a line "
+        "with no context left around it.",
+        "",
+        "Each day below links to its page, where the post sits in the "
+        "conversation it came from. Decide a post by deciding whether you want "
+        "it in the notebook; this note goes when the list is empty.",
+        "",
+        "## Days Holding One",
+        "",
+        "\n".join(lines),
+        "",
+        "## Related Notes",
+        "",
+        "- [[ai_workspace_hub|AI Workspace Hub]] — the map of everything the "
+        "agents read or write in this notebook.",
+        "",
+    ])
+    # The note is written whole and only where it would differ, and the date
+    # it carries is the date its contents last changed.
+    existing = target.read_text(encoding="utf-8") if target.exists() else None
+    born = datetime.datetime.now(zone).strftime("%Y-%m-%d %H:%M")
+    if existing is not None:
+        was = "\n".join(line if not line.startswith("created: ") else
+                        "created: CREATED" for line in existing.splitlines())
+        if was.rstrip("\n") == note.rstrip("\n"):
+            print(f"{count} posts left undecided; {target} already says so")
+            return
+    target.write_text(note.replace("created: CREATED", f"created: {born}"),
+                      encoding="utf-8")
+    print(f"{count} posts across {len(undecided)} days; wrote {target}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--verdicts", help="a verdict file other than the real one")
@@ -367,6 +507,8 @@ def main():
     sample.set_defaults(run=cmd_sample)
 
     subs.add_parser("compare").set_defaults(run=cmd_compare)
+
+    subs.add_parser("index").set_defaults(run=cmd_index)
 
     args = parser.parse_args()
     args.run(args)
