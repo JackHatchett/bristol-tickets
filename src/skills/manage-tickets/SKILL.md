@@ -22,6 +22,9 @@ for all three: `src/templates/identity_template.md`.
 - **At every session start**, per `src/app.md` Phase 3.1.
 - **Whenever the user asks "what's next," "where were we," "status" or
   "continue."** Re-read; never answer from conversation memory.
+- **An ask for the whole board is `src/skills/briefing-the-board/SKILL.md`** —
+  every epic and the backlog for a reader carrying none of it, ending on the
+  user's pick. What is read here is the session's own queue.
 
 ## When to update the board
 

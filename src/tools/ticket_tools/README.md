@@ -80,6 +80,22 @@ the archive.
 - **An agent that has finished nothing gets no section**, which is a first state
   rather than an empty one.
 
+### brief.py
+`python3 brief.py <your slug>` — the whole board for a reader carrying none of
+it: every in-flight epic with its owner, its counts and its open cards; the
+in-flight epics holding nothing on the board; the cards under no epic; the
+backlog; and the card the calling agent's queue would start at. The procedure
+that reads it out to a person is `src/skills/briefing-the-board/SKILL.md`.
+
+- **It reads fleet-wide whoever calls it.** The user owns every epic whichever
+  agent is in the chair, so the slug says whose queue to report and never what
+  to filter to.
+- **An epic's next step is its own top open card in board order.**
+  `epic.next_action` is not read here: a next step derived from the cards
+  cannot disagree with them.
+- **Ownership, the precedence and the queue sort are `status_common.py`.** The
+  groupings are this front end's own, as the fleet section is `cos_status.py`'s.
+
 ### create_tickets.py
 `python3 create_tickets.py --instance <name>` provisions an empty tickets
 database under `data/<instance>/tickets/` with the full schema the viewer

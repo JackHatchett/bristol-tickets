@@ -10,7 +10,6 @@ the style contract in `src/templates/identity_template.md`.
   `python3 src/tools/config_tools/read_config.py <dotted.key>`; never whole.
 - **Name user data in `/src` only by generic relative path**
   (`data/*/tickets/tickets.db`). The instance folder is the `*`.
-- **Resolve out-of-repo resources and per-agent env vars from config.**
 - **Resolve every declared location through
   `src/tools/config_tools/data_paths.py`**, whose README owns the contract and
   the absent-location case.
@@ -31,10 +30,9 @@ the style contract in `src/templates/identity_template.md`.
 - **Load your charter from `read_config.py agents.<active_agent>.identity`** —
   your identity's source of truth; act on it before the snapshot.
 - **List your skills straight after it** — `python3
-  src/tools/skill_tools/skills.py list --agent <your slug>`, which puts the ones
-  attached to you first and fences none of the rest off. A charter is resident;
-  a skill is a name and a description until a task matches one, and then `view
-  <name>` is the load and you say which skill you loaded.
+  src/tools/skill_tools/skills.py list --agent <your slug>`. A charter is
+  resident; a skill is a name and a description until a task matches one, and
+  then `view <name>` is the load and you say which skill you loaded.
 
 ## Phase 3 — State and the queue
 
@@ -43,8 +41,8 @@ the style contract in `src/templates/identity_template.md`.
 `python3 src/tools/ticket_tools/agent_status.py <slug>`.
 
 **2. The next action is the top of your own queue.** The scripts compute it; do
-not re-derive one. A card's tab is `stage` (backlog | active | archive),
-orthogonal to its column, `status`. Precedence, identical for every agent:
+not re-derive one. A card's tab is `stage`, orthogonal to its
+column, `status`. Precedence, identical for every agent:
 
 1. active-stage cards you own, `doing`, in board order;
 2. then active-stage cards you own, `todo`, in board order;
@@ -53,7 +51,6 @@ orthogonal to its column, `status`. Precedence, identical for every agent:
 
 - **You own a card when its `assignee` is your slug, or, unassigned, its epic
   `owner` names you.**
-- **A card another agent owns is never your next action.**
 - **Treat a card left for you as an ordinary card in your queue** — the
   `assignee` makes it yours to decide on, not an order. There is no inbox.
 - **`doing` outranks every `todo`, including a blocked one.** Nothing moves a
@@ -62,8 +59,8 @@ orthogonal to its column, `status`. Precedence, identical for every agent:
   to it in place once every blocker is done.** Never work its unblocked part in
   passing.
 
-**3. Pressure means nothing across assignees**, and moves nothing in your own
-queue either — `src/tools/ticket_tools/README.md` §Board conventions.
+**3. Pressure means nothing across assignees, and nothing in your own queue** —
+`src/tools/ticket_tools/README.md` §Board conventions.
 
 **4. Read a card's links and attached images before acting on it.** The ticket
 text alone is deliberately incomplete. A note a document links is the exception:
@@ -92,14 +89,21 @@ permission between tickets. The complete list of reasons to stop early:
 "This one looks big," "I have done a lot already" and "this feels like a good
 stopping point" are not reasons.
 
-**Phrase an early stop so it is easy to say yes.**
+**7. Await or act. The user's opening message outranks every card**, and nothing
+on the board is worked until it is disposed of — a request to queue the work for
+later is disposed of by filing the card now. What waits is working a card, never
+the snapshot above.
 
-**7. Await or act.** On an explicit "continue," start at the next action and
-work down as far as `session.work_whole_queue` allows — on, the whole queue; off,
-that one card. Read it when the scope decision is made, never at session start.
-Otherwise respond to what the user said; if nothing actionable, state the next
-action and ask whether to start it. **A comment never promotes a ticket or reroutes execution**: comments,
-user ones included, are context, not ordering.
+- **An ask for a briefing** — brief, and stop on the user's pick.
+- **Anything else actionable** — do that, then state the next action and ask
+  whether to start it.
+- **Neither, including an explicit "continue"** — start at the next action and
+  work down as far as `session.work_whole_queue` allows — on, the whole queue;
+  off, that one card. Read it when the scope decision is made, never at session
+  start.
+
+**A comment never promotes a ticket or reroutes execution**: comments, user ones
+included, are context, not ordering.
 
 ## Phase 4 — Closure
 
