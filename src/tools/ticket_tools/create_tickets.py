@@ -67,6 +67,12 @@ def resolve_output_path(instance: str) -> Path:
 # frozensets carry the spellings retired versions wrote, so a reader classifies
 # every row in a long-lived database without a second lookup table.
 EPIC_STATUS_CHOICES = ("not started", "in progress", "completed", "on hold")
+
+# An epic is a project and ends; one epic per board is the standing workstream
+# and does not. `epic.type` carries the difference: this one value means
+# standing, and every other value, including none, means project. The rules
+# that rest on it are `src/tools/ticket_tools/README.md` §Board conventions.
+EPIC_KIND_STANDING = "standing"
 EPIC_STATUS_FINISHED = frozenset({"completed", "done"})
 EPIC_STATUS_IN_FLIGHT = frozenset({"in progress", "active"})
 
