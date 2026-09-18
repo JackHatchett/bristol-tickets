@@ -45,6 +45,24 @@ insert it under the appropriate epic, and confirm back only if it is ambiguous.
 sizing. Size it in one pass against the anchors there. An XL card is one to
 split, not one to start.
 
+## Which epic a card belongs to
+
+Every card names an epic or the standing workstream, and an agent leaves none
+untriaged. The vocabulary and the storage are
+`src/tools/ticket_tools/README.md` §Board conventions.
+
+- **A card that continues a named effort takes that effort's epic.** The work
+  the session is doing names it; nothing has to be worked out.
+- **A card that is the whole of its own subject goes to standing work.** Upkeep,
+  a correction, a one-off request, a fix with nothing behind it.
+- **A second card on a standing subject opens an epic, and both move into it.**
+  Two related cards are a project, and the epic is opened at the moment the
+  second one is written rather than when the subject feels big enough.
+- **Name the assignee on every standing card.** Standing work has no owning
+  agent to fall back on.
+- **Leave `epic_id` NULL only where the user's own capture left it.** It reads
+  as untriaged and the viewer flags it for the user to decide.
+
 ## Record types: Build vs Fix
 
 Every ticket ("issue" and "ticket" are synonyms) is exactly one record type,

@@ -212,6 +212,29 @@ and a **status** (which board column):
 `backlog` is not a *status* value; it lives on the stage axis, and the CLI
 redirects `--status backlog` to a stage move.
 
+**An epic is the project level, and every card belongs to one or to standing
+work.** `epic.type` carries the difference:
+`create_tickets.EPIC_KIND_STANDING` is the one value that means standing, and
+every other value, including none, means project.
+
+- **A project epic ends.** It is opened for an effort, its cards close under it,
+  and closing it is what says the effort is over.
+- **One epic per board is the standing workstream, and it never closes** — the
+  upkeep, the corrections, the one-off requests, and anything that is a single
+  ticket rather than an effort. There is nothing for it to finish, so what is
+  measured against it is a period rather than a closure.
+- **Two cards on one subject are a project.** A single card goes to standing;
+  when a second joins it, both move to an epic of their own. The procedure is
+  `src/skills/manage-tickets/SKILL.md` §Which epic a card belongs to.
+- **A standing card names its assignee.** The standing epic has no agent owner,
+  so the fallback in §Invariants reaches nobody and an unassigned card there
+  would sit in no queue at all.
+- **`epic_id` NULL means untriaged, and is the user's own state.** It is a card
+  captured before anyone decided where it belongs, and the viewer flags it. An
+  agent writing a card decides — an epic, or standing — and leaves none null.
+  A card that reached `done` with no epic is standing by default, which is what
+  the Done sweep may take.
+
 **An epic's status has one vocabulary** — `not started`, `in progress`,
 `completed`, `on hold` — the set Bristol Tickets' epic dialog writes, held as
 `create_tickets.EPIC_STATUS_CHOICES` and used by `add-epic`. The status scripts

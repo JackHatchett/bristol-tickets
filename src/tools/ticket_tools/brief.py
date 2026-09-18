@@ -54,7 +54,7 @@ def in_flight_epics(cur: sqlite3.Cursor) -> list[sqlite3.Row]:
     owns."""
     ph = ",".join("?" * len(create_tickets.EPIC_STATUS_IN_FLIGHT))
     return cur.execute(
-        f"SELECT id, name, owner, status, description FROM epic "
+        f"SELECT id, name, owner, status, type, description FROM epic "
         f"WHERE status IN ({ph}) ORDER BY id",
         tuple(create_tickets.EPIC_STATUS_IN_FLIGHT),
     ).fetchall()
@@ -111,8 +111,12 @@ def main() -> None:
         by_epic.setdefault(r["epic_id"], []).append(r)
 
     epics = in_flight_epics(cur)
-    live = [e for e in epics if any(is_open(r) for r in by_epic.get(e["id"], []))]
-    idle = [e for e in epics if e not in live]
+    standing = [e for e in epics
+                if (e["type"] or "") == create_tickets.EPIC_KIND_STANDING]
+    projects = [e for e in epics if e not in standing]
+    live = [e for e in projects
+            if any(is_open(r) for r in by_epic.get(e["id"], []))]
+    idle = [e for e in projects if e not in live]
 
     print(f"\n{'=' * 72}\nEPICS IN FLIGHT, WITH CARDS OPEN ({len(live)})\n{'=' * 72}")
     for e in live:
@@ -156,9 +160,23 @@ def main() -> None:
             print(f"\n  #{eid} {group[0]['epic']}")
             print_group(group, blockers)
 
-    loose = [r for r in board if r["epic_id"] is None and is_open(r)]
-    print(f"\n{'=' * 72}\nCARDS UNDER NO EPIC ({len(loose)})\n{'=' * 72}\n")
+    for e in standing:
+        held = by_epic.get(e["id"], [])
+        opens = [r for r in held if is_open(r)]
+        done = [r for r in held if r["status"] == "done"]
+        back = [r for r in held if r["stage"] == "backlog"]
+        print(f"\n{'=' * 72}\nSTANDING WORK — #{e['id']} {e['name']} "
+              f"({len(opens)} open)\n{'=' * 72}")
+        print(f"\n     never closes · {len(done)} done · {len(back)} in backlog")
+        if opens:
+            print_group(opens, blockers)
+
+    loose = [r for r in rows if r["epic_id"] is None
+             and (is_open(r) or r["stage"] == "backlog")]
+    print(f"\n{'=' * 72}\nUNTRIAGED — NO EPIC, NOT STANDING ({len(loose)})"
+          f"\n{'=' * 72}\n")
     if loose:
+        print("     each of these needs an epic or the standing workstream")
         print_group(loose, blockers)
     else:
         print("     (none)")
