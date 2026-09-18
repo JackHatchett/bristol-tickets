@@ -26,7 +26,7 @@ TOOLS = HERE.parents[1]
 ROOT = HERE.parents[3]
 sys.path.insert(0, str(TOOLS))
 
-from bluesky import client, render, store, threads  # noqa: E402
+from bluesky import client, judge, render, store, threads  # noqa: E402
 from config_tools import data_paths  # noqa: E402
 
 CONFIG_READER = ROOT / "src" / "tools" / "config_tools" / "read_config.py"
@@ -101,7 +101,7 @@ def link_into_journal(journal_file, page_file):
     return True
 
 
-def build_day(day, records, get_thread, tail_cap, keep, workers=1):
+def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1):
     """Every conversation the account took part in on one day, pruned.
 
     A day is a handful of independent conversations and the time is all spent
@@ -124,11 +124,14 @@ def build_day(day, records, get_thread, tail_cap, keep, workers=1):
     else:
         fetched = [one(item) for item in work]
     kept_trees = [keep(root, tree) for root, tree in fetched]
-    return [render.render_section(tree) for tree in kept_trees if tree is not None]
+    # The store holds every post; the page shows the ones the notebook keeps.
+    shown = [threads.without(tree, dropped) for tree in kept_trees
+             if tree is not None]
+    return [render.render_section(tree) for tree in shown if tree is not None]
 
 
 def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
-        start_from=None):
+        start_from=None, from_store=False):
     zone = ZoneInfo(setting("timezone", "UTC"))
     folder = required("notes_folder")
     journal_folder = required("journal_folder")
@@ -138,13 +141,19 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
     do_link = bool(setting("link_into_journal", True))
     workers = int(setting("fetch_workers", 6))
 
-    did, pds = account()
     since = None
     if window_days is not None:
         since = datetime.now(timezone.utc) - timedelta(days=window_days)
     conn = store.connect()
-    posts = client.read_posts(did, pds, since=since)
-    print(f"{len(posts)} post records read")
+    if from_store:
+        posts = []
+        get_thread = lambda *_args, **_kwargs: None  # noqa: E731
+        print("writing from the store; reaching no account")
+    else:
+        did, pds = account()
+        get_thread = client.get_thread
+        posts = client.read_posts(did, pds, since=since)
+        print(f"{len(posts)} post records read")
     if not dry_run:
         added = store.keep_posts(conn, posts)
         print(f"{added} of them the store had not seen; it holds "
@@ -162,6 +171,9 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
         for day in by_day:
             by_day[day].sort(key=client.created_at)
     print(f"{len(by_day)} days with posts")
+    dropped = judge.pruned_uris()
+    if dropped:
+        print(f"{len(dropped)} posts the notebook does not keep")
 
     def keep(root, tree):
         """The conversation a page is written from, kept where it may be."""
@@ -187,8 +199,8 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
     def handle(day):
         """One day, from its posts to its page. Safe to run beside others,
         because every day writes its own file and its own journal page."""
-        sections = build_day(day, by_day[day], client.get_thread, tail_cap,
-                             keep, workers=1)
+        sections = build_day(day, by_day[day], get_thread, tail_cap,
+                             keep, dropped, workers=1)
         if not sections:
             return None
         destination = page_path(day, folder, prefix)
@@ -257,12 +269,15 @@ def main():
                         help="begin at this date (YYYY-MM-DD) rather than the first")
     parser.add_argument("--budget", type=float,
                         help="stop after this many seconds and say what is left")
+    parser.add_argument("--from-store", dest="from_store", action="store_true",
+                        help="write the pages from what the store already "
+                             "holds, reaching no account")
     args = parser.parse_args()
     start = (datetime.strptime(args.start_from, "%Y-%m-%d").date()
              if args.start_from else None)
     sys.exit(run(window_days=None if args.all else args.days, dry_run=args.dry_run,
                  skip_existing=args.skip_existing, budget=args.budget,
-                 start_from=start))
+                 start_from=start, from_store=args.from_store))
 
 
 if __name__ == "__main__":

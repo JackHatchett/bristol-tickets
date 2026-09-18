@@ -241,6 +241,59 @@ def prune(root, tail_cap=DEFAULT_TAIL_CAP):
     return kept
 
 
+def without(root, dropped):
+    """The conversation with the named posts of the account's taken out.
+
+    A post that goes leaves no placeholder and no gap in the shape: whatever
+    answered it answers what it was answering instead. What stays is every
+    branch still holding one of the account's posts, and whatever was written
+    under one of them, which is the tail the stored conversation was already
+    cut back to. A conversation holding none of the account's posts is no
+    longer a section, and the answer is None.
+
+    The one post that cannot simply go is the one the whole conversation hangs
+    from. Where that is the account's own and something under it stays, it
+    holds its place as the marker for a post that is not there, the same
+    marker a post deleted by its author leaves.
+    """
+    def reaches(node):
+        found = node.mine and node.uri not in dropped
+        for child in node.children:
+            if reaches(child):
+                found = True
+        node.reaches_kept = found
+        return found
+
+    if not reaches(root):
+        return None
+
+    def branch(node, under_kept):
+        """What survives of `node` and everything below it, as a list.
+
+        A list, because a post that goes hands its children up to its own
+        parent rather than taking them with it.
+        """
+        kept_here = node.mine and node.uri not in dropped
+        children = []
+        for child in node.children:
+            if child.reaches_kept or under_kept:
+                children.extend(branch(child, under_kept or kept_here))
+        if node.uri in dropped:
+            return children
+        copy = Node(node.uri, node.author, node.text, node.created, node.record,
+                    node.kind)
+        copy.mine = node.mine
+        copy.children = children
+        return [copy]
+
+    survivors = branch(root, False)
+    if len(survivors) == 1:
+        return survivors[0]
+    marker = Node(root.uri, root.author, None, root.created, {}, UNAVAILABLE)
+    marker.children = survivors
+    return marker
+
+
 def conversation(root, my_uris, fetch, tail_cap=DEFAULT_TAIL_CAP):
     """One thread, fetched and cut back, or None where nothing survives.
 
