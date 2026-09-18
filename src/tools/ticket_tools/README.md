@@ -232,8 +232,16 @@ every other value, including none, means project.
 - **`epic_id` NULL means untriaged, and is the user's own state.** It is a card
   captured before anyone decided where it belongs, and the viewer flags it. An
   agent writing a card decides — an epic, or standing — and leaves none null.
-  A card that reached `done` with no epic is standing by default, which is what
-  the Done sweep may take.
+- **A card reaching `done` with no epic is standing**, and the done transition
+  sets it so. Nothing reaches the Archive unattributed, which is what keeps a
+  period's project cost and upkeep cost comparable.
+
+**The Done column holds work waiting for something.** A project card waits for
+its epic to close, which archives it and writes that epic's report; that
+closure is the only period boundary the board has, and the user declaring an
+effort over is what sets it. A standing card waits for nothing, so it is never
+in Done: marking it done archives it. The board therefore has no sweep button,
+because the two kinds of card each leave on their own event.
 
 **An epic's status has one vocabulary** — `not started`, `in progress`,
 `completed`, `on hold` — the set Bristol Tickets' epic dialog writes, held as
