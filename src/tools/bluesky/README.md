@@ -97,6 +97,37 @@ delete and an app view that has not yet seen it disagree, and a reader believes
 the app view, so the check is what the public view serves rather than what the
 delete call returned.
 
+### judge.py
+
+Sorts every post the account made into what the notebook keeps. The program
+does not judge: it hands a reader the posts in one fixed order with the
+conversation each one sat in, takes a verdict back, and keeps the verdicts in
+`data/<instance>/bluesky/verdicts.db`.
+
+```
+python3 src/tools/bluesky/judge.py status
+python3 src/tools/bluesky/judge.py batch --from 0 --count 70
+python3 src/tools/bluesky/judge.py record --file verdicts.txt
+python3 src/tools/bluesky/judge.py sample --count 100 --seed 7
+python3 src/tools/bluesky/judge.py compare
+```
+
+**A post's number is its position in the corpus**, ordered by when it was
+posted, so two runs hand the same reader the same numbers and a verdict can be
+recorded by number rather than by address.
+
+**The standard `batch` prints is the only standard.** `--bare` leaves it out
+for a reader already holding it.
+
+**A conversation is printed once, with every post of the account's being
+judged inside it numbered.** `--unjudged` skips posts already judged, which is
+what makes a pass resumable; those posts stay in the conversation as context.
+
+**`sample` hands back judged posts without their verdicts**, so a second
+reader judges blind; `record --table review` keeps that second reading, and
+`compare` counts where the two differ. A check shown the judgment it is
+checking is not a check.
+
 ### install_schedule.py
 
 Writes the operating system's own daily schedule — a launch agent on macOS, a
