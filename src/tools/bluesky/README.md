@@ -64,6 +64,14 @@ A throttle or a server fault is retried with a doubling delay, and a call that
 still fails raises rather than returning a short result that would read as a
 quiet day.
 
+**The certificate authorities a call verifies against are found rather than
+assumed.** `certificate_authorities` takes them from the first source that has
+any - the interpreter's own store, certifi, the paths OpenSSL was built to
+read, and on macOS the system root keychain - and raises where none of them
+does. Every call in these programs, `purge.py` included, goes through that one
+context, so a run started by a schedule verifies what a run started by hand
+does.
+
 ### threads.py
 
 Groups posts by the conversation they belong to and cuts each one back to what
