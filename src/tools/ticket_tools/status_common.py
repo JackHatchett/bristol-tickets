@@ -510,6 +510,24 @@ def active_epic_names(cur: sqlite3.Cursor, owner: str | None = None) -> str:
     return ", ".join(e["name"] for e in rows) or "(none)"
 
 
+def next_action(conn: sqlite3.Connection, board: list,
+                mine_q: list) -> tuple:
+    """The card at the top of a queue, as `src/app.md` Phase 3.2 selects it.
+
+    Returns (row or None, {blocked id -> blocker ids}, [ids holding the whole
+    queue up]). The row is the first card in queue order carrying no unmet
+    blocker; a queue whose every card is blocked has none, and the third member
+    is what would clear the way. Every reader of a next action calls this, so
+    the precedence is computed once.
+    """
+    blockers = unmet_blockers(conn, board)
+    ready = [r for r in mine_q if not blockers.get(r["id"])]
+    if ready:
+        return ready[0], blockers, []
+    waiting = sorted({b for r in mine_q for b in blockers.get(r["id"], [])})
+    return None, blockers, waiting
+
+
 def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
                 *, label: str, show_owner: bool) -> None:
     """The next action and the queue under it, or the backlog fallback.
@@ -524,14 +542,11 @@ def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
     the way rather than naming one that cannot be started.
     """
     if mine_q:
-        blockers = unmet_blockers(conn, board)
-        ready = [r for r in mine_q if not blockers.get(r["id"])]
-        if ready:
-            nxt = ready[0]
+        nxt, blockers, waiting = next_action(conn, board, mine_q)
+        if nxt is not None:
             print(f"▶ {label} ({me}, active board): "
                   f"[{nxt['epic']}] {nxt['title']}  (pressure {nxt['pressure']}, {nxt['estimate'] or '?'})")
         else:
-            waiting = sorted({b for r in mine_q for b in blockers.get(r["id"], [])})
             print(f"▶ {label} ({me}, active board): none — every card in your "
                   f"queue is waiting on {', '.join(f'#{b}' for b in waiting)}.")
         print("\nYOUR QUEUE (active board, doing→todo, board order):")
