@@ -61,9 +61,10 @@ In this order, as prose the user can follow without opening anything:
 
 ## How it reads
 
-- **Define every board term at first use** — epic, card, the active board, the
-  backlog, `doing` against `todo`, pressure, a blocker, an assignee. The user
-  owns the board and is not carrying its vocabulary.
+- **`src/app.md` §What you say to the user reaches every term the board has** —
+  epic, card, the active board, the backlog, `doing` against `todo`, pressure, a
+  blocker, an assignee. The user owns the board and is not carrying its
+  vocabulary.
 - **Name every card by its number and its title.** The number is what the user
   answers with.
 - **Say what an epic is for in your own words**, taken from its description and

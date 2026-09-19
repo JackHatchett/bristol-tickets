@@ -124,10 +124,16 @@ databases, mirroring the viewer's `ensure_schema_up_to_date()`.
   `--status`, `--owner`, `--approver`, `--description`, `--hard-constraints`,
   `--definition-of-done`, `--detail-path`, `--next-action`. It reaches the same
   fields Bristol Tickets' epic dialog writes, and sets `closed_at` when a status
-  in `EPIC_STATUS_FINISHED` is given. It touches no task.
+  in `EPIC_STATUS_FINISHED` is given.
+- **A status in `EPIC_STATUS_FINISHED` ends the effort**, which is the one case
+  where this touches tasks: the epic's finished cards move to the Archive in one
+  act and a report covering them is written, through
+  `src/tools/bristol/epic_closure.py`, which the viewer's epic dialog calls too.
+  Only the move into a finished status does it, the standing workstream is
+  refused, and an unreachable notebook folder costs the report alone.
 - **`update-task --id N` edits what a card *says*** — `--title`,
-  `--description`, `--estimate`, `--record-type`, `--reporter`, `--epic-id` —
-  and touches no board position.
+  `--description`, `--estimate`, `--due-date`, `--record-type`, `--reporter`,
+  `--epic-id` — and touches no board position. `--due-date none` clears a date.
 - **`update-task-status --id N --status ...`** moves a card across the Kanban
   columns, setting and clearing `closed_at` on the `done` transition. It also
   takes `--stage`, `--pressure`, `--assignee` and `--block-reason` in the same
@@ -155,8 +161,8 @@ anyone narrating it.
 - **Every entry is machine-written.** Database triggers append them; no agent
   and no person composes one, explains a change, or adds a reason. An entry
   carrying prose has become the narration the change log exists to replace.
-- **The append lives at the database layer**, so a drag, a Clear Done sweep, a
-  record-dialog edit and a CLI call are all recorded identically.
+- **The append lives at the database layer**, so a drag, a record-dialog edit,
+  a card archived on finishing and a CLI call are all recorded identically.
 - **Actor** is `user` from Bristol Tickets and the `--actor` write signature
   from the CLI. Each connection installs the triggers in its own TEMP schema
   with its actor baked in.
@@ -212,6 +218,13 @@ and a **status** (which board column):
 `backlog` is not a *status* value; it lives on the stage axis, and the CLI
 redirects `--status backlog` to a stage move.
 
+**A due date is optional, and it orders nothing.** `task.due_date` holds an
+ISO date an outside deadline falls on — a filing window, a renewal, a date
+somebody else set — and most cards carry none. It is not a plan and not a
+forecast: board order is the queue (`src/app.md` Phase 3.2), and no reader sorts
+by this field. A card whose date has passed and which is not `done` reads as
+overdue wherever it is drawn.
+
 **An epic is the project level, and every card belongs to one or to standing
 work.** `epic.type` carries the difference:
 `create_tickets.EPIC_KIND_STANDING` is the one value that means standing, and
@@ -223,6 +236,14 @@ every other value, including none, means project.
   upkeep, the corrections, the one-off requests, and anything that is a single
   ticket rather than an effort. There is nothing for it to finish, so what is
   measured against it is a period rather than a closure.
+- **A second standing epic is refused**, by the epic dialog and by `add-epic`
+  and `update-epic` alike. Two of them would divide upkeep between two homes and
+  leave every rule that reaches for the standing epic picking whichever was
+  opened first. `finishing.standing_conflict()` is the one place that says so.
+- **The kind is chosen from two values rather than typed** —
+  `create_tickets.EPIC_KIND_PROJECT` and `EPIC_KIND_STANDING`. An older row
+  holding prose reads as project and keeps its text until someone chooses a
+  kind over it.
 - **Two cards on one subject are a project.** A single card goes to standing;
   when a second joins it, both move to an epic of their own. The procedure is
   `src/skills/manage-tickets/SKILL.md` §Which epic a card belongs to.

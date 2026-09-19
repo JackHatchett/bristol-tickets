@@ -46,7 +46,7 @@ bristol/
 │   ├── skills_tab.py    SkillsTab — what a session can load, and importing one
 │   ├── courses_tab.py   CoursesTab — every course, and the control that opens one
 │   └── main_window.py   MainWindow — toolbar, tabs, filters, search, inspector
-├── reports/             the analytic report written on Clear Done (own README)
+├── reports/             the analytic report a closing epic writes (own README)
 │   ├── paths.py         where the report goes (env → .local → config)
 │   ├── metrics.py       DB → computed facts (no I/O, no formatting)
 │   ├── render.py        facts → Markdown (no DB, no computation)
@@ -214,15 +214,18 @@ A ticket Description is confined to its Build or Fix template, so provenance
 lives in a link. That rule is agent behaviour and sits outside this tool:
 `src/skills/manage-tickets/SKILL.md` §Record types: Build vs Fix.
 
-## Clear Done writes a report
+## Ending a period writes a report
 
-Clearing the Done column sweeps finished cards to the Archive **and** writes an
-analytic report to the user's Markdown notebook — one note per sweep, plus a
-Dataview index that trends every report against the ones before it. Clear Done
-is the board's only natural period boundary, so it is where the reporting
-cadence comes from.
+A period ends when an epic closes. Giving an epic a finished status — from the
+epic dialog or from `ticket_write.py update-epic` — moves its finished cards to
+the Archive in one act and writes an analytic report covering exactly those
+cards to the user's Markdown notebook, plus a Dataview index that trends every
+report against the ones before it. `epic_closure.py` is the one act both front
+ends call. The standing workstream never closes and is refused; it is measured
+over a date range instead. Clearing the Done column writes a report too, over
+whatever it swept.
 
-The report is strictly advisory: the sweep commits first, and a missing or
+The report is strictly advisory: the board write commits first, and a missing or
 unreachable notebook folder skips the report rather than failing the action.
 Where reports land is resolved from `BRISTOL_REPORTS_DIR`, then the instance
 pointer's config, then a legacy `bristol_reports.local`, then the config found
@@ -230,8 +233,8 @@ by walking up the tree — see `reports/README.md`.
 
 `task_event` (`schema.sql`) is the mechanical change log: one row per changed
 task field, holding the field, its new value, the actor and a timestamp.
-Database triggers write every row, so a drag, a Clear Done sweep, a dialog edit
-and a CLI call are all recorded the same way. The inspector's Log pane shows
+Database triggers write every row, so a drag, a dialog edit, a card archived on
+finishing and a CLI call are all recorded the same way. The inspector's Log pane shows
 these interleaved with `issue_log` comments, filtered by two checkboxes —
 Comments and Changes, both on by default. Title and description changes record
 only that they changed. The status and stage rows are also what make cycle time,

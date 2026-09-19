@@ -73,6 +73,7 @@ EPIC_STATUS_CHOICES = ("not started", "in progress", "completed", "on hold")
 # standing, and every other value, including none, means project. The rules
 # that rest on it are `src/tools/ticket_tools/README.md` §Board conventions.
 EPIC_KIND_STANDING = "standing"
+EPIC_KIND_PROJECT = "project"
 EPIC_STATUS_FINISHED = frozenset({"completed", "done"})
 EPIC_STATUS_IN_FLIGHT = frozenset({"in progress", "active"})
 
@@ -142,6 +143,7 @@ CREATE TABLE IF NOT EXISTS task (
     record_type TEXT NOT NULL DEFAULT 'build',     -- 'build' (Story + acceptance criteria) | 'fix' (Expected/Observed).
     stage       TEXT NOT NULL DEFAULT 'backlog',   -- backlog | active | archive (which tab; orthogonal to status).
     sort_order  INTEGER NOT NULL DEFAULT 0,        -- manual drag-to-reorder position; lower = higher in its list.
+    due_date    TEXT,                              -- optional ISO date an outside deadline falls on: a filing window, a renewal, a date someone else set. It orders nothing — board order is the queue.
     block_reason TEXT,                             -- NULL | dependency | decision | capability | transient. What kind of thing has stopped the card, never which card: a dependency resolves live from the 'blocks' links.
     FOREIGN KEY (epic_id)    REFERENCES epic  (id),
     FOREIGN KEY (scope_id)   REFERENCES scope (id)

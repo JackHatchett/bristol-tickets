@@ -13,7 +13,7 @@ Output: one document a reader who was not in the session can act on.
 
 Load it for a document carrying more than one finding. A single finding, a
 report, a ticket body and an answer in chat are governed by `src/app.md`
-Phase 4 alone, which every session already holds.
+§What you say to the user alone, which every session already holds.
 
 ## Procedure
 

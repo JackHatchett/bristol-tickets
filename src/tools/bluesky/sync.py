@@ -101,7 +101,8 @@ def link_into_journal(journal_file, page_file):
     return True
 
 
-def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1):
+def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1,
+              handle=""):
     """Every conversation the account took part in on one day, pruned.
 
     A day is a handful of independent conversations and the time is all spent
@@ -127,7 +128,56 @@ def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1):
     # The store holds every post; the page shows the ones the notebook keeps.
     shown = [threads.without(tree, dropped) for tree in kept_trees
              if tree is not None]
-    return [render.render_section(tree) for tree in shown if tree is not None]
+    shown = [tree for tree in shown if tree is not None]
+
+    # A post whose conversation was never kept is on its day in its own right.
+    # The account was emptied, so those conversations can never be fetched now,
+    # and the posts' own words are what the store has.
+    place = {record["uri"]: index for index, record in enumerate(records)}
+    covered = {node.uri for tree in shown for node in tree.walk()}
+    sections = []
+    for tree in shown:
+        first = min((place[node.uri] for node in tree.walk()
+                     if node.uri in place), default=len(place))
+        sections.append((first, render.render_section(tree)))
+    for record in records:
+        uri = record.get("uri")
+        if uri in covered or uri in dropped:
+            continue
+        section = threads.solo_from_record(record, handle)
+        sections.append((place[uri], render.render_section(section)))
+    sections.sort(key=lambda item: item[0])
+    return [section for _, section in sections]
+
+
+def keep_images(conn, did, pds):
+    """Every picture the store has not asked about yet, fetched and kept.
+
+    A blob already kept, or already found gone, is not asked for twice: the
+    store remembers the asking as well as the answer, which is what keeps a
+    daily run from re-reading a picture corpus every morning.
+    """
+    asked = store.image_asked(conn)
+    wanted = [(uri, blob) for uri, blobs in store.records_with_images(conn)
+              for blob in blobs if blob[0] not in asked]
+    if not wanted:
+        kept, gone, size = store.image_totals(conn)
+        print(f"{kept} pictures kept, {gone} gone, {size / 1e6:.1f} MB on disk")
+        return
+    fetched = missing = 0
+    for uri, (cid, mime, alt) in wanted:
+        data = client.fetch_blob(pds, did, cid)
+        if data is None:
+            store.note_image_gone(conn, cid, uri, mime, alt)
+            missing += 1
+            continue
+        store.keep_image(conn, cid, uri, mime, alt, data)
+        fetched += 1
+    kept, gone, size = store.image_totals(conn)
+    print(f"{fetched} pictures kept this run, {missing} the data server no "
+          f"longer serves")
+    print(f"{kept} pictures kept in all, {gone} gone, "
+          f"{size / 1e6:.1f} MB on disk")
 
 
 def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
@@ -145,6 +195,7 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
     if window_days is not None:
         since = datetime.now(timezone.utc) - timedelta(days=window_days)
     conn = store.connect()
+    account_handle = setting("handle", "")
     if from_store:
         posts = []
         get_thread = lambda *_args, **_kwargs: None  # noqa: E731
@@ -159,6 +210,12 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
         print(f"{added} of them the store had not seen; it holds "
               f"{store.post_count(conn)} posts and "
               f"{store.thread_count(conn)} conversations")
+
+    if not dry_run and not from_store:
+        keep_images(conn, did, pds)
+
+    # Every page written this run shows the pictures the store holds.
+    render.use_kept_images(store.kept_images(conn))
 
     # The pages are written from the store, so a post deleted from the account
     # keeps its place on the day it belongs to.
@@ -200,7 +257,7 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
         """One day, from its posts to its page. Safe to run beside others,
         because every day writes its own file and its own journal page."""
         sections = build_day(day, by_day[day], get_thread, tail_cap,
-                             keep, dropped, workers=1)
+                             keep, dropped, workers=1, handle=account_handle)
         if not sections:
             return None
         destination = page_path(day, folder, prefix)

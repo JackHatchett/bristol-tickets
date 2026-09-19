@@ -74,9 +74,12 @@ DATA_FILES += stage_payload()
 OPTIONS = {
     "argv_emulation": False,
     # Bundle the ui/ and reports/ packages, named explicitly: reports/ is
-    # reached only through a guarded import inside Clear Done.
+    # reached only through a guarded import inside the epic closure.
     "packages": ["ui", "reports"],
-    "includes": ["sqlite3"],
+    # epic_closure is reached the same guarded way, from the epic dialog, so
+    # nothing in the import graph would carry it in on its own. finishing is
+    # imported outright by three ui modules and named here beside it.
+    "includes": ["sqlite3", "epic_closure", "finishing"],
     # A board draws no Tk windows and installs no packages at runtime.
     "excludes": ["tkinter", "setuptools", "pip", "pkg_resources", "py2app",
                  "pydoc_data", "test"],

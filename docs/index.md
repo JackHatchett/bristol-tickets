@@ -36,7 +36,7 @@ to the agent in a session.
 - **[sessions.md](sessions.md)** — the loop you actually live in: pick an agent,
   open a session, say what you want.
 - **[board.md](board.md)** — the board as a product. Tabs, columns, cards,
-  links, images, comments, search, Clear Done, reports.
+  links, images, comments, search, closing an epic, reports.
 - **[skills.md](skills.md)** — what a skill is, where skills live, and how to
   install, judge and attach one somebody else wrote.
 - **[studying.md](studying.md)** — working through a course: the reading

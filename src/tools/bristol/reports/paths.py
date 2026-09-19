@@ -14,8 +14,8 @@ resolution order documented in ``src/tools/config_tools/instance_pointer.py``:
        ``markdown_notebook.reports_dir``.
 
 Returns None when nothing resolves, which the caller treats as "skip the
-report" rather than an error — a missing notebook must never cost the user
-their Clear Done.
+report" rather than an error — a missing notebook must never cost the user the
+board write the report follows.
 
 GitHub-safe: contains no personal path.
 """

@@ -14,7 +14,8 @@ that explains one concept.
 
 Load it where the concept needs more explanation than the document can carry
 without becoming a document about that concept instead. A term one plain
-sentence settles is defined in place, per `src/app.md` Phase 4, and nothing here
+sentence settles is defined in place, per `src/app.md` §What you say to the
+user, and nothing here
 fires.
 
 ## Procedure

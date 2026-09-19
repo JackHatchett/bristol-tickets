@@ -93,6 +93,27 @@ def mine_uris(node):
     return {item.uri for item in node.walk() if item.mine}
 
 
+def solo_from_record(record, author):
+    """One kept post as a section of its own, built from the record itself.
+
+    A post whose conversation was never kept — a reply to a thread the account
+    can no longer fetch — still belongs on its day. It is shown as what the
+    store actually holds: the post's own words, and nothing implying replies
+    that cannot be shown.
+    """
+    value = record.get("value") or {}
+    node = Node(
+        uri=record.get("uri", ""),
+        author=author,
+        text=value.get("text", ""),
+        created=_moment(value.get("createdAt")),
+        record={"record": value, "embed": value.get("embed")},
+        kind="post",
+    )
+    node.mine = True
+    return node
+
+
 def root_uri(record):
     """The address of the thread a post record belongs to.
 

@@ -188,7 +188,7 @@ and without the zone model changing.
 | `courses_dir` | Where `teaching_assistant` writes courses. |
 | `recipes_dir` | Where `librarian` keeps recipes. Yours to author, so no agent writes here without a folder grant that says so. |
 | `agent_output_dir` | Where agents drop drafts for you to review. |
-| `reports_dir` | Where Clear Done writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
+| `reports_dir` | Where a closing epic writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
 | `plans_dir` | Where a planning document goes. |
 | `explainers_dir` | Where `teaching_assistant` writes explainers, one folder per topic. |
 

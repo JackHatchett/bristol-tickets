@@ -41,10 +41,11 @@ git-tracked docs.
   fixed schema.
 - **Leave `src/` empty until a build phase starts.** Empty and engine-undecided
   is a legitimate state.
-- **Never open a project-local state or to-do file.** Progress, order and
-  session tracking are the project's epic and cards. A project that arrived from
-  elsewhere may keep a frozen state file, inert and no longer written to; that
-  is never licence to start a new one.
+- **Never open, read or write a project-local state, to-do or session-log
+  file.** Progress, order and session tracking are the project's epic and its
+  cards, and a file that once held them is a second record that went stale the
+  moment the board moved. One that arrived with a project is named to the user
+  and left to him, never read to re-derive where the work stands.
 
 The worldbuilding notebook is the single home for the project's story,
 characters, world, lore and tone.

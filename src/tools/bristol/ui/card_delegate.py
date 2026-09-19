@@ -10,7 +10,10 @@ A card is the only raised surface on the board: a soft shadow, a full corner
 radius, and a fill that carries hover and selection on its own. It reads top to
 bottom as the title, one muted line of the description, and a footer holding
 who owns it, how big it is, how hard it is pushing, what kind of record it is
-and which epic it belongs to.
+and which epic it belongs to. A card with no epic carries one accent dot in its
+top corner instead, and its tooltip names the choice that clears it. A card with
+a due date carries it as one more pill, in the Fix tint once the date has gone
+by on a card nobody has finished.
 
 Pressure is drawn in the same neutral treatment as every other footer fact. It
 sorts nothing and gates nothing (``src/app.md`` Phase 3.3), so nothing on the
@@ -124,6 +127,20 @@ class CardDelegate(QStyledItemDelegate):
     def _content_width(self, total_width: int) -> int:
         return max(40, total_width - self._left_gap() - self.MARGIN - 2 * self.PAD)
 
+    @property
+    def MARK_D(self) -> int:
+        """Diameter of the untriaged mark: the dot on a card nobody has placed
+        yet."""
+        return space("md")
+
+    def _title_width(self, content_w: int, data: dict) -> int:
+        """What the title has to itself. An untriaged card gives up the corner
+        the mark sits in, and sizeHint and paint both ask here so the height
+        reserved is the height drawn."""
+        if not data.get("untriaged"):
+            return content_w
+        return max(40, content_w - self.MARK_D - space("sm"))
+
     def _title_height(self, title: str, content_w: int) -> int:
         fm = QFontMetrics(self._title_font())
         rect = fm.boundingRect(0, 0, content_w, 10_000,
@@ -141,7 +158,8 @@ class CardDelegate(QStyledItemDelegate):
         content_w = self._content_width(total_w)
 
         h = self.PAD
-        h += self._title_height(data.get("title", ""), content_w)
+        h += self._title_height(data.get("title", ""),
+                                self._title_width(content_w, data))
         if (data.get("description") or "").strip():
             h += space("sm") + self.DESC_H
         h += self.GAP + self.FOOT_H + self.PAD
@@ -220,12 +238,25 @@ class CardDelegate(QStyledItemDelegate):
         cw = card.right() - self.PAD - cx
         y = card.top() + self.PAD
 
+        # A card with no epic carries one dot in its top corner, which no other
+        # card has: where it belongs is still to be decided, and the decision
+        # belongs to whoever is looking at the board. A card in the standing
+        # workstream has an epic, so it carries nothing.
+        title_w = self._title_width(int(cw), data)
+        if data.get("untriaged"):
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(C["ACCENT"]))
+            painter.drawEllipse(
+                QRectF(cx + cw - self.MARK_D,
+                       card.top() + self.PAD + (self.MARK_D / 2),
+                       self.MARK_D, self.MARK_D))
+
         # Title — the first thing read.
         title = data.get("title", "") or ""
         painter.setFont(self._title_font())
         painter.setPen(QColor(C["INK"]))
-        th = self._title_height(title, int(cw))
-        painter.drawText(QRectF(cx, y, cw, th),
+        th = self._title_height(title, title_w)
+        painter.drawText(QRectF(cx, y, title_w, th),
                          int(Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop),
                          title)
         y += th
@@ -264,6 +295,15 @@ class CardDelegate(QStyledItemDelegate):
             pills.append(("Fix", C["FIX_BG"], C["FIX_TX"]))
         else:
             pills.append(("Build", C["BUILD_BG"], C["BUILD_TX"]))
+        # A due date is a fact about the card rather than a position in a
+        # queue, so it reads as one more pill. An overdue one takes the same
+        # tint a Fix does, which is the board's one colour for something wrong.
+        due = (data.get("due_date") or "").strip()
+        if due:
+            overdue = bool(data.get("overdue"))
+            pills.append((f"Overdue {due}" if overdue else f"Due {due}",
+                          C["FIX_BG"] if overdue else C["NEUTRAL_BG"],
+                          C["FIX_TX"] if overdue else C["NEUTRAL_TX"]))
         epic_name = (data.get("epic_name") or "").strip()
         if epic_name:
             pills.append((epic_name, C["AMBER_BG"], C["AMBER_TX"]))

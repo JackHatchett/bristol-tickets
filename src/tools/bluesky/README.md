@@ -153,9 +153,12 @@ checking is not a check.
 
 ### install_schedule.py
 
-Writes the operating system's own daily schedule — a launch agent on macOS, a
-cron line elsewhere — so the copy runs with nothing conversational in the loop.
-Bare, it prints what it would install; `--install` installs it.
+Puts the copy on the operating system's own daily schedule — a launch agent on
+macOS, a cron line elsewhere — so it runs with nothing conversational in the
+loop. Bare, it prints what it would install; `--install` installs it. The shape
+of both schedules is `src/tools/_shared/install_schedule.py`, which every daily
+job uses; this file is that installer called with the copy's own label, command
+and log.
 
 **Run it on the machine that will hold the schedule.** It takes the interpreter,
 the repository and the log location from where it is running, so a run from
@@ -178,7 +181,20 @@ time.
 | `link_window_days` | how far back a run looks for journal pages written late |
 | `link_into_journal` | whether a journal page gains a link back |
 | `fetch_workers` | how many days are worked at once |
-| `app_password` | the app password `purge.py` signs in with, and nothing else |
+
+**The app password `purge.py` signs in with is in the OS keychain**, under the
+service `bristol.bluesky` and the key `app_password`, and in no file at all.
+`src/tools/_shared/keychain.py` reads it at the moment the tool runs and stores
+it in the first place; every other field above is configuration rather than a
+secret.
+
+**The pictures sit in an `images` folder beside the store's own file**, each one
+named for the blob it is, so a picture two posts carried is one file. The store
+records every blob it has asked about, kept or gone, so a daily run never reads
+a picture corpus twice, and a run says how many are kept, how many the data
+server no longer serves, and what the kept ones cost on disk. A page embeds the
+kept copy; a picture that was lost before this existed keeps its alt text and
+the address it had.
 
 **A page's filename carries a prefix.** Obsidian resolves a link by basename, so
 a page named for a date alone would collide with the journal's own note for that
@@ -187,7 +203,8 @@ date and make every link to either one ambiguous.
 ## What is checked
 
 ```
-python3 src/tools/test_tools/smoke.py bluesky_pruning bluesky_archive bluesky_purge
+python3 src/tools/test_tools/smoke.py bluesky_pruning bluesky_archive \
+    bluesky_images bluesky_purge
 ```
 
 `bluesky_pruning` is six conversations built by hand: branch pruning, two
@@ -199,6 +216,11 @@ is gone.
 shorter than the first: a post no longer served stays, a day the window opens
 partway through comes back whole, and a conversation is never traded for one
 holding less of what the account said.
+
+`bluesky_images` is a picture kept once and a picture already gone, against a
+data server stood in for by a fetcher that records what it was asked: the bytes
+land beside the store, a second pass asks for nothing, the page embeds the kept
+file, and a picture the store lacks keeps the words and the address it had.
 
 `bluesky_purge` is the arithmetic that paces a deletion pass and the record
 that lets a cut-off one resume. It reaches no account.

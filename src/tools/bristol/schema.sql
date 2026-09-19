@@ -140,6 +140,9 @@ CREATE TABLE IF NOT EXISTS task (
     record_type TEXT    NOT NULL DEFAULT 'build',     -- 'build' (Story + acceptance criteria) | 'fix' (Expected/Observed).
     stage       TEXT    NOT NULL DEFAULT 'backlog',   -- backlog | active | archive (which tab; orthogonal to status).
     sort_order  INTEGER NOT NULL DEFAULT 0,           -- manual drag-to-reorder position; lower = higher in its list.
+    due_date    TEXT,                                 -- optional ISO date an outside deadline falls on: a filing
+                                                      -- window, a renewal, a date someone else set. It orders
+                                                      -- nothing — board order is the queue.
     block_reason TEXT,                                -- NULL | dependency | decision | capability | transient.
                                                       -- What kind of thing has stopped the card, never which card:
                                                       -- 'dependency' is resolved live from the 'blocks' links, and the

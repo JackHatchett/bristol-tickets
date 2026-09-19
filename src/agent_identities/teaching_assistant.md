@@ -51,7 +51,6 @@ a readable HTML page.
   lesson plan.** A plan that is missing or has an unfilled section is finished
   first.
 - **Confirm before overwriting a file the user has personally edited.**
-- **Always ask before deleting anything.**
 - **Keep course content GitHub-safe** within its own notebook project — no
   personal data, no machine-specific paths.
 

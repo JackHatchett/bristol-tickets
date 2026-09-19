@@ -124,6 +124,96 @@ SELECT
     (SELECT COUNT(*) FROM learning_progress WHERE kind='exercise')         AS exercises_done;
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- DOMAIN: contacts
+-- Who is owed what, and since when. Three places already describe a person —
+-- the applications table's contact and referral text, the career dossiers, and
+-- the notebook's own pages — and none of them holds a date. This domain is the
+-- state layer beside them rather than a fourth description: nothing migrates
+-- into it and nothing it holds is a copy of what they hold.
+--
+-- A contact is one person, once. An ask is one thing outstanding between the
+-- user and that person, in either direction. A link joins a contact to
+-- something else — an application, a document, a client — so a person can be
+-- attached to many of them over time without any of their identifiers becoming
+-- a column here.
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS contact (
+    id              INTEGER PRIMARY KEY,
+    name            TEXT NOT NULL,
+    aliases         TEXT,                     -- other names this person answers to, comma separated
+    how_known       TEXT,                     -- how the user knows them, in their own words
+    company         TEXT,                     -- where they are now
+    title           TEXT,                     -- what they do there now
+    cadence_days    INTEGER,                  -- how often to be in touch; NULL means no cadence is owed
+    last_contact_on TEXT,                     -- ISO date of the last exchange either way
+    notes           TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_contact_name ON contact(LOWER(name));
+
+-- One row per thing outstanding. `direction` says who the ask waits on: 'us'
+-- when the next move is the user's, 'them' when it is the other person's.
+CREATE TABLE IF NOT EXISTS contact_ask (
+    id         INTEGER PRIMARY KEY,
+    contact_id INTEGER NOT NULL REFERENCES contact(id),
+    kind       TEXT NOT NULL,                 -- reconnect | referral | application-submit | recommendation | intro | favour-owed | other
+    direction  TEXT NOT NULL DEFAULT 'them',  -- us | them — who the next move waits on
+    subject    TEXT,                          -- what the ask is about, in one line
+    opened_on  TEXT NOT NULL DEFAULT (date('now')),
+    due_on     TEXT,                          -- ISO date this becomes late; NULL means no date was set
+    status     TEXT NOT NULL DEFAULT 'open',  -- open | done | dropped
+    last_touch TEXT                           -- ISO date of the last move on this ask
+);
+CREATE INDEX IF NOT EXISTS idx_ask_contact ON contact_ask(contact_id);
+CREATE INDEX IF NOT EXISTS idx_ask_status  ON contact_ask(status);
+
+-- One row per thing a contact is connected to. `target_id` names a row in this
+-- database and `target_path` a declared path; a row carries whichever of the
+-- two its kind has, and never an identifier copied onto the contact itself.
+CREATE TABLE IF NOT EXISTS contact_link (
+    id          INTEGER PRIMARY KEY,
+    contact_id  INTEGER NOT NULL REFERENCES contact(id),
+    target_kind TEXT NOT NULL,                -- application | document | client | course | other
+    target_id   INTEGER,
+    target_path TEXT,
+    label       TEXT,                         -- what this link is, for a reader
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_link_contact ON contact_link(contact_id);
+
+-- What is due: a contact whose cadence has come round, and an ask past the date
+-- it was given. One view rather than two, because the question they answer is
+-- one question — who is owed something today.
+CREATE VIEW IF NOT EXISTS v_contact_due AS
+SELECT c.id                                                        AS contact_id,
+       c.name                                                      AS name,
+       'cadence'                                                   AS reason,
+       NULL                                                        AS ask_id,
+       NULL                                                        AS kind,
+       c.last_contact_on                                           AS since,
+       date(c.last_contact_on, '+' || c.cadence_days || ' days')   AS due_on
+FROM contact c
+WHERE c.cadence_days IS NOT NULL
+  AND c.cadence_days > 0
+  AND (c.last_contact_on IS NULL
+       OR date(c.last_contact_on, '+' || c.cadence_days || ' days') <= date('now'))
+UNION ALL
+SELECT c.id, c.name, 'ask', a.id, a.kind, a.opened_on, a.due_on
+FROM contact_ask a
+JOIN contact c ON c.id = a.contact_id
+WHERE a.status = 'open'
+  AND a.due_on IS NOT NULL
+  AND a.due_on <= date('now');
+
+CREATE VIEW IF NOT EXISTS v_contact_stats AS
+SELECT
+    (SELECT COUNT(*) FROM contact)                                   AS contacts,
+    (SELECT COUNT(*) FROM contact_ask WHERE status='open')           AS open_asks,
+    (SELECT COUNT(*) FROM v_contact_due WHERE reason='ask')          AS asks_past_due,
+    (SELECT COUNT(*) FROM v_contact_due WHERE reason='cadence')      AS cadence_due;
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- DOMAIN: books — NOT IN THIS DB
 -- Zotero is the source of truth for book data. This file holds no books, loans,
 -- lists, list_items or book_snapshots tables and no v_book_stats view; reading

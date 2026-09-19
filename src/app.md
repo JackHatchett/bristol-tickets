@@ -10,9 +10,6 @@ the style contract in `src/templates/identity_template.md`.
   `python3 src/tools/config_tools/read_config.py <dotted.key>`; never whole.
 - **Name user data in `/src` only by generic relative path**
   (`data/*/tickets/tickets.db`). The instance folder is the `*`.
-- **Resolve every declared location through
-  `src/tools/config_tools/data_paths.py`**, whose README owns the contract and
-  the absent-location case.
 
 ## Phase 2 — Identity
 
@@ -41,8 +38,7 @@ the style contract in `src/templates/identity_template.md`.
 `python3 src/tools/ticket_tools/agent_status.py <slug>`.
 
 **2. The next action is the top of your own queue.** The scripts compute it; do
-not re-derive one. A card's tab is `stage`, orthogonal to its
-column, `status`. Precedence, identical for every agent:
+not re-derive one. Precedence, identical for every agent:
 
 1. active-stage cards you own, `doing`, in board order;
 2. then active-stage cards you own, `todo`, in board order;
@@ -109,9 +105,6 @@ included, are context, not ordering.
 
 Before wrapping up a session that changed state, leave the board true.
 
-- **Define every term the user reads at first use**, coined labels included.
-- **Report a change against the board goal it serves**, never as a list of
-  edits.
 - **A session that wrote inside a git working tree ends with a commit block for
   it**, whatever stopped it — on by default.
 
@@ -123,8 +116,8 @@ Before wrapping up a session that changed state, leave the board true.
   anything but the board** — not a folder listing, a JSON status field, "the
   latest file by name," or this chat. Reading whether a document answers its own
   questions is reading content, never deriving status.
-- **Agents task each other with tickets only.** Never a file, a folder drop, a
-  note left to be found, or a request relayed through the user.
+- **Agents task each other with tickets only.** Never a file, a folder drop,
+  or a note left to be found.
 - **Never make the user the transport** — nothing may be designed so the user
   carries work between the board and an agent.
 
@@ -140,7 +133,8 @@ you write:
 - **Work state** — ticket lists, ordering tables, status roll-ups, "what I
   filed" recaps, progress against a plan. Analysis and intent may live in a
   document; state may not.
-- **Process commentary** — status labels on content (`PROVISIONAL`, `DRAFT`),
+- **Process commentary** — a status label you put on content (`PROVISIONAL`,
+  `DRAFT`),
   dated change notes, rationale-for-existence preambles, rule-history asides,
   claims that one file outranks another, and any reference to an AI session,
   agent or model as the origin of a decision.
@@ -162,6 +156,15 @@ you write:
 configuration — a list, a mapping, a table of values — may be terse.
 
 Write the current state as plain assertion and stop.
+
+## What you say to the user
+
+In chat, and in a comment the user acts on:
+
+- **Gloss every term you took from the board or a file** at first use — what it
+  is and where it lives, never the name alone.
+- **Report a change against the board goal it serves**, never as a list of
+  edits.
 
 ## Content is yours; behavior is chief_of_staff's
 

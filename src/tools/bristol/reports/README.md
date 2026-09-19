@@ -1,15 +1,20 @@
 # Bristol Tickets Reports
 
-The analytic report Bristol Tickets writes to the user's Markdown notebook every
-time the board's **Clear Done** button sweeps finished cards into the Archive.
+The analytic report Bristol Tickets writes to the user's Markdown notebook when
+a period ends.
 
-A Kanban board has no sprints and so no natural period boundary. Clear Done is
-the closest thing this board has — a batch of finished work leaving together, at
-a moment the user chose — so it is where the reporting cadence comes from.
+A Kanban board has no sprints, so the period is the epic. A project epic is
+opened for an effort, its cards close under it, and closing it ends the period:
+its finished cards go to the Archive and a report covering exactly those cards
+is written — `src/tools/bristol/epic_closure.py`, called by the viewer's epic
+dialog and by `ticket_write.py update-epic` alike. A card in the standing
+workstream leaves on its own event instead — finishing it archives it — and what
+standing work costs is measured over a date range rather than reported on a
+closure.
 
 ## What it produces
 
-One note per sweep, plus a rebuilt `_index.md`:
+One note per period, plus a rebuilt `_index.md`:
 
 ```
 <markdown_notebook.reports_dir>/
@@ -26,6 +31,21 @@ quality note, and a full ledger of the archived cards.
 Every headline number is duplicated into the note's YAML frontmatter. That is
 what makes the index's Dataview tables work — the individual note is for
 reading once, the frontmatter is what turns a folder of them into a trend.
+
+## The report on a window
+
+Standing work has no closure to report on, so its report is asked for: Settings
+carries a start date, an end date and a button, and the reports CLI takes
+`--standing --from YYYY-MM-DD --to YYYY-MM-DD`. Both call `standing.py`.
+
+It answers the planning question. Every card that finished in the window is
+counted, whatever its epic, and split into two lines: project work, and standing
+work — which a card finished under no epic belongs to. Each line carries its card
+count, its summed estimate as a share of one full usage budget, and its share of
+the window. Each size counts at the middle of its band, the bands being the
+effort scale in `src/skills/manage-tickets/SKILL.md`, and a card with no estimate
+is reported as unsized rather than counted as nothing. A window nothing finished
+in writes no note and says so.
 
 ## What can and cannot be measured
 
