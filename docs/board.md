@@ -70,7 +70,7 @@ the top of To Do is what an agent picks up next, and dragging is how you decide
 that.
 
 Above the columns sits one control row holding what applies to the Board:
-**Filter**, whatever it is currently set to, and **Clear Done** at the far end.
+**Filter**, and whatever it is currently set to.
 Each column carries its own header — its name and how many cards are in it, and
 nothing else, so the three read across one line.
 
@@ -196,26 +196,60 @@ at the foot of the pane. Each shows its author and how long ago it landed.
 This is where findings, decisions and what is needed next belong.
 
 **Changes** are written by the database itself, one muted line per changed
-field, with the field, its new value, who did it and when. A drag, a Clear
-Done sweep, a pane edit, a dialog edit and an agent's command are all recorded
-identically, so nobody has to narrate a change. Titles and descriptions record
+field, with the field, its new value, who did it and when. A drag, a pane
+edit, a dialog edit and an agent's command are all recorded identically, so
+nobody has to narrate a change. Titles and descriptions record
 only that they changed, never the text.
 
-## Clear Done
+## Leaving the board, and the report
 
-**Clear Done**, at the right of the Board's control row, sweeps every card in
-the Done column into the Archive in one click and writes a report.
+The Done column holds work waiting for something, and the two kinds of card
+wait for different things.
 
-Clearing Done is the only natural period boundary a board has, so it is where
-the reporting cadence comes from. The report is one Markdown note per sweep,
-written into your notebook, plus an index that trends each report against the
-ones before it — cycle time, flow efficiency, work-item age, computed from the
-change log. The metrics cover moves made since the log existed; it cannot be
-reconstructed backwards.
+A card in the standing workstream — upkeep, a correction, a one-off request —
+waits for nothing, so marking it done archives it there and then, from the
+board, the pane, the dialog or an agent's command alike. A card in a project
+epic waits for that epic. Closing the epic, by giving it a finished status,
+moves every card it finished into the Archive in one act and writes the report
+for that effort. So there is no sweep button: each kind of card leaves on its
+own event.
 
-The report is advisory. The sweep commits first, and a missing or unreachable
-notebook folder skips the report rather than failing the sweep. If you set no
-notebook, Clear Done simply archives.
+The report is one Markdown note per period, written into your notebook, plus an
+index that trends each report against the ones before it — cycle time, flow
+efficiency, work-item age, computed from the change log. The metrics cover moves
+made since the log existed; it cannot be reconstructed backwards.
+
+The report is advisory. The board write commits first, and a missing or
+unreachable notebook folder skips the report rather than failing the closure. If
+you set no notebook, closing an epic simply archives its cards.
+
+The standing workstream never closes, because there is no effort to end. What it
+costs is measured over a date range instead.
+
+## Due dates
+
+A card can carry a date, and most do not. It means an outside deadline — a
+filing window, a renewal, a date somebody else set — and it is set in the card's
+record, under **Due**, where winding the date back past its start clears it
+again. The date shows on the card wherever the card is drawn, and once it has
+passed on a card that is not done it reads as overdue.
+
+It changes nothing about order. The top of To Do is still what an agent picks up
+next, and that is the order you dragged the cards into.
+
+## Asking what upkeep cost
+
+Settings carries a start date, an end date and **Write Report**. It covers every
+card that finished between those dates, whatever its epic, and answers one
+question: what the projects cost over that window, and what upkeep cost beside
+them. Each line gives its card count, its size total as a share of one full usage
+budget, and its share of the window; cards with no size are reported as unsized
+rather than counted as nothing. The dates open on the last thirty days, so the
+button answers something the moment you press it, and a window nothing finished
+in writes no note and tells you so.
+
+Nothing about this is on a schedule. A project epic reports when you close it,
+and upkeep is reported when you ask.
 
 ## Settings
 

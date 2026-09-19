@@ -573,8 +573,8 @@ def render(f, slug, previous_slug=None, source_note=None):
         "",
         # The only wiki-links written here are to notes this package writes
         # itself.
-        f"*Generated automatically by Bristol Tickets' Clear Done, from the "
-        f"board it swept. "
+        f"*Generated automatically by Bristol Tickets when a period ended, "
+        f"from the board it closed on. "
         f"Source: `{source_note or 'src/tools/bristol/reports/'}`.*",
         "",
     ]
@@ -597,9 +597,9 @@ type: bristol-report-index
 
 # Bristol Tickets Reports
 
-_One report per Clear Done. Each measures the batch of cards that left the
-board, against the board's health at that moment. Written automatically by
-Bristol Tickets._
+_One report per period. A period is an epic, and closing it is what ends one;
+each report measures the cards that effort closed with, against the board's
+health at that moment. Written automatically by Bristol Tickets._
 
 #### Trend
 

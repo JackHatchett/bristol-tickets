@@ -58,10 +58,8 @@ at that means it failed.
 - **Ask the user to clear a blocker only he can clear, and wait.** An
   application holding a file open, a credential nobody has supplied, a service
   not granted: each is one sentence to him and a card that stays open, never a
-  reason to run something else. Ask in chat where he is present, or move the
-  card to him — `update-task-status --id N --assignee user` with a comment
-  naming exactly what to clear and what runs the moment it is clear — where he
-  is not.
+  reason to run something else. Where the asking happens is
+  `src/skills/manage-tickets/SKILL.md` §Asking the user for a decision.
 - **Never substitute a copy of what the check names.** A snapshot, a scratch
   database, a duplicate folder: running against one proves the code and not the
   change, so it is preparation for the verification rather than the

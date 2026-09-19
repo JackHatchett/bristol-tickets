@@ -9,6 +9,11 @@ worldbuilding, a game's bible, a documentation set.
   domain, the Facts / Reasoning / Open-questions reading aid, and on-demand
   lookup through a router. Load it when a task reads or proposes a change to a
   knowledge base.
+- **`name_variants.py`** — one coined name spelled more than one way across a
+  folder of notes, with how often each spelling is used and which notes hold it.
+  Run it when a body of notes has grown past what one session holds; the
+  procedure around it, including what a finding is and where it goes, is
+  `src/skills/checking-a-wiki-for-disagreements/SKILL.md`.
 
 ## Using these
 

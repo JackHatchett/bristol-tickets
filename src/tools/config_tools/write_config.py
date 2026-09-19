@@ -54,6 +54,31 @@ def set_key(dotted: str, value) -> Path:
     return path
 
 
+def del_key(dotted: str) -> bool:
+    """Remove one dotted key, leaving every other key as it was.
+
+    True where a key was there to remove. A key a build has retired is taken
+    out rather than left holding a value nothing reads, and a secret that
+    should never have been in a file is taken out the same way.
+    """
+    path = read_config.config_path()
+    if not path.exists():
+        raise SystemExit(f"write_config: config not found at {path}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    node = data
+    parts = dotted.split(".")
+    for part in parts[:-1]:
+        node = node.get(part)
+        if not isinstance(node, dict):
+            return False
+    if parts[-1] not in node:
+        return False
+    del node[parts[-1]]
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+                    encoding="utf-8")
+    return True
+
+
 def parse_value(raw: str):
     """The argument as JSON, or as the literal string when it is not JSON."""
     try:
@@ -63,8 +88,16 @@ def parse_value(raw: str):
 
 
 def main(argv: list[str]) -> int:
+    if argv and argv[0] == "--delete":
+        if len(argv) != 2:
+            print("usage: write_config.py --delete <dotted.key>", file=sys.stderr)
+            return 2
+        dotted = argv[1]
+        print(f"{dotted} removed" if del_key(dotted) else f"{dotted} was not there")
+        return 0
     if len(argv) != 2:
-        print("usage: write_config.py <dotted.key> <json-value>", file=sys.stderr)
+        print("usage: write_config.py <dotted.key> <json-value>\n"
+              "       write_config.py --delete <dotted.key>", file=sys.stderr)
         return 2
     dotted, raw = argv
     written = set_key(dotted, parse_value(raw))

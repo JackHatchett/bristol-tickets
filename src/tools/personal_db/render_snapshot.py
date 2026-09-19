@@ -111,6 +111,37 @@ SPECS = {
             ("Exercises Done", '=COUNTIF(Learning!C:C,"exercise")'),
         ],
     },
+    "contacts": {
+        "subdir": "contacts_snapshots",
+        "source": "personal_db",
+        "sheet": "Contacts",
+        "table": "Contacts",
+        "columns": [
+            ("Name", "name", 26), ("Company", "company", 22),
+            ("Title", "title", 24), ("How Known", "how_known", 30),
+            ("Cadence (days)", "cadence_days", 14),
+            ("Last Contact", "last_contact_on", 14),
+            ("Open Asks", "open_asks", 10), ("Next Due", "next_due", 14),
+        ],
+        # The sheet is one row per person with what is outstanding beside them,
+        # since a reader opening it is asking who is owed something rather than
+        # reading the ask rows one at a time.
+        "sql": """SELECT c.name, c.company, c.title, c.how_known,
+                         c.cadence_days, c.last_contact_on,
+                         (SELECT COUNT(*) FROM contact_ask a
+                           WHERE a.contact_id = c.id AND a.status = 'open')
+                             AS open_asks,
+                         (SELECT MIN(d.due_on) FROM v_contact_due d
+                           WHERE d.contact_id = c.id) AS next_due
+                  FROM contact c
+                  ORDER BY LOWER(c.name)""",
+        # F = Last Contact, G = Open Asks
+        "stats": [
+            ("Contacts", "=COUNTA(Contacts!A2:A100000)"),
+            ("With An Open Ask", '=COUNTIF(Contacts!G:G,">0")'),
+            ("Never Contacted", '=COUNTBLANK(Contacts!F2:F100000)'),
+        ],
+    },
     "books": {
         "subdir": "library_snapshots",
         "source": "zotero",

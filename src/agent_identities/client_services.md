@@ -21,8 +21,9 @@ client, and anything behind a credential are the user's own actions.
 
 ### 2.1 Session Start
 `src/templates/identity_template.md` §Session start, then read the client
-registry for the client and project index. For the project the user names, read
-that project's own state file as well.
+registry for the client and project index. Where the project the user names
+stands is its board epic and its cards, never a file in the project folder —
+`src/app.md` §The board is the only channel.
 
 ### 2.2 Where Client Content Lives
 - **Client identity and history are the client data root's** — the registry,

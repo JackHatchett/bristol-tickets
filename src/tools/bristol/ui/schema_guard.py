@@ -2,14 +2,22 @@
 
 The viewer is a read/write client of a database it does not own (the shared
 tickets.db). Older databases may predate columns/tables this UI expects, so on
-every launch we add only what is missing. This never drops or rewrites data —
-it is safe to run against an already-current database (all operations are
-idempotent: ADD COLUMN only when absent, CREATE TABLE IF NOT EXISTS).
+every launch we add only what is missing. Nothing here drops data, and one
+correction rewrites a field the board itself mis-stamped — see
+_recover_closed_at_from_the_log. It is safe to run against an already-current
+database (all operations are idempotent: ADD COLUMN only when absent, CREATE
+TABLE IF NOT EXISTS, and a correction that finds nothing left to correct).
 """
 
 from __future__ import annotations
 
 import sqlite3
+from datetime import datetime, timezone
+
+# How far closed_at may sit from the change log's own 'done' row before the
+# correction below treats it as the wrong moment rather than the same one
+# written a beat apart.
+CLOSED_AT_DRIFT_SECONDS = 120
 
 
 def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
@@ -59,6 +67,13 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
     # pair was retired. NULL means nothing is blocking it.
     if "block_reason" not in columns:
         conn.execute("ALTER TABLE task ADD COLUMN block_reason TEXT;")
+
+    # due_date names an outside deadline the card has to meet — a filing
+    # window, a renewal, a date somebody else set. Optional, and most cards have
+    # none. It orders nothing: board order is the queue (src/app.md Phase 3.2),
+    # and a date that sorted a column would be a second queue nobody chose.
+    if "due_date" not in columns:
+        conn.execute("ALTER TABLE task ADD COLUMN due_date TEXT;")
 
     _migrate_stage_from_sprints(conn)
 
@@ -159,6 +174,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 
     _consolidate_legacy_history(conn)
     _retire_blocked_columns(conn)
+    _recover_closed_at_from_the_log(conn)
     install_change_log(conn, actor="user")
     conn.commit()
 
@@ -172,6 +188,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 CHANGE_LOG_FIELDS = (
     "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
     "assignee", "reporter", "story_points", "record_type", "block_reason",
+    "due_date",
 )
 
 # Fields logged as having changed, without their content. A change log records
@@ -400,3 +417,58 @@ def _consolidate_legacy_history(conn: sqlite3.Connection) -> None:
             (task_id, "system", event, created_at),
         )
     conn.execute("DROP TABLE history")
+
+
+def _parse_moment(value: str | None) -> datetime | None:
+    """An ISO timestamp as an aware datetime, or None for anything unreadable.
+    A stamp written without a zone is read as UTC, which is what every writer
+    here means by it."""
+    if not value:
+        return None
+    try:
+        moment = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
+def _recover_closed_at_from_the_log(conn: sqlite3.Connection) -> None:
+    """One-time, idempotent correction of closed_at on cards the sweep re-stamped.
+
+    closed_at means the moment the work finished, and some cards carry the
+    moment they were archived instead — a card finished on the 3rd and archived
+    on the 30th measuring its lead time to the 30th. The change log holds the
+    real one: the status row that reached `done`.
+    Every card whose log carries one is set back to it, taking the last such row
+    at or before the card was archived, since a card reopened and finished again
+    finished on the second pass.
+
+    A card finished before that log existed cannot be recovered and is left
+    alone rather than guessed at; the reports already read a closed_at they
+    cannot corroborate as weak evidence rather than as a finish. Idempotent:
+    once a card is corrected the two agree, and a card the board stamps normally
+    agrees from the start, so a second run writes nothing."""
+    finishes: dict[int, list[str]] = {}
+    for task_id, at in conn.execute(
+            "SELECT task_id, at FROM task_event "
+            "WHERE field='status' AND to_value='done' ORDER BY at"):
+        finishes.setdefault(task_id, []).append(at)
+    if not finishes:
+        return
+    archived = dict(conn.execute(
+        "SELECT task_id, MAX(at) FROM task_event "
+        "WHERE field='stage' AND to_value='archive' GROUP BY task_id"))
+    for task_id, closed_at in conn.execute(
+            "SELECT id, closed_at FROM task WHERE closed_at IS NOT NULL").fetchall():
+        logged = finishes.get(task_id)
+        if not logged:
+            continue
+        cutoff = archived.get(task_id)
+        candidates = [at for at in logged if cutoff is None or at <= cutoff] or logged
+        finish, stamped = _parse_moment(candidates[-1]), _parse_moment(closed_at)
+        if finish is None or stamped is None:
+            continue
+        if abs((stamped - finish).total_seconds()) <= CLOSED_AT_DRIFT_SECONDS:
+            continue
+        conn.execute("UPDATE task SET closed_at=? WHERE id=?",
+                     (candidates[-1], task_id))

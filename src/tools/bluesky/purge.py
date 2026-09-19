@@ -29,7 +29,15 @@ HERE = Path(__file__).resolve()
 TOOLS = HERE.parents[1]
 sys.path.insert(0, str(TOOLS))
 
+sys.path.insert(0, str(TOOLS / "_shared"))
+
+import keychain  # noqa: E402  (the OS keychain, where every secret lives)
 from bluesky import client, store, sync  # noqa: E402
+
+# Where this account's app password sits in the keychain. The password is not
+# in config and not in any other file: a secret lives in the keychain and is
+# read at the moment it is used.
+KEYCHAIN_SERVICE = "bristol.bluesky"
 
 PURGED = ("app.bsky.feed.post", "app.bsky.feed.repost")
 BATCH = 100
@@ -151,12 +159,10 @@ def run(delete=False, budget=None):
         print("nothing left to remove")
         return verify(did, pds, before)
 
-    password = sync.setting("app_password")
-    if not password:
-        sys.exit("bluesky.app_password is not set in config. Make an app "
-                 "password in the account's settings, write it into config as "
-                 "bluesky.app_password, and run this again. An app password is "
-                 "revocable on its own and is never the account password.")
+    password = keychain.require(
+        KEYCHAIN_SERVICE, "app_password",
+        "Make an app password in the account's settings — it is revocable on "
+        "its own and is never the account password.")
     token = sign_in(pds, handle, password)
     allowance = WriteBudget()
     started = time.monotonic()

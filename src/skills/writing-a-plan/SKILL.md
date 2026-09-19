@@ -49,7 +49,8 @@ rests on.
    one item sits on one line, and a sequence is written as an order rather than
    implied by the prose around it. A reader who infers nothing still gets the
    plan.
-6. **Define every term at first use**, per `src/app.md` Phase 4. A concept
+6. **Define every term at first use**, per `src/app.md` §What you say to the
+   user. A concept
    needing more than the plan can carry gets its own note —
    `src/skills/splitting-an-explanation/SKILL.md`.
 

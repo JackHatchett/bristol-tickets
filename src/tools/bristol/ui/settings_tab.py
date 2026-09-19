@@ -29,10 +29,11 @@ back is the difference from what this build ships, stored under one key.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QDate, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDateEdit,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -43,6 +44,12 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local; see module docstring
 
+try:  # a stripped bundle may carry no reports package at all
+    from reports.standing import default_window, standing_report
+except ImportError:  # pragma: no cover - only a stripped bundle reaches this
+    default_window = standing_report = None
+
+from .dialogs import notify
 from .settled_combo import SettledComboBox, fill_words
 from .theme import (
     LIGHT_MODE,
@@ -82,8 +89,13 @@ def _heading(text: str) -> QLabel:
 
 
 class SettingsTab(QWidget):
-    def __init__(self, parent=None, on_appearance_changed=None) -> None:
+    def __init__(self, parent=None, on_appearance_changed=None, conn=None) -> None:
         super().__init__(parent)
+
+        # The board this page reports on. Absent in a bare construction (the
+        # smoke check builds the page with no database), where the report row
+        # is drawn and says so rather than being hidden.
+        self.conn = conn
 
         # Called when the theme picker moves, so the window it lives in can
         # re-theme itself. Absent in a bare construction (the smoke check), where
@@ -163,10 +175,42 @@ class SettingsTab(QWidget):
         form.addRow("Theme", self.theme)
         form.addRow("Light && Dark", self.mode)
         form.addRow("Themes", self.manage)
+        # Standing work is asked for rather than generated: a project epic
+        # reports when it closes, and upkeep has no such moment, so the window
+        # is the user's to name. The dates open on the last thirty days, so the
+        # button answers something the moment it is pressed.
+        since, until = default_window() if default_window else (None, None)
+        self.report_from = QDateEdit(QDate.fromString(since, "yyyy-MM-dd")
+                                     if since else QDate.currentDate())
+        self.report_to = QDateEdit(QDate.fromString(until, "yyyy-MM-dd")
+                                   if until else QDate.currentDate())
+        for field in (self.report_from, self.report_to):
+            field.setDisplayFormat("yyyy-MM-dd")
+            field.setCalendarPopup(True)
+            field.setEnabled(standing_report is not None)
+        self.report_from.setToolTip("The first day the window covers.")
+        self.report_to.setToolTip("The last day the window covers.")
+        self.report_btn = QPushButton("Write Report")
+        self.report_btn.setToolTip(
+            "What the projects cost over this window, and what upkeep cost "
+            "beside them, written into your notebook.")
+        self.report_btn.setEnabled(standing_report is not None)
+        self.report_btn.clicked.connect(self._write_standing_report)
+
+        report_row = QHBoxLayout()
+        report_row.setSpacing(space("md"))
+        report_row.addWidget(self.report_from)
+        report_row.addWidget(QLabel("to"))
+        report_row.addWidget(self.report_to)
+        report_row.addWidget(self.report_btn)
+        report_row.addStretch(1)
+
         form.addRow(_heading("Agent Sessions"))
         form.addRow("Agent", self.next_agent)
         form.addRow("Work Scope", self.work_scope)
         form.addRow("Git Commit on Session Close", self.suggested_commit)
+        form.addRow(_heading("Reports"))
+        form.addRow("Standing Work", report_row)
 
         self.status = QLabel()
         self.status.setObjectName("formCaption")
@@ -187,6 +231,28 @@ class SettingsTab(QWidget):
         # is never mistaken for someone choosing it.
         self._loading = False
         self.reload()
+
+    def _write_standing_report(self) -> None:
+        """Write the report for the window on the page, and say where it went.
+
+        Nothing finished in the window is an answer rather than a failure: no
+        file is written and the page says so.
+        """
+        if self.conn is None or standing_report is None:
+            notify(self, "No board open",
+                   "This page was opened without a board, so there is nothing "
+                   "to report on.")
+            return
+        result = standing_report(
+            self.conn,
+            self.report_from.date().toString("yyyy-MM-dd"),
+            self.report_to.date().toString("yyyy-MM-dd"))
+        if result.ok:
+            notify(self, "Report written", str(result.written))
+        elif result.skipped:
+            notify(self, "Nothing to report", result.skipped)
+        else:
+            notify(self, "Report not written", result.error)
 
     def _theme_chosen(self) -> None:
         """Offer the modes the new theme can draw, re-theme, and keep the

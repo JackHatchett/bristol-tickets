@@ -41,8 +41,10 @@ from datetime import datetime, timezone
 # the former makes lead time meaningless.
 INSTANT_CLOSE_SECONDS = 3600
 
-# Cards sharing a closed_at to the second were closed by one bulk action, so
-# that timestamp is an administrative moment, not the moment the work finished.
+# Cards sharing a closed_at to the second were marked done by one bulk action,
+# so that timestamp is an administrative moment, not the moment each piece of
+# work finished. Archiving does not produce this: the sweep leaves closed_at as
+# it was.
 BATCH_CLOSE_TOLERANCE_SECONDS = 2
 
 # Backlog items untouched for longer than this are stale: either they matter and
@@ -198,9 +200,9 @@ def _load_cards(conn, task_ids):
         card = dict(zip(columns, row))
         card["comments"] = comments.get(card["id"], 0)
         card["first_doing_at"] = first_doing.get(card["id"])
-        # closed_at is the ordering timestamp Clear Done stamps; a card archived
-        # by some other path may not have one, so fall back to updated_at rather
-        # than dropping the card from every duration statistic.
+        # closed_at is the moment the card went done and nothing rewrites it.
+        # A card finished before the board stamped one has none, so fall back to
+        # updated_at rather than dropping it from every duration statistic.
         card["closed_effective"] = card["closed_at"] or card["updated_at"]
         card["lead_days"] = _days_between(card["created_at"], card["closed_effective"])
         card["cycle_days"] = (
@@ -371,7 +373,8 @@ def _signals(facts):
         add("watch", "Most cards were closed in bulk, not individually",
             f"{grouped} of {n} cards share a close timestamp with at least one "
             f"other ({len(facts['batch_close_groups'])} group(s)). Their closed_at "
-            "is the moment they were swept, not the moment the work ended.",
+            "is the moment someone marked a batch done, not the moment each "
+            "piece of work ended.",
             "Treat this period's lead times as an upper bound. Marking cards done "
             "as you finish them makes the next report's durations real.")
 
@@ -472,7 +475,7 @@ def _signals(facts):
 def collect(conn, task_ids, now=None, period_start=None, prior=None):
     """Compute every fact the report needs.
 
-    `task_ids`      the cards this period closed (what Clear Done just swept).
+    `task_ids`      the cards this period closed (what its epic closed with).
     `period_start`  ISO timestamp; defaults to the earliest creation in the
                     batch, so a first-ever report still has a sane window.
     `prior`         the previous report's frontmatter dict, or None.

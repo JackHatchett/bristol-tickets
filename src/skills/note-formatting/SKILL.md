@@ -15,6 +15,8 @@ Operation: the rules below. Output: a note in the notebook's own shape.
 
 Which zone of the notebook takes the write, and what happens when the note
 belongs in one the user authors, is `src/skills/notebook-proposal/SKILL.md`.
+What may be changed in a note already there — and what goes to the user first —
+is `src/templates/identity_template.md` §Changing a file that is already there.
 This owns the shape alone, and holds for a single note, a note inside a set, and
 an edit to a note that is already there.
 
@@ -32,6 +34,11 @@ Two boundaries, both stated here so neither has to be guessed at:
   `src/skills/notebook-prompt-library/SKILL.md` §What a prompt may emit**, which
   takes its shape from the notebook's own templates. This governs what an agent
   writes.
+- **A generated daily capture of what is due carries no Related Notes
+  section** — `src/tools/personal_db/contacts_due.py` writes it. It is a
+  statement about one day rather than an idea with neighbours, and a second run
+  that day rewrites it. The filename, the frontmatter, Title Case and the
+  spacing below still hold.
 - **A generated daily page carrying someone's own posts is
   `src/skills/bluesky-sync/SKILL.md`**, and three rules here do not reach it.
   Its headings are the handles of the people who wrote the posts, so Title Case
@@ -69,6 +76,10 @@ Applies to the H1, to every heading under it, and to every alias.
   a note telling the user what to do `ai/advice`. Those are the only two tags an
   agent applies on its own.
 - **Write `created` as `YYYY-MM-DD HH:MM`.**
+- **Carry the keys the notebook's own template carries**, `status` among them
+  where it has one. Such a key says what the note is, not how work on it is
+  going, so it is not the status label `src/app.md` §What a file may say bars:
+  that rule bars a label an agent puts on content of its own accord.
 - **Give `source_url` the one source the note chiefly rests on**, as a bare URL,
   and omit the key where the note cites none. Every other source is cited in the
   body per §Links.
@@ -93,7 +104,15 @@ source_url: https://example.org/the-account-this-note-rests-on
   first `##`.
 - **Fill a hub note's `##` sections with bullet lists and nothing else**, each
   bullet a link or a summarizing line.
-- **Fill every other note's `##` sections with spaced paragraphs.**
+- **Fill every other note's `##` sections in the notebook's own body shape** —
+  `markdown_notebook.note_body` in config, read by the session that is about to
+  write a note. Spaced paragraphs where that key names no shape: a notebook
+  whose owner writes no particular way takes prose.
+- **The owner's shape governs the body and nothing else.** Where it and a rule
+  here disagree, what a section is filled with is his; the filename, the
+  frontmatter, Title Case, the link form and the Related Notes section hold
+  whatever the shape is. An agent writing in someone's notebook is not choosing
+  between this skill and the person whose notebook it is.
 
 ## Links
 

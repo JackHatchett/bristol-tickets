@@ -69,10 +69,31 @@ Work down this list; the earlier causes are far more common.
    when its contents would differ, so a page that did not change is a page whose
    inputs did not change.
 
+## A post with no conversation
+
+- **A post the store holds reaches its day whatever became of its thread.** A
+  reply whose conversation was never kept is written as a section of its own,
+  from the record itself, in the day's own order.
+- **Such a post implies no conversation it cannot show** — its own words, and
+  nothing else.
+- **A post judged prune is left out here as anywhere**, so the notebook keeps
+  what it keeps.
+
+## The pictures
+
+- **A run keeps each picture's bytes beside the store**, named for the blob it
+  is, and records every blob it has asked about so nothing is fetched twice.
+- **A blob the data server no longer serves is recorded as gone**, and the run
+  carries on: what was lost before the copy existed is lost, and that page keeps
+  its words.
+- **A page embeds the kept copy** rather than a content network's address, which
+  is what makes the page outlive the account.
+
 ## The schedule
 
 - **Install it on the machine that will run it**, with
-  `python3 src/tools/bluesky/install_schedule.py --install`. The installer takes
+  `python3 src/tools/bluesky/install_schedule.py --install`, which calls the
+  installer every daily job uses, `src/tools/_shared/install_schedule.py`. The installer takes
   the interpreter, the repository and the log location from where it runs, so
   installing from a sandbox that reaches the user's folders through a bridge
   writes that sandbox's paths into a schedule the machine cannot follow.

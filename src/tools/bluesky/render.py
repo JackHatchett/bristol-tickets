@@ -7,6 +7,8 @@ flat chronology, so a reader can see who answered whom.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 ME_MARK = "**"
 UNAVAILABLE_LINE = "*[post unavailable]*"
 
@@ -44,11 +46,38 @@ def _one_line(text):
     return " ".join((text or "").split())
 
 
+# The picture files the store has kept, by the blob each one is. A run sets
+# this once, before any page is written, so a page shows the copy on the machine
+# rather than an address on a content network that outlives nothing. Empty means
+# nothing is kept, and a page falls back to the address it had.
+KEPT_IMAGES: dict = {}
+
+
+def use_kept_images(mapping):
+    """Point the renderer at the pictures the store holds."""
+    KEPT_IMAGES.clear()
+    KEPT_IMAGES.update(mapping or {})
+
+
+def _blob_of(address):
+    """The blob an image address names, which is what the store keeps it by.
+
+    A rendered address ends `/plain/<did>/<cid>@jpeg`, so the blob is the last
+    path segment before the format.
+    """
+    if not address:
+        return None
+    tail = address.rstrip("/").rsplit("/", 1)[-1]
+    return tail.split("@", 1)[0] or None
+
+
 def describe_embed(post):
     """The lines an attachment adds under a post, or none where it adds nothing.
 
-    No media is downloaded. An image contributes the words its author wrote
-    about it and an address; a quoted post contributes its text.
+    An image shows from the copy the store kept where there is one, so the page
+    renders after the account is emptied; where there is none it contributes the
+    words its author wrote about it and the address it had. A quoted post
+    contributes its text.
     """
     lines = []
     embed = post.get("embed") or {}
@@ -61,7 +90,16 @@ def describe_embed(post):
     for image in images or []:
         alt = _one_line(image.get("alt")) or "image"
         address = image.get("fullsize") or image.get("thumb") or ""
-        lines.append(f"[{alt}]({address})" if address else f"image: {alt}")
+        # A rendered view names the picture by address; the record the store
+        # holds names it by the blob itself, which is the same picture.
+        blob = ((image.get("image") or {}).get("ref") or {}).get("$link")
+        kept = KEPT_IMAGES.get(blob or _blob_of(address))
+        if kept is not None:
+            lines.append(f"![{alt}]({Path(kept).as_uri()})")
+        elif address:
+            lines.append(f"[{alt}]({address})")
+        else:
+            lines.append(f"image: {alt}")
 
     external = embed.get("external")
     if external:

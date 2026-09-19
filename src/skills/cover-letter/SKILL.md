@@ -54,9 +54,10 @@ and packing happen in the same turn, with no further prompt-back.
 - **Write to a reader.** Name the company early and use the second person; a
   letter with no "you" in it is a personal essay.
 - **Name the role by its actual posted title, once.**
-- **Never use a generic salutation** ("Dear Hiring Team," "To Whom It May
-  Concern"). Default to no salutation and open at paragraph 1; a named contact
-  is addressed by name.
+- **Open with a salutation.** A named contact is addressed by name; with no
+  name, "Dear Hiring Manager," is the convention of the form and is what the
+  letter uses. "To Whom It May Concern" and "Dear Sir or Madam" are not: the
+  first addresses nobody and the second guesses.
 - **Never open in media res.** Dropping the reader into a scene is a fiction
   move and reads as aggressive here.
 - **Never frame anything as a problem** — not the company's, not the industry's,
@@ -171,12 +172,19 @@ the process; those numbers live there and are not copied here.
 - **One anecdote per letter, maximum**, carrying no sentence explaining what it
   meant. Let it land and stop.
 
-1. **Opening in the chosen approach.** Specific, honest, non-generic, grounded
-   in the user's own work or a concrete contrast. It leads with work the user
-   has done and carries the target job title within its first two sentences;
-   the spec's composition rule 1 governs where the company's name goes.
+1. **Opening: who the writer is, the role, and why they are applying.** One
+   clause of career facts — what they do and for how long — then the posted
+   role by its title and the company, and a referral named here where one
+   exists. This is a letter from a stranger applying to this company, so the
+   reader learns who is writing before they learn anything else; the spec's
+   composition rule 1 governs where the company's name goes.
+   **Never open on a personal or side project, or on how the user spends their
+   own time.** It is proof rather than an introduction, and it belongs in a
+   body paragraph below whatever the approach menu suggests.
 2. **Strongest alignment**, told briefly with context and outcome. For Senior
-   and above, this paragraph or the next operates at decision altitude.
+   and above, this paragraph or the next operates at decision altitude. A
+   personal or side project is one piece of evidence here, never the frame the
+   letter is built on.
 3. **Second alignment, or the honest gap** named directly and pivoted to
    transferable value.
 4. **Something unusual and hard to find in other candidates at this level**,
@@ -226,6 +234,11 @@ anything that trips:
 - any construction announcing that the writer is being honest, plain or
   not-exaggerating — directness is the default, so stating it is a tell
 - vague reaction statements with no content
+
+**Then read the draft as the reader.** Does it read as applying to this
+company, or as writing about the user's own work? The second reorders the draft
+— the career facts and the role to the opening, the project down into the
+evidence — before anything is linted.
 
 **Then run `tools/career_coach/voice_lint.py` on the draft text**, fix every
 HARD, dash and period-emphasis hit, review FLAG hits, pack the docx, and run the

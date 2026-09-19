@@ -117,6 +117,62 @@ def _get(url, params=None, attempts=MAX_ATTEMPTS):
     raise BlueskyError(f"gave up on {url} after {attempts} attempts: {last}")
 
 
+def image_blobs(record):
+    """Every image a raw post record carries, as (cid, mime, alt).
+
+    A record names its images by the blob each one is, which is what the data
+    server serves them by; the address in a rendered view is a content network's
+    copy of the same blob and outlives nothing.
+    """
+    value = record.get("value") or {}
+    embed = value.get("embed") or {}
+    images = embed.get("images")
+    if not images and (embed.get("media") or {}).get("images"):
+        images = embed["media"]["images"]
+    found = []
+    for image in images or []:
+        blob = image.get("image") or {}
+        cid = (blob.get("ref") or {}).get("$link") or blob.get("cid")
+        if not cid:
+            continue
+        found.append((cid, blob.get("mimeType") or "image/jpeg",
+                      image.get("alt") or ""))
+    return found
+
+
+def fetch_blob(pds, did, cid, attempts=MAX_ATTEMPTS):
+    """The bytes of one blob, or None where the data server no longer has it.
+
+    A blob the account deleted is gone rather than late, so a 400 or a 404 is an
+    answer and not a failure: the caller records that it asked and carries on.
+    """
+    url = (f"{pds}/xrpc/com.atproto.sync.getBlob?"
+           + urllib.parse.urlencode({"did": did, "cid": cid}))
+    delay = FIRST_BACKOFF_SECONDS
+    last = None
+    for _ in range(attempts):
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        try:
+            with urllib.request.urlopen(
+                    request, timeout=60,
+                    context=certificate_authorities()) as response:
+                return response.read()
+        except urllib.error.HTTPError as error:
+            if error.code in (400, 404):
+                return None
+            last = error
+            if error.code == 429 or error.code >= 500:
+                time.sleep(delay)
+                delay *= 2
+                continue
+            raise BlueskyError(f"{error.code} from {url}") from error
+        except (urllib.error.URLError, TimeoutError) as error:
+            last = error
+            time.sleep(delay)
+            delay *= 2
+    raise BlueskyError(f"gave up on {url}: {last}")
+
+
 def resolve_handle(handle):
     """The account identifier behind a handle."""
     payload = _get(f"{APPVIEW}/xrpc/com.atproto.identity.resolveHandle", {"handle": handle})

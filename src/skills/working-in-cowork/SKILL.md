@@ -34,8 +34,10 @@ on disk, and nothing left where they were.
    This step takes the screen: request full control, select the sink, move it to
    the Trash, release control.
 
-- **Ask for the delete grant where the user's own request is what needs
-  something deleted**, and name that request in the reason.
+- **Ask for the delete grant whenever something has to go** — the user's own
+  request, or this system's own leftovers under
+  `src/templates/identity_template.md` §Removing a file — and name in the
+  reason what will be deleted.
   `device_request_delete_permission` is the ask, and a grant makes `rm` work
   directly for the rest of the session.
 - **An empty directory is what this route leaves.** Neither the bridge nor a

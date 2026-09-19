@@ -1,4 +1,5 @@
-"""bristol.reports — the analytic report Bristol Tickets writes on Clear Done.
+"""bristol.reports — the analytic report Bristol Tickets writes when a period
+ends, which is when an epic closes.
 
 Clearing the Done column is the board's only natural period boundary: a batch
 of finished cards leaves the board together, at a moment the user chose. This

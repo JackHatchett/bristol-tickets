@@ -300,20 +300,17 @@ class MainWindow(QMainWindow):
         # board and nothing beyond it. A single card in any column is created
         # from the master Create button, not from a per-column control. What
         # narrows the board reads left to right — the button, then what it is
-        # narrowed to — and Clear Done sits at the far end, where a growing chip
-        # row never moves it. Refresh is not here: it reloads every view, so it
-        # lives in the header that spans every tab.
+        # narrowed to. Nothing sweeps the Done column: a standing card archives
+        # itself when it is finished and a project card leaves when its epic
+        # closes, so there is no bulk action left for a control to offer.
+        # Refresh is not here either: it reloads every view, so it lives in the
+        # header that spans every tab.
         board_controls = QHBoxLayout()
         board_controls.setSpacing(space("md"))
         board_controls.addWidget(self.filter_btn)
         board_controls.addLayout(self.chip_row)
         board_controls.addWidget(self.filter_clear_btn)
         board_controls.addStretch(1)
-        self.clear_done_btn = QPushButton("Clear Done")
-        self.clear_done_btn.setToolTip(
-            "Move every card in the Done column to the Archive.")
-        self.clear_done_btn.clicked.connect(self._clear_done)
-        board_controls.addWidget(self.clear_done_btn)
         board_outer.addLayout(board_controls)
 
         board_columns = QHBoxLayout()
@@ -352,7 +349,7 @@ class MainWindow(QMainWindow):
         self._courses_tab_index = self._add_page(self.courses_tab, "Courses")
 
         self.settings_tab = SettingsTab(
-            on_appearance_changed=self._preview_appearance)
+            on_appearance_changed=self._preview_appearance, conn=self.conn)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
 
 
@@ -742,73 +739,6 @@ class MainWindow(QMainWindow):
         mode is Follow System; a pinned mode resolves the same either way."""
         self.refresh_appearance()
 
-    # ----- Sweeping the Done column to the Archive -------------------------
-
-    def _clear_done(self) -> None:
-        """Move every card in the Done column (stage=active, status=done) to the
-        Archive, appended to the top of the modified-ordered Archive. Reached
-        from the Done column's own menu, with no per-card selection to manage —
-        the one bulk action the board offers."""
-        rows = self.conn.execute(
-            "SELECT id FROM task WHERE stage='active' AND status='done'"
-        ).fetchall()
-        ids = [r[0] for r in rows]
-        if not ids:
-            notify(self, "Nothing to clear", "The Done column is empty.")
-            return
-        if not confirm(self, "Clear Done",
-                       f"Move {len(ids)} done card(s) to the Archive?",
-                       "Move to Archive"):
-            return
-        self._move_tasks_to_stage(ids, "archive")
-        # Stamp the archival moment as closed_at — this is the timestamp that
-        # orders the Archive. "Clear Done" is the canonical close action, so it
-        # (re)sets closed_at to now for every card it sweeps, and the Archive
-        # lists newest-closed first.
-        ts = _utcnow()
-        for tid in ids:
-            self.conn.execute("UPDATE task SET closed_at=? WHERE id=?", (ts, tid))
-        self.conn.commit()
-        self._refresh_board()
-        self._write_clear_done_report(ids)
-
-    def _write_clear_done_report(self, ids: list[int]) -> None:
-        """Write the analytic report for the batch that just left the board.
-
-        Clearing Done is the board's only natural period boundary — a set of
-        finished cards leaving together, at a moment the user chose — so it is
-        where the report belongs. Runs AFTER the sweep has committed, so the
-        cards are already archived with their closed_at set and the report
-        describes the board as it now is.
-
-        Everything here is advisory. The archive sweep is done and durable
-        before this method is called; a missing notebook folder, an unmounted
-        cloud drive, or a bug in the reports package must never turn a
-        successful Clear Done into a failure the user has to reason about. So
-        both the import and the call are guarded — a relocated .app may not
-        carry the package at all.
-
-        Success is deliberately silent: the report appearing in the notebook is
-        its own confirmation, and a dialog after every sweep would be noise on
-        the board's most-used button. Only a genuine failure speaks up, since
-        that is the case where the user would otherwise go looking for a file
-        that was never written.
-        """
-        try:
-            from reports.generate import generate_report_safe
-        except ImportError:
-            try:
-                from ..reports.generate import generate_report_safe  # type: ignore
-            except ImportError:
-                return  # reports package unavailable (e.g. a stripped bundle)
-
-        result = generate_report_safe(self.conn, ids)
-        if result.ok or result.skipped:
-            return
-        notify(self, "Report not written",
-               f"The cards were archived successfully, but the analytic report "
-               f"could not be written.\n\n{result.error}")
-
     def _move_tasks_to_stage(self, ids: list[int], stage: str) -> None:
         """Set each task's stage, appended to the bottom of the destination list
         (backlog = one list; active = per status column). Shared by the Board
@@ -877,26 +807,29 @@ class MainWindow(QMainWindow):
     # ----- Archive tab (stripped chronological list) -----------
 
     def _load_archive(self, filters: FilterState) -> None:
-        """Fill the Archive list with stage='archive' tasks, newest-CLOSED
-        first — ordered by closed_at, the timestamp Clear Done stamps on
-        archival. Cards archived by some other path that never got
-        a closed_at fall back to updated_at so they still sort sanely. A
-        stripped one-line-per-ticket view like Search."""
+        """Fill the Archive list with stage='archive' tasks, newest-ARCHIVED
+        first — ordered by the stage move into the archive, which the change
+        log records. Cards archived before that log existed fall back to
+        updated_at so they still sort sanely. closed_at is not read here: it is
+        when the work finished, which is a different moment and is what the
+        reports measure to. A stripped one-line-per-ticket view like Search."""
         self.archive_results.clear()
         narrow, params = filters.where("t")
         query = (
             "SELECT t.id, t.title, t.status, COALESCE(t.record_type,'build'), "
-            "COALESCE(t.closed_at, t.updated_at) AS closed "
+            "COALESCE((SELECT MAX(e.at) FROM task_event e "
+            "          WHERE e.task_id = t.id AND e.field='stage' "
+            "            AND e.to_value='archive'), t.updated_at) AS archived "
             "FROM task t WHERE t.stage='archive'" + narrow
         )
-        query += " ORDER BY closed DESC, t.id DESC"
+        query += " ORDER BY archived DESC, t.id DESC"
         try:
             rows = self.conn.execute(query, tuple(params)).fetchall()
         except sqlite3.OperationalError:
             rows = []
-        for tid, title, status, rtype, closed in rows:
+        for tid, title, status, rtype, archived in rows:
             kind = "Fix" if (rtype or "build").lower() == "fix" else "Build"
-            when = _fmt_dt(closed)
+            when = _fmt_dt(archived)
             item = QListWidgetItem(
                 f"{kind}   #{tid}   {title}   ·   {status}   ·   {when}")
             item.setData(Qt.UserRole, (tid, "task"))

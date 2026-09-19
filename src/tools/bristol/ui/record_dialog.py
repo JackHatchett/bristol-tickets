@@ -21,12 +21,13 @@ from __future__ import annotations
 import os
 import sqlite3
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QDate, Qt
 from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QDateEdit,
     QDialog,
     QDialogButtonBox,
     QFrame,
@@ -43,8 +44,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import finishing  # bristol-local: what done means for the board, one rule
+
 from .attachments import AttachmentBar
-from .dialogs import confirm
+from .dialogs import confirm, notify
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar, remove_links_for_task
 from .settled_combo import fill_words
@@ -53,6 +56,7 @@ from .theme import (
     BLOCK_REASON_HINT,
     EFFORT_CHOICES,
     EFFORT_HINT,
+    EPIC_KIND_CHOICES,
     EPIC_STATUS_CHOICES,
     FLEET_AGENTS,
     LAYOUT,
@@ -115,6 +119,24 @@ def section_widget(name: str) -> QWidget:
     return box
 
 
+# The one value that means standing; every other value, including the prose an
+# older board holds, means project. finishing.STANDING_KIND is the same word,
+# named there because that is where the rules resting on it live.
+STANDING_KIND = finishing.STANDING_KIND
+PROJECT_KIND = "project"
+
+
+def _epic_kind(stored: str | None) -> str:
+    """Which of the two kinds a stored `epic.type` reads as."""
+    return (STANDING_KIND if (stored or "").strip().lower() == STANDING_KIND
+            else PROJECT_KIND)
+
+
+# The date a due-date field sits on when the card has none. A date field has to
+# hold some date, so the earliest one it offers is the word "no date" instead.
+NO_DUE_DATE = QDate(1970, 1, 1)
+
+
 def _captioned(caption: QLabel, widget, stretch: bool = False) -> QWidget:
     """A formCaption above its control — the field treatment the detail pane
     established. ``stretch`` lets a full-width field take its whole row."""
@@ -157,6 +179,10 @@ class UnifiedRecordDialog(QDialog):
         # whether to re-seat the task in its destination list.
         self._loaded_stage = None
         self._loaded_status = None
+        # The raw text this epic's kind arrived as. An older board holds prose
+        # there, which reads as project and is kept until the user chooses
+        # something else.
+        self._loaded_epic_type = None
 
         self.setWindowTitle("Edit Record" if record_id else "Create New Record")
         self.setMinimumWidth(LAYOUT["dialog_min_w"])
@@ -262,14 +288,32 @@ class UnifiedRecordDialog(QDialog):
         self.estimate_combo = fill_words(QComboBox(), EFFORT_CHOICES,
                                          hint=EFFORT_HINT)
 
+        # Due: an outside deadline the card has to meet — a filing window, a
+        # renewal, a date somebody else set. Most cards have none, so the field
+        # opens on "no date" and says so in words; it is a date field rather
+        # than a checkbox and a date because the empty state is the common one
+        # and has to be reachable in one move.
+        self.due_edit = QDateEdit()
+        self.due_edit.setDisplayFormat("yyyy-MM-dd")
+        self.due_edit.setCalendarPopup(True)
+        self.due_edit.setMinimumDate(NO_DUE_DATE)
+        self.due_edit.setSpecialValueText("no date")
+        self.due_edit.setDate(NO_DUE_DATE)
+        self.due_edit.setToolTip(
+            "An outside deadline this card has to meet. Optional, and it "
+            "orders nothing — board order is the queue. Wind the date back "
+            "past its start to clear it.")
+
         # Blocked: what kind of thing has stopped the card. It never names which
         # card — a dependency is a 'blocks' link under Links, resolved live — and
         # the prose that goes with it belongs in a comment under the Log.
         self.block_combo = fill_words(QComboBox(), BLOCK_REASON_CHOICES,
                                       hint=BLOCK_REASON_HINT)
 
-        self.epic_type_combo = QComboBox()
-        self.epic_type_combo.addItems(["Epic (bounded)", "Epic (unbounded)"])
+        # Kind is chosen, never typed: one value means standing and the board
+        # has one standing workstream, so a field anyone can type in is a field
+        # that can break it.
+        self.epic_type_combo = fill_words(QComboBox(), EPIC_KIND_CHOICES)
         self.epic_status_combo = fill_words(QComboBox(), EPIC_STATUS_CHOICES)
 
         # Every short field sits at the width its contents ask for: a combo
@@ -283,6 +327,9 @@ class UnifiedRecordDialog(QDialog):
                       self.epic_type_combo, self.epic_status_combo):
             combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
             combo.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        # A date field sizes itself; only the width policy is shared with the
+        # pickers beside it.
+        self.due_edit.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         self.pressure_spin.setMaximumWidth(
             metrics.horizontalAdvance("100") + space("2xl") * 2)
         self.originator_edit.setMaximumWidth(
@@ -328,6 +375,7 @@ class UnifiedRecordDialog(QDialog):
             ("Effort", self.estimate_combo),
             ("Pressure (0-100)", self.pressure_spin),
             ("Blocked", self.block_combo),
+            ("Due", self.due_edit),
         )):
             row, column = divmod(position, 2)
             placement_grid.addWidget(_captioned(QLabel(caption), widget),
@@ -482,7 +530,8 @@ class UnifiedRecordDialog(QDialog):
             self.pressure_spin.value(),
             self.estimate_combo.currentData(),
             self.block_combo.currentData(),
-            self.epic_type_combo.currentText(),
+            self.due_edit.date(),
+            self.epic_type_combo.currentData(),
             self.epic_status_combo.currentData(),
             # Links buffered on a not-yet-saved ticket are unsaved work too, so
             # cancelling with one queued should warn like any other edit.
@@ -491,6 +540,16 @@ class UnifiedRecordDialog(QDialog):
 
     def _is_dirty(self) -> bool:
         return self._field_signature() != getattr(self, "_baseline_signature", None)
+
+    def _epic_closure(self):
+        """The epic-closure module, or None where this bundle does not carry it.
+        A board that cannot reach it still edits epics; what it loses is the
+        closure, the same way a stripped bundle loses the report."""
+        try:
+            import epic_closure
+        except ImportError:
+            return None
+        return epic_closure
 
     def _confirm_discard(self) -> bool:
         """Return True if it's OK to close (no edits, or the user chose to discard
@@ -638,7 +697,7 @@ class UnifiedRecordDialog(QDialog):
                     "SELECT title, description, status, pressure, epic_id, "
                     "COALESCE(assignee, 'user'), COALESCE(reporter, 'user'), COALESCE(estimate, ''), "
                     "COALESCE(record_type, 'build'), COALESCE(stage, 'backlog'), "
-                    "block_reason "
+                    "block_reason, due_date "
                     "FROM task WHERE id=?", (self.record_id,)
                 ).fetchone()
                 if row:
@@ -676,6 +735,8 @@ class UnifiedRecordDialog(QDialog):
                         max(self.stage_combo.findData(stage), 0))
                     self._loaded_stage = stage
                     self._loaded_status = current_status
+                    due = QDate.fromString(row[11] or "", "yyyy-MM-dd")
+                    self.due_edit.setDate(due if due.isValid() else NO_DUE_DATE)
 
                 self._render_log()
 
@@ -684,7 +745,9 @@ class UnifiedRecordDialog(QDialog):
                 if row:
                     self.title_edit.setText(row[0] or "")
                     self.desc_edit.setPlainText(row[1] or "")
-                    self.epic_type_combo.setCurrentText(row[2] or "Epic (bounded)")
+                    self._loaded_epic_type = row[2]
+                    self.epic_type_combo.setCurrentIndex(max(
+                        self.epic_type_combo.findData(_epic_kind(row[2])), 0))
                     self.epic_status_combo.setCurrentIndex(
                         max(self.epic_status_combo.findData(row[3] or "not started"), 0))
         except sqlite3.OperationalError:
@@ -765,6 +828,7 @@ class UnifiedRecordDialog(QDialog):
             return
 
         chosen_type = self.type_combo.currentText()
+        closing = False
 
         if chosen_type == "Task / Issue":
             status = self.status_combo.currentData()
@@ -775,7 +839,20 @@ class UnifiedRecordDialog(QDialog):
             originator = self.originator_edit.text().strip() or "user"
             estimate = self.estimate_combo.currentData() or None
             record_type = self._current_record_type()
+            due_date = (None if self.due_edit.date() <= NO_DUE_DATE
+                        else self.due_edit.date().toString("yyyy-MM-dd"))
+            # closed_at is the moment the card went done, and only the
+            # transition writes it: a card that was already done keeps the
+            # finish it has, so correcting a typo on it does not move its
+            # finish to today and inflate every duration measured from it.
             closed_at = _utcnow() if status == "done" else None
+            if (self.record_id is not None and status == "done"
+                    and self._loaded_status == "done"):
+                held = self.conn.execute(
+                    "SELECT closed_at FROM task WHERE id=?",
+                    (self.record_id,)).fetchone()
+                if held is not None:
+                    closed_at = held[0]
             # A finished card is not blocked, so Done clears the reason whatever
             # the picker says.
             block_reason = None if status == "done" else self.block_combo.currentData()
@@ -786,13 +863,17 @@ class UnifiedRecordDialog(QDialog):
                 cur = self.conn.execute(
                     "INSERT INTO task (epic_id, title, description, status, stage, sort_order, "
                     "pressure, assignee, reporter, estimate, record_type, block_reason, "
-                    "closed_at, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "due_date, closed_at, created_at, updated_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (epic_id, title, desc, status, stage, sort_order, pressure, owner,
-                     originator, estimate, record_type, block_reason, closed_at, ts, ts),
+                     originator, estimate, record_type, block_reason, due_date,
+                     closed_at, ts, ts),
                 )
                 # The ticket now has an id, so links entered during creation can
                 # finally be written against it.
                 self.links.flush_pending(cur.lastrowid)
+                if status == "done":
+                    finishing.finish(self.conn, cur.lastrowid)
             else:
                 # Re-seat at the bottom of the destination list only if the task
                 # actually changed tab or column; otherwise keep its position.
@@ -806,26 +887,83 @@ class UnifiedRecordDialog(QDialog):
                     self.conn.execute(
                         "UPDATE task SET epic_id=?, title=?, description=?, status=?, stage=?, "
                         "sort_order=?, pressure=?, assignee=?, reporter=?, estimate=?, "
-                        "record_type=?, block_reason=?, closed_at=? WHERE id=?",
+                        "record_type=?, block_reason=?, due_date=?, closed_at=? WHERE id=?",
                         (epic_id, title, desc, status, stage, sort_order, pressure, owner,
-                         originator, estimate, record_type, block_reason, closed_at,
-                         self.record_id),
+                         originator, estimate, record_type, block_reason, due_date,
+                         closed_at, self.record_id),
                     )
                 else:
                     self.conn.execute(
                         "UPDATE task SET epic_id=?, title=?, description=?, status=?, stage=?, "
                         "pressure=?, assignee=?, reporter=?, estimate=?, record_type=?, "
-                        "block_reason=?, closed_at=? WHERE id=?",
+                        "block_reason=?, due_date=?, closed_at=? WHERE id=?",
                         (epic_id, title, desc, status, stage, pressure, owner, originator,
-                         estimate, record_type, block_reason, closed_at, self.record_id),
+                         estimate, record_type, block_reason, due_date, closed_at,
+                         self.record_id),
                     )
+                # What done means for the board, on the one transition that
+                # means it: a standing card archives itself, a project card
+                # waits in Done for its epic, and a card taken out of done
+                # returns to the board.
+                if status != self._loaded_status:
+                    if status == "done":
+                        finishing.finish(self.conn, self.record_id)
+                    elif self._loaded_status == "done":
+                        finishing.reopen(self.conn, self.record_id)
 
         elif chosen_type == "Epic":
-            etype = self.epic_type_combo.currentText()
+            # A kind the user did not touch is written back exactly as it
+            # arrived, so the prose an older board holds survives until someone
+            # chooses one of the two kinds over it.
+            chosen_kind = self.epic_type_combo.currentData()
+            etype = (self._loaded_epic_type
+                     if (self.record_id is not None
+                         and _epic_kind(self._loaded_epic_type) == chosen_kind)
+                     else chosen_kind)
+            if chosen_kind == STANDING_KIND:
+                clash = finishing.standing_conflict(self.conn, self.record_id)
+                if clash:
+                    notify(self, "This board already has a standing workstream",
+                           clash)
+                    etype = self._loaded_epic_type
+                    self.epic_type_combo.setCurrentIndex(max(
+                        self.epic_type_combo.findData(
+                            _epic_kind(self._loaded_epic_type)), 0))
             estatus = self.epic_status_combo.currentData()
             if self.record_id is None:
                 self.conn.execute("INSERT INTO epic (name, description, type, status) VALUES (?,?,?,?)", (title, desc, etype, estatus))
             else:
+                # Giving an epic a finished status is what ends the effort: its
+                # finished cards leave the board and its report is written, in
+                # epic_closure.close_epic. Only the transition does that, so an
+                # edit to an epic that was already finished changes what it says
+                # and nothing else, and a refused closure keeps the rest of the
+                # edit and leaves the status where it was.
+                prior = self.conn.execute(
+                    "SELECT status FROM epic WHERE id=?", (self.record_id,)).fetchone()
+                closure = self._epic_closure()
+                finished = closure.FINISHED_STATUSES if closure else frozenset()
+                was = (prior[0] if prior else "") or ""
+                closing = ((estatus or "").lower() in finished
+                           and was.lower() not in finished)
+                if closing:
+                    refused = closure.refusal(self.conn, self.record_id)
+                    if refused:
+                        notify(self, "This epic does not close", refused)
+                        estatus, closing = (prior[0] if prior else estatus), False
                 self.conn.execute("UPDATE epic SET name=?, description=?, type=?, status=? WHERE id=?", (title, desc, etype, estatus, self.record_id))
+                if closing:
+                    self.conn.execute(
+                        "UPDATE epic SET closed_at=? WHERE id=? AND closed_at IS NULL",
+                        (_utcnow(), self.record_id))
 
         self.conn.commit()
+
+        if closing:
+            result = closure.close_epic(self.conn, self.record_id)
+            if result.report is not None and not (result.report.ok
+                                                  or result.report.skipped):
+                notify(self, "Report not written",
+                       f"{len(result.archived)} card(s) were archived, but the "
+                       f"report for this epic could not be written.\n\n"
+                       f"{result.report.error}")

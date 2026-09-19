@@ -43,3 +43,6 @@ ENV/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# Where the desktop app drops a file a session delivered into the chat.
+Claude outputs/

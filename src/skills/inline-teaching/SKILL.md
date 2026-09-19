@@ -22,7 +22,8 @@ runs inside a coaching procedure rather than as a session of its own.
    in the files the task loaded.** Their own vocabulary, the questions they ask
    and the artifacts they have already built are the evidence. **Never assert a
    skill level in advance.**
-2. **Give the definition `src/app.md` Phase 4 requires one everyday analogy**,
+2. **Give the definition `src/app.md` §What you say to the user requires one
+   everyday analogy**,
    then continue with the work — an explanation that outgrows the step it serves
    has become the subject.
 3. **Answer the question asked, at the depth asked.** Internals beyond what the

@@ -41,9 +41,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import finishing  # bristol-local: what done means for the board, one rule
+
 from .card_delegate import CardDelegate
 from .record_dialog import UnifiedRecordDialog
-from .theme import CARD_ROLE, LAYOUT, _is_checked, _utcnow, space
+from .theme import CARD_ROLE, LAYOUT, _is_checked, _today, _utcnow, space
 
 
 class _DndListWidget(QListWidget):
@@ -120,7 +122,8 @@ class KanbanColumn(QWidget):
     _SELECT = (
         "SELECT t.id, t.title, t.pressure, e.name, e.id, t.status, "
         "COALESCE(t.assignee,'user'), COALESCE(t.estimate,''), "
-        "COALESCE(t.record_type,'build'), COALESCE(t.description,'') FROM task t "
+        "COALESCE(t.record_type,'build'), COALESCE(t.description,''), "
+        "t.due_date FROM task t "
         "LEFT JOIN epic e ON t.epic_id = e.id "
     )
 
@@ -148,7 +151,7 @@ class KanbanColumn(QWidget):
         self._set_count()
 
     def _add_item(self, task_id, title, pressure, epic_name, epic_id, _status,
-                  owner, estimate, record_type, description):
+                  owner, estimate, record_type, description, due_date=None):
         item = QListWidgetItem()
         item.setData(Qt.UserRole, task_id)
         item.setData(CARD_ROLE, {
@@ -156,6 +159,12 @@ class KanbanColumn(QWidget):
             "title": title or "",
             "pressure": pressure or 0,
             "epic_name": (epic_name or "") if epic_id else "",
+            "untriaged": epic_id is None,
+            # A date the card has to meet, and whether it has already gone by
+            # on a card nobody has finished. It says nothing about order.
+            "due_date": due_date or "",
+            "overdue": bool(due_date and _status != "done"
+                            and due_date < _today()),
             "owner": owner or "user",
             "estimate": (estimate or "").upper(),
             "record_type": (record_type or "build").lower(),
@@ -164,7 +173,10 @@ class KanbanColumn(QWidget):
         if self.is_backlog:
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setData(Qt.CheckStateRole, Qt.Unchecked)
-        item.setToolTip(title)
+        item.setToolTip(
+            f"{title}\n\nNo epic yet — open it and choose one, or the "
+            "standing workstream for a card that is the whole of its own "
+            "subject." if epic_id is None else title)
         self.list_widget.addItem(item)
 
     # ----- bulk-select checkbox helpers (backlog) --------------------------
@@ -283,6 +295,12 @@ class KanbanColumn(QWidget):
                 "closed_at=? WHERE id=?",
                 (self.status_key, base + offset, closed, tid),
             )
+            # A cross-column drop is a status transition, so what done means for
+            # the board applies here as it does to every other writer.
+            if self.status_key == "done":
+                finishing.finish(self.conn, tid)
+            else:
+                finishing.reopen(self.conn, tid)
         self.conn.commit()
 
     # ----- click / edit ----------------------------------------------------

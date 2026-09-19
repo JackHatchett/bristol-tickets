@@ -43,6 +43,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import finishing  # bristol-local: what done means for the board, one rule
+
 from .attachments import AttachmentBar
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar, carried_summaries
@@ -525,6 +527,15 @@ class DetailPane(QWidget):
                     "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=? "
                     "WHERE id=?",
                     (new_status, new_stage, base + 1, closed_at, self.task_id))
+            # A status move is where done means something for the board: a
+            # standing card archives itself, a project card waits in Done for
+            # its epic to close, and a card taken out of done comes back. A
+            # stage move the user made by hand is left as they made it.
+            if field == "status" and new_status != status:
+                if new_status == "done":
+                    finishing.finish(self.conn, self.task_id)
+                else:
+                    finishing.reopen(self.conn, self.task_id)
             self.conn.commit()
         except sqlite3.OperationalError:
             return

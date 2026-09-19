@@ -15,8 +15,8 @@ both a `stage` (which tab) and a `status` (which column), plus a `sort_order`
 that is its position in that list.
 
 `task_event` is written by database triggers rather than by any program, so a
-drag in the app, a Clear Done sweep, a dialog edit and a command-line write are
-all recorded the same way. It is what makes cycle time and work-item age
+drag in the app, a dialog edit, a card archived on finishing and a command-line
+write are all recorded the same way. It is what makes cycle time and work-item age
 computable.
 
 One database per installation, never one per agent. An agent is scoped by
@@ -35,7 +35,7 @@ anyone needing to understand the system around it.
 Inside it: `app.py` locates the database and applies the schema; `schema.sql` is
 an idempotent snapshot applied on every launch, so an older database
 self-completes rather than needing a migration step; `ui/` holds the widgets,
-split into small modules; `reports/` computes and writes the Clear Done report,
+split into small modules; `reports/` computes and writes the report an epic's closure produces,
 with the computation, the formatting and the path resolution in separate files.
 
 ## The agent files

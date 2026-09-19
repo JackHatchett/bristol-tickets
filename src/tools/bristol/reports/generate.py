@@ -1,11 +1,12 @@
 """generate.py — orchestration and CLI for the Bristol Tickets report.
 
-`generate_report` is the single entry point, used identically by Bristol
-Tickets' Clear Done button, an agent session, and the CLI.
+`generate_report` is the single entry point, used identically by an epic
+closing (`epic_closure.py`), an agent session, and the CLI.
 
 PERIOD BOUNDARIES
 -----------------
-A period runs from the end of the last report to now. That boundary is read
+A period is an epic: it is opened for an effort and closing it is what says the
+effort is over. A period runs from the end of the last report to now. That boundary is read
 back out of the previous report's own frontmatter rather than stored anywhere,
 which keeps the whole feature free of a second state store — the repo's
 standing rule is that tickets.db is the only place state lives, and a report is
@@ -132,9 +133,9 @@ def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True):
     """Write one report for `task_ids` and return a ReportResult.
 
     `conn`      an open sqlite3 connection to tickets.db.
-    `task_ids`  the cards this period closed. Bristol Tickets passes exactly
-                what Clear Done just swept; the CLI can pass a preview of the
-                Done column.
+    `task_ids`  the cards this period closed. A closing epic passes exactly
+                what it closed with; the CLI can pass a preview of the Done
+                column.
     `out_dir`   overrides path resolution; normally left to the config.
     """
     try:
@@ -166,7 +167,7 @@ def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True):
     stamp = metrics._parse_ts(now) or datetime.now(timezone.utc)
     slug = stamp.strftime(FILENAME_PATTERN)
     target = reports_dir / f"{slug}.md"
-    # Two Clear Dones inside one minute would otherwise collide; keep both
+    # Two periods ending inside one minute would otherwise collide; keep both
     # rather than silently overwriting the earlier one.
     suffix = 2
     while target.exists():
@@ -227,19 +228,22 @@ def _select_ids(conn, args):
     if args.ids:
         return [int(part) for part in args.ids.replace(",", " ").split()]
     if args.last_batch:
-        # The most recent close timestamp in the archive, plus everything that
-        # shares it — i.e. the cards the last Clear Done swept together.
+        # The cards that left the board together: the most recent archival
+        # moment the change log holds, and everything archived within the same
+        # second. closed_at is not what says this — it is when a card finished,
+        # which across one batch is many different moments.
         row = conn.execute(
-            "SELECT MAX(COALESCE(closed_at, updated_at)) FROM task WHERE stage='archive'"
+            "SELECT MAX(at) FROM task_event "
+            "WHERE field='stage' AND to_value='archive'"
         ).fetchone()
         if not row or not row[0]:
             return []
         return [r[0] for r in conn.execute(
-            "SELECT id FROM task WHERE stage='archive' "
-            "AND COALESCE(closed_at, updated_at) >= ?",
+            "SELECT DISTINCT task_id FROM task_event "
+            "WHERE field='stage' AND to_value='archive' AND at >= ?",
             (row[0][:19],),
         ).fetchall()]
-    # Default: preview what the next Clear Done would sweep.
+    # Default: preview what is finished and still on the board.
     return [r[0] for r in conn.execute(
         "SELECT id FROM task WHERE stage='active' AND status='done'").fetchall()]
 
@@ -248,22 +252,56 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="bristol-report",
         description=(
-            "Write the analytic report Bristol Tickets writes on Clear Done."))
+            "Write the analytic report Bristol Tickets writes when a period "
+            "ends."))
     parser.add_argument("--db", default=None, help="path to tickets.db")
     parser.add_argument("--out-dir", default=None,
                         help="override the notebook folder reports are written to")
     parser.add_argument("--ids", default=None,
                         help="comma/space separated task ids to report on")
     parser.add_argument("--last-batch", action="store_true",
-                        help="report on the cards the last Clear Done swept")
+                        help="report on the cards that left the board together "
+                             "most recently")
     parser.add_argument("--stdout", action="store_true",
                         help="print the Markdown instead of writing a file")
     parser.add_argument("--no-index", action="store_true",
                         help="do not rewrite the folder's _index.md")
+    parser.add_argument("--standing", action="store_true",
+                        help="report on a window instead of on a set of cards: "
+                             "what the projects cost over it and what upkeep "
+                             "cost beside them")
+    parser.add_argument("--from", dest="since", default=None,
+                        help="YYYY-MM-DD, the first day of a --standing window "
+                             "(default: thirty days back)")
+    parser.add_argument("--to", dest="until", default=None,
+                        help="YYYY-MM-DD, the last day of a --standing window "
+                             "(default: today)")
     args = parser.parse_args(argv)
 
     conn = sqlite3.connect(_resolve_db(args.db))
     try:
+        if args.standing:
+            if __package__ in (None, ""):
+                from reports.standing import render as render_standing  # type: ignore
+                from reports.standing import standing_report  # type: ignore
+            else:
+                from .standing import render as render_standing
+                from .standing import standing_report
+            if args.stdout:
+                if __package__ in (None, ""):
+                    from reports.standing import collect as collect_standing  # type: ignore
+                    from reports.standing import default_window  # type: ignore
+                else:
+                    from .standing import collect as collect_standing
+                    from .standing import default_window
+                since, until = default_window()
+                print(render_standing(collect_standing(
+                    conn, args.since or since, args.until or until)))
+                return 0
+            result = standing_report(conn, args.since, args.until,
+                                     out_dir=args.out_dir)
+            print(f"bristol-report: {result}")
+            return 0 if result.ok or result.skipped else 1
         ids = _select_ids(conn, args)
         if not ids:
             print("bristol-report: nothing to report on "

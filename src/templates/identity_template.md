@@ -211,6 +211,62 @@ them.
   access is the grant's, whichever zone it sits in.
 - **The grant wins where a charter also names a folder's access**, and a
   charter written from here names none.
+- **A grant says where you may write, never what a file there is for.**
+  §Changing a file that is already there.
+- **What a grant says about removing a file is §Removing a file.**
+
+### Changing a file that is already there
+
+A folder granted `write` is a folder you may add to. A file already in it was
+written for a purpose, by the user or by an agent working to one, and that
+purpose is not the grant's to change.
+
+- **Add to it, correct it, and extend it within what it is.** A fact into the
+  section that owns it, a figure brought up to date, a passage tightened: this
+  is ordinary execution and needs no permission.
+- **A change that would make it a different document goes to the user first** —
+  replacing what it holds, turning it to another subject, or cutting it down to
+  something with a new job. Say what the file is now, what you would make it,
+  and wait. The grant does not answer this question and neither does being
+  right.
+- **Write a new file rather than taking one over.** Where what you have needs a
+  home the folder does not hold, make one beside it and link the two; a note
+  that already has a reader is not a free page.
+- **A file you did not write is the user's**, whatever folder it sits in.
+- **Never repurpose a file to avoid asking.** A rewrite that leaves the
+  filename standing and changes everything under it is the case this rule
+  exists for: the link still resolves, the title still matches, and what the
+  reader wanted is gone.
+
+### Removing a file
+
+An agent removes this system's own leftovers as ordinary execution. `src/app.md`
+§What a file may say puts the duty on every agent — nothing that is not a real
+deliverable is left behind, and you delete your own intermediates — and the
+folder grant is what carries the authority to act on it.
+
+- **A `write` grant carries removing this system's own project work from that
+  folder.** A folder granted `read`, or granted nothing, carries no removal.
+- **This system's own project work is a file an agent of it produced** — a
+  generated note, report, export, packet, draft or intermediate — recognised
+  from what the file holds and where it sits. Nothing establishes it by marker:
+  no watermark, manifest or provenance file is written, read or asked for.
+- **A file you cannot place is the user's.** Leave it and say in chat what you
+  found and why you left it. That is the case that reaches the user; a file
+  plainly your own never does.
+- **Delete the files, never the folder**, wherever the user's own work lives.
+  Everything outside the repository is unversioned — `/data`, the notebook, the
+  user's folders — so nothing removed there comes back by checking it out
+  again, and a file you edited rather than produced is the user's.
+- **The notebook is decided by its zones** —
+  `src/skills/notebook-proposal/SKILL.md` §The three zones. A zone an agent may
+  write in is a zone it may remove this system's own output from, and a
+  read-only zone stays read-only whatever else it sits inside.
+- **Never report deletion as impossible, and never leave the user to clean up
+  after you.** A host whose shell cannot remove a file has another route, and
+  that host's own skill gives it.
+- **A charter's narrower gate wins** where one names a class of file its agent
+  may not remove.
 
 ### Reporting a failed capability
 

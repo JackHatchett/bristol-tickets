@@ -46,6 +46,8 @@ src/tools/personal_db/
   build_db.py         create or patch the DB from schema.sql; seed meta and the registry
   render_snapshot.py  the renderer: applications from this DB, books from Zotero
   personal_write.py   the write CLI
+  contacts_due.py     who is owed something today, read from v_contact_due alone
+  install_due_schedule.py  the due list on the machine's own daily schedule
   snapshot_archive.py the dated series and its retention policy
 
 data/<instance>/personal/db/personal.db
@@ -71,6 +73,24 @@ data/<instance>/system/logs/<domain>_snapshots/
   that row rather than adding a second. `v_learning_place` is the one query the
   study interface runs to reopen a course.
 
+- **`contact`, `contact_ask`, `contact_link`** — who is owed what, and since
+  when. A contact is one person, once: name, aliases, how the user knows them,
+  where they are now, a `cadence_days` and the date of the last exchange. An ask
+  is one outstanding thing between them, with a `direction` saying who the next
+  move waits on — `us` or `them` — a `due_on` and a `status`. A link joins a
+  contact to an application, a document or a client, by `target_id` in this
+  database or by `target_path`. No application, document or job identifier is a
+  column on `contact`: a person is attached to many of them over time.
+- **`v_contact_due`** — one view answering one question, who is owed something
+  today: a contact whose cadence has come round, and an open ask past its
+  `due_on`, each row naming which of the two it is. `v_contact_stats` counts
+  both beside the contacts themselves.
+
+**The contacts domain is a state layer, not a description of a person.** The
+applications table keeps its own `contact` and `referral` text, the career
+dossiers and the notebook's own pages stay where they are, and nothing migrated
+into these tables.
+
 **The learning domain is read by an interface, never by an agent deciding what
 is next.** Where the fleet stands on a course is a card;
 `docs/architecture.md` §The study interface owns the boundary.
@@ -94,11 +114,42 @@ python3 personal_write.py record-progress --course git_course --lesson 3 --kind 
 python3 personal_write.py clear-progress --course git_course --lesson 3 --kind reading
 python3 personal_write.py find-place [--course git_course]
 
+python3 personal_write.py add-contact --name "A Person" --aliases "Nickname" \
+    --how-known "how you know them" --company X --title Y --cadence-days 90
+python3 personal_write.py update-contact --id 1 --last-contact-on 2026-09-19
+python3 personal_write.py add-ask --contact 1 --kind referral --direction them \
+    --subject "what the ask is" --due-on 2026-10-01
+python3 personal_write.py close-ask --id 3 [--status dropped] [--keep-last-contact]
+python3 personal_write.py add-link --contact 1 --kind application --target-id 42
+python3 personal_write.py find-contact --name Nickname
+
+python3 contacts_due.py [--json] [--capture]
+python3 install_due_schedule.py [--install] [--hour 7] [--minute 30]
+
 python3 personal_write.py render --domain all
 
 python3 snapshot_archive.py --dir <...>/library_snapshots --stem library
 python3 snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
 ```
+
+- **`find-contact` matches the name and the aliases**, and `add-contact`
+  refuses a name already recorded unless it is given `--anyway`. A second row
+  for one person is the failure this domain exists to avoid, and a different
+  spelling is how it happens.
+- **`close-ask` moves the contact's `last_contact_on` to the day it closed**,
+  unless it is given `--keep-last-contact`. Closing an ask is the commonest
+  moment two people were last in touch, and a cadence measured from a date
+  nobody updates comes due for ever.
+- **`contacts_due.py` reads `v_contact_due` and nothing else**, prints overdue
+  before due-today, and prints nothing at all when nothing is due.
+- **`--capture` writes the day's list into the notebook's capture inbox** as one
+  dated note, rewritten by a second run the same day, and writes nothing when
+  nothing is due. That is how a contact coming due reaches the user: calling a
+  friend is his and not an agent's, so it is never a card.
+- **`install_due_schedule.py` puts that capture on a daily schedule**, through
+  `src/tools/_shared/install_schedule.py`, which is the same installer the
+  Bluesky copy uses. Run it on the machine that will hold the schedule: it takes
+  the interpreter, the repository and the log location from where it runs.
 
 `record-progress` takes `--course`, `--lesson`, `--kind` and optionally `--item`
 and `--score`; `clear-progress` takes the same key and removes that row; and

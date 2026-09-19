@@ -216,6 +216,7 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
 CHANGE_LOG_FIELDS = (
     "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
     "assignee", "reporter", "story_points", "record_type", "block_reason",
+    "due_date",
 )
 
 # Fields logged as having changed, without their content. A change log records
@@ -307,6 +308,8 @@ def _ensure_stage_columns(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE task ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;")
     if "block_reason" not in cols:
         conn.execute("ALTER TABLE task ADD COLUMN block_reason TEXT;")
+    if "due_date" not in cols:
+        conn.execute("ALTER TABLE task ADD COLUMN due_date TEXT;")
 
 
 def _append_order(conn: sqlite3.Connection, stage: str, status: str) -> int:
@@ -365,6 +368,10 @@ def now() -> str:
 def add_epic(args: argparse.Namespace) -> None:
     conn = connect()
     try:
+        if (args.type or "").strip().lower() == create_tickets.EPIC_KIND_STANDING:
+            clash = _finishing().standing_conflict(conn)
+            if clash:
+                sys.exit(f"add-epic: ERROR — {clash}")
         cur = conn.execute(
             """INSERT INTO epic (name, type, status, owner, description, next_action, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
@@ -375,6 +382,27 @@ def add_epic(args: argparse.Namespace) -> None:
         print(f"OK: epic #{cur.lastrowid} added — {args.name} (owner: {args.owner})")
     finally:
         conn.close()
+
+
+def _finishing():
+    """The rule for a card reaching done, or leaving it — the same module
+    Bristol Tickets calls, so the transition means one thing on this board."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "bristol"))
+    import finishing
+    return finishing
+
+
+def _epic_closure():
+    """The module that closes an epic, or None where this checkout has no copy
+    of Bristol Tickets beside it. It lives in the viewer's tree because the
+    viewer ships it inside a relocatable .app; both front ends call the same
+    function so a closure is one act however it was asked for."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "bristol"))
+    try:
+        import epic_closure
+    except ImportError:
+        return None
+    return epic_closure
 
 
 def update_epic(args: argparse.Namespace) -> None:
@@ -404,7 +432,25 @@ def update_epic(args: argparse.Namespace) -> None:
         given = {k: v for k, v in fields.items() if v is not None}
         if not given:
             sys.exit("update-epic: ERROR — pass at least one field to change")
+        # Giving an epic a finished status ends the effort: its finished cards
+        # leave the board and its report is written. Only the transition into a
+        # finished status does that, and a refused closure writes nothing at all.
+        # One epic per board is the standing workstream, so a second is refused
+        # before anything is written rather than leaving upkeep with two homes.
+        if (given.get("type") or "").strip().lower() == create_tickets.EPIC_KIND_STANDING:
+            clash = _finishing().standing_conflict(conn, args.id)
+            if clash:
+                sys.exit(f"update-epic: ERROR — {clash}")
+        closure, closing = None, False
         if "status" in given and given["status"] in create_tickets.EPIC_STATUS_FINISHED:
+            was = conn.execute("SELECT status FROM epic WHERE id=?",
+                               (args.id,)).fetchone()[0] or ""
+            closing = was not in create_tickets.EPIC_STATUS_FINISHED
+            closure = _epic_closure()
+            if closing and closure is not None:
+                refused = closure.refusal(conn, args.id)
+                if refused:
+                    sys.exit(f"update-epic: ERROR — {refused}")
             conn.execute("UPDATE epic SET closed_at = ? WHERE id = ? AND closed_at IS NULL",
                          (now(), args.id))
         conn.execute(
@@ -413,6 +459,8 @@ def update_epic(args: argparse.Namespace) -> None:
         )
         conn.commit()
         print(f"OK: epic #{args.id} -> {', '.join(sorted(given))} updated")
+        if closing and closure is not None:
+            print(f"OK: epic #{args.id} closed — {closure.close_epic(conn, args.id)}")
     finally:
         conn.close()
 
@@ -479,8 +527,13 @@ def update_task(args: argparse.Namespace) -> None:
             "record_type": args.record_type,
             "reporter": args.reporter,
             "epic_id": args.epic_id,
+            "due_date": args.due_date,
         }
         given = {k: v for k, v in fields.items() if v is not None}
+        # A date is optional and most cards carry none, so there is a word for
+        # clearing one: --due-date none writes NULL rather than the word.
+        if str(given.get("due_date", "")).lower() == "none":
+            given["due_date"] = None
         if not given:
             sys.exit("update-task: ERROR — pass at least one field to change")
         if "epic_id" in given and conn.execute(
@@ -555,8 +608,21 @@ def update_task_status(args: argparse.Namespace) -> None:
         if sets:
             vals.append(args.id)
             conn.execute(f"UPDATE task SET {', '.join(sets)} WHERE id = ?", vals)
+        # What done means for the board is one rule, held in one module: a
+        # standing card archives itself on finishing, a project card waits in
+        # Done for its epic to close, and a card taken back out of done returns
+        # to the board. Only a real transition triggers it.
+        left_the_board = False
+        if status is not None and new_status != cur_status:
+            if new_status == "done":
+                left_the_board = _finishing().finish(conn, args.id)
+            elif cur_status == "done":
+                _finishing().reopen(conn, args.id)
         conn.commit()
         extras = []
+        if left_the_board:
+            extras.append("archived: standing work leaves the board when it is "
+                          "finished")
         if stage is not None:
             extras.append(f"stage {new_stage}")
         if args.pressure is not None:
@@ -868,6 +934,11 @@ def main() -> None:
                       help="S|M|L|XL — how much of a full usage budget this card "
                            "would take. Scale and anchors in "
                            "src/skills/manage-tickets/SKILL.md (§Effort sizing).")
+    pct.add_argument("--due-date", dest="due_date", default=None,
+                      help="YYYY-MM-DD, an outside deadline this card has to "
+                           "meet — a filing window, a renewal, a date somebody "
+                           "else set. Optional, and it orders nothing: board "
+                           "order is the queue. 'none' clears it.")
     pct.add_argument("--record-type", dest="record_type", default=None,
                       choices=["build", "fix"],
                       help="retype the card: 'build' (a thing to build) or "

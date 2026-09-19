@@ -30,9 +30,10 @@ snapshot, which happens first. Where design content lives is
    Read a specific note when a request needs that fact, never sweep it.
    Proposing a page or fact goes through
    `src/skills/design-proposals/SKILL.md`.
-6. **Read a project's own frozen local state file where it has one** (the
-   charter's §The Project and the Notebook exception). This is a per-project
-   fact to confirm, never a default to assume.
+6. **Never read a project-local state, to-do or session-log file**, frozen or
+   otherwise. Where one is in a project that arrived from elsewhere, name it to
+   the user and leave it to him — `game_designer.md` §The Project and the
+   Notebook.
 
 ## On-demand lookup
 
@@ -69,6 +70,6 @@ session:
 4. **Run `src/skills/version-control-milestone/SKILL.md` before ending**
    where the session reached a structural milestone.
 
-**Never create a project-local state or tracking bundle for a new project.** The
-board is the default; a project-local state file is an exception that needs its
-own justification.
+**Never create a project-local state or tracking bundle**, for a new project or
+an old one. The board is the only channel — `src/app.md`, the section of that
+name — and there is no exception to it.

@@ -158,6 +158,15 @@ STAGE_CHOICES: list[tuple[str, str]] = [
     ("archive", "Archive"),
 ]
 
+# An epic is a project and ends, or it is the standing workstream and does not.
+# `epic.type` carries the difference, and these are the two values written here:
+# create_tickets.EPIC_KIND_STANDING is the one that means standing, and every
+# other value, including the prose older versions wrote, means project.
+EPIC_KIND_CHOICES: list[tuple[str, str]] = [
+    ("project", "Project"),
+    ("standing", "Standing"),
+]
+
 # The vocabulary create_tickets.EPIC_STATUS_CHOICES writes.
 EPIC_STATUS_CHOICES: list[tuple[str, str]] = [
     ("not started", "Not Started"),
@@ -2945,6 +2954,12 @@ def _is_checked(state) -> bool:
 
 def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _today() -> str:
+    """Today as the board writes a date, so a due date can be compared against
+    it as plain text."""
+    return datetime.now().strftime("%Y-%m-%d")
 
 
 def log_lines(conn, task_id: int, comments: bool = True,

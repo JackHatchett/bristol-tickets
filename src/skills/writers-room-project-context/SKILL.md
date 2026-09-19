@@ -16,10 +16,10 @@ snapshot, which happens first.
 1. **Identify the active project** after the board snapshot. The config's
    project links resolve which folder is active; there is normally one, and the
    layout supports more over time.
-2. **Read that project's own state file** — its `STATE.md` or equivalent — for
-   the previous session's updates and the recommended next focus. Echo a short
-   summary before waiting on the user: current focus, open blockers, the last
-   handful of decisions.
+2. **Take where the project stands from the board and nothing else** — the
+   snapshot the charter already ran. What is settled, what is open and what to
+   work next are cards and their comments; a file saying any of it is a second
+   record that goes stale (`src/app.md` §The board is the only channel).
 3. **Read that project's content-rules file** — its `AGENTS.md` or equivalent —
    before authoring or judging any content in it. Read it the first time content
    work begins in a session rather than only at session start. **Content rules
@@ -45,23 +45,16 @@ under-specified — ask rather than keep reading. Conventions:
 ## End of session
 
 On "end of session," "update everything," or the natural end of a content
-session. The project's state file and decision log live in the user-authored
-wiki, which this agent does not write in, so **prepare these as summaries in
-`markdown_notebook.agent_output_dir` for the user to fold in** rather than
-writing the wiki files yourself:
+session. Where the project stands goes on the board —
+`src/skills/manage-tickets/SKILL.md` §Session closure, which every agent
+follows: the cards you came back to in the column that reflects reality, what
+remains in a comment on the card it belongs to, and the launch in the To
+Continue block.
 
-1. **The state update** — current focus, blockers, the most recent settled
-   decisions, and a pointer to this session's log entry.
-2. **A short session log entry** — a diff since last time rather than a
-   snapshot. A few lines is normal.
-3. **Never regenerate the encyclopedia or recap a settled decision.**
-
-## The project state file is a scoped exception
-
-This framework holds work state in `tickets.db` and nowhere else (`src/app.md`
-§The board is the only channel). **The novel's project state file is a
-deliberate exception**, the same shape career_coach makes for its applications
-tracker: it tracks the novel's narrative progress — what is settled in the
-story, what is still open in the worldbuilding — not this agent's operational
-tasks, which stay on its epic. **Never collapse the two, and never migrate this
-file's contents into the board.**
+- **Never write a state file, a session log or a decision log**, in the
+  notebook or anywhere else. A settled decision is a comment on the card that
+  settled it.
+- **A deliverable is not state.** Prose, a proposal, a summary the user asked
+  for goes to `markdown_notebook.agent_output_dir` as content he folds in, and
+  says nothing about where the work stands.
+- **Never regenerate the encyclopedia or recap a settled decision.**

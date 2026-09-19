@@ -42,6 +42,16 @@ CREATE TABLE IF NOT EXISTS thread (
     covers   TEXT NOT NULL,
     tree     TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS image (
+    cid        TEXT PRIMARY KEY,
+    post_uri   TEXT NOT NULL,
+    mime       TEXT,
+    alt        TEXT,
+    bytes      INTEGER,
+    filename   TEXT,
+    kept_at    TEXT,
+    missing_at TEXT
+);
 CREATE TABLE IF NOT EXISTS other_record (
     uri             TEXT PRIMARY KEY,
     collection      TEXT NOT NULL,
@@ -66,6 +76,12 @@ def archive_path():
     return folder / "archive.db"
 
 
+# The store file this process last opened, which is what the pictures sit
+# beside. A store opened at another path — a test's own — takes its pictures
+# with it rather than writing them into the account's folder.
+_OPENED = [None]
+
+
 def connect(path=None):
     """The store, created with its schema where it is not there yet.
 
@@ -73,6 +89,7 @@ def connect(path=None):
     the store be exercised without a real one to write into.
     """
     target = data_paths.ensure_db(Path(path) if path else archive_path(), SCHEMA)
+    _OPENED[0] = Path(target)
     conn = sqlite3.connect(str(target), timeout=10, check_same_thread=False)
     conn.execute("PRAGMA busy_timeout=5000")
     conn.execute("PRAGMA journal_mode=MEMORY")
@@ -84,6 +101,78 @@ def connect(path=None):
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {kind}")
     conn.commit()
     return conn
+
+
+def images_folder():
+    """Where the picture files sit: an `images` folder beside the store's own
+    file, so a store opened somewhere else keeps its pictures there too."""
+    folder = (_OPENED[0].parent if _OPENED[0] else archive_path().parent) / "images"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def image_asked(conn):
+    """Every blob the store has already asked about, kept or gone."""
+    with _LOCK:
+        return {row["cid"] for row in conn.execute("SELECT cid FROM image")}
+
+
+def kept_images(conn):
+    """The file each kept picture sits in, by the blob it is."""
+    folder = images_folder()
+    with _LOCK:
+        rows = conn.execute(
+            "SELECT cid, filename FROM image WHERE filename IS NOT NULL").fetchall()
+    return {row["cid"]: folder / row["filename"] for row in rows}
+
+
+def keep_image(conn, cid, post_uri, mime, alt, data):
+    """One picture's bytes, written beside the store and recorded.
+
+    The file is named for the blob it is, so a picture two posts carry is one
+    file and a second run recognises it without reading it.
+    """
+    suffix = {"image/png": ".png", "image/gif": ".gif",
+              "image/webp": ".webp"}.get(mime, ".jpg")
+    filename = f"{cid}{suffix}"
+    (images_folder() / filename).write_bytes(data)
+    with _LOCK:
+        conn.execute(
+            "INSERT INTO image (cid, post_uri, mime, alt, bytes, filename, kept_at) "
+            "VALUES (?,?,?,?,?,?,?) ON CONFLICT(cid) DO UPDATE SET "
+            "bytes=excluded.bytes, filename=excluded.filename, "
+            "kept_at=excluded.kept_at, missing_at=NULL",
+            (cid, post_uri, mime, alt, len(data), filename,
+             datetime.now(timezone.utc).isoformat()))
+        conn.commit()
+    return images_folder() / filename
+
+
+def note_image_gone(conn, cid, post_uri, mime, alt):
+    """A picture the data server no longer serves, recorded so that a later run
+    does not ask again. What is lost is lost; the page keeps the words."""
+    with _LOCK:
+        conn.execute(
+            "INSERT INTO image (cid, post_uri, mime, alt, missing_at) "
+            "VALUES (?,?,?,?,?) ON CONFLICT(cid) DO UPDATE SET "
+            "missing_at=excluded.missing_at",
+            (cid, post_uri, mime, alt,
+             datetime.now(timezone.utc).isoformat()))
+        conn.commit()
+
+
+def image_totals(conn):
+    """How many pictures are kept, how many are gone, and what the kept ones
+    cost on disk. A corpus of pictures is a different order of size from a
+    corpus of posts, so a run says so rather than letting a folder grow
+    unremarked."""
+    with _LOCK:
+        kept, size = conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(bytes),0) FROM image "
+            "WHERE filename IS NOT NULL").fetchone()
+        gone = conn.execute(
+            "SELECT COUNT(*) FROM image WHERE filename IS NULL").fetchone()[0]
+    return kept, gone, size
 
 
 def keep_posts(conn, records):
@@ -120,6 +209,20 @@ def thread_count(conn):
     """How many conversations the store holds."""
     with _LOCK:
         return conn.execute("SELECT COUNT(*) FROM thread").fetchone()[0]
+
+
+def records_with_images(conn):
+    """Every kept post record carrying at least one picture, newest first."""
+    with _LOCK:
+        rows = conn.execute(
+            "SELECT uri, record FROM post ORDER BY created_at DESC").fetchall()
+    carrying = []
+    for row in rows:
+        record = json.loads(row["record"])
+        blobs = client.image_blobs(record)
+        if blobs:
+            carrying.append((row["uri"], blobs))
+    return carrying
 
 
 def records_by_day(conn, zone, since=None):

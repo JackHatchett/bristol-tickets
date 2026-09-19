@@ -101,6 +101,171 @@ def find_company(args) -> None:
               f"[{r['status']}, {r['fit_verdict']}, {r['date_evaluated'] or r['year']}]")
 
 
+# ---------------------------------------------------------------------------
+# contacts — the person, what is outstanding with them, and what they are
+# attached to. Every write goes through db_common.connect(), as the
+# applications writes above do.
+# ---------------------------------------------------------------------------
+
+CONTACT_FIELDS = ["name", "aliases", "how_known", "company", "title",
+                  "cadence_days", "last_contact_on", "notes"]
+ASK_KINDS = ("reconnect", "referral", "application-submit", "recommendation",
+             "intro", "favour-owed", "other")
+ASK_STATUSES = ("open", "done", "dropped")
+DIRECTIONS = ("us", "them")
+
+
+def _contact_matches(conn, needle: str):
+    """Every contact whose name or aliases hold this text.
+
+    Aliases are matched as well as the name because the same person arrives
+    spelled differently — a nickname, a maiden name, a middle initial — and a
+    second row for one person is the failure this domain exists to avoid.
+    """
+    like = f"%{needle.lower()}%"
+    return conn.execute(
+        "SELECT id, name, aliases, company, title, cadence_days, last_contact_on "
+        "FROM contact "
+        "WHERE LOWER(name) LIKE ? OR LOWER(COALESCE(aliases,'')) LIKE ? "
+        "ORDER BY LOWER(name)", (like, like)).fetchall()
+
+
+def add_contact(args) -> None:
+    vals = {f: getattr(args, f) for f in CONTACT_FIELDS
+            if getattr(args, f, None) is not None}
+    if not vals.get("name"):
+        sys.exit("add-contact: --name is required")
+    existing = _contact_matches(dbc.connect(), vals["name"])
+    if existing and not args.anyway:
+        print(f"⚠ {len(existing)} contact(s) already match '{vals['name']}':")
+        for r in existing:
+            print(f"  #{r['id']} {r['name']}"
+                  f"{' (' + r['aliases'] + ')' if r['aliases'] else ''}")
+        sys.exit("Pass --anyway if this is a different person.")
+    vals["created_at"] = vals["updated_at"] = _now()
+    cols = list(vals)
+    conn = dbc.connect()
+    cur = conn.execute(
+        f"INSERT INTO contact ({','.join(cols)}) VALUES ({','.join('?'*len(cols))})",
+        [vals[c] for c in cols])
+    conn.commit()
+    rid = cur.lastrowid
+    conn.close()
+    print(f"✓ inserted contact id={rid}: {vals['name']}")
+    if not args.no_render:
+        _rerender("contacts")
+
+
+def update_contact(args) -> None:
+    sets = {f: getattr(args, f) for f in CONTACT_FIELDS
+            if getattr(args, f, None) is not None}
+    if not sets:
+        sys.exit("update-contact: nothing to update")
+    sets["updated_at"] = _now()
+    conn = dbc.connect()
+    conn.execute(f"UPDATE contact SET {','.join(f'{c}=?' for c in sets)} WHERE id=?",
+                 [*sets.values(), args.id])
+    conn.commit()
+    changed = conn.total_changes
+    conn.close()
+    print(f"✓ updated contact id={args.id} ({changed} row change)" if changed
+          else f"⚠ no contact with id={args.id}")
+    if changed and not args.no_render:
+        _rerender("contacts")
+
+
+def add_ask(args) -> None:
+    conn = dbc.connect()
+    if conn.execute("SELECT 1 FROM contact WHERE id=?", (args.contact,)).fetchone() is None:
+        conn.close()
+        sys.exit(f"add-ask: no contact with id={args.contact}")
+    cur = conn.execute(
+        "INSERT INTO contact_ask (contact_id, kind, direction, subject, "
+        "opened_on, due_on, status, last_touch) "
+        "VALUES (?,?,?,?,COALESCE(?, date('now')),?, 'open', COALESCE(?, date('now')))",
+        (args.contact, args.kind, args.direction, args.subject,
+         args.opened_on, args.due_on, args.opened_on))
+    conn.commit()
+    rid = cur.lastrowid
+    conn.close()
+    print(f"✓ opened ask id={rid} on contact #{args.contact}: "
+          f"{args.kind} — {args.subject or ''}")
+    if not args.no_render:
+        _rerender("contacts")
+
+
+def close_ask(args) -> None:
+    """Close an ask, and record the exchange on the contact it belongs to.
+
+    Closing one is the commonest moment the two were last in touch, so the
+    contact's last_contact_on follows it unless the caller says otherwise; a
+    cadence measured from a date nobody updates would come due for ever.
+    """
+    conn = dbc.connect()
+    row = conn.execute("SELECT contact_id FROM contact_ask WHERE id=?",
+                       (args.id,)).fetchone()
+    if row is None:
+        conn.close()
+        sys.exit(f"close-ask: no ask with id={args.id}")
+    when = args.on or datetime.date.today().isoformat()
+    conn.execute("UPDATE contact_ask SET status=?, last_touch=? WHERE id=?",
+                 (args.status, when, args.id))
+    if not args.keep_last_contact:
+        conn.execute(
+            "UPDATE contact SET last_contact_on=?, updated_at=? WHERE id=?",
+            (when, _now(), row["contact_id"]))
+    conn.commit()
+    conn.close()
+    print(f"✓ ask id={args.id} is {args.status} as of {when}")
+    if not args.no_render:
+        _rerender("contacts")
+
+
+def add_link(args) -> None:
+    conn = dbc.connect()
+    if conn.execute("SELECT 1 FROM contact WHERE id=?", (args.contact,)).fetchone() is None:
+        conn.close()
+        sys.exit(f"add-link: no contact with id={args.contact}")
+    if args.target_id is None and not args.target_path:
+        conn.close()
+        sys.exit("add-link: pass --target-id or --target-path")
+    cur = conn.execute(
+        "INSERT INTO contact_link (contact_id, target_kind, target_id, "
+        "target_path, label) VALUES (?,?,?,?,?)",
+        (args.contact, args.kind, args.target_id, args.target_path, args.label))
+    conn.commit()
+    rid = cur.lastrowid
+    conn.close()
+    print(f"✓ linked contact #{args.contact} to {args.kind} "
+          f"{args.target_id if args.target_id is not None else args.target_path} "
+          f"(link id={rid})")
+
+
+def find_contact(args) -> None:
+    conn = dbc.connect()
+    rows = _contact_matches(conn, args.name)
+    if not rows:
+        print(f"No contact matching '{args.name}'.")
+        conn.close()
+        return
+    print(f"{len(rows)} contact(s) matching '{args.name}':")
+    for r in rows:
+        asks = conn.execute(
+            "SELECT id, kind, direction, subject, due_on FROM contact_ask "
+            "WHERE contact_id=? AND status='open' ORDER BY COALESCE(due_on,'9999')",
+            (r["id"],)).fetchall()
+        alias = f" (also {r['aliases']})" if r["aliases"] else ""
+        seen = r["last_contact_on"] or "never"
+        print(f"  #{r['id']} {r['name']}{alias} — "
+              f"{r['company'] or 'no company recorded'}, last contact {seen}")
+        for a in asks:
+            waits = "waiting on them" if a["direction"] == "them" else "ours to move"
+            due = f", due {a['due_on']}" if a["due_on"] else ""
+            print(f"      ask #{a['id']} {a['kind']}: {a['subject'] or ''} "
+                  f"[{waits}{due}]")
+    conn.close()
+
+
 KINDS = ("opened", "reading", "quiz", "exercise")
 
 
@@ -210,6 +375,62 @@ def build_parser() -> argparse.ArgumentParser:
     add_app_args(u); u.set_defaults(func=update_application)
     f = sub.add_parser("find-company"); f.add_argument("--company", required=True)
     f.set_defaults(func=find_company)
+
+    def add_contact_args(sp):
+        sp.add_argument("--name"); sp.add_argument("--aliases",
+                        help="other names this person answers to, comma separated")
+        sp.add_argument("--how-known", dest="how_known")
+        sp.add_argument("--company"); sp.add_argument("--title")
+        sp.add_argument("--cadence-days", dest="cadence_days", type=int,
+                        help="how often to be in touch; leave unset for no cadence")
+        sp.add_argument("--last-contact-on", dest="last_contact_on",
+                        help="YYYY-MM-DD of the last exchange either way")
+        sp.add_argument("--notes")
+        sp.add_argument("--no-render", action="store_true")
+
+    ac = sub.add_parser("add-contact")
+    add_contact_args(ac)
+    ac.add_argument("--anyway", action="store_true",
+                    help="add the row even though a contact of this name is "
+                         "already recorded")
+    ac.set_defaults(func=add_contact)
+
+    uc = sub.add_parser("update-contact"); uc.add_argument("--id", type=int, required=True)
+    add_contact_args(uc); uc.set_defaults(func=update_contact)
+
+    aa = sub.add_parser("add-ask")
+    aa.add_argument("--contact", type=int, required=True)
+    aa.add_argument("--kind", required=True, choices=ASK_KINDS)
+    aa.add_argument("--direction", default="them", choices=DIRECTIONS,
+                    help="who the next move waits on")
+    aa.add_argument("--subject", help="what the ask is about, in one line")
+    aa.add_argument("--opened-on", dest="opened_on", help="YYYY-MM-DD; default today")
+    aa.add_argument("--due-on", dest="due_on",
+                    help="YYYY-MM-DD this becomes late; optional")
+    aa.add_argument("--no-render", action="store_true")
+    aa.set_defaults(func=add_ask)
+
+    ca = sub.add_parser("close-ask"); ca.add_argument("--id", type=int, required=True)
+    ca.add_argument("--status", default="done", choices=("done", "dropped"))
+    ca.add_argument("--on", help="YYYY-MM-DD it closed; default today")
+    ca.add_argument("--keep-last-contact", dest="keep_last_contact",
+                    action="store_true",
+                    help="leave the contact's last_contact_on where it is")
+    ca.add_argument("--no-render", action="store_true")
+    ca.set_defaults(func=close_ask)
+
+    al = sub.add_parser("add-link"); al.add_argument("--contact", type=int, required=True)
+    al.add_argument("--kind", required=True,
+                    help="application | document | client | course | other")
+    al.add_argument("--target-id", dest="target_id", type=int,
+                    help="a row id in this database")
+    al.add_argument("--target-path", dest="target_path",
+                    help="a declared path, where the target is a file")
+    al.add_argument("--label", help="what this link is, for a reader")
+    al.set_defaults(func=add_link)
+
+    fc = sub.add_parser("find-contact"); fc.add_argument("--name", required=True)
+    fc.set_defaults(func=find_contact)
 
     g = sub.add_parser("record-progress")
     g.add_argument("--course", required=True)

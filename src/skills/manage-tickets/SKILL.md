@@ -111,7 +111,7 @@ the skeleton back next time the record opens.
 | What you wanted to write | Where it goes |
 | --- | --- |
 | Reasoning, findings, what you did, what's needed next | An `add-issue-log` comment |
-| A decision the user must make before you proceed | An `add-issue-log` comment, plus `assignee` = `user` |
+| A decision the user must make before you proceed | §Asking the user for a decision |
 | What kind of thing stopped the card | `update-task-status --block-reason dependency\|decision\|capability\|transient` |
 | "This came from that review / that note / that page" | A link (`link-add --uri`) — a file inside the repository repository-relative (`src/tools/ticket_tools/README.md`), a file anywhere else by its absolute path |
 | "This relates to ticket #153" | A link (`link-add --to-task 153`) |
@@ -185,6 +185,55 @@ thing in the message:
 - **Set the card's block reason to what actually stopped it**, and put the tool,
   the call or the choice in a comment beside it. A `capability` or a `decision`
   is what puts the card under NEEDS YOU the next time anyone reads the board.
+
+**9. Close on a To Continue block, and let it be the last thing.** The user
+starts the next session from it alone, so it states the launch and nothing else:
+
+```
+To Continue
+Run as: <agent slug>
+Work: #<id> <title>
+Effort: <tier>
+```
+
+- **Name one card, never the queue.** The board holds the order and the session
+  that reads it will see it; a block that recites the queue makes the user read
+  it twice and goes stale the moment anyone drags a card. Where other cards
+  could run beside the one named, say so in one clause — "#571 and #572 can run
+  in the same session" — and name no more.
+- **Name the decision instead of a card where one is owed.** A session that
+  stopped on a grant, a credential or a choice of the user's puts that in the
+  Work line: what he has to decide or grant, and what runs the moment he has.
+- **Say which agent to run as, always**, even where it is the agent that just
+  ran. The line the user copies is the whole launch, and an agent he has to
+  remember is a launch he has to reconstruct.
+- **Take the effort from the card** — `src/skills/manage-tickets/SKILL.md`
+  §Effort sizing — so the tier is the card's own rather than a second judgement
+  made at the close.
+- **Write no state into any file to support it.** The block is the message's
+  last paragraph and lives in the conversation; what it names lives on the
+  board, and `src/app.md` §The board is the only channel is unchanged by it.
+
+## Asking the user for a decision
+
+A decision that is the user's is put to him where he is, and the session waits.
+A card is where the decision is recorded once it is made, never where the asking
+is left for him to find.
+
+- **Ask in the session where he is present**, as a question in whatever the
+  runtime offers for one — a prompt he answers in place. Name the decision, the
+  options you see, and what each one costs, in the question itself: an ask he
+  has to open a card to understand is the thing this rule exists against.
+- **Move the card to him only where he is not** — `update-task-status --id N
+  --assignee user --block-reason decision`, with a comment naming exactly what
+  to decide and what runs the moment he has. That is the unattended case, and
+  the block reason is what puts it under NEEDS YOU.
+- **Record the answer on the card he decided about**, in one comment, in his
+  words where the wording matters. The asking lives in the conversation and the
+  decision lives on the board.
+- **Never hold a question for the close.** A decision that gates the work is
+  asked when it is reached; a decision that gates the next card goes in the To
+  Continue block.
 
 ## Splitting a card
 

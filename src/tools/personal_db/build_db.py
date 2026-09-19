@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import db_common as dbc  # noqa: E402
 
-SCHEMA_VERSION = "2"
+SCHEMA_VERSION = "3"
 
 # name, display_name, source, primary_table, snapshot_file, stats_view, sort_order, notes
 DOMAINS = [
@@ -30,6 +30,10 @@ DOMAINS = [
      "learning.xlsx", "v_learning_stats", 30,
      "Where the learner stands in a course. Read by the study interface, "
      "never by an agent deciding a next action."),
+    ("contacts", "Contacts", "personal_db", "contact",
+     "contacts.xlsx", "v_contact_stats", 40,
+     "Who is owed what, and since when. The state layer beside the people "
+     "descriptions that already exist, never a second description of them."),
 ]
 
 

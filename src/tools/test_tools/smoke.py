@@ -645,9 +645,10 @@ def check_bristol() -> list[str]:
 
         # Where a control sits says what it reaches. Refresh reloads every
         # view, so it is in the header beside Create and reachable from any
-        # tab; Clear Done touches the Board alone, so it is on the board's
-        # control row; a column header carries no control at all, which is
-        # what keeps the three names and counts on one line.
+        # tab; the board's own control row narrows the board and offers nothing
+        # else, since each kind of card leaves the board on its own event; a
+        # column header carries no control at all, which is what keeps the three
+        # names and counts on one line.
         from PySide6.QtWidgets import QPushButton
 
         header_bar = win.centralWidget().layout().itemAt(0).widget()
@@ -666,9 +667,13 @@ def check_bristol() -> list[str]:
             board_row.itemAt(i).widget().text()
             for i in range(board_row.count())
             if isinstance(board_row.itemAt(i).widget(), QPushButton)]
-        if board_buttons[-1] != "Clear Done":
+        if any("Done" in text for text in board_buttons):
             raise SmokeFailure(
-                f"Clear Done should end the board's control row, got {board_buttons}")
+                f"the board offers a sweep button: {board_buttons}")
+        if board_buttons != ["Filter", "Clear"]:
+            raise SmokeFailure(
+                f"the board's control row is Filter and its Clear, got "
+                f"{board_buttons}")
         for key, column in win.columns.items():
             if column.findChildren(QPushButton):
                 raise SmokeFailure(f"the {key} column header carries a control")
@@ -677,8 +682,9 @@ def check_bristol() -> list[str]:
         if win.columns["todo"].list_widget.count() != 1:
             raise SmokeFailure("Refresh did not reload the board from another tab")
         win._show_page(win._board_tab_index)
-        ok.append("Refresh and Create are the header's; Clear Done is the "
-                  "board's; a column header holds no control")
+        ok.append("Refresh and Create are the header's; the board's row "
+                  "narrows the board and nothing more; a column header holds "
+                  "no control")
 
         # ---- What the board is showing ------------------------------------
         # One filter state narrows the board, the Backlog and the Archive and
@@ -802,65 +808,111 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("Backlog Activate did not move the card to the active board")
         ok.append("Backlog Activate → Board")
 
-        # Clear Done: moves every Done card to the Archive, then writes the
-        # analytic report. Confirm dialog is auto-accepted so the headless run
-        # doesn't block.
-        #
-        # BRISTOL_REPORTS_DIR is redirected to a temp folder for the duration.
-        # Without it the report resolver would find the real config and this
-        # test would write a bogus report into the user's actual notebook —
-        # a smoke check must not leave anything behind outside its sandbox.
+        # Finishing a standing card archives it there and then, and a project
+        # card stays in Done until its epic closes. The report is an epic's, so
+        # nothing here writes one; what is guarded is which card leaves the
+        # board on being finished and which one waits.
         import os as _os
+        import finishing
         import ui.main_window as mw
-        mconn.execute("UPDATE task SET status='done' WHERE id=?", (b1,))
+
+        mconn.execute("INSERT INTO epic (name, type, status) "
+                      "VALUES ('Standing work','standing','in progress')")
+        standing_epic = mconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        mconn.execute("UPDATE task SET epic_id=?, status='done' WHERE id=?",
+                      (standing_epic, b1))
+        finishing.finish(mconn, b1)
+        project_card = _seed("a project card", "active", "todo", 2)
+        mconn.execute("UPDATE task SET epic_id=?, status='done' WHERE id=?",
+                      (live_epic, project_card))
+        finishing.finish(mconn, project_card)
+        loose = _seed("nobody's card", "active", "todo", 3)
+        mconn.execute("UPDATE task SET status='done' WHERE id=?", (loose,))
+        finishing.finish(mconn, loose)
         mconn.commit()
-        # The confirmation is a modal, so the answer is stubbed at the name the
-        # window calls rather than left to block an offscreen run.
-        _orig_confirm = mw.confirm
-        mw.confirm = lambda *a, **k: True
-        _prior_reports_dir = _os.environ.get("BRISTOL_REPORTS_DIR")
-        with tempfile.TemporaryDirectory() as reports_tmp:
-            _os.environ["BRISTOL_REPORTS_DIR"] = reports_tmp
-            try:
-                win._refresh_board()
-                win._clear_done()
-            finally:
-                mw.confirm = _orig_confirm
-                if _prior_reports_dir is None:
-                    _os.environ.pop("BRISTOL_REPORTS_DIR", None)
-                else:
-                    _os.environ["BRISTOL_REPORTS_DIR"] = _prior_reports_dir
-            written = sorted(Path(reports_tmp).glob("bristol_report_*.md"))
-            if not written:
-                raise SmokeFailure("Clear Done did not write an analytic report")
-            body = written[0].read_text(encoding="utf-8")
-            for required in ("# Bristol Tickets Report",
-                             "#### Executive Summary",
-                             "#### Headline Metrics", "#### Ledger"):
-                if required not in body:
-                    raise SmokeFailure(f"report is missing its {required!r} section")
-            if not (Path(reports_tmp) / "_index.md").exists():
-                raise SmokeFailure("Clear Done did not write the reports _index.md")
-        moved = mconn.execute("SELECT stage FROM task WHERE id=?", (b1,)).fetchone()[0]
-        if moved != "archive":
-            raise SmokeFailure("Clear Done did not move the Done card to Archive")
-        ok.append("Clear Done → Archive + analytic report written")
+
+        if mconn.execute("SELECT stage FROM task WHERE id=?",
+                         (b1,)).fetchone()[0] != "archive":
+            raise SmokeFailure("a finished standing card stayed on the board")
+        if mconn.execute("SELECT stage FROM task WHERE id=?",
+                         (project_card,)).fetchone()[0] != "active":
+            raise SmokeFailure(
+                "a finished project card left before its epic closed")
+        where, whose = mconn.execute(
+            "SELECT stage, epic_id FROM task WHERE id=?", (loose,)).fetchone()
+        if whose != standing_epic or where != "archive":
+            raise SmokeFailure(
+                "a card finished under no epic should be attributed to the "
+                "standing workstream and archived with it")
+        ok.append("finishing archives a standing card, attributes one with no "
+                  "epic, and leaves a project card for its epic to close")
+
+        # Taken back out of done, an archived card returns to the board: the
+        # archive is where finishing put it, so unfinishing has to undo it.
+        mconn.execute("UPDATE task SET status='doing' WHERE id=?", (b1,))
+        finishing.reopen(mconn, b1)
+        mconn.commit()
+        if mconn.execute("SELECT stage FROM task WHERE id=?",
+                         (b1,)).fetchone()[0] != "active":
+            raise SmokeFailure("a reopened card did not come back to the board")
+        ok.append("a card taken out of done returns to the active board")
+
+        # A card nobody has placed carries a mark the others do not, in both
+        # places a card is drawn. Standing work is a decision, so a card in the
+        # standing workstream carries nothing.
+        from ui.theme import CARD_ROLE as _CARD_ROLE
+
+        triaged = _seed("in an epic", "active", "todo", 4)
+        mconn.execute("UPDATE task SET epic_id=? WHERE id=?",
+                      (live_epic, triaged))
+        upkeep = _seed("standing upkeep", "active", "todo", 5)
+        mconn.execute("UPDATE task SET epic_id=? WHERE id=?",
+                      (standing_epic, upkeep))
+        untriaged = _seed("nobody placed this", "active", "todo", 6)
+        backlog_untriaged = _seed("nor this", "backlog", "todo", 7)
+        mconn.commit()
+        win._refresh_board()
+
+        def _card_payload(column, task_id):
+            lw = column.list_widget
+            for i in range(lw.count()):
+                if lw.item(i).data(Qt.UserRole) == task_id:
+                    return lw.item(i)
+            raise SmokeFailure(f"card #{task_id} is not in the column drawn")
+
+        for column, task_id, expected in (
+                (win.columns["todo"], triaged, False),
+                (win.columns["todo"], upkeep, False),
+                (win.columns["todo"], untriaged, True),
+                (win.backlog_column, backlog_untriaged, True)):
+            item = _card_payload(column, task_id)
+            if bool(item.data(_CARD_ROLE).get("untriaged")) != expected:
+                raise SmokeFailure(
+                    f"card #{task_id} should {'' if expected else 'not '}be "
+                    "marked as having no epic")
+            says_so = "No epic yet" in (item.toolTip() or "")
+            if says_so != expected:
+                raise SmokeFailure(
+                    f"card #{task_id}'s tooltip should {'' if expected else 'not '}"
+                    "name the choice")
+        ok.append("a card with no epic is marked on the board and in the "
+                  "backlog, and standing work is not")
 
         # The transition log must capture the moves the UI just made, since
-        # cycle time and work-item age are computed from nothing else. The moves
-        # exercised above (Backlog Activate, Clear Done) are both *stage*
-        # transitions — neither touches status — so `field='stage'` is the
-        # invariant to assert here. Asserting `field='status'` was checking for
-        # events these paths never produce.
+        # cycle time and work-item age are computed from nothing else. Backlog
+        # Activate and an archive on finishing are both *stage* transitions —
+        # neither touches status — so `field='stage'` is the invariant to assert
+        # here. Asserting `field='status'` was checking for events these paths
+        # never produce.
         events = mconn.execute(
             "SELECT COUNT(*) FROM task_event WHERE field='stage'").fetchone()[0]
         if not events:
             raise SmokeFailure("no task_event rows written by UI board moves")
-        swept = mconn.execute(
+        archived = mconn.execute(
             "SELECT COUNT(*) FROM task_event WHERE field='stage' AND to_value='archive'"
         ).fetchone()[0]
-        if not swept:
-            raise SmokeFailure("Clear Done archived a card without logging the transition")
+        if not archived:
+            raise SmokeFailure("a card was archived without logging the transition")
         ok.append(f"transition log records stage moves ({events} events)")
 
         # Create-modal Stage follows the active view, and lands on the board
@@ -2188,6 +2240,533 @@ def check_bristol() -> list[str]:
                 _agents_tab.confirm = real_confirm
             ok.append("every ✕ on the agent form asks by name, and drops a row "
                       "only on an accept")
+
+        # ---- closed_at is the finish; the Archive orders by the archival ----
+        # A card finished on one day and archived on another separates the two
+        # moments, which is the whole of what is guarded here: archiving leaves
+        # closed_at alone, and the Archive reads newest-archived first even
+        # where that disagrees with newest-finished.
+        aconn = sqlite3.connect(":memory:")
+        aconn.executescript(schema.read_text())
+
+        def _seed_closed(title, stage, closed_at):
+            aconn.execute(
+                "INSERT INTO task (title, status, stage, record_type, "
+                "created_at, updated_at, closed_at) "
+                "VALUES (?, 'done', ?, 'build', '2026-01-01T00:00:00+00:00', ?, ?)",
+                (title, stage, closed_at, closed_at))
+            return aconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        def _logged(task_id, field, to_value, at):
+            aconn.execute(
+                "INSERT INTO task_event (task_id, at, actor, field, to_value) "
+                "VALUES (?,?,'user',?,?)", (task_id, at, field, to_value))
+
+        # Seeded before the window is built, so the change log carries these
+        # moments rather than the moment the test seeded them.
+        finished = "2026-03-03T09:00:00+00:00"
+        swept = _seed_closed("Finished in March", "active", finished)
+        _logged(swept, "status", "done", finished)
+        older = _seed_closed("Finished in May", "archive",
+                             "2026-05-05T09:00:00+00:00")
+        _logged(older, "status", "done", "2026-05-05T09:00:00+00:00")
+        _logged(older, "stage", "archive", "2026-02-02T09:00:00+00:00")
+        aconn.commit()
+
+        awin = MainWindow(aconn)
+        awin._move_tasks_to_stage([swept], "archive")
+        stage, closed = aconn.execute(
+            "SELECT stage, closed_at FROM task WHERE id=?", (swept,)).fetchone()
+        if stage != "archive":
+            raise SmokeFailure("the card was not archived")
+        if closed != finished:
+            raise SmokeFailure(
+                f"archiving rewrote closed_at to {closed!r}; it is the finish, "
+                f"{finished!r}")
+        awin._refresh_board()
+        order = [awin.archive_results.item(i).text()
+                 for i in range(awin.archive_results.count())]
+        if len(order) != 2 or f"#{swept}" not in order[0]:
+            raise SmokeFailure(
+                f"the Archive is not ordered newest-archived first: {order}")
+        ok.append("archiving a card leaves closed_at at the finish, and the "
+                  "Archive orders by the archival moment")
+
+        # ---- what a re-stamped closed_at can be recovered from --------------
+        # The correction reads the change log alone: a card the log has a finish
+        # for is set back to it, a card it says nothing about is left as it is
+        # rather than guessed at, and a second pass writes nothing.
+        from ui.schema_guard import _recover_closed_at_from_the_log
+
+        rconn = sqlite3.connect(":memory:")
+        rconn.executescript(schema.read_text())
+
+        def _seed_restamped(title, closed_at, finish=None):
+            rconn.execute(
+                "INSERT INTO task (title, status, stage, record_type, "
+                "created_at, updated_at, closed_at) VALUES "
+                "(?, 'done', 'archive', 'build', '2026-01-01T00:00:00+00:00', ?, ?)",
+                (title, closed_at, closed_at))
+            task_id = rconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            if finish:
+                rconn.execute(
+                    "INSERT INTO task_event (task_id, at, actor, field, to_value) "
+                    "VALUES (?,?,'user','status','done')", (task_id, finish))
+            rconn.execute(
+                "INSERT INTO task_event (task_id, at, actor, field, to_value) "
+                "VALUES (?,?,'user','stage','archive')", (task_id, closed_at))
+            return task_id
+
+        sweep_stamp = "2026-06-30T12:00:00+00:00"
+        true_finish = "2026-06-03T12:00:00+00:00"
+        restamped = _seed_restamped("Swept weeks later", sweep_stamp, true_finish)
+        unrecorded = _seed_restamped("Finished before the log", sweep_stamp)
+        rconn.commit()
+
+        _recover_closed_at_from_the_log(rconn)
+        rconn.commit()
+        recovered = rconn.execute(
+            "SELECT closed_at FROM task WHERE id=?", (restamped,)).fetchone()[0]
+        if recovered != true_finish:
+            raise SmokeFailure(
+                f"the correction left closed_at at {recovered!r} rather than the "
+                f"finish the log records, {true_finish!r}")
+        left = rconn.execute(
+            "SELECT closed_at FROM task WHERE id=?", (unrecorded,)).fetchone()[0]
+        if left != sweep_stamp:
+            raise SmokeFailure(
+                "a card the log holds no finish for was given one anyway: "
+                f"{left!r}")
+        settled = dict(rconn.execute("SELECT id, closed_at FROM task"))
+        _recover_closed_at_from_the_log(rconn)
+        rconn.commit()
+        if dict(rconn.execute("SELECT id, closed_at FROM task")) != settled:
+            raise SmokeFailure("a second correction pass rewrote a closed_at")
+        ok.append("a re-stamped closed_at is recovered from the log, one the "
+                  "log cannot account for is left alone, and a second pass "
+                  "writes nothing")
+
+        # ---- closing an epic is what ends a period --------------------------
+        # The effort is the boundary: its finished cards leave the board in one
+        # act and the report covers exactly them. What is guarded here is the
+        # boundary rather than the metrics — that an open card stays, that the
+        # standing workstream is refused, that an unreachable notebook costs the
+        # report alone, and that a second closure leaves the first report as it
+        # was.
+        import epic_closure
+        from PySide6.QtCore import QDate as _QDate
+
+        econn = sqlite3.connect(":memory:")
+        econn.executescript(schema.read_text())
+        reports_home = Path(tempfile.mkdtemp(prefix="smoke_reports_"))
+
+        def _epic_row(name, kind=None):
+            econn.execute("INSERT INTO epic (name, type, status) "
+                          "VALUES (?,?,'in progress')", (name, kind))
+            return econn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        def _epic_card(epic_id, title, status):
+            econn.execute(
+                "INSERT INTO task (epic_id, title, status, stage, record_type, "
+                "created_at, updated_at, closed_at) VALUES "
+                "(?,?,?,'active','build','2026-02-01T00:00:00+00:00',"
+                "'2026-02-10T00:00:00+00:00',?)",
+                (epic_id, title, status,
+                 "2026-02-10T00:00:00+00:00" if status == "done" else None))
+            return econn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        def _stage_of(task_id):
+            return econn.execute(
+                "SELECT stage FROM task WHERE id=?", (task_id,)).fetchone()[0]
+
+        effort = _epic_row("An effort")
+        delivered = _epic_card(effort, "Delivered in the effort", "done")
+        unfinished = _epic_card(effort, "Never finished", "todo")
+        standing = _epic_row("Standing work", epic_closure.STANDING_KIND)
+        upkeep = _epic_card(standing, "Upkeep", "done")
+        econn.commit()
+
+        closed = epic_closure.close_epic(econn, effort, out_dir=reports_home)
+        if not closed.ok:
+            raise SmokeFailure(f"closing an epic was refused: {closed.refused}")
+        if closed.archived != [delivered]:
+            raise SmokeFailure(
+                f"the closure archived {closed.archived}, not the finished card")
+        if _stage_of(delivered) != "archive" or _stage_of(unfinished) != "active":
+            raise SmokeFailure(
+                "closing an epic should archive what it finished and leave an "
+                "open card on the board")
+        if closed.report is None or not closed.report.ok:
+            raise SmokeFailure(f"no report on closure: {closed.report}")
+        written = closed.report.written.read_text(encoding="utf-8")
+        if "Delivered in the effort" not in written:
+            raise SmokeFailure("the report does not cover the epic's own card")
+        if "Never finished" in written:
+            raise SmokeFailure("the report counts a card the effort never finished")
+        ok.append("closing an epic archives its finished cards and reports on "
+                  "exactly them")
+
+        refused = epic_closure.close_epic(econn, standing, out_dir=reports_home)
+        if refused.ok:
+            raise SmokeFailure("the standing workstream was allowed to close")
+        if _stage_of(upkeep) != "active":
+            raise SmokeFailure("a refused closure archived a card anyway")
+        ok.append("the standing workstream is refused, and a refusal moves "
+                  "nothing")
+
+        # An unreachable notebook: the parent of the folder does not exist, so
+        # nothing is written and nothing is materialised in its place.
+        elsewhere = _epic_row("Another effort")
+        also = _epic_card(elsewhere, "Delivered elsewhere", "done")
+        econn.commit()
+        unreachable = Path(tempfile.gettempdir()) / "smoke_absent_notebook" / "r"
+        lost = epic_closure.close_epic(econn, elsewhere, out_dir=unreachable)
+        if _stage_of(also) != "archive":
+            raise SmokeFailure(
+                "an unreachable notebook folder cost the closure itself")
+        if lost.report is None or lost.report.ok:
+            raise SmokeFailure(
+                "a report was written into a folder that is not there")
+        if unreachable.exists():
+            raise SmokeFailure("an absent notebook was materialised on disk")
+        ok.append("an unreachable notebook costs the report alone")
+
+        # Reopened, finished again, closed again: a second report over what it
+        # closed with the second time, and the first left as it was.
+        first_report = closed.report.written
+        first_text = first_report.read_text(encoding="utf-8")
+        econn.execute("UPDATE epic SET status='in progress', closed_at=NULL "
+                      "WHERE id=?", (effort,))
+        after = _epic_card(effort, "Delivered after reopening", "done")
+        econn.commit()
+        again = epic_closure.close_epic(econn, effort, out_dir=reports_home)
+        if again.archived != [after]:
+            raise SmokeFailure(
+                f"the second closure archived {again.archived}, not the card "
+                "finished since the first")
+        if again.report is None or not again.report.ok:
+            raise SmokeFailure(f"no second report: {again.report}")
+        if again.report.written == first_report:
+            raise SmokeFailure("the second closure overwrote the first report")
+        if first_report.read_text(encoding="utf-8") != first_text:
+            raise SmokeFailure("the first report was rewritten")
+        if "Delivered after reopening" not in again.report.written.read_text(
+                encoding="utf-8"):
+            raise SmokeFailure("the second report misses what it closed with")
+        ok.append("a reopened epic closing again writes a second report and "
+                  "leaves the first as it was")
+
+        # The epic dialog is the other front end, and closes through the same
+        # act. Its report resolves through the environment, since the dialog
+        # passes no folder of its own.
+        from ui.record_dialog import UnifiedRecordDialog
+        import ui.record_dialog as _record_dialog
+
+        dialog_effort = _epic_row("An effort closed from the dialog")
+        by_dialog = _epic_card(dialog_effort, "Delivered for the dialog", "done")
+        econn.commit()
+        edlg = UnifiedRecordDialog(None, econn, mode="epic",
+                                   record_id=dialog_effort)
+        edlg.epic_status_combo.setCurrentIndex(
+            edlg.epic_status_combo.findData("completed"))
+        was_env = os.environ.get("BRISTOL_REPORTS_DIR")
+        os.environ["BRISTOL_REPORTS_DIR"] = str(reports_home)
+        try:
+            edlg.save_data()
+        finally:
+            if was_env is None:
+                os.environ.pop("BRISTOL_REPORTS_DIR", None)
+            else:
+                os.environ["BRISTOL_REPORTS_DIR"] = was_env
+        if _stage_of(by_dialog) != "archive":
+            raise SmokeFailure(
+                "closing an epic from its dialog did not archive its cards")
+        if not econn.execute("SELECT closed_at FROM epic WHERE id=?",
+                             (dialog_effort,)).fetchone()[0]:
+            raise SmokeFailure("the dialog closed an epic without stamping it")
+        ok.append("the epic dialog closes an epic through the same act as the "
+                  "command line")
+
+        # ---- what the projects cost, and upkeep beside them -----------------
+        # The window is asked for rather than generated, so what is guarded is
+        # the split, the sizing arithmetic and the two answers a window can
+        # have: a note, or nothing finished.
+        from reports import standing as standing_report_mod
+
+        sconn = sqlite3.connect(":memory:")
+        sconn.executescript(schema.read_text())
+        sconn.execute("INSERT INTO epic (name, type, status) "
+                      "VALUES ('An effort','development','in progress')")
+        an_effort = sconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        sconn.execute("INSERT INTO epic (name, type, status) "
+                      "VALUES ('Standing work','standing','in progress')")
+        upkeep_epic = sconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        def _closed(epic_id, title, estimate, closed_at):
+            sconn.execute(
+                "INSERT INTO task (epic_id, title, status, stage, record_type, "
+                "estimate, created_at, updated_at, closed_at) VALUES "
+                "(?,?, 'done','archive','build', ?, '2026-01-01T00:00:00+00:00',"
+                " ?, ?)", (epic_id, title, estimate, closed_at, closed_at))
+
+        _closed(an_effort, "Big piece of the effort", "L",
+                "2026-05-10T12:00:00+00:00")
+        _closed(an_effort, "Small piece of the effort", "S",
+                "2026-05-12T12:00:00+00:00")
+        _closed(upkeep_epic, "Upkeep, sized", "M", "2026-05-11T12:00:00+00:00")
+        _closed(upkeep_epic, "Upkeep, unsized", None, "2026-05-11T13:00:00+00:00")
+        _closed(None, "Finished under no epic", "S", "2026-05-13T12:00:00+00:00")
+        _closed(an_effort, "Finished long after the window", "L",
+                "2026-08-01T12:00:00+00:00")
+        sconn.commit()
+
+        facts = standing_report_mod.collect(sconn, "2026-05-01", "2026-05-31")
+        if facts["total_cards"] != 5:
+            raise SmokeFailure(
+                f"the window covered {facts['total_cards']} cards, not the 5 "
+                "that finished inside it")
+        if facts["project"]["cards"] != 2 or facts["standing"]["cards"] != 3:
+            raise SmokeFailure(
+                "a card finished under no epic belongs to the standing side: "
+                f"{facts['project']['cards']} project, "
+                f"{facts['standing']['cards']} standing")
+        if facts["standing"]["unsized"] != 1:
+            raise SmokeFailure(
+                "an unsized card should be counted as unsized, not as zero")
+        expected = round(standing_report_mod.SPEND["L"]
+                         + standing_report_mod.SPEND["S"], 2)
+        if facts["project"]["spend"] != expected:
+            raise SmokeFailure(
+                f"the project side summed to {facts['project']['spend']}, not "
+                f"{expected}")
+        if not 0 < facts["standing"]["share"] < 1:
+            raise SmokeFailure("each side should carry its share of the window")
+        ok.append("a window splits project work from upkeep, sums each as a "
+                  "share of budget, and counts what is unsized")
+
+        window_home = Path(tempfile.mkdtemp(prefix="smoke_standing_"))
+        wrote = standing_report_mod.standing_report(
+            sconn, "2026-05-01", "2026-05-31", out_dir=window_home)
+        if not wrote.ok:
+            raise SmokeFailure(f"no standing report written: {wrote}")
+        note = wrote.written.read_text(encoding="utf-8")
+        for required in ("# Standing Work", "#### What it cost", "| Projects |",
+                         "| Standing |", "#### The projects", "#### The upkeep"):
+            if required not in note:
+                raise SmokeFailure(f"the report is missing {required!r}")
+        if "Finished long after the window" in note:
+            raise SmokeFailure("the report reached outside its own window")
+        empty = standing_report_mod.standing_report(
+            sconn, "2026-06-01", "2026-06-30", out_dir=window_home)
+        if empty.ok or not empty.skipped:
+            raise SmokeFailure(
+                "a window nothing finished in should write no file and say so")
+        if len(list(window_home.glob("bristol_standing_*.md"))) != 1:
+            raise SmokeFailure("an empty window left a note behind")
+        ok.append("a window with work writes one note, and a window with none "
+                  "writes nothing and says so")
+
+        # The Settings page is where it is asked for, and it opens on a window
+        # rather than on nothing.
+        from ui.settings_tab import SettingsTab
+        import ui.settings_tab as _settings_tab
+
+        page = SettingsTab(conn=sconn)
+        if page.report_from.date() >= page.report_to.date():
+            raise SmokeFailure(
+                "the report row does not open on a period that has any days "
+                "in it")
+        page.report_from.setDate(_QDate.fromString("2026-05-01", "yyyy-MM-dd"))
+        page.report_to.setDate(_QDate.fromString("2026-05-31", "yyyy-MM-dd"))
+        said = []
+        _real_notify = _settings_tab.notify
+        _settings_tab.notify = lambda parent, title, body, *a, **k: said.append(title)
+        was_env = os.environ.get("BRISTOL_REPORTS_DIR")
+        os.environ["BRISTOL_REPORTS_DIR"] = str(window_home)
+        try:
+            page.report_btn.click()
+        finally:
+            _settings_tab.notify = _real_notify
+            if was_env is None:
+                os.environ.pop("BRISTOL_REPORTS_DIR", None)
+            else:
+                os.environ["BRISTOL_REPORTS_DIR"] = was_env
+        if said != ["Report written"]:
+            raise SmokeFailure(f"the Settings button said {said}")
+        if len(list(window_home.glob("bristol_standing_*.md"))) != 2:
+            raise SmokeFailure("the Settings button wrote no second note")
+        ok.append("Settings asks for the report over a window it opens already "
+                  "filled in")
+
+        # ---- an epic's kind is chosen, not typed ----------------------------
+        # One value means standing and a board has one standing workstream, so
+        # what is guarded is that the field cannot be typed into, that an older
+        # board's prose survives until someone chooses over it, and that a
+        # second standing epic is refused with the reason.
+        kconn = sqlite3.connect(":memory:")
+        kconn.executescript(schema.read_text())
+        kconn.execute("INSERT INTO epic (name, type, status) "
+                      "VALUES ('Standing work','standing','in progress')")
+        the_standing = kconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        kconn.execute("INSERT INTO epic (name, type, status) VALUES "
+                      "('An older epic','Epic (bounded — archived when the "
+                      "subsystem lands)','in progress')")
+        legacy = kconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        kconn.commit()
+
+        legacy_dialog = UnifiedRecordDialog(None, kconn, mode="epic",
+                                            record_id=legacy)
+        if legacy_dialog.epic_type_combo.currentData() != "project":
+            raise SmokeFailure(
+                "an epic carrying legacy text should read as a project, not "
+                f"{legacy_dialog.epic_type_combo.currentData()!r}")
+        if legacy_dialog.epic_type_combo.isEditable():
+            raise SmokeFailure("the kind can still be typed into")
+        if sorted(legacy_dialog.epic_type_combo.itemData(i)
+                  for i in range(legacy_dialog.epic_type_combo.count())) != [
+                      "project", "standing"]:
+            raise SmokeFailure("the kind is not the two kinds")
+        legacy_dialog.save_data()
+        kept = kconn.execute("SELECT type FROM epic WHERE id=?",
+                             (legacy,)).fetchone()[0]
+        if "Epic (bounded" not in (kept or ""):
+            raise SmokeFailure(
+                f"saving without touching the kind rewrote it to {kept!r}")
+        ok.append("an epic's kind is one of two choices, and legacy text reads "
+                  "as project and survives a save that did not touch it")
+
+        said = []
+        _real_notify = _record_dialog.notify
+        _record_dialog.notify = lambda parent, title, body, *a, **k: said.append(body)
+        try:
+            legacy_dialog.epic_type_combo.setCurrentIndex(
+                legacy_dialog.epic_type_combo.findData("standing"))
+            legacy_dialog.save_data()
+        finally:
+            _record_dialog.notify = _real_notify
+        if not said or "standing workstream" not in said[-1]:
+            raise SmokeFailure(f"a second standing epic was not refused: {said}")
+        after = kconn.execute("SELECT type FROM epic WHERE id=?",
+                              (legacy,)).fetchone()[0]
+        if (after or "").lower() == "standing":
+            raise SmokeFailure("a second epic was made standing anyway")
+        if kconn.execute(
+                "SELECT COUNT(*) FROM epic WHERE LOWER(COALESCE(type,''))='standing'"
+        ).fetchone()[0] != 1:
+            raise SmokeFailure("the board holds more than one standing epic")
+        if finishing.standing_epic(kconn) != the_standing:
+            raise SmokeFailure("the board's standing workstream moved")
+        ok.append("a second standing workstream is refused with the reason, "
+                  "and the epic keeps the kind it had")
+
+        # ---- a due date, on the few cards that have one --------------------
+        # What is guarded: a date can be set, read back and cleared; it is drawn
+        # where the card is drawn; a date that has gone by on an unfinished card
+        # reads as overdue; and none of it touches the order of a column.
+        from datetime import date as _date, timedelta as _timedelta
+
+        dconn = sqlite3.connect(":memory:")
+        dconn.executescript(schema.read_text())
+
+        def _dated_card(title, order):
+            dconn.execute(
+                "INSERT INTO task (title, status, stage, sort_order, "
+                "record_type, created_at, updated_at) VALUES "
+                "(?, 'todo','active', ?, 'build','2026-01-01','2026-01-01')",
+                (title, order))
+            return dconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        first = _dated_card("first in the column", 0)
+        second = _dated_card("second in the column", 1)
+        dconn.commit()
+
+        dwin = MainWindow(dconn)
+        dialog = UnifiedRecordDialog(None, dconn, mode="task", record_id=second)
+        if dialog.due_edit.date() != _record_dialog.NO_DUE_DATE:
+            raise SmokeFailure("a card with no date did not open on 'no date'")
+        gone_by = (_date.today() - _timedelta(days=3)).isoformat()
+        dialog.due_edit.setDate(_QDate.fromString(gone_by, "yyyy-MM-dd"))
+        dialog.save_data()
+        stored = dconn.execute("SELECT due_date FROM task WHERE id=?",
+                               (second,)).fetchone()[0]
+        if stored != gone_by:
+            raise SmokeFailure(f"the date saved as {stored!r}, not {gone_by!r}")
+        reopened = UnifiedRecordDialog(None, dconn, mode="task", record_id=second)
+        if reopened.due_edit.date().toString("yyyy-MM-dd") != gone_by:
+            raise SmokeFailure("the saved date did not read back into the field")
+
+        dwin._refresh_board()
+        column = dwin.columns["todo"]
+        order = [column.list_widget.item(i).data(Qt.UserRole)
+                 for i in range(column.list_widget.count())]
+        if order != [first, second]:
+            raise SmokeFailure(
+                f"a due date reordered the column: {order} rather than "
+                f"{[first, second]}")
+        payload = None
+        for i in range(column.list_widget.count()):
+            if column.list_widget.item(i).data(Qt.UserRole) == second:
+                payload = column.list_widget.item(i).data(_CARD_ROLE)
+        if (payload or {}).get("due_date") != gone_by:
+            raise SmokeFailure("the card is not carrying its date to be drawn")
+        if not (payload or {}).get("overdue"):
+            raise SmokeFailure(
+                "a date that has gone by on an unfinished card should read as "
+                "overdue")
+        dconn.execute("UPDATE task SET status='done' WHERE id=?", (second,))
+        dconn.commit()
+        dwin._refresh_board()
+        done_column = dwin.columns["done"]
+        finished = done_column.list_widget.item(0).data(_CARD_ROLE)
+        if finished.get("overdue"):
+            raise SmokeFailure("a finished card is not overdue, whatever its date")
+
+        # Cleared by winding the field back past the date it starts on.
+        clearing = UnifiedRecordDialog(None, dconn, mode="task", record_id=second)
+        clearing.due_edit.setDate(_record_dialog.NO_DUE_DATE)
+        clearing.save_data()
+        if dconn.execute("SELECT due_date FROM task WHERE id=?",
+                         (second,)).fetchone()[0] is not None:
+            raise SmokeFailure("the date could not be cleared")
+        ok.append("a due date is set, read back, drawn, marked overdue once it "
+                  "has gone by, cleared again, and orders nothing")
+
+        # Editing a finished card leaves its finish alone. Only the transition
+        # into done writes closed_at; a save that changes a title is not one.
+        finished_long_ago = "2026-04-04T10:00:00+00:00"
+        dconn.execute(
+            "INSERT INTO task (title, status, stage, sort_order, record_type, "
+            "created_at, updated_at, closed_at) VALUES "
+            "('finished in April','done','active', 9, 'build','2026-01-01',"
+            " '2026-04-04', ?)", (finished_long_ago,))
+        old_card = dconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        dconn.commit()
+        editing = UnifiedRecordDialog(None, dconn, mode="task", record_id=old_card)
+        editing.title_edit.setText("finished in April, retitled")
+        editing.save_data()
+        kept_finish = dconn.execute(
+            "SELECT closed_at FROM task WHERE id=?", (old_card,)).fetchone()[0]
+        if kept_finish != finished_long_ago:
+            raise SmokeFailure(
+                f"editing a finished card moved its finish to {kept_finish!r}")
+
+        # The transition itself still writes it, and leaving done still clears it.
+        moving = UnifiedRecordDialog(None, dconn, mode="task", record_id=first)
+        moving.status_combo.setCurrentIndex(moving.status_combo.findData("done"))
+        moving.save_data()
+        stamped = dconn.execute(
+            "SELECT closed_at FROM task WHERE id=?", (first,)).fetchone()[0]
+        if not stamped:
+            raise SmokeFailure("taking a card to done in the dialog stamped nothing")
+        reopening = UnifiedRecordDialog(None, dconn, mode="task", record_id=first)
+        reopening.status_combo.setCurrentIndex(
+            reopening.status_combo.findData("doing"))
+        reopening.save_data()
+        if dconn.execute("SELECT closed_at FROM task WHERE id=?",
+                         (first,)).fetchone()[0] is not None:
+            raise SmokeFailure("taking a card out of done left its finish behind")
+        ok.append("only the move into done writes a finish: an edit to a "
+                  "finished card leaves it, and leaving done clears it")
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok
@@ -2531,6 +3110,110 @@ def check_bluesky_archive() -> list[str]:
 
 
 
+def check_bluesky_images() -> list[str]:
+    """A picture outlives the post that carried it.
+
+    The account's own pictures are gone, so the data server is stood in for by a
+    fetcher that answers once and then records whether it was asked again.
+    """
+    root_dir = Path(__file__).resolve().parents[3]
+    sys.path.insert(0, str(root_dir / "src" / "tools"))
+    try:
+        from bluesky import render as br
+        from bluesky import store as bs
+    finally:
+        sys.path.pop(0)
+
+    failures: list[str] = []
+    picture = b"\x89PNG\r\n\x1a\n" + b"not really a png, but bytes are bytes"
+
+    def record(name, cid, moment, mime="image/png"):
+        return {"uri": f"at://me/app.bsky.feed.post/{name}", "cid": name,
+                "value": {"text": name, "createdAt": moment,
+                          "embed": {"$type": "app.bsky.embed.images",
+                                    "images": [{"alt": "a photograph of a cat",
+                                                "image": {"$type": "blob",
+                                                          "ref": {"$link": cid},
+                                                          "mimeType": mime}}]}}}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        conn = bs.connect(Path(tmp) / "archive.db")
+        kept_cid, gone_cid = "bafkreiKEPT", "bafkreiGONE"
+        bs.keep_posts(conn, [record("a", kept_cid, "2026-03-01T12:00:00Z"),
+                             record("b", gone_cid, "2026-03-01T13:00:00Z")])
+
+        carrying = bs.records_with_images(conn)
+        if len(carrying) != 2:
+            failures.append(f"{len(carrying)} of 2 records read as carrying a picture")
+
+        asked: list[str] = []
+
+        def fetch(cid):
+            asked.append(cid)
+            return picture if cid == kept_cid else None
+
+        def pass_once():
+            already = bs.image_asked(conn)
+            for uri, blobs in bs.records_with_images(conn):
+                for cid, mime, alt in blobs:
+                    if cid in already:
+                        continue
+                    data = fetch(cid)
+                    if data is None:
+                        bs.note_image_gone(conn, cid, uri, mime, alt)
+                    else:
+                        bs.keep_image(conn, cid, uri, mime, alt, data)
+
+        pass_once()
+        if sorted(asked) != sorted([kept_cid, gone_cid]):
+            failures.append(f"a first pass asked for {asked}")
+        kept_file = bs.kept_images(conn).get(kept_cid)
+        if kept_file is None or not kept_file.exists():
+            failures.append("the picture's bytes were not kept beside the store")
+        elif kept_file.read_bytes() != picture:
+            failures.append("the kept file is not the bytes that were fetched")
+        if kept_file is not None and Path(tmp) not in kept_file.parents:
+            failures.append(f"the picture was kept outside the store's folder: {kept_file}")
+
+        # A second pass asks for nothing: the store remembers the asking as
+        # well as the answer, including the blob that was already gone.
+        asked.clear()
+        pass_once()
+        if asked:
+            failures.append(f"a second pass asked again for {asked}")
+
+        kept, gone, size = bs.image_totals(conn)
+        if (kept, gone, size) != (1, 1, len(picture)):
+            failures.append(f"the totals read {kept} kept, {gone} gone, {size} bytes")
+
+        # The page shows the kept copy. Nothing here reaches a network, and the
+        # address the view carried is a content network's copy that no longer
+        # answers.
+        br.use_kept_images(bs.kept_images(conn))
+        view = {"embed": {"$type": "app.bsky.embed.images#view",
+                          "images": [{"alt": "a photograph of a cat",
+                                      "fullsize": f"https://cdn.example/img/feed_fullsize/plain/did:plc:me/{kept_cid}@jpeg"}]}}
+        lines = br.describe_embed(view)
+        if not lines or not lines[0].startswith("!["):
+            failures.append(f"the page did not embed the kept picture: {lines}")
+        elif kept_file is not None and kept_file.as_uri() not in lines[0]:
+            failures.append(f"the page points somewhere other than the kept file: {lines[0]}")
+
+        # A picture the store never kept still reads as it did before.
+        missing_view = {"embed": {"$type": "app.bsky.embed.images#view",
+                                  "images": [{"alt": "gone", "fullsize":
+                                              f"https://cdn.example/img/feed_fullsize/plain/did:plc:me/{gone_cid}@jpeg"}]}}
+        fallback = br.describe_embed(missing_view)
+        if not fallback or fallback[0].startswith("!["):
+            failures.append(f"a picture the store lacks should keep its address: {fallback}")
+        br.use_kept_images({})
+
+    if failures:
+        raise SmokeFailure("; ".join(failures))
+    return ["a picture is kept once, beside its store, and a page shows the "
+            "kept copy while a lost one keeps its words"]
+
+
 def check_bluesky_purge() -> list[str]:
     """Emptying the account paces itself, and writes down what it sent.
 
@@ -2629,6 +3312,16 @@ def check_published_files() -> list[str]:
     home = Path(declared or "~").expanduser()
     needles = {s for s in (git_cfg("user.name"), git_cfg("user.email"),
                            str(home), home.name) if len(s) > 2}
+    # A name this installation's own content is built from — a world's proper
+    # nouns, a client, a course — is as private as the user's own name, and the
+    # published tree describes the shape of the work rather than the work.
+    # config names them because only this installation knows them.
+    private = subprocess.run(
+        [sys.executable, str(reader), "published_tree.private_names"],
+        capture_output=True, text=True).stdout.strip()
+    if private.startswith("["):
+        needles |= {str(name) for name in json.loads(private)
+                    if len(str(name)) > 2}
     # A repository's own address is a published fact, and it names the account
     # that hosts it. Clone lines are masked before the scan for that reason.
     origin = git_cfg("remote.origin.url")
@@ -3100,6 +3793,7 @@ TARGETS = {
     "bluesky_pruning": check_bluesky_pruning,
     "bluesky_archive": check_bluesky_archive,
     "bluesky_purge": check_bluesky_purge,
+    "bluesky_images": check_bluesky_images,
     "published_files": check_published_files,
 }
 
