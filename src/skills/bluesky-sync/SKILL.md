@@ -48,6 +48,11 @@ note the epic's cards link to. This owns what a session does.
   A post standing alone is a block quote with the identifier on its own line
   after it; a post inside a conversation is one bullet holding the quote, its
   line breaks kept as `<br>`, with the identifier at the end of that bullet.
+- **An embed of a post inside a conversation carries the replies nested under
+  it.** Obsidian embeds a list item together with its children, and an
+  identifier placed anywhere else inside a list item does not resolve. That is
+  the intended behaviour, chosen over flattening conversations and over repeating
+  the owner's posts in a section of their own.
 - **The identifier is the post's record key**, which never changes, so an embed
   survives every rebuild. Never number posts by position on the page.
 - **Nothing on a page is bold** — `src/skills/note-formatting/SKILL.md`
