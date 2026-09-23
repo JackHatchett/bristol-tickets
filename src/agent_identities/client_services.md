@@ -46,7 +46,7 @@ stands is its board epic and its cards, never a file in the project folder —
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns the skills whose `bristol.maintainer` names it. There is no
+Owns the skills whose `bristol.maintainer` gives its slug. There is no
 `tools/client_services/`; a recurring procedure that hardens into a
 single-purpose script would go there, and a client-specific procedure stays in
 that client's own folder because it is client content.

@@ -135,7 +135,7 @@ Against the artifact a stranger actually gets, on the user's own machine.
    holds `src/`, `docs/`, the entry files, `config/config.local.json` and a
    board, and no `data/` belonging to anyone else.
 
-5. **Check the hand-off page** names that folder and copies a line naming it.
+5. **Check the hand-off page** gives that folder and copies a line containing it.
 
 6. **Prove an update keeps the installation.** A user step: raise `src/VERSION`,
    rebuild, and open the new app. It passes when `src/VERSION` in the scratch
@@ -217,7 +217,7 @@ Against the artifact a stranger actually gets, on the user's own machine.
 8. **Run one session against the copy.** A user step: point an agent host at
    `~/Downloads/bristol_check`, open a new conversation there, and say
    `continue`. It passes when the session initializes from `src/app.md`,
-   resolves config, loads an agent, prints a snapshot, and names no path
+   resolves config, loads an agent, prints a snapshot, and prints no path
    belonging to the user.
 
 9. **Fix every defect in the repo, never in the copy**, then rebuild the copy

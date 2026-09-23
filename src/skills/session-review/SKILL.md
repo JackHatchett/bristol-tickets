@@ -100,7 +100,7 @@ python3 src/tools/skill_tools/skills.py view <name>
 ```
 
 **Propose against the body you loaded, never against a memory of it.** A patch
-proposal names the section it replaces, or the exact text before and after.
+proposal gives the section it replaces, or the exact text before and after.
 
 ### Step 3 — File one card
 
@@ -119,7 +119,7 @@ python3 src/tools/skill_tools/propose_skill.py \
   skill exists, the card goes to chief_of_staff with you as reporter, the skill
   it patches is linked, and `--from-task` puts the evidence one hop away.
 - **It declines a second card carrying the same proposal**, by title or by
-  identical text, and names the card that already has it.
+  identical text, and gives the card that already has it.
 - **One proposal per session.** A pass that files three has stopped judging.
 - **Nothing to propose is a real outcome** and files no card.
 
@@ -139,7 +139,7 @@ where the change is reviewed and applied.
   belongs in the card that carried the choice, not in a skill.
 - **A second proposal in the same session** → the first was not the strongest.
   Pick one.
-- **A proposal naming this session's task** → Step 1's name test failed; drop
+- **A proposal named for this session's task** → Step 1's name test failed; drop
   it.
 - **A skill file written directly** → the pass has become the thing it replaces.
 

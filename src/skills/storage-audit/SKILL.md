@@ -21,7 +21,7 @@ be freed. Run it monthly, or whenever a drive is filling.
 ## What only the user can do
 
 Most of these locations have no delete API. **Audit and report sizes; the user
-performs the deletion**, except where a location is named below as scriptable.
+performs the deletion**, except where a location is listed below as scriptable.
 
 ## Locations
 

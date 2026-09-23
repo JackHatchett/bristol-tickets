@@ -26,18 +26,18 @@ is why this is a pass someone else runs rather than a section of the work.
   disagrees with is a finding about the card rather than about the work.
 - **What is on disk**, not what the closing comment says was done. A comment is
   a claim, and the review exists because a claim is not evidence.
-- **The verification the card named** — `src/skills/verifying-a-card/SKILL.md`.
-  Re-run it. A card that named none is itself the first finding.
+- **The verification the card stated** — `src/skills/verifying-a-card/SKILL.md`.
+  Re-run it. A card that stated none is itself the first finding.
 
 ## The pass
 
 1. **Read the card whole**: description, criteria, comments, links.
-2. **Take one criterion.** Find the thing it names, open it, and say met or not
+2. **Take one criterion.** Find the thing it refers to, open it, and say met or not
    met. Not "looks right": the file, the line, the output.
 3. **Repeat for every criterion**, including the ones the closing comment
    already claims. A review that reads the comment and agrees has reviewed the
    comment.
-4. **Re-run the verification** the card named, and record what it produced.
+4. **Re-run the verification** the card stated, and record what it produced.
 5. **File it**, per §Where findings go.
 
 **Stop at the criteria.** Everything a reviewer would rather say — a better
@@ -47,7 +47,7 @@ author with a second opinion.
 
 ## Where findings go
 
-- **One comment on the card reviewed**, naming each criterion and whether it is
+- **One comment on the card reviewed**, listing each criterion and whether it is
   met, and nothing else. That comment is the review; there is no report file and
   no second place to look — `src/app.md` §The board is the only channel.
 - **Each defect is a card of its own**, `add-task --assignee <the author's
@@ -84,6 +84,6 @@ subject rather than a line of prose.
 
 ## Audit
 
-**Whether every criterion on the reviewed card is named in the comment.** A
+**Whether every criterion on the reviewed card is listed in the comment.** A
 criterion the review passed over silently is one nobody checked, and the card
 now carries a review saying otherwise.

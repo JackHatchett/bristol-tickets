@@ -3,13 +3,19 @@
 A solo post is prose, the way the notebook's other prose notes are spaced. A
 conversation is a bulleted outline that follows its own branching rather than a
 flat chronology, so a reader can see who answered whom.
+
+The account owner's own posts are set apart as quotes, each carrying a block
+identifier taken from the post's record key, so any one of them can be embedded
+in another note as `![[bluesky_YYYY-MM-DD#^bsky-<key>]]` and the embed still
+resolves after a rebuild. Nothing on a page is bold: bolding in the notebook is
+the user's (`src/skills/note-formatting/SKILL.md` §Emphasis).
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
-ME_MARK = "**"
 UNAVAILABLE_LINE = "*[post unavailable]*"
 
 
@@ -117,14 +123,30 @@ def describe_embed(post):
     return lines
 
 
+def block_id(node):
+    """The block identifier an owner's post carries: its record key, which is
+    the last segment of its address and never changes, in the letters, digits
+    and dashes a block identifier may hold."""
+    key = (node.uri or "").rstrip("/").rsplit("/", 1)[-1]
+    key = re.sub(r"[^A-Za-z0-9-]", "-", key).strip("-")
+    return f"bsky-{key}" if key else None
+
+
 def _post_lines(node):
-    """A post's own words plus whatever it carried, as separate lines."""
+    """A post's own words plus whatever it carried, as separate lines.
+
+    The owner's post is one line, a quote ending in its block identifier, so
+    the whole post is the one bullet an embed pulls; its own line breaks are
+    kept as breaks inside it.
+    """
     if node.kind != "post":
         return [UNAVAILABLE_LINE]
     text = resolve_links(node.record.get("record") or {}).strip()
     lines = [line for line in text.split("\n") if line.strip()] or ["*[no text]*"]
     if node.mine:
-        lines = [f"{ME_MARK}{line}{ME_MARK}" for line in lines]
+        ident = block_id(node)
+        quote = "> " + "<br>".join(lines)
+        lines = [f"{quote} ^{ident}" if ident else quote]
     return lines + describe_embed(node.record)
 
 
@@ -149,11 +171,22 @@ def render_outline(node, depth=0, lines=None, last_author=None):
 
 
 def render_solo(node):
-    """A post with no conversation under it, as spaced prose."""
+    """A post with no conversation under it, as spaced prose.
+
+    The owner's post is one quote, its paragraphs kept apart inside it, with
+    the block identifier on its own line after it, which is where a quote's
+    identifier goes.
+    """
     blocks = []
     text = resolve_links(node.record.get("record") or {}).strip()
-    for paragraph in [p for p in text.split("\n") if p.strip()]:
-        blocks.append(paragraph)
+    paragraphs = [p for p in text.split("\n") if p.strip()]
+    if node.mine and paragraphs:
+        blocks.append("\n>\n".join(f"> {p}" for p in paragraphs))
+        ident = block_id(node)
+        if ident:
+            blocks.append(f"^{ident}")
+    else:
+        blocks.extend(paragraphs)
     blocks.extend(describe_embed(node.record))
     return blocks
 

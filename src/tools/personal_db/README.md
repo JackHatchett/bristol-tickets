@@ -68,7 +68,7 @@ data/<instance>/system/logs/<domain>_snapshots/
   Excel formulas over the sheet, so they follow the data.
 - **`learning_progress`** — one row per thing the learner did in a course, with
   `v_learning_stats` and `v_learning_place` beside it. `kind` is `opened`,
-  `reading`, `quiz` or `exercise`, `item` names which quiz or exercise, and
+  `reading`, `quiz` or `exercise`, `item` says which quiz or exercise, and
   `UNIQUE(course, lesson, kind, item)` means doing the same thing again updates
   that row rather than adding a second. `v_learning_place` is the one query the
   study interface runs to reopen a course.
@@ -83,7 +83,7 @@ data/<instance>/system/logs/<domain>_snapshots/
   column on `contact`: a person is attached to many of them over time.
 - **`v_contact_due`** — one view answering one question, who is owed something
   today: a contact whose cadence has come round, and an open ask past its
-  `due_on`, each row naming which of the two it is. `v_contact_stats` counts
+  `due_on`, each row saying which of the two it is. `v_contact_stats` counts
   both beside the contacts themselves.
 
 **The contacts domain is a state layer, not a description of a person.** The
@@ -174,7 +174,7 @@ Three different artifacts live in a snapshot folder:
 | `archive/<stem>_YYYY-MM-DD.xlsx` | the retained series | one per day at most, pruned by policy |
 | `checkpoints/*.xlsx` | pinned moments | never pruned, never auto-created |
 
-- **`snapshot_archive.py` owns the series.** `--dir` plus `--stem` names it, or
+- **`snapshot_archive.py` owns the series.** `--dir` plus `--stem` identifies it, or
   `--archive <live file>` derives both. Without `--apply` it prints the plan and
   deletes nothing; `--json` prints it machine-readable.
 - **Retention is grandfather-father-son** — `--keep-daily 7`, `--keep-weekly 5`,

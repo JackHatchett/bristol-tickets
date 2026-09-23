@@ -22,7 +22,7 @@ Turn the files a session wrote into a commit the user can paste unedited.
 ## Operation
 
 - **Group the written paths by working tree, and compose one message per tree**
-  naming in one line what changed, drawn from the work rather than from ticket
+  saying in one line what changed, drawn from the work rather than from ticket
   numbers.
 - **Render the repository root as the user's own shell would accept it.**
   Resolve it against `drives.local_home.path`; a session-mount path is a broken
@@ -48,5 +48,5 @@ Turn the files a session wrote into a commit the user can paste unedited.
 
 `src/skills/version-control-milestone/SKILL.md` is the coached procedure: a
 user learning git, each command annotated, at a structural milestone the calling
-procedure names. This one is mechanical, fires whenever a session closes, and
+procedure gives. This one is mechanical, fires whenever a session closes, and
 annotates nothing.

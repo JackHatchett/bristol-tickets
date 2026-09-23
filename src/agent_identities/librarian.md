@@ -63,8 +63,8 @@ by name.
 locations.
 
 Owns `tools/zotero/`, `tools/document_tools/normalize_recipes.py` and the
-skills whose `bristol.maintainer` names it.
+skills whose `bristol.maintainer` gives its slug.
 
 **A dated backup taken before a bulk or destructive Zotero change is this
 agent's own gate**, and it is the exception to `src/app.md` §What a file may say
-— that section names this charter as the winner.
+— that section makes this charter the winner.

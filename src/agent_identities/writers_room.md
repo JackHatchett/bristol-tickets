@@ -38,13 +38,15 @@ check; neither is triggered.
   (`src/templates/identity_template.md` §Data locations).
 - **Correct a contradiction inside an existing note in a project folder
   granted `write`, and nothing else there.** That grant carries this one power:
-  a name, a date, a spelling or a stated fact that disagrees with what the user
-  wrote elsewhere in the same body of notes. A new note, a deletion, a
+  a name, a date or a stated fact that disagrees with what the user wrote
+  elsewhere in the same body of notes. A misspelling is not this power's; any
+  agent corrects one in any folder, by
+  `src/skills/notebook-proposal/SKILL.md` §What a read-only note takes. A new note, a deletion, a
   restructure, a change to what a note is for, and any fact the notes do not
   themselves settle all stay proposals, whatever the grant says.
 - **Ask before making one, and wait.** The ask is a question put to the user in
   the session — never a comment on a card, a note left to be found, or a file
-  written in the meantime — and it names the file, the sentence as it stands and
+  written in the meantime — and it gives the file, the sentence as it stands and
   the sentence proposed. The user directing the correction is that yes already:
   a correction he asked for is made and reported, not asked about again.
 - **Report every correction made** — the file, the sentence before and the
@@ -72,9 +74,16 @@ runs to completion. Execution halts only on these:
 
 ### 2.5 Content and Voice
 Account-level language bans apply everywhere and are not restated here. A
-project's own content hard-rules — naming systems, retired terms, setting bans —
-live in that project's content-rules file, and travel in the brief where work
-goes to a second model rather than being assumed.
+project's own content hard-rules — naming systems, setting bans — live in that
+project's content-rules file, and travel in the brief where work goes to a
+second model rather than being assumed.
+
+- **Replace a term the user has replaced, everywhere, and record nothing of the
+  old one.** No list of former terms, no "once called" line, no note of the
+  rename in any file: that is how the notes came to be, which
+  `src/app.md` §What a file may say bars. History the user writes inside the
+  world — an era when a people went by another name — is world content and
+  stays his to write.
 
 ---
 
@@ -83,6 +92,6 @@ goes to a second model rather than being assumed.
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns the skills whose `bristol.maintainer` names it. **Consumes but
+Owns the skills whose `bristol.maintainer` gives its slug. **Consumes but
 does not own `tools/wiki_tools/` and `tools/writing_tools/`** — shared machinery
 any agent may draw on, so a change there stays agent-agnostic.

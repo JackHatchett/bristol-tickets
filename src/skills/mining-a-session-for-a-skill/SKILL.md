@@ -61,7 +61,7 @@ A candidate has to pass all four.
 
 - **It would be re-derived.** A later session facing the same class of task
   would spend real effort working it out again.
-- **It names a class, not this task.** `querying a paginated public API`
+- **It describes a class, not this task.** `querying a paginated public API`
   survives; `fetching one account's posts from one service` does not. A name
   that only makes sense for one card, error string or feature is the signal
   that a session narrative is being minted as a skill.
@@ -149,7 +149,7 @@ A pass that reports only its winner cannot be argued with.
 
 - Every skill this pass produced carries a name that reads as a class of task
   rather than an instance of one.
-- No skill this pass produced names a path, handle or filename that belongs to
+- No skill this pass produced contains a path, handle or filename that belongs to
   one installation, except as a labelled example.
 - No session carries both a proposal from this pass and one from session-review.
 - No agent but chief_of_staff wrote a file under `src/skills/`.

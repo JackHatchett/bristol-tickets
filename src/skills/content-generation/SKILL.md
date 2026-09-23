@@ -88,6 +88,6 @@ short `add-issue-log` comment to it.
 
 ## Audit
 
-**Whether `progress.json` still names what is on disk for each course.** It is
+**Whether `progress.json` still lists what is on disk for each course.** It is
 a manifest of the Markdown files, and the Markdown files are the source of
 truth.

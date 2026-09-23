@@ -15,7 +15,7 @@ which one to reach for.
 ## Scheme keys
 
 A scheme is one complete palette under a name in `theme.py`'s `SCHEMES`. Every
-scheme carries every key below; `check_schemes()` names any that does not.
+scheme carries every key below; `check_schemes()` lists any that does not.
 
 | Key | What it colours |
 | --- | --- |
@@ -82,7 +82,7 @@ answer with a hex value or a pixel count.
 | More prominent, draw the eye | `ACCENT` fill with `ON_ACCENT` text; up one step on `TYPE`. |
 | Reads as a warning | `FIX_BG` / `FIX_TX` for a label, `MISSING` for a field, `DELETE_BG` for an action. |
 | Reads as settled or complete | `BUILD_BG` / `BUILD_TX`. |
-| Ranks nothing, just a fact | `NEUTRAL_BG` / `NEUTRAL_TX`. Pressure and effort are read this way: neither sorts anything. |
+| Ranks nothing, just a fact | `NEUTRAL_BG` / `NEUTRAL_TX`. A tier and a size are read this way: neither sorts anything. |
 | Make it breathe | Up one step on `SPACE` for the gaps, unchanged for the pads. |
 | Tighter, denser | Down one step on `SPACE`. |
 | Softer, friendlier | Up one step on `RADIUS`. |
@@ -98,7 +98,7 @@ key every scheme has to gain, which is a change to `theme.py` and to this file.
 - **A name is Title Case; a sentence is sentence case.** A tab, a section
   heading, a field label, a picker option and a button all name something and are
   Title Cased. A tooltip, a placeholder, a notice and a checkbox whose label is a
-  clause all say something and are not. "Hide Closed Items" names a mode; "Open
+  clause all say something and are not. "Hide Closed Items" states a mode; "Open
   this installation when Bristol Tickets starts" is a sentence.
 - **A picker holds the stored value in its item data and shows a caption.** The
   two move independently, so a vocabulary is reworded without a migration and a
@@ -117,9 +117,9 @@ key every scheme has to gain, which is a change to `theme.py` and to this file.
 Two surfaces write a card, and each has its own job.
 
 - **Settings writes each choice at the moment it is made**, one key per
-  control, and carries no Save button. The status line names the row it wrote.
+  control, and carries no Save button. The status line gives the row it wrote.
 - **The detail pane edits a selected card in place**: status, stage, owner,
-  epic, effort, pressure and Blocked are live controls, and comments, links and
+  epic, tier, size and Blocked are live controls, and comments, links and
   image attachments post from it. Blocked says what kind of thing has stopped the
   card and never which one — that is a `blocks` link under Links — and moving a
   card to Done clears it. Every pane write goes down the same connection as
@@ -151,7 +151,7 @@ Two surfaces write a card, and each has its own job.
   answers with `dialogs.choose()`, and state something unanswerable with
   `dialogs.notify()`.** Never a `QMessageBox`: every question this app asks is
   drawn in this app's palette, with its own button ranks.
-- **Give the action a label that names it** — "Delete", "Move to Archive" —
+- **Give the action a label that says it** — "Delete", "Move to Archive" —
   rather than Yes, and pass `destructive=True` where it cannot be undone, which
   is what puts it at the `DELETE_BG` rank.
 - **The way out is always the ordinary rank and always the default**, so Enter,
@@ -244,7 +244,7 @@ under ids that never change.
   different and `git status` never clean, and `payload.refresh()` replaces
   `src/` whenever a newer app opens an installation, so it would be undone by
   the next release without a word.
-- **A theme's id is stable and its name is not.** What a stored choice names is
+- **A theme's id is stable and its name is not.** What a stored choice refers to is
   the id, so renaming a theme migrates nothing. `theme_id_for()` mints one.
 - **A palette built when the picker offered one Custom option is an ordinary
   theme.** `appearance.custom_scheme` is read, never written, and joins the
@@ -273,13 +273,13 @@ rows `palette_form.py` draws.
 - **The half being edited is the half the board previews**, whatever mode is
   stored, and the stored mode comes back when the window closes.
 - **`KEY_GROUPS` is the order a palette form offers the keys in**, and
-  `palette_rows()` places a key no group names rather than dropping it.
+  `palette_rows()` places a key no group lists rather than dropping it.
 
 ## Contrast
 
 `TEXT_PAIRS` is every run of text and the surface it is read on;
 `contrast_ratio()` reads a pair on the WCAG 1:1–21:1 scale and
-`contrast_complaints()` names each one under `CONTRAST_MIN`, which is 4.5:1,
+`contrast_complaints()` lists each one under `CONTRAST_MIN`, which is 4.5:1,
 AA for body text. Every shipped scheme clears every pair, and the smoke check
 asserts it.
 
@@ -289,6 +289,6 @@ asserts it.
 - **The unclickable pair is deliberately absent from the set.** Text a control
   greys out is meant to be hard to read.
 - **`readable_on()` is the one colour not taken from a scheme.** A palette is
-  previewed live, so the notice naming what cannot be read is drawn in the
+  previewed live, so the notice saying what cannot be read is drawn in the
   palette that broke it; that one line takes black or white against the canvas
   instead. Nothing else in the app derives a colour this way.

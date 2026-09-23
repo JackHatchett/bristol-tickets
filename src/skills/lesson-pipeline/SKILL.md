@@ -71,7 +71,7 @@ alongside `lessons/` and `exercises/`. The course folder resolves via `/config`
 ```
 
 **Stage 2 runs on a complete plan** — every section present and filled, no
-placeholder left, File targets naming real paths. An incomplete plan is finished
+placeholder left, File targets giving real paths. An incomplete plan is finished
 in stage 1 rather than carried into generation.
 
 ## Stage 2 — Write materials
@@ -120,12 +120,12 @@ Stage 4 has no key — it is always the deterministic renderer and validator.
   `lesson_pipeline.stages` and reaches the configured engines runs the identical
   pipeline.
 - **A session-scoped `lesson_pipeline_override` takes precedence over config**,
-  naming per-stage engines for this session only. It is read-only and never
+  setting per-stage engines for this session only. It is read-only and never
   writes config, so offline runs are unaffected. This mirrors `src/app.md`'s
   `agent_override` over `active_agent`.
 - **Write every stage here unless config or a session override routes one
   elsewhere.** `stages.materials` and `stages.lint` are the whole answer; there
-  is no per-lesson question about who writes. Where one names an external
+  is no per-lesson question about who writes. Where one gives an external
   engine, emit the hand-off prompt and the file list, both derived from the
   plan, per `src/skills/external-ai-bridge/references/teaching_assistant.md`.
 

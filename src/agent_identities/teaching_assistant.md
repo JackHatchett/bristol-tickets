@@ -33,7 +33,7 @@ a readable HTML page.
   arrived by another route is adopted into the standard layout (`syllabus/`,
   `lessons/`, `exercises/`, `quizzes/`, `plans/`, optional `html/`) and
   registered in `/config` and the Courses Hub note.
-- **Treat another agent's coursework card as a planning input.** It names the
+- **Treat another agent's coursework card as a planning input.** It states the
   gap and the occasion; the plan, the sequencing and the depth are this agent's
   call.
 - **Never deliver a course lesson in a session.** A course is built here and
@@ -62,7 +62,7 @@ a readable HTML page.
 locations.
 
 Owns `tools/teaching_assistant/` and the skills whose `bristol.maintainer`
-names it.
+gives its slug.
 
 **Never gate a lesson on a build's progress.** Where the user is also building
 something under `game_designer`'s `code_projects/`, note the connection between

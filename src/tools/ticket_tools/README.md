@@ -72,7 +72,7 @@ the archive.
 - **It is bounded at three and its comments are cut**, because it orients a
   session in its role and the queue above it is the work. `ROLE_HISTORY_CARDS`
   and `ROLE_HISTORY_CHARS` are the two numbers.
-- **A card belongs to the agent its `assignee` names.** The change log records
+- **A card belongs to the agent its `assignee` gives.** The change log records
   which actor closed a card, and a third of finished cards carry no such row, so
   reading it here would shorten an agent's history the further back it reached.
 - **A comment already printed above keeps its card's line and loses its body.**
@@ -117,7 +117,7 @@ the `issue_log` table and the Kanban `stage` / `sort_order` columns into older
 databases, mirroring the viewer's `ensure_schema_up_to_date()`.
 
 - **`add-task` lands a new card where `board.new_ticket_stage` says**, unless
-  `--stage` names a tab, and always in `--status todo`. The key defaults to
+  `--stage` gives a tab, and always in `--status todo`. The key defaults to
   `active`, the Board where a card is seen and worked; an explicit `--stage`
   always wins.
 - **`update-epic --id N` edits what an epic *says*** — `--name`, `--type`,
@@ -132,12 +132,13 @@ databases, mirroring the viewer's `ensure_schema_up_to_date()`.
   Only the move into a finished status does it, the standing workstream is
   refused, and an unreachable notebook folder costs the report alone.
 - **`update-task --id N` edits what a card *says*** — `--title`,
-  `--description`, `--estimate`, `--due-date`, `--record-type`, `--reporter`,
-  `--epic-id` — and touches no board position. `--due-date none` clears a date.
+  `--description`, `--tier`, `--estimate`, `--due-date`, `--record-type`,
+  `--reporter`, `--epic-id` — and touches no board position. `--due-date none`
+  clears a date, and `--tier none` a tier.
 - **`update-task-status --id N --status ...`** moves a card across the Kanban
   columns, setting and clearing `closed_at` on the `done` transition. It also
-  takes `--stage`, `--pressure`, `--assignee` and `--block-reason` in the same
-  call. A bare `--status backlog` is redirected to a stage move. A call naming
+  takes `--stage`, `--assignee` and `--block-reason` in the same
+  call. A bare `--status backlog` is redirected to a stage move. A call giving
   the column a card already sits in keeps its position; only a real move re-seats
   it at the bottom of its destination. `--block-reason none` clears the reason,
   and so does `--status done`, which refuses an explicit reason in the same
@@ -247,7 +248,7 @@ every other value, including none, means project.
 - **Two cards on one subject are a project.** A single card goes to standing;
   when a second joins it, both move to an epic of their own. The procedure is
   `src/skills/manage-tickets/SKILL.md` §Which epic a card belongs to.
-- **A standing card names its assignee.** The standing epic has no agent owner,
+- **A standing card states its assignee.** The standing epic has no agent owner,
   so the fallback in §Invariants reaches nobody and an unassigned card there
   would sit in no queue at all.
 - **`epic_id` NULL means untriaged, and is the user's own state.** It is a card
@@ -272,12 +273,12 @@ the active epics, and an epic outside `EPIC_STATUS_FINISHED` still carries its
 backlog into an agent's fallback queue. Both sets also carry the spellings
 retired versions wrote, so one long-lived database needs no second lookup.
 
-**Order, blockers and pressure are three separate mechanisms** (`src/app.md`
+**Order, blockers, tier and size are separate mechanisms** (`src/app.md`
 Phase 3.3 states the rule). Their storage:
 
 - **Order** is `task.sort_order`, a card's position in its column. The user sets
   it by dragging in Bristol Tickets; an agent sets it with `set-order`.
-- **A blocker** is a `blocks` link between two named cards, resolved live
+- **A blocker** is a `blocks` link between two specific cards, resolved live
   against the blocking card's status. Once that card is `done`, its own last
   comment reads through the same link onto the card it blocked — a join at read
   time, so the handoff is never a second copy of the comment. It never moves a card in the queue —
@@ -288,16 +289,19 @@ Phase 3.3 states the rule). Their storage:
   what *kind* of thing is in the way and never which card: a `dependency` sends
   the reader to the `blocks` links above, so a blocker that finishes clears the
   display with no field to reset. The prose goes in an `add-issue-log` comment,
-  which is where the ungranted tool or the failed call gets named. `decision` and
+  which is where the ungranted tool or the failed call is stated. `decision` and
   `capability` are the two the status scripts list under NEEDS YOU, because no
   agent can clear either by working. The vocabulary is
   `create_tickets.BLOCK_REASONS`, mirrored in `bristol/ui/theme.py`. A card
   reaching `done` has its reason cleared by every writer.
-- **Pressure** is `task.pressure`, 0–100: urgency, impact and live interest
-  collapsed into one gestalt reading, written for a human eye. It is
-  agent-local, so a card low in the order carrying high pressure is a question
-  worth asking, and a comparison across assignees is meaningless. Only the user
-  sequences work across agents.
+- **Tier** is `task.tier`: `max`, `standard`, or NULL for a card nobody has
+  rated — the depth of processing the card needs, chosen from the card by
+  `src/skills/manage-tickets/SKILL.md` §Processing tier. What each tier runs on
+  is config's `tiers` key. It ranks nothing: only the user sequences work across
+  agents, and only board order sequences an agent's own queue.
+- **Size** is `task.estimate`, S/M/L/XL — a share of a usage budget, scaled in
+  the same skill's §Sizing. The column keeps its name; every surface a person
+  reads calls it size.
 
 **At session end every card you engaged is `done` or `doing`, never `todo`.**
 Leaving a worked ticket in `todo` is the single most common board-hygiene
@@ -315,7 +319,7 @@ gives every session a second place to look.
 
 **A file an outside party needs is a payload, not a channel.** When something
 that genuinely cannot read `tickets.db` — an external service shown a JSON
-envelope — needs the data in a file, a ticket names that file, the ticket holds
+envelope — needs the data in a file, a ticket gives that file, the ticket holds
 the state, and deleting the file loses nothing. Never scan a payload to discover
 work.
 

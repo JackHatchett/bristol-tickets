@@ -53,7 +53,7 @@ confirmed identity carries forward to `src/skills/cover-letter/SKILL.md`.
 verdict, and print the result in chat as one line above the verdict** whether or
 not there is a hit. "No prior application" is a finding the user needs to see.
 
-**A cadence violation is a Skip, named as the reason, and it outranks fit.**
+**A cadence violation is a Skip, given as the reason, and it outranks fit.**
 
 ### Re-application cadence
 

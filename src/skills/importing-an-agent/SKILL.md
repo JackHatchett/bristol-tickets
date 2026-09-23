@@ -28,7 +28,7 @@ and is one command there.
    is trusted and attached there; one that does not stays in quarantine and the
    agent runs without it.
 4. **Where the mandate clears**, `import_agent.py <file> --accept`, then supply
-   each value the run names.
+   each value the run lists.
 5. **Where it does not clear**, §Where an agent does not clear.
 6. **Report** to §What the user is told.
 
@@ -48,12 +48,12 @@ Three cases, tested in this order.
   in it that halts, and adopting it grants authority against no limit.
 - **A charter clears when its mandate is one job and its guardrails are that
   job's own.** `src/templates/identity_template.md` §When one job is two agents
-  is the test for the first half; a guardrail naming a bright line in the
+  is the test for the first half; a guardrail stating a bright line in the
   agent's own domain is the second.
 
 **The skills decide nothing about the charter.** An agent whose every skill was
 refused is still an agent; a charter that does not clear is refused even where
-every skill it named is clean.
+every skill it listed is clean.
 
 ## Where an agent does not clear
 

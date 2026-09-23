@@ -46,7 +46,7 @@ registration. For converting an existing pre-framework bundle, use
      `src/tools/skill_tools/README.md`, and turning an existing procedure file
      into one is `src/skills/skill-conversion/SKILL.md`.
    - `src/tools/<agent>/` — for genuinely agent-specific callables, which a
-     skill names the command line for. A tool useful to more than one agent goes
+     skill gives the command line for. A tool useful to more than one agent goes
      in a shared folder nested under `src/tools/` (`tools/wiki_tools/`,
      `tools/writing_tools/`, `tools/ticket_tools/`), never a new top-level
      `src/` sibling.

@@ -50,7 +50,7 @@ authority flows.}}
   specializations that cite it. **Never duplicate a contract across agents**:
   either cite the archetype or reconcile to one canonical source and have the
   other cite it.
-- **Specializing an archetype**: open with one line naming it, do not
+- **Specializing an archetype**: open with one line stating it, do not
   re-explain its shared invariants, and state only this agent's specialization
   parameters and its domain delta. `src/skills/external-ai-bridge/SKILL.md` is
   the reference archetype and its §2 gives the shape.

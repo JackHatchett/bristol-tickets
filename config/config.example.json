@@ -16,7 +16,18 @@
   },
   "sizing": {
     "usage_window": "one full plan allowance over its rolling window",
-    "notes": "The unit a ticket's S/M/L/XL estimate is measured against — see src/app.md (Effort sizing). Describe YOUR plan's budget here in plain words; agents read this string rather than assuming any vendor's limits. The scale and its anchors live in src/app.md and do not change per instance."
+    "notes": "The unit a ticket's S/M/L/XL estimate is measured against — src/skills/manage-tickets/SKILL.md §Effort sizing. Describe YOUR plan's budget here in plain words; agents read this string rather than assuming any vendor's limits. The scale and its anchors live in that skill and do not change per instance."
+  },
+  "tiers": {
+    "max": {
+      "model": "<model id for work that must invent its own criteria>",
+      "reasoning": "<your runtime's highest reasoning level>"
+    },
+    "standard": {
+      "model": "<model id for fully specified work>",
+      "reasoning": "<a lower reasoning level>"
+    },
+    "notes": "What each processing tier runs on. The tier is chosen from a card by src/skills/manage-tickets/SKILL.md §Processing tier and names no model; this mapping is the only place a model is named. Point both at whatever vendor's models you run."
   },
   "drives": {
     "_notes": "OPTIONAL. Named roots outside the project. Only drives.external1.path is read by code (the photo tools); the rest are reference entries for agents. Delete any you do not have.",

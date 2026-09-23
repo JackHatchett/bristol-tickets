@@ -12,7 +12,7 @@ metadata:
 # checking-a-wiki-for-disagreements
 
 Input: a folder of notes about one subject. Operation: the machine pass, then
-the reading pass. Output: one card per disagreement, naming every note that
+the reading pass. Output: one card per disagreement, listing every note that
 holds it.
 
 Catching a disagreement is worth as much as fixing one, and it does not depend
@@ -55,6 +55,10 @@ becomes a re-reading of the whole wiki:
 - **Name every note holding each side**, by path, with how often each spelling
   or claim appears. The card is what the user meets; a disagreement spoken only
   in a session is not recorded.
+- **A spelling is corrected rather than filed** where it is clear, and asked
+  about in the session where it is not —
+  `src/skills/notebook-proposal/SKILL.md` §What a read-only note takes, which holds in
+  a folder you may only read. The cards below are for everything else.
 - **Never file the fix as done by finding it.** What a card may then do about it
   is that agent's own write authority — `src/templates/identity_template.md`
   §Data locations and the agent's charter — and a folder it may not write gets a
@@ -65,7 +69,7 @@ becomes a re-reading of the whole wiki:
 
 ## Failure modes
 
-- **A card naming a spelling but not its notes** → the user cannot see which is
+- **A card giving a spelling but not its notes** → the user cannot see which is
   right without a search of their own.
 - **Every group the tool raised filed as a card** → §The machine pass: three of
   the four answers are not findings.

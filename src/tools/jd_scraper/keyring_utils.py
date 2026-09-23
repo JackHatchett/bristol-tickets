@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
 """
 keyring_utils.py
-Helpers for reading and writing career_coach secrets from/to macOS Keychain.
+career_coach's secrets, read and written through the shared keychain module,
+src/tools/_shared/keychain.py, which is the one place this system touches the
+operating system's store. What lives here is what career_coach alone knows: the
+names its secrets are kept under, and that two of them are JSON blobs.
 
 All secrets live under service name KEYRING_SERVICE ("career_coach").
 Keys stored:
   gmail_credentials_json  — full JSON blob from gmail_credentials.json (OAuth2 client secrets)
   gmail_token_json        — full JSON blob from gmail_token.json (OAuth2 access/refresh token)
-  flexjobs_password       — FlexJobs account password
-  linkedin_password       — LinkedIn account password
+  <site>_username, <site>_password — a job board's sign-in, for ziprecruiter,
+                            flexjobs, indeed and linkedin; jd_scraper.py --login
+                            fills them in
 
 Usage:
   from keyring_utils import get_secret, set_secret, get_gmail_credentials, get_gmail_token, save_gmail_token
 
-Install:
-  pip install keyring --break-system-packages
+A missing secret is stored with:
+  python3 src/tools/_shared/keychain.py set career_coach <key>
 """
 
 import json
-import keyring
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "_shared"))
+import keychain  # noqa: E402  (the shared keychain reader)
 
 KEYRING_SERVICE = "career_coach"
 
@@ -26,26 +34,24 @@ KEYRING_SERVICE = "career_coach"
 
 def get_secret(key: str) -> str:
     """Return the secret stored at (KEYRING_SERVICE, key), or raise if missing."""
-    value = keyring.get_password(KEYRING_SERVICE, key)
+    value = keychain.read(KEYRING_SERVICE, key)
     if value is None:
         raise KeyError(
             f"No keyring entry found for service='{KEYRING_SERVICE}' key='{key}'. "
-            f"Run migrate_to_keyring.py to populate the keychain."
+            f"Store it with: python3 src/tools/_shared/keychain.py set "
+            f"{KEYRING_SERVICE} {key}"
         )
     return value
 
 
 def set_secret(key: str, value: str) -> None:
-    """Store value at (KEYRING_SERVICE, key) in the macOS Keychain."""
-    keyring.set_password(KEYRING_SERVICE, key, value)
+    """Store value at (KEYRING_SERVICE, key) in the keychain."""
+    keychain.write(KEYRING_SERVICE, key, value)
 
 
 def delete_secret(key: str) -> None:
     """Remove a keyring entry. Safe to call even if the key doesn't exist."""
-    try:
-        keyring.delete_password(KEYRING_SERVICE, key)
-    except keyring.errors.PasswordDeleteError:
-        pass
+    keychain.erase(KEYRING_SERVICE, key)
 
 
 # ----- Gmail credentials (OAuth2 client secrets) -----------------------------
@@ -85,7 +91,7 @@ def save_gmail_token(token_json_str: str) -> None:
 
 def gmail_token_exists() -> bool:
     """Return True if a gmail token is already stored in the keychain."""
-    return keyring.get_password(KEYRING_SERVICE, "gmail_token_json") is not None
+    return keychain.read(KEYRING_SERVICE, "gmail_token_json") is not None
 
 
 # ----- Job-board passwords ---------------------------------------------------

@@ -24,7 +24,7 @@ Usage:
 
     python3 ticket_write.py add-task --title "..." [--description "..."]
         [--epic-id N] [--stage backlog|active|archive] [--status todo|doing|done]
-        [--pressure N] [--estimate S|M|L|XL] [--reporter "..."] [--assignee "..."]
+        [--tier max|standard] [--estimate S|M|L|XL] [--reporter "..."] [--assignee "..."]
         [--record-type build|fix]
         (defaults: stage=active, status=todo, reporter="agent",
         record-type=build)
@@ -56,7 +56,8 @@ Usage:
         wins.
 
     python3 ticket_write.py update-task --id N [--title "..."]
-        [--description "..."] [--estimate S|M|L|XL] [--record-type build|fix]
+        [--description "..."] [--tier max|standard|none] [--estimate S|M|L|XL]
+        [--record-type build|fix]
         [--reporter "..."] [--epic-id N] [--actor "..."]
         Edits a card's CONTENT. Its board position is the other two commands'
         job: `update-task-status` moves it between columns and tabs, `set-order`
@@ -214,7 +215,7 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
 # Fields logged with their new value. A dependency is not among them: it lives
 # on a link now, and a link's own history is the row's presence or absence.
 CHANGE_LOG_FIELDS = (
-    "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
+    "epic_id", "scope_id", "status", "stage", "tier", "estimate",
     "assignee", "reporter", "story_points", "record_type", "block_reason",
     "due_date",
 )
@@ -487,12 +488,12 @@ def add_task(args: argparse.Namespace) -> None:
         sort_order = _append_order(conn, stage, status)
         cur = conn.execute(
             """INSERT INTO task (epic_id, scope_id, title, description, status,
-                   pressure, estimate, created_at, updated_at,
+                   tier, estimate, created_at, updated_at,
                    closed_at, assignee, reporter, story_points, record_type,
                    stage, sort_order)
                VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 0, ?, ?, ?)""",
             (args.epic_id, args.title, args.description, status,
-             args.pressure, args.estimate, ts, ts, args.assignee, args.reporter,
+             args.tier, args.estimate, ts, ts, args.assignee, args.reporter,
              record_type, stage, sort_order),
         )
         conn.commit()
@@ -503,7 +504,7 @@ def add_task(args: argparse.Namespace) -> None:
 
 
 def update_task(args: argparse.Namespace) -> None:
-    """Edit a card's content: title, description, estimate, record type,
+    """Edit a card's content: title, description, tier, estimate, record type,
     reporter, epic.
 
     The board's three writes are separate on purpose — this one changes what a
@@ -523,6 +524,7 @@ def update_task(args: argparse.Namespace) -> None:
         fields = {
             "title": args.title,
             "description": args.description,
+            "tier": args.tier,
             "estimate": args.estimate,
             "record_type": args.record_type,
             "reporter": args.reporter,
@@ -534,6 +536,10 @@ def update_task(args: argparse.Namespace) -> None:
         # clearing one: --due-date none writes NULL rather than the word.
         if str(given.get("due_date", "")).lower() == "none":
             given["due_date"] = None
+        # A tier the rule has not been run for is NULL, so the same word
+        # clears one.
+        if str(given.get("tier", "")).lower() == "none":
+            given["tier"] = None
         if not given:
             sys.exit("update-task: ERROR — pass at least one field to change")
         if "epic_id" in given and conn.execute(
@@ -590,11 +596,9 @@ def update_task_status(args: argparse.Namespace) -> None:
         # of its (new) destination list. A call that names the column the card is
         # already in has moved nothing and keeps its position — the same test the
         # record dialog makes, so a queue is not silently reordered by a call
-        # that came to set pressure, an assignee or a block reason.
+        # that came to set an assignee or a block reason.
         if new_stage != cur_stage or new_status != cur_status:
             sets.append("sort_order = ?"); vals.append(_append_order(conn, new_stage, new_status))
-        if args.pressure is not None:
-            sets.append("pressure = ?"); vals.append(args.pressure)
         if args.assignee is not None:
             sets.append("assignee = ?"); vals.append(args.assignee)
         # A finished card is not blocked, so `done` clears the reason whether or
@@ -625,8 +629,6 @@ def update_task_status(args: argparse.Namespace) -> None:
                           "finished")
         if stage is not None:
             extras.append(f"stage {new_stage}")
-        if args.pressure is not None:
-            extras.append(f"pressure {args.pressure}")
         if args.assignee is not None:
             extras.append(f"assignee {args.assignee}")
         if new_status == "done":
@@ -674,7 +676,7 @@ def set_order(args: argparse.Namespace) -> None:
     the whole backlog. `--position 1` is the top. The whole list is renumbered
     contiguously afterwards, so positions stay readable instead of drifting into
     gaps. This is the only thing that reorders an agent's queue: the status
-    scripts read sort_order, and pressure never sorts."""
+    scripts read sort_order, and nothing else sorts."""
     conn = connect(getattr(args, "actor", None) or "agent")
     try:
         row = conn.execute(
@@ -897,11 +899,14 @@ def main() -> None:
     pt.add_argument("--status", default="todo",
                      help="board column: todo | doing | done (default todo). "
                           "'backlog' is accepted for back-compat and redirected to --stage backlog.")
-    pt.add_argument("--pressure", type=int, default=0)
+    pt.add_argument("--tier", default=None, choices=list(create_tickets.TIERS),
+                     help="max|standard — how much thinking this card needs, "
+                          "whatever its size. Chosen from the card by "
+                          "src/skills/manage-tickets/SKILL.md §Processing tier.")
     pt.add_argument("--estimate", default=None,
                      help="S|M|L|XL — how much of a full usage budget this "
                           "card would take. Scale and anchors in "
-                          "src/skills/manage-tickets/SKILL.md (§Effort sizing); XL "
+                          "src/skills/manage-tickets/SKILL.md (§Sizing); XL "
                           "means split it, not start it.")
     pt.add_argument("--reporter", default="agent",
                      help="who originated this task — an agent slug, or 'user' "
@@ -933,7 +938,13 @@ def main() -> None:
     pct.add_argument("--estimate", default=None,
                       help="S|M|L|XL — how much of a full usage budget this card "
                            "would take. Scale and anchors in "
-                           "src/skills/manage-tickets/SKILL.md (§Effort sizing).")
+                           "src/skills/manage-tickets/SKILL.md (§Sizing).")
+    pct.add_argument("--tier", default=None,
+                      choices=list(create_tickets.TIERS) + ["none"],
+                      help="max|standard — how much thinking this card needs, "
+                           "whatever its size. Chosen from the card by "
+                           "src/skills/manage-tickets/SKILL.md §Processing tier; "
+                           "'none' clears it.")
     pct.add_argument("--due-date", dest="due_date", default=None,
                       help="YYYY-MM-DD, an outside deadline this card has to "
                            "meet — a filing window, a renewal, a date somebody "
@@ -960,8 +971,6 @@ def main() -> None:
                           "back-compat and redirected to a --stage backlog move.")
     pu.add_argument("--stage", default=None, choices=["backlog", "active", "archive"],
                      help="optionally move the task's tab in the same call")
-    pu.add_argument("--pressure", type=int, default=None,
-                     help="optionally reset pressure in the same call")
     pu.add_argument("--assignee", default=None,
                      help="optionally set the task's assignee (an agent slug)")
     pu.add_argument("--block-reason", dest="block_reason", default=None,
@@ -993,7 +1002,7 @@ def main() -> None:
                       help="1 = top of the card's own list (its active-board "
                            "status column, or the whole backlog). The list is "
                            "renumbered contiguously. This is what reorders an "
-                           "agent's queue — pressure does not.")
+                           "agent's queue — nothing else does.")
     pso.add_argument("--actor", default=None,
                       help="who is making this change, for the change log "
                            "(your agent slug, e.g. chief_of_staff).")

@@ -16,8 +16,8 @@ that does three things:
 - **Runs `python3` in that folder**, which is how every tool here executes.
 
 That is the entire mechanism by which an agent does anything: there is no
-server, no API key in a config file, no background process. Bristol names no
-vendor in any file it runs on — the host is named once, in the entry file that
+server, no API key in a config file, no background process. Bristol mentions no
+vendor in any file it runs on — the host appears once, in the entry file that
 host reads, and nothing else branches on it.
 
 **Cowork**, a mode in the Claude desktop app, is the host Bristol has been run
@@ -76,7 +76,7 @@ launch is four steps rather than one:
 
 1. Double-click the app, and click **Done** on the message that appears.
 2. Open **System Settings → Privacy & Security** and scroll to the Security
-   section, where Bristol Tickets is named.
+   section, where Bristol Tickets appears.
 3. Click **Open Anyway**, and confirm with your password or Touch ID.
 4. Open the app again.
 
@@ -135,8 +135,8 @@ left as it stands. Pages 2 and 3 are skipped, because adoption needs no answer
 they collect.
 
 Either way, the last thing Finish writes is the instance pointer — a small file
-outside the repository naming the installation this machine opens, so a
-relocated app can still find its data. The summary page names the installation
+outside the repository giving the installation this machine opens, so a
+relocated app can still find its data. The summary page gives the installation
 Bristol Tickets opens today and the one it opens afterwards, and the tick box on
 that page decides whether that hand-over happens. Clear it to set an
 installation up, or adopt one, without changing what the app opens; an adoption

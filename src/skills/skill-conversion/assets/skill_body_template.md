@@ -53,5 +53,5 @@ when there are none.}}
 - **Provider-specific behavior goes to that provider's connected MCP**, never
   into a skill and never into a shared config file.
 - **A file an outside party must be shown, because it cannot read
-  `tickets.db`, is a payload**: a ticket names it, the ticket holds the state,
+  `tickets.db`, is a payload**: a ticket gives it, the ticket holds the state,
   and deleting it loses nothing.

@@ -17,11 +17,11 @@ is `src/skills/story-proposals/SKILL.md`.
 - **Read the active project's content-rules file before authoring or judging
   anything in it** — `src/skills/writers-room-project-context/SKILL.md`.
 - **Read the author's voice profile before composing or revising publishable
-  prose** — `src/skills/voice-distillation/SKILL.md` names where it lives.
+  prose** — `src/skills/voice-distillation/SKILL.md` says where it lives.
 
 ## Procedure
 
-Four ways prose gets worked. The user's request names one; where it does not,
+Four ways prose gets worked. The user's request picks one; where it does not,
 ask which rather than defaulting into drafting.
 
 1. **Open reasoning.** Generate options, riff, and pressure-test an idea against
@@ -56,7 +56,7 @@ anything here.**
   an open question. Never invent the fact or coin the proper noun
   (`writers_room.md` §Bright-Line Guardrails Only).
 - **The work would touch something the project has settled** — a settled beat, a
-  retired term → name the conflict and route it through `src/skills/story-proposals/SKILL.md`.
+  settled name → state the conflict and route it through `src/skills/story-proposals/SKILL.md`.
   Never revise a settled thing in passing.
 - **A draft drifts from the voice profile** → say which technique card it
   departs from, and let the author rule.

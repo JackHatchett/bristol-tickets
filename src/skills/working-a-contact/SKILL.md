@@ -50,7 +50,7 @@ person is like, what they said, what they do — that is prose, and
 - **Give `--due-on` a date only where one is real** — a posting that closes, a
   renewal, a promise made for a day. A date invented to force a reminder makes
   every date on the board suspect.
-- **Close it when the thing it names has happened, or has stopped being
+- **Close it when the thing it records has happened, or has stopped being
   wanted** — `close-ask --id N`, `--status dropped` for the second. Closing
   moves the contact's last contact to that day unless told otherwise.
 - **Never close an ask because time passed.** An ask nobody answered is still

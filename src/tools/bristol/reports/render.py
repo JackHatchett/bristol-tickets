@@ -2,9 +2,10 @@
 
 House style is taken from the notebook's existing generated artefact, the daily
 briefing: YAML frontmatter, an `#` title, `####` section headers, a prose
-executive summary before any table, bold-lead bullets, `---` rules, and an
-italic generation footer naming what produced the file. Nothing here invents a
-new convention for the vault to absorb.
+executive summary before any table, plain bullets, `---` rules, and an
+italic generation footer saying what produced the file. Nothing is bold: bolding
+in the notebook is the user's (`src/skills/note-formatting/SKILL.md`
+§Emphasis).
 
 Two decisions worth stating:
 
@@ -281,7 +282,7 @@ def _shipped(f):
 
     out = []
     for epic, cards in ordered:
-        out.append(f"**{epic}** — {len(cards)} card{'s' if len(cards) != 1 else ''}")
+        out.append(f"{epic} — {len(cards)} card{'s' if len(cards) != 1 else ''}")
         out.append("")
         for card in cards:
             bits = [card["record_type"].title(),
@@ -290,7 +291,7 @@ def _shipped(f):
             if card["comments"]:
                 bits.append(f"{card['comments']} comment"
                             f"{'s' if card['comments'] != 1 else ''}")
-            out.append(f"- **#{card['id']}** {_escape(card['title'])}  \n"
+            out.append(f"- #{card['id']} {_escape(card['title'])}  \n"
                        f"  _{' · '.join(bits)}_")
         out.append("")
     return "\n".join(out).rstrip()
@@ -315,17 +316,17 @@ def _delivery_profile(f):
     out.append("```")
     out += [
         "",
-        f"- **Median** {_days(lead['median'])} — the typical card.",
-        f"- **85th percentile** {_days(lead['p85'])} — what you could honestly "
+        f"- Median {_days(lead['median'])} — the typical card.",
+        f"- 85th percentile {_days(lead['p85'])} — what you could honestly "
         "promise, since completion times skew long.",
-        f"- **Range** {_days(lead['min'])} to {_days(lead['max'])}.",
+        f"- Range {_days(lead['min'])} to {_days(lead['max'])}.",
     ]
 
     cycle = f["cycle_time"]
     if cycle["n"]:
         out += [
             "",
-            f"**Cycle time** (from first entering Doing) is available for "
+            f"Cycle time (from first entering Doing) is available for "
             f"{cycle['n']} of {f['throughput']['count']} cards: median "
             f"{_days(cycle['median'])}, 85th percentile {_days(cycle['p85'])}.",
         ]
@@ -339,7 +340,7 @@ def _delivery_profile(f):
     else:
         out += [
             "",
-            "**Cycle time is not available for this batch.** It needs the moment a "
+            "Cycle time is not available for this batch. It needs the moment a "
             "card entered Doing, which the board only began recording with the "
             "transition log. Cards that move through Doing from now on will carry "
             "it, and this section will fill in on its own.",
@@ -356,22 +357,22 @@ def _flow_health(f):
             "metric you can act on while there is still time — unlike lead time, "
             "which you only learn once the card is already finished.",
             "",
-            "| Card | Age | In Doing | Owner | Pressure |",
+            "| Card | Age | In Doing | Owner | Tier |",
             "| --- | --- | --- | --- | --- |",
         ]
         for card in sorted(wip, key=lambda w: -(w["age_days"] or 0)):
             out.append(
-                f"| **#{card['id']}** {_truncate(card['title'], 46)} "
+                f"| #{card['id']} {_truncate(card['title'], 46)} "
                 f"| {_days(card['age_days'], 0)} "
                 f"| {_days(card['doing_days'], 0) if card['doing_days'] is not None else 'not recorded'} "
-                f"| {card['assignee']} | {card['pressure']} |"
+                f"| {card['assignee']} | {(card['tier'] or 'not rated').capitalize()} |"
             )
     else:
         out.append("Nothing is in Doing. The board is between pushes.")
 
     queue, backlog = f["queue"], f["backlog"]
     out.append("")
-    out.append(f"**Queue** — {queue['size']} card"
+    out.append(f"Queue — {queue['size']} card"
                f"{'s' if queue['size'] != 1 else ''} in Todo"
                + (f", median age {_days(queue['median_age_days'], 0)}"
                   if queue["median_age_days"] is not None else "") + ".")
@@ -381,7 +382,7 @@ def _flow_health(f):
                    f"queue would drain in about {queue['size'] / rate:.1f} weeks.")
 
     out.append("")
-    line = f"**Backlog** — {backlog['size']} card{'s' if backlog['size'] != 1 else ''}"
+    line = f"Backlog — {backlog['size']} card{'s' if backlog['size'] != 1 else ''}"
     if backlog["median_age_days"] is not None:
         line += f", median age {_days(backlog['median_age_days'], 0)}"
     if backlog["oldest_days"] is not None:
@@ -394,7 +395,7 @@ def _flow_health(f):
     trailing = f["throughput"]["trailing_weeks"]
     if any(trailing):
         biggest = max(trailing)
-        out += ["", "**Cards closed per week**, trailing eight weeks (oldest first):",
+        out += ["", "Cards closed per week, trailing eight weeks (oldest first):",
                 "", "```"]
         for index, count in enumerate(trailing):
             label = "this week" if index == len(trailing) - 1 else f"-{len(trailing) - 1 - index}w"
@@ -407,32 +408,32 @@ def _flow_health(f):
 
 
 def _composition(f):
-    out = ["**By owner**", ""]
+    out = ["By owner", ""]
     biggest = max((row["count"] for row in f["by_assignee"]), default=0)
     for row in f["by_assignee"]:
-        out.append(f"- `{_bar(row['count'], biggest, 16)}` **{row['name']}** — "
+        out.append(f"- `{_bar(row['count'], biggest, 16)}` {row['name']} — "
                    f"{row['count']} ({_pct(row['share'])})")
 
-    out += ["", "**By originator**", ""]
+    out += ["", "By originator", ""]
     biggest = max((row["count"] for row in f["by_reporter"]), default=0)
     for row in f["by_reporter"]:
-        out.append(f"- `{_bar(row['count'], biggest, 16)}` **{row['name']}** — "
+        out.append(f"- `{_bar(row['count'], biggest, 16)}` {row['name']} — "
                    f"{row['count']} ({_pct(row['share'])})")
 
     mix = f["mix"]
-    out += ["", f"**Record type** — {mix['build']} Build"
+    out += ["", f"Record type — {mix['build']} Build"
             f"{'s' if mix['build'] != 1 else ''}, {mix['fix']} Fix"
             f"{'es' if mix['fix'] != 1 else ''} ({_pct(mix['fix_ratio'])} rework)."]
 
     discussion = f["discussion"]
-    line = (f"**Discussion** — {discussion['total']} comment"
+    line = (f"Discussion — {discussion['total']} comment"
             f"{'s' if discussion['total'] != 1 else ''} across the batch; "
             f"{discussion['silent']} card"
             f"{'s' if discussion['silent'] != 1 else ''} closed with none.")
     out += ["", line]
     most = discussion["most_discussed"]
     if most and most["comments"]:
-        out.append(f"  Most discussed: **#{most['id']}** {_escape(most['title'])} "
+        out.append(f"  Most discussed: #{most['id']} {_escape(most['title'])} "
                    f"({most['comments']}).")
     return "\n".join(out)
 
@@ -444,7 +445,7 @@ def _signals_section(f):
     out = []
     for index, signal in enumerate(f["signals"], start=1):
         out += [
-            f"**{index}. {signal['title']}** — {labels.get(signal['severity'], 'Note')}",
+            f"{index}. {signal['title']} — {labels.get(signal['severity'], 'Note')}",
             "",
             f"{signal['detail']}",
             "",
@@ -464,12 +465,12 @@ def _data_quality(f):
     ]
     if quality["has_event_log"]:
         coverage = f["cycle_time"]["coverage"]
-        out.append(f"- **Transition log** present. Cycle time covered "
+        out.append(f"- Transition log present. Cycle time covered "
                    f"{_pct(coverage)} of the batch.")
     else:
-        out.append("- **Transition log** absent — lead time only.")
+        out.append("- Transition log absent — lead time only.")
     sized = quality["estimates_used"]
-    out.append(f"- **Effort estimates** on {quality['estimates_used']} of {n} cards. "
+    out.append(f"- Sizes on {quality['estimates_used']} of {n} cards. "
                + ("Too sparse to compute velocity or forecast accuracy from."
                   if not n or sized / n < SIZING_COVERAGE_FLOOR
                   else "Dense enough to reason about sizing."))
@@ -514,7 +515,7 @@ def _ledger(f):
 def render(f, slug, previous_slug=None, source_note=None):
     """Return the full Markdown note for one report."""
     header = (
-        f'_Period **{_date(f["period_start"])} → {_date(f["period_end"])}** '
+        f'_Period {_date(f["period_start"])} → {_date(f["period_end"])} '
         f'({f["period_days"]:.0f} days) · '
         f'{f["throughput"]["count"]} card'
         f'{"s" if f["throughput"]["count"] != 1 else ""} archived._'

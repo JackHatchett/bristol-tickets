@@ -534,13 +534,13 @@ class SkillsTab(QWidget):
         stamp = _utcnow()
         cur = self.conn.execute(
             "INSERT INTO task (epic_id, title, description, status, stage, "
-            "sort_order, pressure, assignee, reporter, estimate, record_type, "
+            "sort_order, tier, assignee, reporter, estimate, record_type, "
             "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (None,
              CARD_TITLE.format(name=record["name"]),
              CARD_BODY.format(name=record["name"], origin=record["origin"],
                               code=code),
-             "todo", "active", row[0], 50, "chief_of_staff", "user", "S",
+             "todo", "active", row[0], "max", "chief_of_staff", "user", "S",
              "build", stamp, stamp),
         )
         self.conn.commit()

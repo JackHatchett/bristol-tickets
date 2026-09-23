@@ -39,7 +39,7 @@ exceptions and no leaving the rest for later:
   the card now asks for. This is the commonest of the three and the one that
   keeps the board's history intact.
 - **Archived** where the work should not happen at all: `set-stage --id N
-  --stage archive`, with a comment naming what replaced it. Archiving is not
+  --stage archive`, with a comment saying what replaced it. Archiving is not
   deleting, and a card that stops being worked without being archived is the
   rot this pass exists to prevent.
 

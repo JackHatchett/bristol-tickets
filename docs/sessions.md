@@ -23,7 +23,7 @@ sentence, and the agent says which skill it opened. Installing one is therefore
 enough to change what a session does; you do not have to mention it.
 
 The last step prints a snapshot: the current milestone, the active epics, and
-the agent's own queue in order, with the next action named at the top. The
+the agent's own queue in order, with the next action given at the top. The
 chief of staff also sees a fleet section — the cards other agents own — as
 context, never as its own work.
 
@@ -39,7 +39,7 @@ been granted, it is grinding on something that keeps failing, or the
 conversation is running out of room.
 
 Anything else you say, it responds to. If nothing you said was actionable, it
-names the next action and asks whether to start.
+states the next action and asks whether to start.
 
 When a session ends having written files inside a git repository, whatever
 stopped it, the last thing in its message is a block you can paste into a
@@ -55,14 +55,14 @@ Ordering is entirely the board's, and you own it by dragging cards.
   to raise it with you. A backlog card is a planning signal, never something it
   starts on its own.
 - An agent owns a card when the card is assigned to it, or when the card is
-  unassigned and its epic names it as owner.
+  unassigned and its epic gives it as owner.
 - A card blocked by something that is not Done is passed over, and the agent
   takes the next card in order. It comes back to the passed-over card, in the
   same place, once every card blocking it is Done. A blocker never moves a card
   up or down the queue, and the agent never works the unblocked half of one in
   passing.
 
-Nothing else moves a card up or down that list — not pressure, not a comment,
+Nothing else moves a card up or down that list — not its tier, not a comment,
 not how big the card looks. If you want something done first, drag it to the
 top.
 

@@ -118,6 +118,7 @@ def main(argv: list[str]) -> int:
     made = ticket("add-task", "--title", title, "--record-type", "build",
                   "--assignee", "chief_of_staff", "--reporter", args.reporter,
                   "--actor", args.reporter, "--estimate", args.estimate,
+                  "--tier", "max",
                   "--description", text)
     sys.stdout.write(made.stdout)
     if made.returncode != 0:

@@ -75,7 +75,7 @@ Settings tab.
 1. **`TICKETS_DB`** env var — explicit full path to the `.db` file (use for
    testing/overrides).
 2. **The instance pointer** — `~/Library/Application
-   Support/BristolTickets/instance.json`, which names the data root and the
+   Support/BristolTickets/instance.json`, which gives the data root and the
    instance slug. This is what a relocated `.app` uses; it lives outside the
    repo so it is never committed and never bundled.
 3. **Legacy `tickets_db.local`** — a one-line absolute path next to `app.py`,
@@ -121,7 +121,7 @@ Finish creates the data folders each enabled agent declares, provisions
 instance pointer. Cancel writes nothing, and takes back a tree the same run
 placed — leaving a folder that already held anything as it stands.
 
-The run ends by naming where the installation went and offering the line to
+The run ends by saying where the installation went and offering the line to
 paste into an agent host that takes typed project instructions. Replacing an existing configuration
 asks first, and **File → Setup…** re-runs the flow from a running
 Bristol Tickets.
@@ -154,7 +154,7 @@ keys, and this app only writes them.
   `--stage`, whoever files it and whoever it is for.
   `ticket_tools/ticket_write.py` reads the same key.
 - **Theme** — `appearance.theme`, applied live as it is picked so it can be
-  compared against the board it themes. The stored value names a pair of
+  compared against the board it themes. The stored value identifies a pair of
   palettes; the caption is what this product calls it.
 - **Light & Dark** — `appearance.mode`, which half of the theme is drawn:
   Light, Dark, or Follow System. A theme with no dark half offers Light alone

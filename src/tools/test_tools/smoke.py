@@ -543,7 +543,7 @@ def check_bristol() -> list[str]:
 
     option = QStyleOptionViewItem()
     option.rect = QRect(0, 0, 260, 140)
-    cell = _Cell({"title": "A card", "pressure": 85, "issue_id": 1,
+    cell = _Cell({"title": "A card", "tier": "max", "issue_id": 1,
                   "record_type": "fix", "epic_name": "An epic",
                   "owner": "user", "estimate": "M"})
     for name in theme.SCHEMES:
@@ -593,17 +593,17 @@ def check_bristol() -> list[str]:
         mconn = sqlite3.connect(":memory:")
         mconn.executescript(schema.read_text())
 
-        def _seed(title, stage, status, sort_order, pressure=0):
+        def _seed(title, stage, status, sort_order, tier=None):
             mconn.execute(
                 "INSERT INTO task (title, description, status, stage, sort_order, "
-                "pressure, record_type, assignee, reporter, created_at, updated_at) "
+                "tier, record_type, assignee, reporter, created_at, updated_at) "
                 "VALUES (?,?,?,?,?,?, 'build','user','user','2026-07-08','2026-07-08')",
-                (title, "d", status, stage, sort_order, pressure))
+                (title, "d", status, stage, sort_order, tier))
             return mconn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
-        _seed("active todo", "active", "todo", 0, 50)
-        b1 = _seed("backlog one", "backlog", "todo", 0, 90)
-        b2 = _seed("backlog two", "backlog", "todo", 1, 80)
+        _seed("active todo", "active", "todo", 0, "max")
+        b1 = _seed("backlog one", "backlog", "todo", 0, "standard")
+        b2 = _seed("backlog two", "backlog", "todo", 1)
         _seed("archived", "archive", "done", 0)
         mconn.commit()
 
@@ -955,6 +955,53 @@ def check_bristol() -> list[str]:
             "AND to_value='doing'", (b2,)).fetchone()[0]
         if not logged:
             raise SmokeFailure("a pane edit was not recorded by the change-log triggers")
+        pane.tier_combo.setCurrentIndex(pane.tier_combo.findData("max"))
+        if mconn.execute("SELECT tier FROM task WHERE id=?",
+                         (b2,)).fetchone()[0] != "max":
+            raise SmokeFailure("a pane tier edit did not reach the database")
+        if not mconn.execute(
+                "SELECT COUNT(*) FROM task_event WHERE task_id=? AND "
+                "field='tier' AND to_value='max'", (b2,)).fetchone()[0]:
+            raise SmokeFailure("a tier edit was not recorded by the change log")
+        pane.show_task(b1)
+        if pane.tier_combo.currentData() != "standard":
+            raise SmokeFailure("the pane did not show the card's stored tier")
+        ok.append("the pane shows a card's tier and writes it through the change log")
+
+        # A board written before the tier existed opens without losing a card:
+        # pressure is retired, tier arrives unrated, and every other value of
+        # every card is where it was.
+        from ui.schema_guard import ensure_schema_up_to_date
+        legacy = sqlite3.connect(":memory:")
+        legacy.executescript(
+            "CREATE TABLE epic (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);"
+            "CREATE TABLE task (id INTEGER PRIMARY KEY AUTOINCREMENT, epic_id "
+            "INTEGER, scope_id INTEGER, title TEXT NOT NULL, description TEXT, "
+            "status TEXT NOT NULL DEFAULT 'todo', pressure INTEGER NOT NULL "
+            "DEFAULT 0, estimate TEXT, created_at TEXT, updated_at TEXT, "
+            "closed_at TEXT);"
+            "INSERT INTO task (title, description, status, pressure, estimate) "
+            "VALUES ('kept', 'body', 'doing', 70, 'M'), ('also kept', NULL, "
+            "'todo', 0, NULL);")
+        before = legacy.execute(
+            "SELECT id, title, description, status, estimate FROM task "
+            "ORDER BY id").fetchall()
+        ensure_schema_up_to_date(legacy)
+        ensure_schema_up_to_date(legacy)  # idempotent
+        cols = [r[1] for r in legacy.execute("PRAGMA table_info(task)")]
+        if "pressure" in cols or "tier" not in cols:
+            raise SmokeFailure(f"a legacy board migrated to the wrong columns: {cols}")
+        after = legacy.execute(
+            "SELECT id, title, description, status, estimate FROM task "
+            "ORDER BY id").fetchall()
+        if after != before:
+            raise SmokeFailure("migrating a legacy board changed a card")
+        if legacy.execute("SELECT COUNT(*) FROM task WHERE tier IS NOT NULL"
+                          ).fetchone()[0]:
+            raise SmokeFailure("a legacy card arrived with a tier nobody chose")
+        legacy.close()
+        ok.append("a board carrying pressure opens with every card intact and "
+                  "pressure retired")
         win._set_pane_collapsed(True, save=False)
         if not win.detail_pane.isHidden():
             raise SmokeFailure("collapsing did not hide the detail pane")
@@ -1028,7 +1075,7 @@ def check_bristol() -> list[str]:
         if guard_dlg.findChildren(QFormLayout):
             raise SmokeFailure("record dialog lays out fields in a QFormLayout")
         for w in (guard_dlg.stage_combo, guard_dlg.status_combo, guard_dlg.owner_edit,
-                  guard_dlg.epic_combo, guard_dlg.pressure_spin,
+                  guard_dlg.epic_combo, guard_dlg.tier_combo,
                   guard_dlg.estimate_combo, guard_dlg.originator_edit,
                   guard_dlg.title_edit, guard_dlg.desc_edit):
             cell = w.parentWidget()
@@ -3559,6 +3606,32 @@ def check_config_resolution() -> list[str]:
         instance.get_path = orig_get_path
         config_file.project_root = orig_project_root
 
+    # Which project a session opens on, when an agent holds one, two or none.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
+    import active_project
+    grant = lambda p: {"path": p, "access": "write"}
+    cfg = {"projects": {"notebook_projects": ["notes/novel_a", "notes/novel_b",
+                                              "notes/course"],
+                        "local_projects": []},
+           "agents": {"writer": {"key_data_paths": [grant("notes/novel_a")]},
+                      "nobody": {"key_data_paths": [grant("data/x")]}}}
+    if active_project.active("writer", data=cfg) != ("notes/novel_a",
+                                                     "the only project"):
+        raise SmokeFailure("one project did not open as it always has")
+    cfg["agents"]["writer"]["key_data_paths"].append(grant("notes/novel_b"))
+    if active_project.active("writer", data=cfg)[0] != "notes/novel_a":
+        raise SmokeFailure("two projects and no choice did not open on the first")
+    cfg["agents"]["writer"]["active_project"] = "notes/novel_b"
+    if active_project.active("writer", data=cfg)[0] != "notes/novel_b":
+        raise SmokeFailure("a chosen project did not hold")
+    cfg["agents"]["writer"]["active_project"] = "notes/course"
+    if active_project.active("writer", data=cfg)[0] != "notes/novel_a":
+        raise SmokeFailure("a choice outside the agent's projects was honoured")
+    if active_project.active("nobody", data=cfg)[0] is not None:
+        raise SmokeFailure("an agent with no project was given one")
+    ok.append("a session opens on its only project, on the chosen one of two, "
+              "and on none where it holds none")
+
     return ok
 
 
@@ -3782,6 +3855,105 @@ def check_agent_tools() -> list[str]:
     return ok
 
 
+def check_ticket_tier() -> list[str]:
+    """The write CLI carries a card's tier, a board written before the tier
+    existed opens through it without losing a card, and the status scripts read
+    the tier where pressure used to sit.
+
+    No Qt: the CLI and the status readers are plain sqlite3.
+    """
+    import tempfile
+
+    ok: list[str] = []
+    tools = Path(__file__).resolve().parents[1] / "ticket_tools"
+    sys.path.insert(0, str(tools))
+    import create_tickets
+    import status_common
+    import ticket_write
+
+    with tempfile.TemporaryDirectory() as tmp:
+        db = Path(tmp) / "tickets.db"
+        legacy = sqlite3.connect(db)
+        legacy.executescript(
+            "CREATE TABLE epic (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, "
+            "owner TEXT, status TEXT);"
+            "CREATE TABLE task (id INTEGER PRIMARY KEY AUTOINCREMENT, epic_id "
+            "INTEGER, scope_id INTEGER, title TEXT NOT NULL, description TEXT, "
+            "status TEXT NOT NULL DEFAULT 'todo', pressure INTEGER NOT NULL "
+            "DEFAULT 0, estimate TEXT, created_at TEXT, updated_at TEXT, "
+            "closed_at TEXT, assignee TEXT, reporter TEXT, story_points INTEGER "
+            "DEFAULT 0, record_type TEXT NOT NULL DEFAULT 'build', stage TEXT "
+            "NOT NULL DEFAULT 'active', sort_order INTEGER NOT NULL DEFAULT 0);"
+            "CREATE TABLE task_link (id INTEGER PRIMARY KEY AUTOINCREMENT, kind "
+            "TEXT NOT NULL, task_id INTEGER NOT NULL, other_id INTEGER, uri TEXT, "
+            "label TEXT, author TEXT, created_at TEXT);"
+            "INSERT INTO task (title, status, pressure, estimate, assignee) "
+            "VALUES ('kept', 'doing', 70, 'M', 'chief_of_staff');")
+        legacy.commit()
+        legacy.close()
+
+        original = ticket_write.resolve_db_path
+        ticket_write.resolve_db_path = lambda: db
+        argv = sys.argv
+        try:
+            def run(*args):
+                sys.argv = ["ticket_write.py", *args]
+                ticket_write.main()
+
+            run("add-task", "--title", "rated", "--tier", "max",
+                "--estimate", "S", "--assignee", "chief_of_staff",
+                "--actor", "chief_of_staff")
+            conn = sqlite3.connect(db)
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(task)")]
+            if "pressure" in cols or "tier" not in cols:
+                raise SmokeFailure(f"the CLI left a legacy board with {cols}")
+            kept = conn.execute("SELECT title, status, estimate, tier FROM task "
+                                "WHERE id=1").fetchone()
+            if kept != ("kept", "doing", "M", None):
+                raise SmokeFailure(f"the migration changed a card: {kept}")
+            if conn.execute("SELECT tier FROM task WHERE id=2").fetchone()[0] != "max":
+                raise SmokeFailure("add-task --tier did not store the tier")
+            ok.append("a board carrying pressure opens through the CLI with "
+                      "every card intact and pressure retired")
+
+            run("update-task", "--id", "1", "--tier", "standard",
+                "--actor", "chief_of_staff")
+            if conn.execute("SELECT tier FROM task WHERE id=1").fetchone()[0] \
+                    != "standard":
+                raise SmokeFailure("update-task --tier did not store the tier")
+            if not conn.execute("SELECT COUNT(*) FROM task_event WHERE "
+                                "task_id=1 AND field='tier'").fetchone()[0]:
+                raise SmokeFailure("a tier edit was not recorded by the change log")
+            run("update-task", "--id", "1", "--tier", "none")
+            if conn.execute("SELECT tier FROM task WHERE id=1").fetchone()[0] \
+                    is not None:
+                raise SmokeFailure("update-task --tier none did not clear it")
+            ok.append("update-task sets and clears a tier, and the change log "
+                      "records it")
+
+            conn.row_factory = sqlite3.Row
+            rows = status_common.board_tasks(conn)
+            lines = [status_common.fmt(r, {}) for r in rows]
+            if not any(" Max " in line for line in lines) or \
+                    not any("no tier" in line for line in lines):
+                raise SmokeFailure(f"the queue line does not read the tier: {lines}")
+            ok.append("the status scripts print a card's tier, and say so when "
+                      "it has none")
+            conn.close()
+        finally:
+            sys.argv = argv
+            ticket_write.resolve_db_path = original
+
+        create_tickets.provision(Path(tmp) / "fresh.db")
+        fresh = sqlite3.connect(Path(tmp) / "fresh.db")
+        cols = [r[1] for r in fresh.execute("PRAGMA table_info(task)")]
+        fresh.close()
+        if "pressure" in cols or "tier" not in cols:
+            raise SmokeFailure(f"a new board is provisioned with {cols}")
+        ok.append("a new board is provisioned with tier and without pressure")
+    return ok
+
+
 TARGETS = {
     "bristol": check_bristol,
     "agent_tools": check_agent_tools,
@@ -3795,6 +3967,7 @@ TARGETS = {
     "bluesky_purge": check_bluesky_purge,
     "bluesky_images": check_bluesky_images,
     "published_files": check_published_files,
+    "ticket_tier": check_ticket_tier,
 }
 
 

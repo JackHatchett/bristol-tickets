@@ -13,15 +13,15 @@ metadata:
 Input: a change to Bristol Tickets. Operation: the runs below. Output: what each
 run produced, in the closing comment of the card the change belongs to.
 
-`src/skills/verifying-a-card/SKILL.md` owns the rule that a card names its check
+`src/skills/verifying-a-card/SKILL.md` owns the rule that a card states its check
 before it may close, and what a closing comment carries. This owns what the
 check is when the thing changed is Bristol Tickets.
 
 ## What runs wherever the session already is
 
-- **Run the six targets that build no widget** — `python3
+- **Run the seven targets that build no widget** — `python3
   src/tools/test_tools/smoke.py agent_tools payload config_resolution
-  governing_docs skill_declarations published_files`. They read files, copy
+  governing_docs skill_declarations published_files ticket_tier`. They read files, copy
   trees and provision databases, so `python3` is the whole requirement.
 - **Any `SMOKE FAIL` line is the result**, whatever passed above it.
 - **A change to a governing document, a skill or a tool is checked here and
@@ -90,7 +90,7 @@ output, from a shell that has Qt.
 
 - **Hand a visible change to the user to look at.** Run every check above, put
   what each run produced on the card, then `update-task-status --id N
-  --assignee user --actor <you>`, with a comment naming what to open, what to
+  --assignee user --actor <you>`, with a comment saying what to open, what to
   do in it, and what would fail the card.
 - **Never open Bristol Tickets to look at it yourself.** The look is the user's,
   and a session that reaches for the application spends his attention on
@@ -107,7 +107,7 @@ output, from a shell that has Qt.
 
 ## Failure modes
 
-- **The six headless targets claimed for a widget change** → they build no
+- **The seven headless targets claimed for a widget change** → they build no
   widget, and the two that do were not run.
 - **A Qt run against an archive older than the last edit** → it reports on code
   that is not the code being closed on.
@@ -117,7 +117,7 @@ output, from a shell that has Qt.
   → the staging location is declared so that no run has to choose one.
 - **An offscreen screenshot offered as the look of a change** → it is the wrong
   platform's controls, and the user is the one who says.
-- **A visible change closed without a handover** → the criterion the card names
+- **A visible change closed without a handover** → the criterion the card states
   was never checked by anyone.
 
 ## Audit

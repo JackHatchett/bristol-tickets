@@ -44,19 +44,20 @@ value no other agent has declares its own key beside them:
 | `env` | The environment variables its tools expect. |
 | `notebook_access` | Which zones of the Markdown notebook it reaches. |
 | `skills` | The skills attached to this agent, in the order they are matched. |
+| `active_project` | Optional: the project a session opens on, where the agent holds more than one. |
 
 A fact about an agent that is neither must-have-read nor one of these values is
 a procedure, and a procedure is a skill.
 
 **What the loader supplies, and what it cannot.** A session lists the installed
 skills at start and matches a task against their descriptions, so a charter that
-names a procedure by path is a second copy of something the loader already
+gives a procedure's path is a second copy of something the loader already
 knows, and the loader is the source. Section by section:
 
 | Charter section | Supplied by the loader |
 | --- | --- |
 | Identity & System Role | No. What an agent is for is not a procedure and nothing routes to it. |
-| Session Start | Only in part. A file the agent must have read before it acts is named here, because a match happens when a task arrives and this has to happen before one does. |
+| Session Start | Only in part. A file the agent must have read before it acts is listed here, because a match happens when a task arrives and this has to happen before one does. |
 | Sources of truth and data rules | No. Where content lives is a config value; which of two copies is authoritative is the agent's own rule. |
 | Bright-Line Guardrails Only | No. A guardrail reached by a match is not a guardrail. |
 | Boundaries & Coordination | No. Which folders an agent owns, and where another agent's authority starts, is authority rather than capability. |
@@ -128,15 +129,15 @@ refused because another part cannot.
   `src/skills/importing-a-skill/SKILL.md` the judgment.
 - **A config entry imports as associations** — which skills, which data roots,
   which environment. A list of associations grants nothing, which makes it the
-  most portable part of an agent. An attachment names a skill and never copies
-  one, so the same skill serves as many agents as name it.
+  most portable part of an agent. An attachment refers to a skill and never copies
+  one, so the same skill serves as many agents as list it.
 - **A charter's role description imports as content to read.** A downloaded
   description of what a role does is prose, and the user adopts it into a
   charter by reading it. It is inert until then: `skills.py convert` writes a
   foreign definition into quarantine as a skill, and a file describing a whole
   agent writes nothing at all until the run that adopts it.
 - **A whole agent travels as one file** — its charter, its config entry with
-  every local value taken out, and the address of each skill it names.
+  every local value taken out, and the address of each skill it lists.
   `src/tools/agent_tools/README.md` §The agent file owns the format, and
   `src/skills/importing-an-agent/SKILL.md` the judgment.
 - **The mandate is granted by the user and never by the file.** Who the agent
@@ -150,8 +151,8 @@ refused because another part cannot.
   reading it is enough to judge it.
 - **Fields that route work in another host do not import** — `tools`, `model`,
   a client's own frontmatter extensions. A session's model and tool surface
-  belong to the host it runs in, and the conversion names each field it drops.
-- **The skills a definition declares it depends on are named as it is
+  belong to the host it runs in, and the conversion lists each field it drops.
+- **The skills a definition declares it depends on are listed as it is
   imported**, so they can be installed rather than sitting in prose the user has
   to notice.
 
@@ -159,7 +160,7 @@ refused because another part cannot.
 
 ## Shared charter clauses
 
-Stated here once. A charter names the clause and adds only what is specific to
+Stated here once. A charter cites the clause and adds only what is specific to
 its own agent.
 
 ### Session start
@@ -206,11 +207,11 @@ them.
 
 - **Write only in a folder whose grant says `write`.** What you would have
   written into a folder granted `read` goes to the user as a proposal instead.
-- **A grant decides the folder it names; the notebook zones decide the rest.**
-  Where a grant names a folder inside the Markdown notebook, that folder's
+- **A grant decides the folder it gives; the notebook zones decide the rest.**
+  Where a grant gives a folder inside the Markdown notebook, that folder's
   access is the grant's, whichever zone it sits in.
-- **The grant wins where a charter also names a folder's access**, and a
-  charter written from here names none.
+- **The grant wins where a charter also states a folder's access**, and a
+  charter written from here states none.
 - **A grant says where you may write, never what a file there is for.**
   §Changing a file that is already there.
 - **What a grant says about removing a file is §Removing a file.**
@@ -232,7 +233,9 @@ purpose is not the grant's to change.
 - **Write a new file rather than taking one over.** Where what you have needs a
   home the folder does not hold, make one beside it and link the two; a note
   that already has a reader is not a free page.
-- **A file you did not write is the user's**, whatever folder it sits in.
+- **A file you did not write is the user's**, whatever folder it sits in. A
+  misspelling in it and a missing Related Notes section are the two exceptions,
+  by `src/skills/notebook-proposal/SKILL.md` §What a read-only note takes.
 - **Never repurpose a file to avoid asking.** A rewrite that leaves the
   filename standing and changes everything under it is the case this rule
   exists for: the link still resolves, the title still matches, and what the
@@ -265,7 +268,7 @@ folder grant is what carries the authority to act on it.
 - **Never report deletion as impossible, and never leave the user to clean up
   after you.** A host whose shell cannot remove a file has another route, and
   that host's own skill gives it.
-- **A charter's narrower gate wins** where one names a class of file its agent
+- **A charter's narrower gate wins** where one defines a class of file its agent
   may not remove.
 
 ### Reporting a failed capability
@@ -291,10 +294,10 @@ folder grant is what carries the authority to act on it.
 ### Boundaries and coordination
 
 - **An agent maintains its own `tools/<agent>/`, the skills whose
-  `bristol.maintainer` names it, and its tagged epics** in the shared tickets
+  `bristol.maintainer` gives its slug, and its tagged epics** in the shared tickets
   database (`data/*/tickets/tickets.db`, `epic.owner` = its slug). Never a
   private per-agent database.
-- **A folder under `src/tools/`, and a skill's `bristol.maintainer`, name the
+- **A folder under `src/tools/`, and a skill's `bristol.maintainer`, give the
   agent that maintains it, never who may run it.** Load a capability from
   outside your own when the task calls for it: the skill index is one line per
   skill, and `src/tools/_shared/README.md` indexes what serves more than one
@@ -330,7 +333,7 @@ language. Write it for a stranger — someone with a different job, different
 clients, a different notebook and a different software stack. Name anything the
 agent needs installed as a prerequisite, and say whether it works without it.
 Where its personal content lives is a path, so it is declared in the config
-entry and named here in general terms at most; the split itself is
+entry and described here in general terms at most; the split itself is
 `src/templates/identity_template.md` §The machinery/personal-data split.}}
 
 {{Then write the same thing in one line into `config/config.local.json` at
@@ -358,7 +361,7 @@ work.}}
 
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations. {{Then only what is specific: which folders this agent owns, and any
-named boundary with another agent.}}
+stated boundary with another agent.}}
 ```
 
 ---
@@ -369,7 +372,7 @@ Every governing document under `/src` — a charter written from this template,
 `src/app.md`, skills, tool READMEs, the other templates — is
 written to be executed by a model, not to convince a reader. The reader already
 does what it says; what it needs is the rule, its boundary, and which rule wins.
-Eight rules:
+Nine rules, and the one on words below:
 
 - **State a rule once, in the one file that owns it.** Every other file
   references that file and adds nothing of its own. Two statements of a rule are
@@ -396,7 +399,7 @@ Eight rules:
   until someone clears it makes the same claim from the other end, and
   `src/app.md` §What a file may say already bars it as a status label on
   content. What the caller does with the output is not the procedure's business.
-- **Keep a negative where it names a plausible failure mode; cut it where it is
+- **Keep a negative where it describes a plausible failure mode; cut it where it is
   the logical complement of the positive.** "Never make the user the transport"
   earns its line because an agent will otherwise reach for it. "Do not leave the
   field blank" after "fill in the field" earns nothing.
@@ -404,10 +407,22 @@ Eight rules:
   meet.** Explain a rule when knowing why changes what the agent does at an edge
   it will actually reach. Otherwise state the rule and stop — a rule that holds
   everywhere needs no defence.
-- **State precedence wherever two rules can conflict.** Name the winner at the
+- **State precedence wherever two rules can conflict.** Say which rule wins at the
   point of conflict, in both files if the conflict spans two. Saying which rule
   wins is a boundary, not a claim that one document outranks another; the latter
   is banned by `src/app.md` §What a file may say.
+- **Refer to user data in `/src` only by generic relative path**
+  (`data/*/tickets/tickets.db`). The instance folder is the `*`.
 - **Cut anything that is neither a rule nor a fact.** No preamble justifying the
   file's existence, no history of how a rule came to be, no reassurance, no
   restatement of the previous paragraph in different words.
+
+### Words
+
+This holds for everything an agent writes — a file, a card, a comment, a note,
+a line in chat — and not only for governing documents.
+
+- **Only a person names something.** A document, a rule, a card or a field
+  states, defines, gives, sets, specifies or lists; a person names a child, a
+  ship, a price, or someone to a post. "The card names the file" is the misuse,
+  and "the card gives the file" is the sentence.

@@ -1,6 +1,6 @@
 ---
 name: note-formatting
-description: The shape every note an agent writes in the Markdown notebook takes - filename, frontmatter, Title Case, headings, spacing, wikilinks, and the Related Notes section that closes it. Use before writing or editing any note in the notebook, whatever produced it.
+description: The shape every note an agent writes in the Markdown notebook takes - filename, frontmatter, Title Case, headings, spacing, no bold, wikilinks, and the Related Notes section that closes it. Use before writing or editing any note in the notebook, whatever produced it.
 license: MIT
 compatibility: Runs where the Markdown notebook is reachable; needs python3 to resolve its location.
 metadata:
@@ -26,7 +26,7 @@ only in §Headings and spacing.
 
 Two boundaries, both stated here so neither has to be guessed at:
 
-- **A skill naming the sections of a particular kind of file wins for those
+- **A skill defining the sections of a particular kind of file wins for those
   sections** — a lesson, an exercise and a quiz are
   `src/skills/content-generation/SKILL.md` §File shapes. The filename,
   frontmatter, Title Case, spacing and links below still hold.
@@ -106,7 +106,7 @@ source_url: https://example.org/the-account-this-note-rests-on
   bullet a link or a summarizing line.
 - **Fill every other note's `##` sections in the notebook's own body shape** —
   `markdown_notebook.note_body` in config, read by the session that is about to
-  write a note. Spaced paragraphs where that key names no shape: a notebook
+  write a note. Spaced paragraphs where that key gives no shape: a notebook
   whose owner writes no particular way takes prose.
 - **The owner's shape governs the body and nothing else.** Where it and a rule
   here disagree, what a section is filled with is his; the filename, the
@@ -122,14 +122,33 @@ source_url: https://example.org/the-account-this-note-rests-on
 - **Cite a source as an ordinary Markdown link carrying its title**, in the
   sentence making the claim, never as a bare address parked at the bottom.
 
+## Emphasis
+
+- **Apply no bold anywhere in a note** — not in a heading, a bullet, a table or
+  the body, and not as a lead clause on a bullet. Bolding in the notebook is the
+  user's. The bold lead clause the governing-doc style contract uses belongs to
+  files under `/src` and never travels into a note.
+- **Italics are outside this rule**, and stay in use for citing a form or a
+  root inline.
+- **A program that writes notes follows it too** — a report, a generated page
+  and a capture are notes.
+
 ## Related Notes
 
 - **Close every note with a `## Related Notes` section**, a blank line, then a
   bulleted list.
-- **Give each bullet the link and one clause saying why the reader would follow
-  it.**
+- **Make each bullet the link and nothing else** — `- [[filename|Title]]`, the
+  Title being that note's H1. The reason beside a link is the user's to write.
 - **Include the hub in an ordinary note's list**, and every note of the set in a
   hub's.
+- **Add the section to a note you meet without one**, as the last thing in it:
+  the notes it already links to or mentions, plus the hub for an ordinary note.
+  Say in the session or on the card which notes you changed. Which folders take
+  this edit is `src/skills/notebook-proposal/SKILL.md` §What a read-only note
+  takes.
+- **Leave a section the user wrote as it stands.**
+- **Strip the clauses from a section an agent wrote earlier** when you next open
+  that note in a writable zone, and leave its links.
 
 ## Failure modes
 
@@ -141,6 +160,9 @@ source_url: https://example.org/the-account-this-note-rests-on
 - **A hub section holds a paragraph** → it belongs in the note that section
   links to.
 - **Every source parked under a Sources heading** → §Links.
+- **Something in a note is bold** → §Emphasis; the user bolds his own notes.
+- **A Related Notes bullet carries a clause after its link** → §Related Notes;
+  the space after the link is where the user writes his own.
 
 ## Audit
 

@@ -2,7 +2,7 @@
 edited in place.
 
 ``DetailPane`` sits right of the board splitter. Status, stage, owner, epic,
-effort and pressure are live labelled controls, two to a row: a change writes
+tier, size and Blocked are live labelled controls, two to a row: a change writes
 through the same connection every other writer uses, so the database triggers
 record a pane edit exactly as they record a dialog edit or a board drag. The
 fields nobody edits — issue number, record type, originator, created,
@@ -26,7 +26,7 @@ from __future__ import annotations
 import html
 import sqlite3
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -37,7 +37,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
-    QSpinBox,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -54,10 +53,12 @@ from .theme import (
     BLOCK_REASON_CHOICES,
     BLOCK_REASON_HINT,
     C,
-    EFFORT_CHOICES,
-    EFFORT_HINT,
+    SIZE_CHOICES,
+    SIZE_HINT,
     STAGE_CHOICES,
     STATUS_CHOICES,
+    TIER_CHOICES,
+    TIER_HINT,
     FLEET_AGENTS,
     LAYOUT,
     _fmt_dt,
@@ -68,11 +69,6 @@ from .theme import (
     space,
     type_size,
 )
-
-# How long a run of pressure-spinner clicks may continue before the value is
-# written, so stepping 40 → 70 lands as one change-log entry rather than six.
-PRESSURE_SETTLE_MS = 600
-
 
 class DetailPane(QWidget):
     """The board's right-hand pane. ``show_task`` / ``show_epic`` point it at a
@@ -129,10 +125,10 @@ class DetailPane(QWidget):
         self.owner_combo = QComboBox()
         self.owner_combo.addItems(FLEET_AGENTS)
         self.epic_combo = QComboBox()
-        self.effort_combo = fill_words(QComboBox(), EFFORT_CHOICES,
-                                       hint=EFFORT_HINT)
-        self.pressure_spin = QSpinBox()
-        self.pressure_spin.setRange(0, 100)
+        self.size_combo = fill_words(QComboBox(), SIZE_CHOICES,
+                                       hint=SIZE_HINT)
+        self.tier_combo = fill_words(QComboBox(), TIER_CHOICES,
+                                     hint=TIER_HINT)
         # Blocked says what kind of thing has stopped the card. Which card is the
         # Links section's job, and the prose is a comment under the Log.
         self.block_combo = fill_words(QComboBox(), BLOCK_REASON_CHOICES,
@@ -143,8 +139,8 @@ class DetailPane(QWidget):
             ("Stage", self.stage_combo),
             ("Owner", self.owner_combo),
             ("Epic", self.epic_combo),
-            ("Effort", self.effort_combo),
-            ("Pressure", self.pressure_spin),
+            ("Tier", self.tier_combo),
+            ("Size", self.size_combo),
             ("Blocked", self.block_combo),
         )):
             row, column = divmod(position, 2)
@@ -165,13 +161,9 @@ class DetailPane(QWidget):
         self.owner_combo.currentTextChanged.connect(
             lambda value: self._write_field("assignee", value))
         self.epic_combo.currentIndexChanged.connect(self._write_epic)
-        self.effort_combo.currentIndexChanged.connect(self._write_effort)
+        self.size_combo.currentIndexChanged.connect(self._write_size)
         self.block_combo.currentIndexChanged.connect(self._write_block_reason)
-        self._pressure_timer = QTimer(self)
-        self._pressure_timer.setSingleShot(True)
-        self._pressure_timer.setInterval(PRESSURE_SETTLE_MS)
-        self._pressure_timer.timeout.connect(self._write_pressure)
-        self.pressure_spin.valueChanged.connect(self._pressure_moved)
+        self.tier_combo.currentIndexChanged.connect(self._write_tier)
 
         # ----- the scrolling body: Description, Links, Log, Attributes ------
         self._scroll = QScrollArea()
@@ -324,9 +316,6 @@ class DetailPane(QWidget):
 
     def clear(self) -> None:
         """No selection: placeholder title, controls dark, sections empty."""
-        if self._pressure_timer.isActive():
-            self._pressure_timer.stop()
-            self._write_pressure()
         self.task_id = None
         self.epic_id = None
         self._loading = True
@@ -351,14 +340,9 @@ class DetailPane(QWidget):
     def show_task(self, task_id: int) -> None:
         """Point the pane at a ticket. Also how a clicked issue link navigates,
         so a chain of related work is walkable in place."""
-        # A pressure edit still waiting on its debounce belongs to the card
-        # leaving the pane; land it before anything is repointed.
-        if self._pressure_timer.isActive():
-            self._pressure_timer.stop()
-            self._write_pressure()
         try:
             row = self.conn.execute(
-                "SELECT t.title, t.description, t.status, t.pressure, e.name, "
+                "SELECT t.title, t.description, t.status, t.tier, e.name, "
                 "COALESCE(t.assignee,'user'), COALESCE(t.reporter,'user'), "
                 "COALESCE(t.estimate,''), e.id, t.created_at, t.updated_at, "
                 "COALESCE(t.record_type,'build'), COALESCE(t.stage,'backlog'), "
@@ -370,7 +354,7 @@ class DetailPane(QWidget):
             return
         if row is None:
             return
-        (title, desc, status, pressure, epic_name, owner, originator, estimate,
+        (title, desc, status, tier, epic_name, owner, originator, estimate,
          joined_epic_id, created_at, updated_at, record_type, stage,
          epic_id, block_reason) = row
 
@@ -388,9 +372,10 @@ class DetailPane(QWidget):
             stage if stage in STAGES else "backlog"), 0))
         self._select_owner(owner)
         self._load_epics(epic_id)
-        effort_index = self.effort_combo.findData((estimate or "").upper())
-        self.effort_combo.setCurrentIndex(max(effort_index, 0))
-        self.pressure_spin.setValue(pressure or 0)
+        size_index = self.size_combo.findData((estimate or "").upper())
+        self.size_combo.setCurrentIndex(max(size_index, 0))
+        tier_index = self.tier_combo.findData((tier or "").lower() or None)
+        self.tier_combo.setCurrentIndex(max(tier_index, 0))
         block_index = self.block_combo.findData(block_reason)
         self.block_combo.setCurrentIndex(max(block_index, 0))
 
@@ -546,25 +531,20 @@ class DetailPane(QWidget):
             return
         self._write_field("epic_id", self.epic_combo.currentData())
 
-    def _write_effort(self, *args) -> None:
+    def _write_size(self, *args) -> None:
         if self._loading or self.task_id is None:
             return
-        self._write_field("estimate", self.effort_combo.currentData() or None)
+        self._write_field("estimate", self.size_combo.currentData() or None)
 
     def _write_block_reason(self, *args) -> None:
         if self._loading or self.task_id is None:
             return
         self._write_field("block_reason", self.block_combo.currentData())
 
-    def _pressure_moved(self, *args) -> None:
+    def _write_tier(self, *args) -> None:
         if self._loading or self.task_id is None:
             return
-        self._pressure_timer.start()
-
-    def _write_pressure(self) -> None:
-        if self.task_id is None:
-            return
-        self._write_field("pressure", self.pressure_spin.value())
+        self._write_field("tier", self.tier_combo.currentData())
 
     def _after_write(self) -> None:
         """Refresh what a write changes on screen: the Modified attribute and

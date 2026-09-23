@@ -60,7 +60,7 @@ teaching_assistant                      delegated engine
 ## How any party should use this
 
 1. **teaching_assistant completes stage 1.**
-2. **Brief the engine** where config or the session override names it as the
+2. **Brief the engine** where config or the session override sets it as the
    `materials` or `lint` engine: this protocol, the plan, and the
    course's `syllabus/syllabus.md` and `progress.json`. Hand over the file list
    from the plan's File targets.

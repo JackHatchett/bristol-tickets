@@ -80,7 +80,7 @@ specifics. This tells you which files move verbatim and which need Step 6 first.
 Create `src/agent_identities/<agent>.md` from
 `src/templates/identity_template.md`. Two constraints beyond the template:
 `src/app.md` §What a file may say governs what may appear in it, and **no
-procedure logic is inlined and no file is named** — a charter carries what a
+procedure logic is inlined and no file is cited** — a charter carries what a
 session must have read before it can act safely and nothing else.
 
 ### Step 5 — Split the machinery

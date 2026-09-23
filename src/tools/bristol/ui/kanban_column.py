@@ -120,7 +120,7 @@ class KanbanColumn(QWidget):
     # ----- loading ---------------------------------------------------------
 
     _SELECT = (
-        "SELECT t.id, t.title, t.pressure, e.name, e.id, t.status, "
+        "SELECT t.id, t.title, t.tier, e.name, e.id, t.status, "
         "COALESCE(t.assignee,'user'), COALESCE(t.estimate,''), "
         "COALESCE(t.record_type,'build'), COALESCE(t.description,''), "
         "t.due_date FROM task t "
@@ -150,14 +150,14 @@ class KanbanColumn(QWidget):
             self._add_item(*row)
         self._set_count()
 
-    def _add_item(self, task_id, title, pressure, epic_name, epic_id, _status,
+    def _add_item(self, task_id, title, tier, epic_name, epic_id, _status,
                   owner, estimate, record_type, description, due_date=None):
         item = QListWidgetItem()
         item.setData(Qt.UserRole, task_id)
         item.setData(CARD_ROLE, {
             "issue_id": task_id,
             "title": title or "",
-            "pressure": pressure or 0,
+            "tier": (tier or "").lower(),
             "epic_name": (epic_name or "") if epic_id else "",
             "untriaged": epic_id is None,
             # A date the card has to meet, and whether it has already gone by

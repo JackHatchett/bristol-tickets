@@ -63,7 +63,7 @@ Four cases, tested in this order.
   so a refusal needs no other enforcement.
 - **Return the card to the user** — `update-task-status --id N --status todo
   --assignee user --block-reason decision`, with the prose in `add-issue-log`.
-  The comment names what was read, what was not, which case above it fell to,
+  The comment says what was read, what was not, which case above it fell to,
   and what would change the answer.
 - **Name the alternative where one exists** — another skill doing the same job,
   or the procedure already written here.
@@ -73,7 +73,7 @@ Four cases, tested in this order.
 - **The name, what it does, and where it came from** — repository, commit and
   licence.
 - **Whether it carried executable code, and what read it.** A skill of Markdown
-  says so. A skill carrying scripts names the scanner, what it covers, and what
+  says so. A skill carrying scripts states the scanner, what it covers, and what
   it left unread.
 - **Which agent holds it, and what that agent can now do that it could not.**
 - **Never the intermediate steps.** Install, read and trust are one act, and a

@@ -27,8 +27,8 @@ rests on.
   and how it is worked, linking the plans that belong to it. One project note;
   a plan for each defined body of work inside it.
 - **An agent whose `notebook_access` reaches the workspace zone writes the file
-  itself** — `config`'s `markdown_notebook` §ZONES names the zones, and
-  `agents.<slug>.notebook_access` names the ones that agent reaches.
+  itself** — `config`'s `markdown_notebook` §ZONES defines the zones, and
+  `agents.<slug>.notebook_access` lists the ones that agent reaches.
 - **Every other agent gives its plan to the user in chat**, because `plans_dir`
   and `agent_output_dir` both sit inside that same zone. Producing planning
   material is content any agent may write; writing into the notebook is access,
@@ -45,7 +45,7 @@ rests on.
 4. **Put nothing in it that answers "where are we?"** What has been built, what
    broke, what is next, and how the work is tracking against a date are the
    board's, and a card is where each one goes.
-5. **Let the structure carry the meaning.** A heading names the thing it covers,
+5. **Let the structure carry the meaning.** A heading says the thing it covers,
    one item sits on one line, and a sequence is written as an order rather than
    implied by the prose around it. A reader who infers nothing still gets the
    plan.
@@ -81,7 +81,7 @@ answers where are we is the board's**, and it comes out. Four shapes it catches.
   which stay attached to the work rather than aging inside a document.
 
 **An effort figure in hours or days is not sizing.** A card's size is a share of
-a usage budget — `src/skills/manage-tickets/SKILL.md` §Effort sizing — and a plan
+a usage budget — `src/skills/manage-tickets/SKILL.md` §Sizing — and a plan
 carrying hours has started forecasting.
 
 **What usually survives is the analytical opening**: the situation as it stands,
@@ -91,7 +91,7 @@ Those state intent, and intent is what a plan is.
 ## Failure modes
 
 - **A heading that is a status** → step 4; that heading is a board column.
-- **A phase that names a later time rather than work** → deferral, not subject;
+- **A phase that gives a later time rather than work** → deferral, not subject;
   it is a card.
 - **A date carrying how far along it is** → step 3 permits the date and step 4
   refuses the rest.

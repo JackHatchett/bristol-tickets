@@ -1,6 +1,6 @@
 ---
 name: skill-conversion
-description: Turns one of this repository's procedure files into a skill folder that any client reading the Agent Skills format can load, and names the files that are not skills at all. Use when converting a file into a skill, or when judging whether it should be one.
+description: Turns one of this repository's procedure files into a skill folder that any client reading the Agent Skills format can load, and says which files are not skills at all. Use when converting a file into a skill, or when judging whether it should be one.
 license: MIT
 metadata:
   bristol.kind: playbook
@@ -30,7 +30,7 @@ and name the files that are not skills at all. The specification is at
 | a procedure file, wherever it is found | one skill |
 | a per-agent specialization of an archetype | `references/<agent>.md` inside that archetype's skill |
 | `src/templates/*.md` | `assets/` inside the skill whose procedure writes that file |
-| `src/tools/**` | not moved; the skill body names the command line |
+| `src/tools/**` | not moved; the skill body gives the command line |
 | a folder `README.md` | not a skill; a skill's index is its own `description` |
 | `src/agent_identities/*.md` | not a skill |
 | `src/app.md` | not a skill |
@@ -53,7 +53,7 @@ and name the files that are not skills at all. The specification is at
 - **A tool is independently runnable and shared**, and any agent loads any of
   them: `src/tools/README.md`. A copy under one skill's `scripts/` is a second
   copy of a behaviour that has one owner.
-- **The body names the exact command line**, which
+- **The body gives the exact command line**, which
   `assets/skill_body_template.md` already requires.
 - **A skill is read and a tool is run, and that is the whole distinction.** A
   skill is text a session decides whether to follow; a tool is a program whose
@@ -62,7 +62,7 @@ and name the files that are not skills at all. The specification is at
 - **There is no tool to import from the ecosystem.** A Hermes toolset is a group
   of functions inside that runtime, admitted per thread by a whitelist; nobody
   publishes or installs one. A skill declaring `requires_toolsets` or
-  `fallback_for_toolsets` is naming a runtime it expects, which is why `install`
+  `fallback_for_toolsets` is stating a runtime it expects, which is why `install`
   reports those as gates with no reader here rather than as dependencies to go
   and fetch — `src/tools/skill_tools/README.md`.
 
@@ -80,7 +80,7 @@ Two fields are required and carry the whole routing surface.
   it.** The user reads a list of these to decide what each skill is for, and a
   session matches a task against the same sentence; both readings fail
   together, so write it for the user and the matching follows. A description
-  naming no situation leaves a session to guess when to load the body, which is
+  stating no situation leaves a session to guess when to load the body, which is
   the other half of this field's job.
   - **Say what the skill does to what, in the words a reader who has never seen
     this system would use.** A coined verb, or a noun standing in for a plain
@@ -116,7 +116,7 @@ metadata:
 - **`bristol.maintainer`** — the agent that maintains it, never who may run it.
 - **`bristol.scripts`** — every script the body tells a session to run, as
   repository-relative paths separated by spaces, and absent where the skill runs
-  none. A command named only in a sentence is prose and nothing can check it;
+  none. A command mentioned only in a sentence is prose and nothing can check it;
   this is the field `smoke.py`'s `skill_declarations` target reads, so a renamed
   or deleted tool fails there rather than mid-task.
 - **No field carries state, order, status or assignment** — `src/app.md` §The
@@ -170,7 +170,7 @@ The body moves verbatim: Preconditions, Procedure, Failure modes, Audit. The
 specification puts no restriction on the body, and the style contract already
 governs it. Two things change.
 
-- **The trigger moves into `description`.** An agent's charter naming when to
+- **The trigger moves into `description`.** An agent's charter saying when to
   load a procedure does not travel with a published skill.
 - **A cross-reference to a file that did not move becomes a command line or a
   repository path**, never a relative link out of the skill folder.
@@ -178,12 +178,12 @@ governs it. Two things change.
 ### Step 5 — Split past five hundred lines
 
 `SKILL.md` stays under five hundred lines. Anything longer moves into a
-`references/` file named for its subject, and the body gains one line naming it.
+`references/` file named for its subject, and the body gains one line citing it.
 
 ### Step 6 — Retire the source
 
 Delete the converted file and update every citation of it: the maintaining
-agent's charter, the folder README that indexed it, and any skill that named
+agent's charter, the folder README that indexed it, and any skill that cited
 it.
 
 ### Step 7 — Validate
@@ -199,7 +199,7 @@ in the conversion, not in the source.
 
 The same target shape, from a source nobody here wrote: a subagent or persona
 definition, a slash command, a prompt-pack entry. Everything above governs the
-result; this names what differs at the input.
+result; this lists what differs at the input.
 
 - **The conversion is `python3 src/tools/skill_tools/skills.py convert
   <file.md>`, and it lands in quarantine.** A foreign body is third-party content
@@ -211,7 +211,7 @@ result; this names what differs at the input.
 - **A source with no description is refused, not given one.** The description is
   the whole routing surface, and inventing one is authoring rather than
   converting; `--description` is where a person supplies it deliberately.
-- **Rewrite a description that names no trigger before trusting it.** A foreign
+- **Rewrite a description that states no trigger before trusting it.** A foreign
   `description` is usually prose about the agent rather than a trigger, and
   §Frontmatter's rule applies to it unchanged.
 - **Steps 6 and 7 read differently.** There is no source of ours to retire, and
@@ -222,7 +222,7 @@ result; this names what differs at the input.
 
 ## Failure modes
 
-- **A description naming no branch** → the skill is listed and never reached.
+- **A description stating no branch** → the skill is listed and never reached.
   Write what fires it before saving.
 - **A nested map under `metadata`** → the specification's metadata maps strings
   to strings. Flatten to dotted keys.

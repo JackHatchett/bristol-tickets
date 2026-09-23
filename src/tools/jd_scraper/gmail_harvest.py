@@ -58,6 +58,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import keyring_utils  # noqa: E402  (career_coach's secrets, from the keychain)
+
 # ---------------------------------------------------------------------------
 # Config loading
 # ---------------------------------------------------------------------------
@@ -85,22 +88,27 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 
 def get_gmail_service(settings):
-    creds_path = BASE_DIR / settings["gmail"]["credentials_file"]
-    token_path = BASE_DIR / settings["gmail"]["token_file"]
+    """A Gmail client, authorised from the keychain.
 
+    The OAuth client secrets and the token both live in the keychain under
+    career_coach (keyring_utils); no file holds either. A token that has expired
+    is refreshed and written back there, and a first run opens a browser once
+    to approve access.
+    """
     creds = None
-    if token_path.exists():
-        creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+    if keyring_utils.gmail_token_exists():
+        creds = Credentials.from_authorized_user_info(
+            keyring_utils.get_gmail_token(), SCOPES)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(str(creds_path), SCOPES)
-            # Opens a browser window for one-time OAuth. After approval, token is saved.
+            flow = InstalledAppFlow.from_client_config(
+                keyring_utils.get_gmail_credentials(), SCOPES)
+            # Opens a browser window for one-time OAuth.
             creds = flow.run_local_server(port=0)
-        with open(token_path, "w") as token:
-            token.write(creds.to_json())
+        keyring_utils.save_gmail_token(creds.to_json())
 
     return build("gmail", "v1", credentials=creds)
 

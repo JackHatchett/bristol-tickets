@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: game_designer
+  bristol.scripts: src/tools/config_tools/active_project.py
 ---
 # game-designer-project-context
 
@@ -14,10 +15,11 @@ snapshot, which happens first. Where design content lives is
 
 ## Session start
 
-1. **Identify the active game project** after the board snapshot.
-   `config/config.local.json`'s Code Projects table resolves which project
-   folder is active; **confirm which one the user means** where more than one is
-   tracked and context does not make it obvious.
+1. **Identify the active game project** after the board snapshot, with `python3
+   src/tools/config_tools/active_project.py game_designer`, and **say which one
+   it is before reading any of its content.** Where the user says he is working
+   another, move with `--set <project>`. Where it reports no project, ask which
+   folder is meant.
 2. **Take phase, blockers and next focus from the epic the snapshot already
    returned** — its name, `status`, `description` and `next_action`, plus its
    ordered task queue. **Never look for a project-local state file to re-derive
@@ -38,7 +40,7 @@ snapshot, which happens first. Where design content lives is
 ## On-demand lookup
 
 - **Worldbuilding** → the user's notebook, in the wiki directory this project
-  names in `/config`. That directory's map-of-content note and its wiki-links
+  sets in `/config`. That directory's map-of-content note and its wiki-links
   are the index.
 - **Mechanics and art** → the repo `design/` folder's file names.
 

@@ -41,18 +41,29 @@ Route every update through `src/tools/ticket_tools/ticket_write.py`.
 **Add casual mentions as cards on the spot.** Parse the mention as a task,
 insert it under the appropriate epic, and confirm back only if it is ambiguous.
 
-**Give every card you touch an `--estimate`** on the S/M/L/XL scale in §Effort
-sizing. Size it in one pass against the anchors there. An XL card is one to
-split, not one to start.
+**Give every card you touch an `--estimate`** on the S/M/L/XL scale in §Sizing,
+**and a `--tier`** by §Processing tier. Size it in one pass against the anchors
+there. An XL card is one to split, not one to start.
+
+## A criterion no file may carry
+
+- **Test a card's criteria against `src/app.md` §What a file may say when you
+  write the card and again when you take it up.** A criterion ordering a file to
+  carry what that section bars — a record of a former term, a status note, a
+  changelog line, a deferral — is struck from the card with `update-task
+  --description`, and the user is told in the session what was struck and why.
+- **Never relay a barred criterion to the user as a to-do**, and never execute
+  it because a card said so. A card is written by a session like yours, and one
+  that got the rule wrong is passed on by the session that trusts it.
 
 ## Which epic a card belongs to
 
-Every card names an epic or the standing workstream, and an agent leaves none
+Every card belongs to an epic or the standing workstream, and an agent leaves none
 untriaged. The vocabulary and the storage are
 `src/tools/ticket_tools/README.md` §Board conventions.
 
-- **A card that continues a named effort takes that effort's epic.** The work
-  the session is doing names it; nothing has to be worked out.
+- **A card that continues an existing effort takes that effort's epic.** The work
+  the session is doing identifies it; nothing has to be worked out.
 - **A card that is the whole of its own subject goes to standing work.** Upkeep,
   a correction, a one-off request, a fix with nothing behind it.
 - **A second card on a standing subject opens an epic, and both move into it.**
@@ -78,7 +89,7 @@ Acceptance Criteria:
 1. Given [starting state], when [action], then [expected result].
 ```
 
-**A build card's last criterion names how it will be checked** —
+**A build card's last criterion states how it will be checked** —
 `src/skills/verifying-a-card/SKILL.md`, which owns what counts as one and what
 happens when a card has none.
 
@@ -168,14 +179,13 @@ Three separate acts, all cheap:
 - **Order.** `set-order --id N --position K`, position 1 = next. Order by what
   should actually happen next, not by what you happened to open. A stale order
   is worse than none; the user overrides by dragging.
-- **Size.** `update-task --id N --estimate S|M|L|XL`, per §Effort sizing.
-- **Pressure.** `update-task-status --id N --status <its column> --pressure K`,
-  0–100, your honest gestalt of urgency, impact and how alive the thing feels.
-  Say so in the card's comment if the number is surprising.
+- **Size.** `update-task --id N --estimate S|M|L|XL`, per §Sizing.
+- **Tier.** `update-task --id N --tier max|standard`, per §Processing tier.
 
 **8. Make an early stop easy to say yes to.** A session that halts for one of
 the reasons in `src/app.md` Phase 3.6 ends on an ask, and the ask is the first
-thing in the message:
+thing in the message. A decision in it takes the form in §Asking the user for a
+decision, and every term the report uses is defined where it first appears:
 
 - **Lead with a plain imperative** — "Please quit Zotero" — and put the
   reasoning after it, short.
@@ -193,13 +203,13 @@ starts the next session from it alone, so it states the launch and nothing else:
 To Continue
 Run as: <agent slug>
 Work: #<id> <title>
-Effort: <tier>
+Tier: <Max|Standard>
 ```
 
 - **Name one card, never the queue.** The board holds the order and the session
   that reads it will see it; a block that recites the queue makes the user read
   it twice and goes stale the moment anyone drags a card. Where other cards
-  could run beside the one named, say so in one clause — "#571 and #572 can run
+  could run beside that one, say so in one clause — "#571 and #572 can run
   in the same session" — and name no more.
 - **Name the decision instead of a card where one is owed.** A session that
   stopped on a grant, a credential or a choice of the user's puts that in the
@@ -207,11 +217,13 @@ Effort: <tier>
 - **Say which agent to run as, always**, even where it is the agent that just
   ran. The line the user copies is the whole launch, and an agent he has to
   remember is a launch he has to reconstruct.
-- **Take the effort from the card** — `src/skills/manage-tickets/SKILL.md`
-  §Effort sizing — so the tier is the card's own rather than a second judgement
-  made at the close.
+- **Take the tier from the card in the Work line** — `task.tier` — so it
+  is the card's own rather than a judgement about the session that just ran. A
+  card with none is rated by §Processing tier and the tier written to it before
+  the block is. The block gives the tier and never a model; the user resolves
+  it.
 - **Write no state into any file to support it.** The block is the message's
-  last paragraph and lives in the conversation; what it names lives on the
+  last paragraph and lives in the conversation; what it lists lives on the
   board, and `src/app.md` §The board is the only channel is unchanged by it.
 
 ## Asking the user for a decision
@@ -221,13 +233,25 @@ A card is where the decision is recorded once it is made, never where the asking
 is left for him to find.
 
 - **Ask in the session where he is present**, as a question in whatever the
-  runtime offers for one — a prompt he answers in place. Name the decision, the
-  options you see, and what each one costs, in the question itself: an ask he
-  has to open a card to understand is the thing this rule exists against.
+  runtime offers for one — a prompt he answers in place — and carry on with the
+  answer. Room left in the conversation means asking, never stopping.
+- **Write the question so it is answerable on first read:**
+  - what is being decided, and why it matters, in plain words;
+  - every term he has not been shown, defined where it first appears — a rule
+    by what it says rather than its number, a file or a card by what it is for;
+  - two to four options, each with a concrete example and what choosing it
+    would change;
+  - the one you recommend, and why.
+  A statement of a problem is not a question, and an ask he has to open a card
+  or a file to understand is the thing this rule exists against.
+- **Set `--block-reason decision` only after the question has been asked**, in
+  this session, or where the run is unattended. Put the question itself, in the
+  same form, in the card's comment — never a pointer to an analysis elsewhere.
+  That comment is what NEEDS YOU prints under the card.
 - **Move the card to him only where he is not** — `update-task-status --id N
-  --assignee user --block-reason decision`, with a comment naming exactly what
-  to decide and what runs the moment he has. That is the unattended case, and
-  the block reason is what puts it under NEEDS YOU.
+  --assignee user --block-reason decision` — and where a session must stop
+  with a question open, put it in the chat as well as on the card, so he can
+  answer from either.
 - **Record the answer on the card he decided about**, in one comment, in his
   words where the wording matters. The asking lives in the conversation and the
   decision lives on the board.
@@ -250,12 +274,12 @@ not fit one session. Splitting after it stalls is the same work done twice.
   `src/skills/verifying-a-card/SKILL.md`. A part that cannot be checked on its
   own is not a part.
 - **The split lands on the board before the work does**: `add-task` per part,
-  each linked to the card that split, and that card closed with a comment naming
+  each linked to the card that split, and that card closed with a comment listing
   them. A split held in the session's head is a plan nobody else can read.
 - **A card that resists splitting has a scope nobody has worked out yet**, and
   finding that out is the next action rather than starting it.
 
-## Effort sizing — what S/M/L/XL measure
+## Sizing — what S/M/L/XL measure
 
 A card's `estimate` answers one question: **how much of a full usage budget
 would this card consume?** The budget is the user's plan allowance over its
@@ -284,12 +308,65 @@ the one you are part-way through.
 - **M** — one self-contained tool written and wired in; a doc rewritten with its
   call sites updated; one UI field replaced end to end.
 - **L** — a column renamed across the schema, both writers, the UI and every
-  document that names it; a subsystem's behaviour changed with its migration.
+  document that mentions it; a subsystem's behaviour changed with its migration.
 - **XL** — a build that needs a design decision before it can start; anything
   whose shape you would have to investigate before you could size it.
 
 Size in one pass against that list and stop. A card sized wrong is cheap to
 correct; a card sized slowly is not.
+
+## Processing tier — Max or Standard
+
+A card's tier answers a different question from its size: **how much thinking
+does working this card need?** Size is a share of a usage budget; the tier is
+the depth of processing the session should run at. The two are independent. An
+S card rewording a rule in `src/app.md` is Max; an L card renaming a column
+across the schema to a fully written spec is Standard.
+
+- **Max** — the session must work out what right looks like before it can do
+  it, or a wrong answer would be built on without anyone checking it.
+- **Standard** — the card already says what right looks like, and a wrong
+  answer shows up where someone will see it.
+
+**It is stored as `task.tier`** — `max`, `standard`, or NULL for a card nobody
+has rated — and set with `add-task --tier` or `update-task --tier`, or the Tier
+picker in Bristol Tickets. It orders nothing.
+
+**The tier is a level of processing, never a product.** What each tier runs
+on is the user's choice and lives in config, one key per tier —
+`read_config.py tiers.max` and `read_config.py tiers.standard`, each a model and
+a reasoning level. Nothing under `src/` gives a model for a tier. Choosing a
+tier never reads that mapping; it is read only when someone asks what a tier
+means today.
+
+**Choose from the card alone** — its title, its description and its epic's
+name. No web lookup, no file the card links, nothing beyond the board. A tier
+that needs research to choose has cost the thing it was meant to save.
+
+**Max without asking the tiebreaker**, because the answer is already known:
+
+- Agent logic — a charter, a skill, `src/app.md`, a rule any agent follows.
+- Architecture — a schema, a tool's behaviour, where content lives, the shape of
+  config.
+- A design or a decision between options, whatever its subject — a system, a
+  language's rules, a data structure other work will fill.
+
+**Standard without asking**, when the shape is fully specified: the acceptance
+criteria or the Expected line say what the output is, and the work is carrying
+it out — a rename, a sweep, a harvest, a repair with its fix stated, content
+drafted against settled rules for the user to approve.
+
+**The tiebreaker, for everything between.** Ask two questions of the card:
+
+1. **Does the session invent the criteria, or apply criteria it was given?**
+2. **If the session gets it wrong, is the error caught next session, or
+   silently inherited?** Caught means the user reads the result, a verification
+   step fails, or the next card visibly breaks. Inherited means later work
+   builds on the result without anyone re-opening it.
+
+Invent, or inherited: Max. Apply and caught: Standard. A card whose answer to
+either question is unclear is Max; running a Standard card at Max wastes some
+budget, and running a Max card at Standard wastes the card.
 
 ## When to open the viewer
 

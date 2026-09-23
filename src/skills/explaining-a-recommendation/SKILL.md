@@ -30,7 +30,7 @@ report, a ticket body and an answer in chat are governed by `src/app.md`
 - **The document opens on the recommendation** → steps 1 to 3 became an
   appendix, and the reader has nothing to weigh it against.
 - **Only the winning option appears** → step 3 did not fire.
-- **A heading names something the reader has not met** → the term wanted step 2.
+- **A heading uses a term the reader has not met** → the term wanted step 2.
 
 ## Audit
 

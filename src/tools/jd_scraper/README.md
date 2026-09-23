@@ -4,9 +4,9 @@ Getting job-description text from a job alert into a triage-ready file.
 
 **Optional.** `career_coach` runs every skill off a pasted job description.
 This folder automates the incoming half and asks for real setup: a mail account
-receiving job alerts, Google API credentials (`credentials.example.json` is the
-shape), a settings file (`settings.example.json`), the OS keychain, and a
-schedule (`setup_cron.sh`). Skipping it breaks nothing else.
+receiving job alerts, Google API credentials and any job-board sign-ins held in
+the OS keychain, a settings file (`settings.example.json`), and a schedule
+(`setup_cron.sh`). Skipping it breaks nothing else.
 
 Examples below use `$CAREER_COACH_DIR` for this agent's data root, resolved
 per instance through config.
@@ -47,7 +47,7 @@ walls — so each posting routes by source to the cheapest method that reaches i
 | `gmail_harvest.py` | 0 | Gmail API to `applications/pipeline/job_feed.json` |
 | `jd_scraper.py` | 1 | Playwright to JD text files |
 | `daily_pipeline.py` | — | the orchestrator, and the only thing a schedule calls |
-| `keyring_utils.py`, `migrate_to_keyring.py` | — | the keychain read, per `src/templates/identity_template.md` §The machinery/personal-data split |
+| `keyring_utils.py` | — | career_coach's secret names, read through `src/tools/_shared/keychain.py` per `src/templates/identity_template.md` §The machinery/personal-data split |
 | `setup_cron.sh` | — | installs the cron entry, reading `CAREER_COACH_DIR` from the environment |
 
 ## The LinkedIn recipe
@@ -94,14 +94,16 @@ playwright install chromium
 ```
 
 **Gmail credentials.** In the Google Cloud console, create or reuse a project,
-enable the Gmail API, and create an OAuth client ID of type Desktop app. Save
-the downloaded JSON to `$CAREER_COACH_DIR/config/gmail_credentials.json`. On the
+enable the Gmail API, and create an OAuth client ID of type Desktop app. Put
+the downloaded JSON into the keychain, never into a file the harvest reads:
+`python3 src/tools/_shared/keychain.py set career_coach gmail_credentials_json`,
+pasting the whole JSON at the prompt, then delete the download. On the
 consent screen set user type External, add the account as a test user, and add
 the `https://www.googleapis.com/auth/gmail.readonly` scope.
 
 **First run.** `python3 tools/gmail_harvest.py` from `$CAREER_COACH_DIR` opens a
-browser to approve access once, then writes `config/gmail_token.json` and
-refreshes it automatically.
+browser to approve access once, then keeps the token in the keychain under
+`career_coach` / `gmail_token_json` and refreshes it there.
 
 **Alert filtering.** The search query lives in `config/settings.json`. Labelling
 job-alert mail and adding `label:<name>` to the query cuts the noise.

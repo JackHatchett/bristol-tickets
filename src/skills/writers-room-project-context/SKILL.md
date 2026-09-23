@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: writers_room
+  bristol.scripts: src/tools/config_tools/active_project.py
 ---
 # writers-room-project-context
 
@@ -13,9 +14,10 @@ snapshot, which happens first.
 
 ## Session start
 
-1. **Identify the active project** after the board snapshot. The config's
-   project links resolve which folder is active; there is normally one, and the
-   layout supports more over time.
+1. **Identify the active project** after the board snapshot, with `python3
+   src/tools/config_tools/active_project.py writers_room`, and **say which one
+   it is before reading any of its content.** Where the user says he is working
+   the other, move with `--set <project>`; the choice holds for later sessions.
 2. **Take where the project stands from the board and nothing else** — the
    snapshot the charter already ran. What is settled, what is open and what to
    work next are cards and their comments; a file saying any of it is a second

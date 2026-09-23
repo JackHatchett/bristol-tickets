@@ -175,15 +175,30 @@ EPIC_STATUS_CHOICES: list[tuple[str, str]] = [
     ("on hold", "On Hold"),
 ]
 
-# An effort code as the word a reader who does not know the codes can read.
-EFFORT_WORDS = {"S": "Small", "M": "Medium", "L": "Large", "XL": "Extra Large"}
-EFFORT_CHOICES: list[tuple[str, str]] = [("", "Not Sized")] + [
-    (code, word) for code, word in EFFORT_WORDS.items()
+# A size code as the word a reader who does not know the codes can read.
+SIZE_WORDS = {"S": "Small", "M": "Medium", "L": "Large", "XL": "Extra Large"}
+SIZE_CHOICES: list[tuple[str, str]] = [("", "Not Sized")] + [
+    (code, word) for code, word in SIZE_WORDS.items()
 ]
-EFFORT_HINT = (
+SIZE_HINT = (
     "How much of a full usage budget this card would take.\n"
     "Small — under a tenth.    Medium — a tenth to about half.\n"
     "Large — half a budget or more.    Extra Large — more than one; split it."
+)
+
+# The depth of processing a card should be worked at. None is not yet rated.
+# Mirrors ticket_tools/create_tickets.TIERS; the viewer carries its own copy so
+# it depends on no package outside itself. What each tier runs on is config's
+# `tiers` key, never this file.
+TIER_WORDS = {"max": "Max", "standard": "Standard"}
+TIER_CHOICES: list[tuple[str | None, str]] = [(None, "No Tier")] + [
+    (code, word) for code, word in TIER_WORDS.items()
+]
+TIER_HINT = (
+    "How much thinking this card needs, whatever its size.\n"
+    "Max — the session must work out what right looks like,\n"
+    "or a wrong answer would be built on unchecked.\n"
+    "Standard — the card already says what right looks like."
 )
 
 # What kind of thing has stopped a card. None is not blocked. A dependency names
@@ -253,7 +268,7 @@ WARM_LIGHT = {
     "MISSING":      "#d61f1f",  # required-but-empty field border (bright red)
     "DISABLED_BG":  "#f3ece0",  # unclickable button fill
     "DISABLED_TX":  "#b3a389",  # unclickable button text
-    "NEUTRAL_BG":   "#f0e7d6",  # a quiet pill: effort, pressure
+    "NEUTRAL_BG":   "#f0e7d6",  # a quiet pill: size, tier
     "NEUTRAL_TX":   "#574e3b",  # text on a NEUTRAL_BG pill (6.7:1 on its tint)
     "SHADOW":       "#33241c10",  # the soft drop shadow under a card
 }
@@ -286,7 +301,7 @@ WARM_DARK = {
     "MISSING":      "#ff5449",  # required-but-empty field border (bright red)
     "DISABLED_BG":  "#241c14",  # unclickable button fill
     "DISABLED_TX":  "#6b5b45",  # unclickable button text
-    "NEUTRAL_BG":   "#2f2618",  # a quiet pill: effort, pressure
+    "NEUTRAL_BG":   "#2f2618",  # a quiet pill: size, tier
     "NEUTRAL_TX":   "#c4ae8e",  # text on a NEUTRAL_BG pill
     "SHADOW":       "#66000000",  # the soft drop shadow under a card
 }
@@ -321,7 +336,7 @@ COOL_LIGHT = {
     "MISSING":      "#dc2626",  # required-but-empty field border
     "DISABLED_BG":  "#f1f5f9",  # unclickable button fill
     "DISABLED_TX":  "#94a3b8",  # unclickable button text
-    "NEUTRAL_BG":   "#eef1f5",  # a quiet pill: effort, pressure
+    "NEUTRAL_BG":   "#eef1f5",  # a quiet pill: size, tier
     "NEUTRAL_TX":   "#475569",  # text on a NEUTRAL_BG pill
     "SHADOW":       "#2b0f172a",  # the soft drop shadow under a card
 }
@@ -354,7 +369,7 @@ COOL_DARK = {
     "MISSING":      "#f87171",  # required-but-empty field border
     "DISABLED_BG":  "#1a1f26",  # unclickable button fill
     "DISABLED_TX":  "#5b6672",  # unclickable button text
-    "NEUTRAL_BG":   "#242b34",  # a quiet pill: effort, pressure
+    "NEUTRAL_BG":   "#242b34",  # a quiet pill: size, tier
     "NEUTRAL_TX":   "#b6c0cc",  # text on a NEUTRAL_BG pill
     "SHADOW":       "#66000000",  # the soft drop shadow under a card
 }
@@ -3083,10 +3098,19 @@ def _get_epic_badge(epic_name: str, epic_id: int | None) -> str:
     return f"[{first_letter}{epic_id}] "
 
 
-def effort_label(code: str | None) -> str:
-    """An effort size as a word. An unrecognised or absent code returns the code
+def size_label(code: str | None) -> str:
+    """A size code as a word. An unrecognised or absent code returns the code
     itself, so a board carrying something else still says what it holds."""
     key = (code or "").strip().upper()
     if not key:
         return ""
-    return EFFORT_WORDS.get(key, key)
+    return SIZE_WORDS.get(key, key)
+
+
+def tier_label(code: str | None) -> str:
+    """A tier as a word. An unrecognised code returns itself, and an absent one
+    returns nothing, so a card not yet rated draws no pill."""
+    key = (code or "").strip().lower()
+    if not key:
+        return ""
+    return TIER_WORDS.get(key, key)

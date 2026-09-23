@@ -249,7 +249,7 @@ because it is their content rather than the tool's.
 ## Delivery
 
 Surface a compact note of three to five lines: what research found (the
-confirmed company plus the one earned hook), one line naming the chosen approach
+confirmed company plus the one earned hook), one line stating the chosen approach
 descriptively, then the plain-text letter and the docx. **Offer corrections
 after delivery, never before.**
 

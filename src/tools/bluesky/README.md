@@ -25,7 +25,7 @@ python3 src/tools/bluesky/sync.py --all         # the whole history
 - `--dry-run` says what it would write and writes nothing.
 - `--skip-existing` leaves a day whose page is already there.
 - `--from YYYY-MM-DD` begins at a date rather than the first.
-- `--budget SECONDS` stops after that long and names the day it stopped at, for
+- `--budget SECONDS` stops after that long and gives the day it stopped at, for
   a host that will not hold a long-running command.
 
 **A run reads the account, adds what it read to the store, and writes the pages
