@@ -100,7 +100,7 @@ stored: a fresh launch opens on the whole board.
 ## A card
 
 Click any card to load it into the detail pane on the right, where its
-placement is edited in place: status, stage, owner, epic, effort and pressure
+placement is edited in place: status, stage, owner, epic, tier and size
 are live controls, and a change lands the moment it is made. The pane's
 collapse control puts it away — the columns take the reclaimed width — and the
 strip at the window's edge brings it back; its width and collapsed state
@@ -109,11 +109,11 @@ dialog, which is where a record is created and where its title, description
 and record type are rewritten.
 
 A card leads with its title, followed by the first line of its description in a
-lighter face. Everything else sits in one footer row: the id, the owner and the
-pressure reading on the left, then the effort, the record type and the epic as
-soft-tinted pills. Pressure is drawn in the same quiet treatment as the rest —
-it sorts nothing and gates nothing, so nothing on the card ramps it from green
-to red.
+lighter face. Everything else sits in one footer row: the id and the owner on
+the left, then the tier, the size, the record type and the epic as soft-tinted
+pills. The tier and the size are drawn in the same quiet treatment as the rest —
+neither sorts anything, so neither is coloured like urgency. A card nobody has
+rated for a tier shows no tier pill.
 
 | Field | What it holds |
 | --- | --- |
@@ -125,12 +125,11 @@ to red.
 | **Owner** | Who the card belongs to: `user` or an agent slug. An agent works only its own cards. |
 | **Originator** | Who raised it. |
 | **Epic** | Optional grouping. Only active epics are offered, so finished work stops collecting new cards. |
-| **Pressure** | 0–100. How hard the card is pushing — urgency, impact and live interest in one number, for a human eye. It sorts nothing and gates nothing. |
-| **Effort** | S, M, L or XL, measuring how much of a full usage allowance the card would consume. S is under a tenth, M a tenth to about half, L half or more, XL more than one — an XL is a card to split rather than start. |
+| **Tier** | Max or Standard — how much thinking the card needs, whatever its size. Max when the work has to decide what right looks like, or a wrong answer would be built on unchecked; Standard when the card already says what right looks like. What each tier runs on is the `tiers` key in your configuration, and a session ends by giving the tier of the card it hands you. |
+| **Size** | S, M, L or XL, measuring how much of a full usage allowance the card would consume. S is under a tenth, M a tenth to about half, L half or more, XL more than one — an XL is a card to split rather than start. |
 
-Pressure and order are deliberately separate. Order alone decides what gets
-worked next; pressure is a reading you can disagree with, and a low card
-carrying high pressure is a question worth asking.
+Tier, size and order are deliberately separate. Order alone decides what gets
+worked next; the tier says what to run a card at when its turn comes.
 
 ## Links
 
@@ -144,7 +143,7 @@ relations:
 
 - **related** — they belong together.
 - **blocks** / **blocked by** — a dependency. The card it blocks may not start
-  until this one is Done. This is the only mechanism that names *which* card is
+  until this one is Done. This is the only mechanism that says *which* card is
   in the way: there is no blocked flag holding an id to set and forget, and the
   status readouts resolve a blocker live so a dependency that has been satisfied
   stops showing.
@@ -276,7 +275,7 @@ Pumpkin leaves Pumpkin alone. Delete removes a theme — the last one stays, and
 deleting the one in force moves the board to another. Restore Shipped Themes
 puts every theme this build ships back as it ships it and leaves the ones you
 added alone. Where text would land too close to what it sits on to read, the
-window names the pair — it says so and lets you save anyway, because the colours
+window gives the pair — it says so and lets you save anyway, because the colours
 are yours to choose.
 
 Everything here is stored in your own configuration file, so editing a shipped

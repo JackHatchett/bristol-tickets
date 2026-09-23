@@ -1,6 +1,6 @@
 ---
 name: assembling-a-loan-package
-description: Builds a small-business loan package in a fixed order — the document list the programme actually asks for, the records read on the machine they sit on, the plan, projections whose every assumption is written beside them, and a handover naming what is missing. Use when a loan, a line of credit or a grant application is being prepared, or when a lender has asked for a file.
+description: Builds a small-business loan package in a fixed order — the document list the programme actually asks for, the records read on the machine they sit on, the plan, projections whose every assumption is written beside them, and a handover listing what is missing. Use when a loan, a line of credit or a grant application is being prepared, or when a lender has asked for a file.
 license: MIT
 compatibility: Runs where the lender's or agency's own pages can be fetched and the user's records are readable in place; needs python3 to resolve where the package is filed and to write the board.
 metadata:
@@ -107,7 +107,7 @@ Four things, and a handover missing one is not finished.
 - **What is missing**, and which item on the list each gap belongs to.
 - **What only the user can supply** — a signature, a certification, a personal
   statement, a document held by his accountant or his bank.
-- **What the lender is most likely to push back on**, named as the underwriter
+- **What the lender is most likely to push back on**, stated as the underwriter
   would name it, with where in the package the answer sits.
 
 ## Where the output goes
@@ -159,7 +159,7 @@ Four things, and a handover missing one is not finished.
   the months the loan exists to cover are the ones no longer visible.
 - **The user's statements copied somewhere to be processed** → the one thing
   §Reading the user's records forbids outright.
-- **A handover that says the package is complete** → it names no gaps because
+- **A handover that says the package is complete** → it lists no gaps because
   nobody looked for them.
 
 ## Audit

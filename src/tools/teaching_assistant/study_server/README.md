@@ -22,7 +22,7 @@ reading the pipe learns the port. `--course` changes only which URL that is;
 every course is served either way.
 
 `--list-json` answers the same listing the course page shows and exits, which is
-what Bristol Tickets' Courses tab reads. It exits non-zero, naming what is
+what Bristol Tickets' Courses tab reads. It exits non-zero, saying what is
 missing, where the root is undeclared, absent, or holds no rendered course.
 
 ## Routes
@@ -62,7 +62,7 @@ learning domain's own vocabulary — `opened`, `reading`, `quiz`, `exercise` —
   not a second copy of it.
 - **The learning domain is written through `personal_db/personal_write.py`** —
   `record`, `clear`, `marks` and `place`. No SQL is written here.
-- **Bind the loopback interface.** `--host` exists for a host that names it
+- **Bind the loopback interface.** `--host` exists for a host that asks for it
   differently, never to publish the server.
 - **A course with no rendered lesson is not listed**, because there is nothing
   to serve.

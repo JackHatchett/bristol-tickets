@@ -22,7 +22,7 @@ does not recognise survives.
 
 ## Why paths live here rather than in the code
 
-Nothing under `src/` names a real path, a username, or a personal filename, even
+Nothing under `src/` contains a real path, a username, or a personal filename, even
 as a string literal — that is what makes the repository publishable. The code
 refers to your data by generic relative paths like `data/*/tickets/tickets.db`,
 where the `*` is your instance folder, and resolves everything through this
@@ -52,7 +52,7 @@ this key.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `new_ticket_stage` | `active` | Where a new card lands when `add-task` names no `--stage`: `active` (the To Do column) or `backlog`. It governs every new card, whoever files it and whoever it is for; an explicit `--stage` always wins. |
+| `new_ticket_stage` | `active` | Where a new card lands when `add-task` gives no `--stage`: `active` (the To Do column) or `backlog`. It governs every new card, whoever files it and whoever it is for; an explicit `--stage` always wins. |
 
 ### `session`
 
@@ -94,10 +94,10 @@ and in the Manage Themes window that tab opens.
 
 A theme you have not touched appears in none of them, which is what lets the
 themes a later release ships arrive in your list beside your own. A theme id is
-what `theme` names, and it never changes: renaming a theme changes what you see
+what `theme` holds, and it never changes: renaming a theme changes what you see
 and nothing that is stored.
 
-An unrecognised `theme` falls back to the default, and so does one naming a
+An unrecognised `theme` falls back to the default, and so does one giving a
 theme you deleted. A key a stored palette does not carry is filled from the warm
 light palette, so a palette written by an older build stays complete. The
 palette in `custom_scheme` joins the collection as an ordinary theme named
@@ -117,6 +117,22 @@ Adding a theme to the build is a data change in
 | `notes` | Free text. |
 
 The scale itself does not vary per installation.
+
+### `tiers`
+
+**Optional.** What each processing tier runs on. A card carries Max or Standard,
+chosen from the card itself; this is the only place either is turned into a
+model, and it is read only when someone asks what a tier means today.
+
+| Key | Meaning |
+| --- | --- |
+| `max.model` | The model for work that has to decide what right looks like. |
+| `max.reasoning` | The reasoning level to run it at, in your runtime's own words. |
+| `standard.model` | The model for work the card already specifies. |
+| `standard.reasoning` | Its reasoning level. |
+| `notes` | Free text. |
+
+Point both at whatever vendor's models you run; nothing in the code gives one.
 
 ### `important_paths`
 
@@ -148,6 +164,7 @@ The scale itself does not vary per installation.
 | `env` | Environment variables this agent's tools expect. |
 | `notebook_access` | `{ "read": bool, "write_zones": [ … ], "archive_moves": bool }` — which zones of your notebook this agent reaches. The zone names are `workspace` and `inbox`; an empty list is an agent that reads your notebook and never writes in it. |
 | `skills` | The skills attached to this agent, by name, in the order a session matches them. A skill named by no agent is available to every agent. Set it with `skills.py attach` and `detach` rather than by hand. |
+| `active_project` | Optional. Which of the agent's projects a session opens on, where it has more than one. An agent's projects are the `projects` entries under its folder grants; without this key a session opens on the first one listed. A session writes it when you say you are working the other one — `src/tools/config_tools/active_project.py`. |
 
 An agent whose tools need a value no other agent has declares its own key beside
 these. `teaching_assistant` has one, `lesson_pipeline.stages`, which routes each
@@ -174,7 +191,7 @@ fact whose home is one of them reaches you as a summary in `agent_output_dir`.
 Which zones a given agent reaches is its `notebook_access`.
 
 A zone is the default, not the last word. A folder grant in an agent's
-`key_data_paths` that names a folder in here decides that folder — so one agent
+`key_data_paths` that gives a folder in here decides that folder — so one agent
 can be given write access to your recipes without any other agent gaining it,
 and without the zone model changing.
 
@@ -271,7 +288,7 @@ downloaded skill lands in.
 ### `stack`
 
 **Optional.** A reference block binding stable roles to whichever tool currently
-fills them, so a charter names a role and this file names the tool.
+fills them, so a charter states a role and this file gives the tool.
 
 | Key | Meaning |
 | --- | --- |
@@ -288,7 +305,7 @@ follows one order:
 
 1. An explicit environment variable (`TICKETS_DB`, `BRISTOL_REPORTS_DIR`).
 2. The instance pointer at `~/Library/Application Support/BristolTickets/instance.json`
-   (`$XDG_CONFIG_HOME/BristolTickets/instance.json` off macOS), which names the
+   (`$XDG_CONFIG_HOME/BristolTickets/instance.json` off macOS), which gives the
    data root and instance slug.
 3. A legacy single-line pointer file next to the tool.
 4. Discovery: walk up the source tree to `src/app.md` and search

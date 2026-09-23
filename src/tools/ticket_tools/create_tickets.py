@@ -86,6 +86,12 @@ EPIC_STATUS_IN_FLIGHT = frozenset({"in progress", "active"})
 BLOCK_REASONS = ("dependency", "decision", "capability", "transient")
 BLOCK_REASONS_NEEDING_USER = frozenset({"decision", "capability"})
 
+# The depth of processing a card should be worked at, chosen from the card by
+# src/skills/manage-tickets/SKILL.md §Processing tier. NULL is not yet rated.
+# What each one runs on is config's `tiers` key, never this file. Mirrored in
+# bristol/ui/theme.py, which carries its own copy.
+TIERS = ("max", "standard")
+
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS theme (
@@ -132,8 +138,8 @@ CREATE TABLE IF NOT EXISTS task (
     title       TEXT NOT NULL,
     description TEXT,
     status      TEXT NOT NULL DEFAULT 'todo',      -- todo | doing | done (board columns)
-    pressure    INTEGER NOT NULL DEFAULT 0,      -- 0-100 gestalt: how hard this card is pushing. A rating, not a rank; sort_order is the rank.
-    estimate    TEXT,
+    tier        TEXT,                            -- max | standard | NULL: the depth of processing the card needs. It orders nothing; sort_order is the rank.
+    estimate    TEXT,                            -- S | M | L | XL: the card's size, a share of a usage budget.
     created_at  TEXT DEFAULT (datetime('now')),
     updated_at  TEXT DEFAULT (datetime('now')),
     closed_at   TEXT,
@@ -172,7 +178,7 @@ CREATE TABLE IF NOT EXISTS issue_log (
 
 -- (There is no `handoff` table. A per-agent "where things stand" note is work
 -- state living outside the cards; being inside this DB never made it part of
--- the board. Carry-forward is a `doing` card with an owner and a pressure.)
+-- the board. Carry-forward is a `doing` card with an owner.)
 
 
 -- task_event — the mechanical change log: one row per changed task field,
@@ -283,7 +289,9 @@ def migrate(conn: sqlite3.Connection) -> None:
     """
     _ensure_link_dep_type(conn)
     _ensure_block_reason(conn)
+    _ensure_tier(conn)
     _retire_blocked_columns(conn)
+    _retire_pressure(conn)
     conn.commit()
 
 
@@ -311,6 +319,40 @@ def _ensure_block_reason(conn: sqlite3.Connection) -> None:
     cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
     if cols and "block_reason" not in cols:
         conn.execute("ALTER TABLE task ADD COLUMN block_reason TEXT")
+
+
+def _ensure_tier(conn: sqlite3.Connection) -> None:
+    """Add task.tier to a DB that predates it. A card written before the column
+    existed has not been rated, which is what NULL means, so nothing is
+    backfilled. Mirrors bristol/ui/schema_guard.py."""
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
+    if cols and "tier" not in cols:
+        conn.execute("ALTER TABLE task ADD COLUMN tier TEXT")
+
+
+def _retire_pressure(conn: sqlite3.Connection) -> None:
+    """Drop task.pressure, and task.priority if a DB still carries it.
+
+    Pressure was a 0–100 reading that ordered nothing, so no value moves
+    anywhere: board order is sort_order, and the depth a card needs is
+    task.tier. The change log keeps every pressure reading it recorded. Mirrors
+    bristol/ui/schema_guard._retire_pressure; runs before the change-log
+    triggers are installed, since they name the task columns.
+    """
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
+    for column in ("pressure", "priority"):
+        if column not in cols:
+            continue
+        for (name,) in conn.execute(
+                "SELECT name FROM sqlite_temp_master WHERE type='trigger' "
+                "AND sql LIKE ?", (f"%{column}%",)).fetchall():
+            conn.execute(f"DROP TRIGGER IF EXISTS temp.{name}")
+        try:
+            conn.execute(f"ALTER TABLE task DROP COLUMN {column}")
+        except sqlite3.OperationalError:
+            # An SQLite too old to drop a column keeps it; nothing reads or
+            # writes it, and its default satisfies every insert.
+            pass
 
 
 def _retire_blocked_columns(conn: sqlite3.Connection) -> None:

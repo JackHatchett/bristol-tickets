@@ -38,7 +38,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
-    QSpinBox,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -54,8 +53,10 @@ from .settled_combo import fill_words
 from .theme import (
     BLOCK_REASON_CHOICES,
     BLOCK_REASON_HINT,
-    EFFORT_CHOICES,
-    EFFORT_HINT,
+    SIZE_CHOICES,
+    SIZE_HINT,
+    TIER_CHOICES,
+    TIER_HINT,
     EPIC_KIND_CHOICES,
     EPIC_STATUS_CHOICES,
     FLEET_AGENTS,
@@ -279,14 +280,13 @@ class UnifiedRecordDialog(QDialog):
                 continue
             self.epic_combo.addItem(ename, eid)
 
-        self.pressure_spin = QSpinBox()
-        self.pressure_spin.setRange(0, 100)
-
-        # Effort: how much of a full usage budget this card would take. The
-        # anchors are the tooltip rather than the option text, so the picker
-        # stays a column of names; the scale itself is the manage-tickets skill.
-        self.estimate_combo = fill_words(QComboBox(), EFFORT_CHOICES,
-                                         hint=EFFORT_HINT)
+        # Tier: how much thinking the card needs, whatever its size. Size: how
+        # much of a full usage budget it would take. The anchors are each
+        # picker's tooltip rather than its option text, so the picker stays a
+        # column of names; both scales are the manage-tickets skill.
+        self.tier_combo = fill_words(QComboBox(), TIER_CHOICES, hint=TIER_HINT)
+        self.estimate_combo = fill_words(QComboBox(), SIZE_CHOICES,
+                                         hint=SIZE_HINT)
 
         # Due: an outside deadline the card has to meet — a filing window, a
         # renewal, a date somebody else set. Most cards have none, so the field
@@ -317,21 +317,18 @@ class UnifiedRecordDialog(QDialog):
         self.epic_status_combo = fill_words(QComboBox(), EPIC_STATUS_CHOICES)
 
         # Every short field sits at the width its contents ask for: a combo
-        # sizes to its longest entry, the pressure spinner to three digits, the
-        # originator to the longest agent slug. Only the title and description
+        # sizes to its longest entry, the originator to the longest agent slug. Only the title and description
         # keep an Expanding policy and take the dialog's width.
         metrics = QFontMetrics(self.font())
         for combo in (self.type_combo, self.recordtype_combo, self.stage_combo,
                       self.status_combo, self.owner_edit, self.epic_combo,
-                      self.estimate_combo, self.block_combo,
+                      self.tier_combo, self.estimate_combo, self.block_combo,
                       self.epic_type_combo, self.epic_status_combo):
             combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
             combo.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         # A date field sizes itself; only the width policy is shared with the
         # pickers beside it.
         self.due_edit.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        self.pressure_spin.setMaximumWidth(
-            metrics.horizontalAdvance("100") + space("2xl") * 2)
         self.originator_edit.setMaximumWidth(
             max(metrics.horizontalAdvance(slug) for slug in FLEET_AGENTS)
             + space("2xl") * 2)
@@ -372,8 +369,8 @@ class UnifiedRecordDialog(QDialog):
             ("Owner", self.owner_edit),
             ("Originator", self.originator_edit),
             ("Epic Link", self.epic_combo),
-            ("Effort", self.estimate_combo),
-            ("Pressure (0-100)", self.pressure_spin),
+            ("Tier", self.tier_combo),
+            ("Size", self.estimate_combo),
             ("Blocked", self.block_combo),
             ("Due", self.due_edit),
         )):
@@ -527,7 +524,7 @@ class UnifiedRecordDialog(QDialog):
             self.owner_edit.currentText(),
             self.originator_edit.text(),
             self.epic_combo.currentIndex(),
-            self.pressure_spin.value(),
+            self.tier_combo.currentData(),
             self.estimate_combo.currentData(),
             self.block_combo.currentData(),
             self.due_edit.date(),
@@ -630,7 +627,7 @@ class UnifiedRecordDialog(QDialog):
     def _missing_required(self) -> list:
         """The required widgets that are currently empty. Title is the only
         required field for either kind: everything else the dialog collects has
-        a default (Stage, Status, Owner, Pressure) or is legitimately optional
+        a default (Stage, Status, Owner) or is legitimately optional
         (Description, Epic Link, links, attachments). Return widgets, not names,
         so the caller can mark exactly what it found."""
         missing = []
@@ -694,7 +691,7 @@ class UnifiedRecordDialog(QDialog):
         try:
             if self.mode == "task":
                 row = self.conn.execute(
-                    "SELECT title, description, status, pressure, epic_id, "
+                    "SELECT title, description, status, tier, epic_id, "
                     "COALESCE(assignee, 'user'), COALESCE(reporter, 'user'), COALESCE(estimate, ''), "
                     "COALESCE(record_type, 'build'), COALESCE(stage, 'backlog'), "
                     "block_reason, due_date "
@@ -706,7 +703,8 @@ class UnifiedRecordDialog(QDialog):
                     current_status = row[2] if row[2] in ["todo", "doing", "done"] else "todo"
                     self.status_combo.setCurrentIndex(
                         max(self.status_combo.findData(current_status), 0))
-                    self.pressure_spin.setValue(row[3] or 0)
+                    tier_idx = self.tier_combo.findData((row[3] or "").lower() or None)
+                    self.tier_combo.setCurrentIndex(max(tier_idx, 0))
                     if row[4] is not None:
                         idx = self.epic_combo.findData(row[4])
                         if idx < 0:
@@ -833,7 +831,7 @@ class UnifiedRecordDialog(QDialog):
         if chosen_type == "Task / Issue":
             status = self.status_combo.currentData()
             stage = self.stage_combo.currentData()
-            pressure = self.pressure_spin.value()
+            tier = self.tier_combo.currentData()
             epic_id = self.epic_combo.currentData() or fallback_epic or self.fallback_epic_id
             owner = self.owner_edit.currentText().strip() or "user"
             originator = self.originator_edit.text().strip() or "user"
@@ -862,10 +860,10 @@ class UnifiedRecordDialog(QDialog):
                 ts = _utcnow()
                 cur = self.conn.execute(
                     "INSERT INTO task (epic_id, title, description, status, stage, sort_order, "
-                    "pressure, assignee, reporter, estimate, record_type, block_reason, "
+                    "tier, assignee, reporter, estimate, record_type, block_reason, "
                     "due_date, closed_at, created_at, updated_at) "
                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    (epic_id, title, desc, status, stage, sort_order, pressure, owner,
+                    (epic_id, title, desc, status, stage, sort_order, tier, owner,
                      originator, estimate, record_type, block_reason, due_date,
                      closed_at, ts, ts),
                 )
@@ -886,18 +884,18 @@ class UnifiedRecordDialog(QDialog):
                     sort_order = self._append_order(stage, status)
                     self.conn.execute(
                         "UPDATE task SET epic_id=?, title=?, description=?, status=?, stage=?, "
-                        "sort_order=?, pressure=?, assignee=?, reporter=?, estimate=?, "
+                        "sort_order=?, tier=?, assignee=?, reporter=?, estimate=?, "
                         "record_type=?, block_reason=?, due_date=?, closed_at=? WHERE id=?",
-                        (epic_id, title, desc, status, stage, sort_order, pressure, owner,
+                        (epic_id, title, desc, status, stage, sort_order, tier, owner,
                          originator, estimate, record_type, block_reason, due_date,
                          closed_at, self.record_id),
                     )
                 else:
                     self.conn.execute(
                         "UPDATE task SET epic_id=?, title=?, description=?, status=?, stage=?, "
-                        "pressure=?, assignee=?, reporter=?, estimate=?, record_type=?, "
+                        "tier=?, assignee=?, reporter=?, estimate=?, record_type=?, "
                         "block_reason=?, due_date=?, closed_at=? WHERE id=?",
-                        (epic_id, title, desc, status, stage, pressure, owner, originator,
+                        (epic_id, title, desc, status, stage, tier, owner, originator,
                          estimate, record_type, block_reason, due_date, closed_at,
                          self.record_id),
                     )

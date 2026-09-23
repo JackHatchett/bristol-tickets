@@ -22,11 +22,11 @@ Reports every banned phrase, dash construct and period-emphasis run in the
 input, reading `.txt` and `.docx` alike. The blacklist is the user's own
 content: it resolves from `agents.career_coach.key_data_paths` plus
 `foundation/*_Voice_Blacklist.txt`, and `--blacklist` overrides that. More than
-one match under that glob is an error naming the flag.
+one match under that glob is an error stating the flag.
 
 - **The gate covers everything written in the user's own voice**, not a cover
   letter alone: a resume, a profile section, a post. A skill that produces such
-  a draft names this command.
+  a draft gives this command.
 - **The phrase lists bind every form; the two coded patterns do not.** `--fiction`
   drops the dash constraint and period-emphasis, which the voice profile scopes
   to business writing and to non-fiction, and checks the phrase lists alone.

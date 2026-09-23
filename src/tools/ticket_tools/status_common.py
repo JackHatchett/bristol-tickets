@@ -16,6 +16,7 @@ DB discovery, the Kanban model, the next-action precedence and the reason a
 """
 
 import os
+import textwrap
 import sys
 import sqlite3
 from pathlib import Path
@@ -84,7 +85,7 @@ def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     These are the tasks 'in play right now'. A
     LEFT JOIN keeps epic-less tasks visible."""
     return conn.execute(
-        "SELECT t.id, t.title, t.status, t.pressure, t.sort_order, t.estimate, "
+        "SELECT t.id, t.title, t.status, t.tier, t.sort_order, t.estimate, "
         "       t.assignee, t.block_reason, "
         "       COALESCE(e.name, '(no epic)') AS epic, e.owner AS epic_owner "
         "FROM task t "
@@ -124,8 +125,8 @@ def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
 
     The order you see on the board IS the order the agent works. Dragging a card
     up a column moves it up the agent's queue, and an agent that reorders its
-    own queue does it by rewriting sort_order. `pressure` is a 0–100 rating of
-    how hard a card is pushing, not a rank, and it does not sort.
+    own queue does it by rewriting sort_order. A card's tier and its size are facts
+    about the card, not ranks, and neither sorts.
 
     A blocker deliberately does NOT sort. It was once the leading key, which
     silently sank a blocked `doing` card below every `todo` and made the script
@@ -143,9 +144,10 @@ def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
 def my_backlog(conn: sqlite3.Connection, me: str) -> list[sqlite3.Row]:
     """Fallback only: my Backlog-stage tasks. Epic-less tasks are
     included; epic'd ones are limited to unfinished epics to cut noise.
-    Pressure desc (a planning signal, not an execution order)."""
+    In the Backlog's own manual order (a planning signal, not an execution
+    order)."""
     rows = conn.execute(
-        "SELECT t.id, t.title, t.status, t.pressure, t.assignee, "
+        "SELECT t.id, t.title, t.status, t.tier, t.sort_order, t.assignee, "
         "       e.name AS epic, e.owner AS epic_owner "
         "FROM task t LEFT JOIN epic e ON t.epic_id = e.id "
         "WHERE t.stage = 'backlog' "
@@ -154,7 +156,7 @@ def my_backlog(conn: sqlite3.Connection, me: str) -> list[sqlite3.Row]:
         tuple(create_tickets.EPIC_STATUS_FINISHED),
     ).fetchall()
     mine = [r for r in rows if owned_by(r, me)]
-    return sorted(mine, key=lambda r: (-r["pressure"], r["id"]))
+    return sorted(mine, key=lambda r: (r["sort_order"], r["id"]))
 
 
 def latest_comment_per_task(conn: sqlite3.Connection,
@@ -181,15 +183,19 @@ def latest_comment_per_task(conn: sqlite3.Connection,
 
 
 def print_comments(conn: sqlite3.Connection,
-                   tasks: list[sqlite3.Row]) -> set[int]:
+                   tasks: list[sqlite3.Row],
+                   already: set[int] | None = None) -> set[int]:
     """Surface the latest comment on each of `tasks` that has one. User-authored
-    latest comments are flagged ⚠ as context to read — they are NOT a pressure
-    signal and never reroute which task is next (pressure/stage decide that)."""
+    latest comments are flagged ⚠ as context to read — they are NOT a priority
+    signal and never reroute which task is next (board order decides that).
+    A card whose comment NEEDS YOU already printed keeps its line here and
+    loses its body."""
+    already = already or set()
     latest = latest_comment_per_task(conn, [t["id"] for t in tasks])
     if not latest:
         return set()
     shown: set[int] = set()
-    print("\n--- COMMENTS on your active-board tasks (⚠ = user; context to read, NOT a pressure signal) ---")
+    print("\n--- COMMENTS on your active-board tasks (⚠ = user; context to read, NOT a priority signal) ---")
     for t in tasks:
         c = latest.get(t["id"])
         if not c:
@@ -200,11 +206,14 @@ def print_comments(conn: sqlite3.Connection,
         body = " ".join((c["body"] or "").split())
         if len(body) > 300:
             body = body[:297] + "..."
+        if t["id"] in already:
+            body = "(the question under NEEDS YOU above)"
         print(f"{mark}#{t['id']} [{c['created_at'][:10]} {c['author']}] {body}")
     return shown
 
 
-def print_needs_you(rows: list[sqlite3.Row]) -> None:
+def print_needs_you(rows: list[sqlite3.Row],
+                    conn: sqlite3.Connection | None = None) -> set[int]:
     """The cards only the user can clear, named rather than left in the queue.
 
     A decision block and a capability block are the two reasons no agent can
@@ -214,14 +223,31 @@ def print_needs_you(rows: list[sqlite3.Row]) -> None:
 
     Fleet-wide, like the rest of this script: a card any agent left waiting on
     the user is the user's to clear whoever owns it.
+
+    Each card carries its latest comment in full, because that comment is the
+    question put to the user (src/skills/manage-tickets/SKILL.md §Asking the
+    user for a decision), and a question he has to open a card to read is one
+    he was not asked.
     """
     held = [r for r in rows
             if (r["block_reason"] or "") in create_tickets.BLOCK_REASONS_NEEDING_USER]
     if not held:
-        return
+        return set()
     print("\n--- NEEDS YOU (blocked on something no agent can clear) ---")
+    asked = latest_comment_per_task(conn, [r["id"] for r in held]) if conn else {}
     for r in held:
         print(f"  #{r['id']} [{r['block_reason']}] {r['title']}")
+        if r["id"] in asked:
+            for line in textwrap.wrap(" ".join(asked[r["id"]]["body"].split()),
+                                      76):
+                print(f"      {line}")
+    return set(asked)
+
+
+def tier_word(tier: str | None) -> str:
+    """A card's tier as the word a reader sees; a card not yet rated says so."""
+    return {"max": "Max", "standard": "Standard"}.get((tier or "").lower(),
+                                                      tier or "no tier")
 
 
 def fmt(r: sqlite3.Row, blockers: dict | None = None,
@@ -245,7 +271,7 @@ def fmt(r: sqlite3.Row, blockers: dict | None = None,
         who = (r["assignee"] or "").strip() or f"(epic:{r['epic_owner']})"
         flag = f"  <{who}>{flag}"
     pos = f"{position:>2}." if position is not None else "   "
-    return (f"  {pos} {r['status']:5} pr{r['pressure']:>3} {r['estimate'] or '-':>4}  "
+    return (f"  {pos} {r['status']:5} {tier_word(r['tier']):8} {r['estimate'] or '-':>2}  "
             f"[{r['epic']}] {r['title']}{flag}")
 
 
@@ -545,7 +571,7 @@ def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
         nxt, blockers, waiting = next_action(conn, board, mine_q)
         if nxt is not None:
             print(f"▶ {label} ({me}, active board): "
-                  f"[{nxt['epic']}] {nxt['title']}  (pressure {nxt['pressure']}, {nxt['estimate'] or '?'})")
+                  f"[{nxt['epic']}] {nxt['title']}  (tier {tier_word(nxt['tier'])}, size {nxt['estimate'] or '?'})")
         else:
             print(f"▶ {label} ({me}, active board): none — every card in your "
                   f"queue is waiting on {', '.join(f'#{b}' for b in waiting)}.")
@@ -559,15 +585,16 @@ def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
     if bl:
         print("   Fallback — your backlog (activate one onto the board before executing):")
         for r in bl[:5]:
-            print(f"     backlog pr{r['pressure']:>3}  [{r['epic']}] {r['title']}")
+            print(f"     backlog {tier_word(r['tier']):8}  [{r['epic']}] {r['title']}")
     else:
         print("   Your backlog is also empty — await direction.")
 
 
 def print_body(conn: sqlite3.Connection, db_path, me: str,
-               mine_all: list, mine_q: list) -> None:
+               mine_all: list, mine_q: list,
+               asked: set[int] | None = None) -> None:
     """Everything under the queue, in the one order both front ends print it."""
-    shown = print_comments(conn, mine_all)
+    shown = print_comments(conn, mine_all, asked)
     print_links(conn, mine_all)
     # Scoped to the queue rather than to every card on the board: a
     # handoff is what the agent about to work a card needs, and a card

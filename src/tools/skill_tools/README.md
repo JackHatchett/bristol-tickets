@@ -83,7 +83,7 @@ python3 skills.py package <name> [--out DIR]
 ```
 
 - **`list`** — every loadable skill as name, origin and description, plus a
-  closing line naming anything quarantined. **`--json`** returns every skill
+  closing line listing anything quarantined. **`--json`** returns every skill
   including the quarantined ones, what each carries, and each agent's
   attachments, as data. It is one read, which is what stops a surface built on
   it and a session reading the same loader from disagreeing about a name, a
@@ -101,7 +101,7 @@ python3 skills.py package <name> [--out DIR]
     commit and folder it came from, which is what a surface needs to open a
     skill rather than only name it. The wording is `origin_phrase`, `contents_phrase` and
     `holders_phrase`, and it is written for someone who has never seen this
-    system: a skill came with Bristol or names where it was downloaded from, a
+    system: a skill came with Bristol or states where it was downloaded from, a
     count agrees with the noun beside it, and a skill carrying code does not
     read like one carrying none.
 - **`view`** — one skill's `SKILL.md` in full. This is the on-demand load.
@@ -113,10 +113,10 @@ python3 skills.py package <name> [--out DIR]
   object, a markdown body under frontmatter, and the half of that frontmatter
   which routes work — `tools`, `model`, a client's own extensions — has no reader
   here, because a Bristol session's model and tool surface belong to its host.
-  `name`, `description` and `license` cross; everything else is dropped and named
+  `name`, `description` and `license` cross; everything else is dropped and listed
   in the output. A source stating no description is refused rather than given
   one, since a skill without a trigger never routes; `--description` supplies it.
-  **The skills the source declares it depends on are named too**, from its
+  **The skills the source declares it depends on are listed too**, from its
   frontmatter's `skills`, `required_skills`, `dependencies` or `requires` key,
   so they can be installed instead of being noticed later; a dependency stated
   in the body alone is not a declaration and the output says as much.
@@ -127,33 +127,33 @@ python3 skills.py package <name> [--out DIR]
   the move safe is the read that preceded it.
 - **A native skill declares the scripts it runs** in
   `metadata.bristol.scripts`, and `smoke.py`'s `skill_declarations` target
-  checks each one is on disk. A command named only in a sentence cannot be
+  checks each one is on disk. A command mentioned only in a sentence cannot be
   checked, which is how a renamed tool becomes a failure halfway through a task
   instead of a failure in the suite.
 - **`install` closes with a compatibility note where the skill's own
   frontmatter declares something with no reader here** — environment variables
   it expects credentials for, and the Hermes toolsets it gates or offers itself
-  as a fallback for. Each says what will happen and names what it found. It is
+  as a fallback for. Each says what will happen and lists what it found. It is
   a statement, never a gate: a skill whose gate is inert here may still carry a
   body worth reading, and refusing it would decide something that is the
   person's to decide. A skill carrying only fields the specification defines,
-  or declaring one of those keys and naming nothing under it, prints no note.
+  or declaring one of those keys and listing nothing under it, prints no note.
   **A named toolset also gets the other half of the answer** — what covers that
-  ground here, named where anything does, and reported as uncovered where the
-  table names nothing. That is a statement about the table rather than a guess
+  ground here, given where anything does, and reported as uncovered where the
+  table lists nothing. That is a statement about the table rather than a guess
   about the skill.
 - **`remove`** — delete an installed or quarantined skill and detach it from
   every agent that held it. The directory goes before the detachments, so a
   filesystem that refuses the delete leaves the attachments intact rather than
-  leaving an agent naming a skill that is gone. It refuses a native skill: those
+  leaving an agent listing a skill that is gone. It refuses a native skill: those
   are source under version control, and removing one is an edit to the
   repository.
 - **`package`** — write a loadable skill out as a zip whose root is the skill's
   own directory, which is the shape a reader of the specification expects, into
-  the declared staging location or a directory named with `--out`. The origin
+  the declared staging location or a directory given with `--out`. The origin
   record travels inside it, and the output states in words who wrote the skill,
   what its licence says and where that was read: a skill installed from
-  elsewhere leaves here naming that source, never this one. **A quarantined
+  elsewhere leaves here giving that source, never this one. **A quarantined
   skill is refused**, because quarantine is the state of not having been read
   and passing an unread skill to somebody else is what the quarantine exists to
   stop. **Nothing about how a skill arrives changes here.** This is a second
@@ -183,7 +183,7 @@ python3 skills.py package <name> [--out DIR]
   native skill's origin is the repository it is published in.
 
 **Bristol redistributes no skill's bytes.** An exported agent
-(`src/tools/agent_tools/README.md` §The agent file) names each skill by the
+(`src/tools/agent_tools/README.md` §The agent file) lists each skill by the
 address it was installed from, and the person importing fetches it from that
 source under that source's own terms. Three consequences, and they are the whole
 of what publishing changes:
@@ -198,7 +198,7 @@ of what publishing changes:
   blank, which is the difference between a source that stated no licence and a
   field nobody filled.
 - **A skill installed before the record existed carries no address at all**, so
-  an export names it as a capability the importer must find for themselves.
+  an export lists it as a capability the importer must find for themselves.
 
 ## propose_skill.py
 
@@ -218,7 +218,7 @@ from, and notes which agent the skill would serve.
   a skill is a behaviour change — `src/app.md` §Content is yours; behavior is
   chief_of_staff's.
 - **It declines a duplicate rather than filing a second card**, matching an open
-  card by title or by identical description, and names the one that already
+  card by title or by identical description, and gives the one that already
   carries it. A finished card is not a duplicate: the same lesson learned again
   is a new proposal.
 - **Every write goes through `ticket_tools/ticket_write.py`**, so a card filed
@@ -270,7 +270,7 @@ skill and never infers one.
   the sentence saying when it applies, the agent's own first. That is the whole
   of the standing cost, and it does not grow with what a skill contains.
 - **On a match, one body, through `view`.** Every other body stays unread, and
-  the session names the skill it opened.
+  the session says which skill it opened.
 - **Never a skill's scripts, references or assets.** A skill's own body says
   when to open one.
 
@@ -294,8 +294,8 @@ above the source, which is then the whole of the evidence.
   credentials written into the source, disabled certificate verification,
   predictable temporary files.
 - **What it does not.** Any language but Python, so a skill's shell, JavaScript,
-  Ruby and PowerShell go unread and the report names them. Dataflow across
-  files. Intent — a call it names may be the right one and a call it passes may
+  Ruby and PowerShell go unread and the report lists them. Dataflow across
+  files. Intent — a call it reports may be the right one and a call it passes may
   be the wrong one. Code that is obfuscated, encoded, or fetched at run time,
   which reads to it as ordinary Python.
 - **A finding is a place to look, not a verdict**, and a clean report says only

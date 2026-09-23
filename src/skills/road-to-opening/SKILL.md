@@ -11,7 +11,7 @@ metadata:
 # road-to-opening
 
 Input: a business concept in a sentence, and the stage the user is about to
-work. Operation: the procedure below. Output: one packet — a hub note naming
+work. Operation: the procedure below. Output: one packet — a hub note listing
 every stage between the concept and opening, and the live stage elaborated into
 its own note and forms — plus one card for the live stage and one for each date
 and each decision.
@@ -33,9 +33,9 @@ Everything below is those two applied to opening a business.
 ## What the input has to name
 
 - **The concept in one sentence** — what is sold, to whom, and where.
-- **The live stage**, where the user names one.
+- **The live stage**, where the user picks one.
 - **Take the live stage as the earliest stage whose questions are unanswered**
-  where he names none, reading the packet's forms to find it.
+  where he picks none, reading the packet's forms to find it.
 - **Ask for the concept rather than working from an inferred one.** Every stage
   is tested against that sentence, so a wrong one is wrong twelve times.
 - **Treat a changed concept as a new input.** The road is rewritten from it, and
@@ -43,7 +43,7 @@ Everything below is those two applied to opening a business.
 
 ## The road
 
-Twelve stages. Each is named in the hub with what it answers, what it needs from
+Twelve stages. Each is listed in the hub with what it answers, what it needs from
 the stages before it, what it hands the ones after, and its gate.
 
 - **Concept definition** — what is sold, to whom, where, and why they would
@@ -156,7 +156,7 @@ one, with questions in an upstream form still blank.
 - **Offer the two moves that follow**: work the blanks, or take the one question
   the user is stuck on.
 - **Produce it where the user directs it anyway, having read the questions**,
-  with every value that rests on a blank naming the assumption it rests on in
+  with every value that rests on a blank stating the assumption it rests on in
   the sentence that states it.
 
 ## Where the packet goes
@@ -182,7 +182,7 @@ one, with questions in an upstream form still blank.
 - **Never a backlog seeded with the stages after the live one.** They would be
   written from guesses, and the board would carry a plan that has to be thrown
   away.
-- **The card names the packet; no note names a card.**
+- **The card links the packet; no note links a card.**
 
 ## Procedure
 
@@ -213,7 +213,7 @@ one, with questions in an upstream form still blank.
 - **A downstream deliverable produced with the gaps filled quietly** → §Work
   asked for from further down the road; the assumptions went in unnamed and are
   now indistinguishable from findings.
-- **A refusal that names a status** → the same section; the user cannot act on
+- **A refusal that gives a status** → the same section; the user cannot act on
   "incomplete", and can act on a list of questions.
 - **The next stage elaborated from the road as first drawn** → step 8; the gate
   exists because the answers change the plan.

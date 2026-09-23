@@ -52,7 +52,7 @@ hold regardless of agent, vendor or domain:
 
 ### 1a. Memory model
 
-A thin bridge names which one it uses; that choice drives its sync trigger.
+A thin bridge states which one it uses; that choice drives its sync trigger.
 
 | Memory model | How it is briefed | Refresh trigger | Reference bridge |
 |---|---|---|---|
@@ -62,7 +62,7 @@ A thin bridge names which one it uses; that choice drives its sync trigger.
 
 ### 1b. Return format
 
-A thin bridge names which one it uses, in rising order of formality:
+A thin bridge states which one it uses, in rising order of formality:
 
 - **Pasted text block** — a fenced, delimited block the user copies back into
   the owning session. Lowest ceremony; right when a human is the transport.
@@ -91,7 +91,7 @@ in one line**, and nothing here overrides it.
   Each `collaborator` is a `stack.ai_collaborators` entry.
 - **Never write bare "Copilot."** Three unrelated products share the word — a
   chat assistant, an in-editor coding assistant, and a local notebook
-  assistant — so the bare noun names nothing.
+  assistant — so the bare noun means nothing.
 - **An external tool is an advisory consultant, never in the chain of command.**
   Its output is overrulable with reason.
 
@@ -118,7 +118,7 @@ The trigger and the target are deliberately split:
   already, and a second copy drifts. The only durable artifact here is the
   config role table.
 
-Reference triggers, each in the named charter:
+Reference triggers, each in the charter given:
 
 - **`game_designer`** → the next action is writing or editing project code →
   the configured `inline_coding` agent.
@@ -133,7 +133,7 @@ Reference triggers, each in the named charter:
 
 A `references/<agent>.md` is short. It:
 
-1. **Opens with one line naming the archetype it specializes**, and does not
+1. **Opens with one line stating the archetype it specializes**, and does not
    re-explain the six invariants.
 2. **States its four parameters**: memory model (§1a), direction (§1c), payload
    (what the external AI is briefed with, and where that snapshot lives under

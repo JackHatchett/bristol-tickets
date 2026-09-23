@@ -9,15 +9,16 @@ reserved height always matches what is drawn.
 A card is the only raised surface on the board: a soft shadow, a full corner
 radius, and a fill that carries hover and selection on its own. It reads top to
 bottom as the title, one muted line of the description, and a footer holding
-who owns it, how big it is, how hard it is pushing, what kind of record it is
-and which epic it belongs to. A card with no epic carries one accent dot in its
+who owns it, how much thinking it needs, how big it is, what kind of record it
+is and which epic it belongs to. A card with no epic carries one accent dot in its
 top corner instead, and its tooltip names the choice that clears it. A card with
 a due date carries it as one more pill, in the Fix tint once the date has gone
 by on a card nobody has finished.
 
-Pressure is drawn in the same neutral treatment as every other footer fact. It
-sorts nothing and gates nothing (``src/app.md`` Phase 3.3), so nothing on the
-card ramps it from green to red.
+The tier and the size are drawn in the same neutral treatment as every other
+footer fact. Neither sorts anything (``src/app.md`` Phase 3.3), so neither is
+given a colour that would read as urgency. A card not yet rated for a tier draws
+no tier pill.
 
 Reads its structured payload from ``CARD_ROLE`` (see theme.py). Every colour,
 gap, pad, corner and font size it draws with resolves through theme.py at paint
@@ -43,7 +44,8 @@ from .theme import (
     C,
     CARD_ROLE,
     _is_checked,
-    effort_label,
+    size_label,
+    tier_label,
     radius,
     space,
     type_size,
@@ -279,17 +281,20 @@ class CardDelegate(QStyledItemDelegate):
         painter.restore()
 
     def _draw_footer(self, painter, data, cx, y, cw) -> None:
-        """One row: who owns it and how hard it is pushing on the left, then the
-        soft-tinted pills right-aligned — effort, record type, epic. Each pill's
+        """One row: the id and who owns it on the left, then the soft-tinted
+        pills right-aligned — tier, size, record type, epic. Each pill's
         text colour comes from its own tint. The epic is the one that gives up
         width first, because the board is usually already filtered by epic."""
         sfont = self._small_font()
         fm = QFontMetrics(sfont)
 
         pills: list[tuple[str, str, str]] = []
-        effort = effort_label(data.get("estimate"))
-        if effort:
-            pills.append((effort, C["NEUTRAL_BG"], C["NEUTRAL_TX"]))
+        tier = tier_label(data.get("tier"))
+        if tier:
+            pills.append((tier, C["NEUTRAL_BG"], C["NEUTRAL_TX"]))
+        size = size_label(data.get("estimate"))
+        if size:
+            pills.append((size, C["NEUTRAL_BG"], C["NEUTRAL_TX"]))
         rtype = (data.get("record_type") or "build").lower()
         if rtype == "fix":
             pills.append(("Fix", C["FIX_BG"], C["FIX_TX"]))
@@ -309,11 +314,9 @@ class CardDelegate(QStyledItemDelegate):
             pills.append((epic_name, C["AMBER_BG"], C["AMBER_TX"]))
 
         owner = data.get("owner", "") or "user"
-        pressure = int(data.get("pressure", 0) or 0)
         issue_id = data.get("issue_id")
         prefix = f"#{issue_id}  ·  " if issue_id is not None else ""
-        suffix = f"  ·  pr {pressure}"
-        left_text = prefix + owner + suffix
+        left_text = prefix + owner
         wanted_left = fm.horizontalAdvance(left_text)
 
         gap = space("sm")
@@ -324,8 +327,8 @@ class CardDelegate(QStyledItemDelegate):
 
         # The epic gives up width first: it shrinks to what is left, and is
         # dropped once it is too narrow to say anything. Only then does the
-        # left-hand text elide, and the id, the owner and the pressure reading
-        # are what it holds — each of them appearing exactly once.
+        # left-hand text elide, and the id and the owner are what it holds —
+        # each of them appearing exactly once.
         if spare() < 0 and epic_name:
             shrunk = widths[-1] + spare()
             if shrunk < self._pill_width("…", sfont) * 2:
@@ -334,13 +337,12 @@ class CardDelegate(QStyledItemDelegate):
                 widths[-1] = shrunk
         left_w = max(0, min(wanted_left, wanted_left + spare()))
         if left_w < wanted_left:
-            # The owner is the elastic part: the id and the pressure reading
-            # each stay whole, and a long slug is what gives up characters.
-            fixed = fm.horizontalAdvance(prefix + suffix)
+            # The owner is the elastic part: the id stays whole, and a long
+            # slug is what gives up characters.
+            fixed = fm.horizontalAdvance(prefix)
             left_text = (prefix
                          + fm.elidedText(owner, Qt.ElideRight,
-                                         max(0, left_w - fixed))
-                         + suffix)
+                                         max(0, left_w - fixed)))
 
         painter.setFont(sfont)
         painter.setPen(QColor(C["INK_SOFT"]))

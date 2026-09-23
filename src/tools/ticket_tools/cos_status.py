@@ -48,8 +48,8 @@ def main() -> None:
 
     # Fleet-wide, unlike every other section: a card any agent left waiting on
     # the user is the user's to clear whoever owns it.
-    sc.print_needs_you(board)
-    sc.print_body(conn, db_path, ME, mine_all, mine_q)
+    asked = sc.print_needs_you(board, conn)
+    sc.print_body(conn, db_path, ME, mine_all, mine_q, asked)
 
     print("\n--- FLEET (active-board items owned by OTHER agents — context only, not yours) ---")
     if others_q:
@@ -60,8 +60,8 @@ def main() -> None:
         print("  (none)")
 
     # No handoff section by design. A session's carry-forward IS its cards: work
-    # left mid-flight is a `doing` card on the active board with a real owner and
-    # pressure. There is no per-agent narrative block, because a note saying
+    # left mid-flight is a `doing` card on the active board with a real owner.
+    # There is no per-agent narrative block, because a note saying
     # "where things stand" is work state living somewhere other than a ticket.
     conn.close()
 

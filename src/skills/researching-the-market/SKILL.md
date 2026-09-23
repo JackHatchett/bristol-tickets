@@ -34,12 +34,12 @@ left blank with what a usable answer looks like beside it.
 
 - **The questions this stage has to answer** — the decisions downstream that
   turn on this stage, and the question each one needs settled. A usable answer
-  names the decision, the question, and the figure or fact that would settle it.
+  states the decision, the question, and the figure or fact that would settle it.
 - **The customer, and how many** — who buys, how many of them are reachable
   from where the business trades, how often they buy, and what share of them buy
   this at all. A usable answer is a count or a rate for a named area, from a
   published table or a survey, with its link and its year.
-- **The competitors, and what they charge** — a table, and the stage names its
+- **The competitors, and what they charge** — a table, and the stage gives its
   columns and how many rows it needs before the table is a finding rather than
   three examples. Columns: the business, what it sells that competes, its price
   by the unit the buyer compares, how it is bought, and the source. A usable row
@@ -100,13 +100,13 @@ or a decision's.
    stage itself produces.
 6. **Read the forms back against three checks**, fixing what fails: nothing is
    filled in that was not asked for, every question states what a usable answer
-   looks like, and the competitor table names its columns and its row count.
+   looks like, and the competitor table gives its columns and its row count.
 7. **Return at the gate** and plan the next stage from what the forms say.
 
 ## Failure modes
 
 - **Three competitors the session picked** → the form was answered instead of
-  written; it names columns and a row count, and the rows are the user's to
+  written; it gives columns and a row count, and the rows are the user's to
   fill or to hand back.
 - **A market size with no publisher or year** → §The five forms; a figure
   without those is not usable in a plan a lender reads.

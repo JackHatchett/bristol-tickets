@@ -38,11 +38,11 @@ teaching_assistant` is this skill's input.
    active-stage tasks in precedence order — `doing` first, then `todo`, both in
    board order — plus its epics. **That ordering is the recommendation. Never
    re-sort, re-weight or second-guess it.**
-2. **Resolve each of the top cards to a concrete artifact.** Look the named
+2. **Resolve each of the top cards to a concrete artifact.** Look the given
    course and lesson up in that course's `progress.json` for the topic, the file
    path, and whether the file has been generated. This is the only use of that
    file.
-3. **Report divergence, never silently correct it.** A card naming a lesson
+3. **Report divergence, never silently correct it.** A card giving a lesson
    whose file is absent is a blocker to state plainly. **Where a
    `progress.json` status field contradicts the board, the board is right** —
    say so and move on. Do not edit the JSON to match, and do not edit the board

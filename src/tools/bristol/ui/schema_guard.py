@@ -2,8 +2,10 @@
 
 The viewer is a read/write client of a database it does not own (the shared
 tickets.db). Older databases may predate columns/tables this UI expects, so on
-every launch we add only what is missing. Nothing here drops data, and one
-correction rewrites a field the board itself mis-stamped — see
+every launch we add only what is missing. The only columns dropped are retired
+ones whose values mean nothing any longer — see _retire_blocked_columns and
+_retire_pressure — and one correction rewrites a field the board itself
+mis-stamped — see
 _recover_closed_at_from_the_log. It is safe to run against an already-current
 database (all operations are idempotent: ADD COLUMN only when absent, CREATE
 TABLE IF NOT EXISTS, and a correction that finds nothing left to correct).
@@ -26,9 +28,9 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
     cursor.execute("PRAGMA table_info(task)")
     columns = [row[1] for row in cursor.fetchall()]
 
-    # `priority` is now `pressure` — one 0–100 rating of how much a card is
-    # pushing to be done, not a rank. Rank is task.sort_order. The rename is a
-    # column rename, so every existing value carries over unchanged.
+    # `priority` became `pressure`, and pressure is retired by
+    # _retire_pressure below. The rename stays because the sprint migration
+    # seeds an order from it on a database old enough to carry either.
     if "pressure" not in columns and "priority" in columns:
         conn.execute("ALTER TABLE task RENAME COLUMN priority TO pressure;")
         columns = [c if c != "priority" else "pressure" for c in columns]
@@ -75,13 +77,19 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
     if "due_date" not in columns:
         conn.execute("ALTER TABLE task ADD COLUMN due_date TEXT;")
 
+    # tier is the depth of processing a card should be worked at — 'max' or
+    # 'standard', NULL for a card not yet rated. It orders nothing, and what
+    # each tier runs on is config's `tiers` key.
+    if "tier" not in columns:
+        conn.execute("ALTER TABLE task ADD COLUMN tier TEXT;")
+
     _migrate_stage_from_sprints(conn)
 
     # The `handoff` table is retired. A per-agent "where things stand" note is
     # work state living somewhere other than a card, which is exactly what the
     # board exists to prevent — being stored inside tickets.db never made it
     # part of the board. Carry-forward is now a `doing` card on the active
-    # board with a real owner and pressure. Dropped on launch; idempotent.
+    # board with a real owner. Dropped on launch; idempotent.
     _drop_retired_handoff(conn)
 
     # (Cross-agent suggestions are ordinary active-board cards: task.assignee =
@@ -174,6 +182,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 
     _consolidate_legacy_history(conn)
     _retire_blocked_columns(conn)
+    _retire_pressure(conn)
     _recover_closed_at_from_the_log(conn)
     install_change_log(conn, actor="user")
     conn.commit()
@@ -186,7 +195,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 # Fields logged with their new value. A dependency is not among them: it lives
 # on a link now, and a link's own history is the row's presence or absence.
 CHANGE_LOG_FIELDS = (
-    "epic_id", "scope_id", "status", "stage", "pressure", "estimate",
+    "epic_id", "scope_id", "status", "stage", "tier", "estimate",
     "assignee", "reporter", "story_points", "record_type", "block_reason",
     "due_date",
 )
@@ -276,7 +285,7 @@ def _migrate_stage_from_sprints(conn: sqlite3.Connection) -> None:
          status is still 'backlog' becomes stage='backlog', status='todo' (the
          status axis is now only todo/doing/done);
       3. seed sort_order so each list keeps roughly its old on-screen order
-         (pressure desc, then id) — a contiguous sequence per (stage, status);
+         (pressure desc where the column survives, then id) — a contiguous sequence per (stage, status);
       4. DROP sprint_task then sprint.
     After the drop this function is a no-op, so it is safe to run on every
     launch. Runs inside the caller's transaction (committed by
@@ -310,9 +319,11 @@ def _migrate_stage_from_sprints(conn: sqlite3.Connection) -> None:
     #    order: the Backlog is ONE combined list (key = stage alone), while the
     #    active Board is three separate columns (key = stage+status). Archive is
     #    shown chronologically by modified date, so its sort_order is unused.
+    task_cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
+    rank = "pressure DESC, " if "pressure" in task_cols else ""
     rows = conn.execute(
         "SELECT id, stage, status FROM task "
-        "ORDER BY stage, pressure DESC, id ASC"
+        f"ORDER BY stage, {rank}id ASC"
     ).fetchall()
     counters: dict[tuple, int] = {}
     for tid, stage, status in rows:
@@ -385,6 +396,34 @@ def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
             conn.execute(f"ALTER TABLE task DROP COLUMN {column}")
         except sqlite3.OperationalError:
             conn.execute(f"UPDATE task SET {column} = {neutral}")
+
+
+def _retire_pressure(conn: sqlite3.Connection) -> None:
+    """Drop task.pressure, and task.priority if a DB still carries it.
+
+    Pressure was a 0–100 reading that ordered nothing, so no value moves
+    anywhere: board order is sort_order, and the depth a card needs is
+    task.tier. The change log keeps every pressure reading it recorded. Mirrors
+    create_tickets._retire_pressure; runs before the change-log triggers are
+    installed, since they name the task columns.
+    """
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
+    for column in ("pressure", "priority"):
+        if column not in cols:
+            continue
+        # A column no trigger names can always be dropped; the triggers are
+        # TEMP and installed after this, but an older build's may be live on
+        # this connection.
+        for (name,) in conn.execute(
+                "SELECT name FROM sqlite_temp_master WHERE type='trigger' "
+                "AND sql LIKE ?", (f"%{column}%",)).fetchall():
+            conn.execute(f"DROP TRIGGER IF EXISTS temp.{name}")
+        try:
+            conn.execute(f"ALTER TABLE task DROP COLUMN {column}")
+        except sqlite3.OperationalError:
+            # An SQLite too old to drop a column keeps it; nothing reads or
+            # writes it, and its default satisfies every insert.
+            pass
 
 
 def _drop_retired_handoff(conn: sqlite3.Connection) -> None:

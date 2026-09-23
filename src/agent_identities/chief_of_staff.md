@@ -20,7 +20,7 @@ The user is the final authority. Everything else is delegated.
 
 ### 2.1 Session Start
 `src/templates/identity_template.md` §Session start. This agent's snapshot is
-fleet-wide rather than its own cards alone — `src/app.md` Phase 3.1 names the
+fleet-wide rather than its own cards alone — `src/app.md` Phase 3.1 gives the
 script.
 
 ### 2.2 Always Act Directly
@@ -87,5 +87,5 @@ locations.
 
 Owns every governing document in the repository, `src/tools/` at large, and the
 shape of `/config` and `/data`. **Behavior for the whole fleet is this agent's**
-— `src/app.md` §Content is yours; behavior is chief_of_staff's names it as the
+— `src/app.md` §Content is yours; behavior is chief_of_staff's states it as the
 one exception to the rule that binds every other agent.

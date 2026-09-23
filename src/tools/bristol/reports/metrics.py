@@ -163,12 +163,12 @@ def _load_cards(conn, task_ids):
         return []
     placeholders = ",".join("?" * len(task_ids))
     columns = [
-        "id", "title", "description", "status", "stage", "pressure",
+        "id", "title", "description", "status", "stage", "tier",
         "record_type", "assignee", "reporter", "estimate",
         "created_at", "updated_at", "closed_at", "epic_name", "epic_id",
     ]
     rows = conn.execute(
-        f"""SELECT t.id, t.title, t.description, t.status, t.stage, t.pressure,
+        f"""SELECT t.id, t.title, t.description, t.status, t.stage, t.tier,
                    COALESCE(t.record_type, 'build'),
                    t.assignee, t.reporter, t.estimate,
                    t.created_at, t.updated_at, t.closed_at,
@@ -218,7 +218,7 @@ def _load_cards(conn, task_ids):
             span is not None and span * SECONDS_PER_DAY <= INSTANT_CLOSE_SECONDS
         )
         cards.append(card)
-    cards.sort(key=lambda c: (-(c["pressure"] or 0), c["id"]))
+    cards.sort(key=lambda c: c["id"])
     return cards
 
 
@@ -248,11 +248,11 @@ def _work_in_progress(conn, now):
     while there is still time to act on it.
     """
     rows = conn.execute(
-        """SELECT t.id, t.title, t.pressure, t.assignee, t.created_at,
+        """SELECT t.id, t.title, t.tier, t.assignee, t.created_at,
                   COALESCE(t.record_type,'build'), e.name
            FROM task t LEFT JOIN epic e ON e.id = t.epic_id
            WHERE t.stage='active' AND t.status='doing'
-           ORDER BY t.pressure DESC, t.id"""
+           ORDER BY t.id"""
     ).fetchall()
     first_doing = {}
     if _table_exists(conn, "task_event"):
@@ -261,10 +261,10 @@ def _work_in_progress(conn, now):
             "WHERE field='status' AND to_value='doing' GROUP BY task_id"
         ).fetchall())
     out = []
-    for tid, title, pressure, assignee, created_at, record_type, epic in rows:
+    for tid, title, tier, assignee, created_at, record_type, epic in rows:
         started = first_doing.get(tid)
         out.append({
-            "id": tid, "title": title, "pressure": pressure,
+            "id": tid, "title": title, "tier": tier,
             "assignee": assignee or "(unassigned)", "record_type": record_type,
             "epic_name": epic, "created_at": created_at, "started_at": started,
             "age_days": _days_between(created_at, now),
@@ -277,10 +277,10 @@ def _queue_snapshot(conn, now):
     """The `todo` column — committed but not started. Its size relative to
     throughput is how long the current queue would take to drain."""
     rows = conn.execute(
-        "SELECT id, pressure, created_at FROM task "
+        "SELECT id, created_at FROM task "
         "WHERE stage='active' AND status='todo'"
     ).fetchall()
-    ages = [_days_between(created, now) for _, _, created in rows]
+    ages = [_days_between(created, now) for _, created in rows]
     return {
         "size": len(rows),
         "median_age_days": _median(ages),
@@ -290,10 +290,10 @@ def _queue_snapshot(conn, now):
 
 def _backlog_snapshot(conn, now):
     rows = conn.execute(
-        "SELECT id, title, pressure, created_at, updated_at FROM task "
+        "SELECT id, title, created_at, updated_at FROM task "
         "WHERE stage='backlog'"
     ).fetchall()
-    ages = [_days_between(created, now) for _, _, _, created, _ in rows]
+    ages = [_days_between(created, now) for _, _, created, _ in rows]
     stale = sum(
         1 for *_, updated in rows
         if (_days_between(updated, now) or 0) > STALE_BACKLOG_DAYS
@@ -423,18 +423,7 @@ def _signals(facts):
             "Delete what you will not do. A backlog you do not trust is one you "
             "stop reading, and then it hides the things that mattered.")
 
-    # 8. Pressure not steering delivery.
-    high = [c["lead_days"] for c in batch if (c["pressure"] or 0) >= 60]
-    low = [c["lead_days"] for c in batch if (c["pressure"] or 0) < 30]
-    hi_med, lo_med = _median(high), _median(low)
-    if len(high) >= 3 and len(low) >= 3 and hi_med and lo_med and hi_med > lo_med * 1.5:
-        add("attention", "High-pressure cards took longer than low-pressure ones",
-            f"Median lead time: {hi_med:.1f}d for pressure 60+, {lo_med:.1f}d for "
-            "pressure under 30.",
-            "Pressure is not currently predicting order of delivery. Either it is "
-            "set after the fact, or the hard cards are simply the important ones.")
-
-    # 9. Cycle-time coverage.
+    # 8. Cycle-time coverage.
     cycle = facts["cycle_time"]
     if n and cycle["coverage"] < 0.5:
         add("watch", "Cycle time is not yet measurable for most cards",
@@ -443,19 +432,19 @@ def _signals(facts):
             "Nothing to fix — coverage rises on its own as cards move through the "
             "board from here. Lead time carries this report in the meantime.")
 
-    # 10. Fields that exist but are effectively never filled. Sized rather than
+    # 9. Fields that exist but are effectively never filled. Sized rather than
     #     binary: one card out of thirty-five carrying an estimate is the same
     #     situation as none of them, for anything you could compute from it.
     quality = facts["data_quality"]
     sized = quality["estimates_used"]
     if n >= 5 and sized / n < SIZING_COVERAGE_FLOOR:
         add("watch", "Estimate and story-point fields are going unused",
-            f"{quality['estimates_used']} of {n} cards carried an effort estimate.",
+            f"{quality['estimates_used']} of {n} cards carried a size.",
             "Not a problem in itself — but velocity and forecast accuracy are "
             "unavailable without one of them filled consistently. Either commit "
             "to a single sizing field or drop both from the card.")
 
-    # 11. Written trace.
+    # 10. Written trace.
     silent = facts["discussion"]["silent"]
     if n >= 5 and silent / n > 0.6:
         add("watch", "Most cards closed with no written trace",

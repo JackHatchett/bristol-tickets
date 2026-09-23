@@ -16,7 +16,7 @@ rules in full, and `src/skills/base-resume-update/SKILL.md` owns a content
 change to the master made with no job description in play.
 
 Inputs live in the user's career data root: the base resume, the always-on
-context core, and any on-demand module the index names — see
+context core, and any on-demand module the index lists — see
 `src/skills/jd-evaluation/SKILL.md` §The fit rubric for the split. **The ATS source of truth is
 the plain-text resume, not the formatted docx.**
 

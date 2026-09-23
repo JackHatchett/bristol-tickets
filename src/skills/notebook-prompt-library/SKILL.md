@@ -103,6 +103,6 @@ because the assistant invents one otherwise.
    resolving to no note, and an emitted frontmatter block holding a Templater
    expression or carrying no template's keys. Exit status is 1 when any check
    matched.
-2. **Read each note the checker names**, against the two contracts above.
+2. **Read each note the checker lists**, against the two contracts above.
 3. **Fix what is wrong in place**, then rebuild the index.
 4. **Re-run the checker** until it says every check matched nothing.

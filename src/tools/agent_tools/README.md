@@ -8,7 +8,7 @@ template's §The governing-doc style contract.
 ## Invariants
 
 - **The mandate and the guardrails are supplied, never generated.** Everything
-  else about a new agent follows from them or from a value the caller names, and
+  else about a new agent follows from them or from a value the caller gives, and
   a file that could grant itself authority is what
   `src/templates/identity_template.md` §What of an agent can be imported
   refuses.
@@ -44,7 +44,7 @@ What it writes:
 - **`src/agent_identities/<slug>.md`**, in the shape the template's skeleton
   gives: identity, the session-start reference, the guardrails as one bullet
   each, and the boundaries reference. It carries no list of files, because a
-  charter names none.
+  charter states none.
 - **`agents.<slug>` in config**, with the fields every agent has. `--notebook`
   is `none` by default, which is `read` and `write` both false.
 - **An attachment per `--skill`**, through `skills.py attach`.

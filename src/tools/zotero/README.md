@@ -94,7 +94,7 @@ python3 build_records.py --types
 ```
 
 **`item_types.json` beside the script is the whole of what the library can
-catalogue**, one entry per kind of thing. An entry names the Zotero item type,
+catalogue**, one entry per kind of thing. An entry gives the Zotero item type,
 the payload keys that become fields, the keys that become creators and with
 which creator type, and which of them are required. Adding a kind is an edit to
 that file and none to the script, and `--types` prints what it currently holds.
@@ -114,17 +114,17 @@ Payloads live in `data/*/personal/library_records/`, one file per batch:
 }
 ```
 
-A payload names its collection by configuration key — `collection_key`, one of
+A payload gives its collection by configuration key — `collection_key`, one of
 the keys under `zotero.collections` — so a collection can be renamed in one
 place. A literal `collection` still wins where one is given, and a payload
-naming neither takes the type's own default key where it declares one
+giving neither takes the type's own default key where it declares one
 (`video_game` declares `point_and_click`). A key with no name configured is
 refused, because naming a new collection is the user's.
 
 Behaviour worth knowing:
 
-- **`type` names an entry of the map, and an unmapped one is refused by name**
-  along with the list of the mapped ones. A payload naming no type is the type
+- **`type` is an entry of the map, and an unmapped one is refused by name**
+  along with the list of the mapped ones. A payload giving no type is the type
   whose `payload_key` it carries, which is what keeps a game payload written
   before the map existed running unchanged: `games` is `video_game`'s.
 - **Each type's required fields are its own and a payload missing any of them
@@ -189,7 +189,7 @@ Behaviour worth knowing:
   a bare title is too weak a key to merge on.
 - **Nothing is ever added to "Books I've Read".** A list is aspirational; the
   read collection is a fact about the user. The script refuses a payload that
-  names it.
+  gives it.
 - **Re-running is safe.** An existing collection is reused and only missing
   entries are added, so a payload can be corrected and replayed.
 - `--dry-run` opens the database read-only and reports reuse and create counts,
@@ -207,7 +207,7 @@ python3 build_reading_list_notes.py [--dry-run] [--out-dir PATH]
 
 - **A reading list is any collection holding at least one book**, minus the read
   set and the ownership view. That rule keeps clipping collections out without
-  naming any.
+  listing any.
 - **A book already read is ticked when its line is first written.** After that
   the note is the user's: a re-run preserves every tick and untick.
 - **A re-run only appends lines new to the list**, and deletes only a line whose

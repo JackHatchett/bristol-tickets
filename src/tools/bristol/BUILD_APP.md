@@ -75,7 +75,7 @@ What the tool handles for you:
   `python3` to be resolved at launch.
 - **Surviving a folder move.** The generated script resolves the project at
   launch from the instance pointer (`instance.py`), falling back to the path
-  baked in when it was generated, and shows an alert naming this command if
+  baked in when it was generated, and shows an alert giving this command if
   neither resolves.
 - **The icon**, copied from `icon.icns` next to the tool.
 

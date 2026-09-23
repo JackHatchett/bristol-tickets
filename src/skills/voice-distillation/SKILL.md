@@ -66,7 +66,7 @@ it.
 
 ## Session close
 
-**Note voice progress in the project's session log** — one line naming which
+**Note voice progress in the project's session log** — one line saying which
 technique IDs got filled — per `src/skills/writers-room-project-context/SKILL.md`'s end-of-session step.
 **Surface a milestone to the user** when one lands, such as the core tier
 completing, and record it in the session-log summary.

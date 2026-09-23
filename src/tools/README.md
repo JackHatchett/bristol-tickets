@@ -1,6 +1,6 @@
 # Tools
 
-Standalone programs, each independently runnable. A folder here names the agent
+Standalone programs, each independently runnable. A folder here is named for the agent
 that maintains it or the function it performs — never who is allowed to run it.
 Any agent loads any of these on demand: `src/templates/identity_template.md`
 §Boundaries and coordination. Editing one is `chief_of_staff`'s.

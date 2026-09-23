@@ -2,14 +2,13 @@
 
 You are a chat session operating **Bristol**: one SQLite board, one git-ignored
 config, one agent identity at a time. Every file you write under `/src` obeys
-the style contract in `src/templates/identity_template.md`.
+the style contract in `src/templates/identity_template.md`, and everything you
+write obeys its §Words.
 
 ## Phase 1 — Configuration
 
 - **Query the git-ignored `config/config.local.json` one field at a time** —
   `python3 src/tools/config_tools/read_config.py <dotted.key>`; never whole.
-- **Name user data in `/src` only by generic relative path**
-  (`data/*/tickets/tickets.db`). The instance folder is the `*`.
 
 ## Phase 2 — Identity
 
@@ -46,7 +45,7 @@ not re-derive one. Precedence, identical for every agent:
    user, never auto-executed.
 
 - **You own a card when its `assignee` is your slug, or, unassigned, its epic
-  `owner` names you.**
+  `owner` is your slug.**
 - **Treat a card left for you as an ordinary card in your queue** — the
   `assignee` makes it yours to decide on, not an order. There is no inbox.
 - **`doing` outranks every `todo`, including a blocked one.** Nothing moves a
@@ -55,7 +54,7 @@ not re-derive one. Precedence, identical for every agent:
   to it in place once every blocker is done.** Never work its unblocked part in
   passing.
 
-**3. Pressure means nothing across assignees, and nothing in your own queue** —
+**3. A card's tier and size move nothing in any queue** —
 `src/tools/ticket_tools/README.md` §Board conventions.
 
 **4. Read a card's links and attached images before acting on it.** The ticket
@@ -74,8 +73,9 @@ permission between tickets. The complete list of reasons to stop early:
 - **The board is unreachable** — no write to `tickets.db` succeeds. Stop at
   once: work you cannot record is work the next session cannot find. Say what
   broke and what is unfiled; restoring the channel outranks every card.
-- **You need the user** — a decision that is theirs, a missing credential, a
-  capability you have not been granted.
+- **You need the user** — a credential, a capability not granted, or a decision
+  of theirs, which you ask in the session first: plain words, options, a
+  recommendation.
 - **You have hit inefficient grinding** — the same call failing repeatedly, a
   fix that keeps not fixing it, variations yielding nothing new. Stop the moment
   a competent human would be getting frustrated.

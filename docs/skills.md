@@ -82,7 +82,7 @@ and asserts nothing. What makes it safe is the reading that came before it.
 Python, then the skill's own text, then every script in full.
 
 The scanner is **bandit**, and it reads Python only. A skill's shell,
-JavaScript, Ruby or PowerShell goes unread and the report names it. It does not
+JavaScript, Ruby or PowerShell goes unread and the report lists it. It does not
 follow data between files, it cannot tell a dangerous call used correctly from a
 safe one used wrongly, and code that is obfuscated or fetched while it runs
 reads to it as ordinary Python. A finding is a place to look. A clean report
@@ -102,7 +102,7 @@ python3 src/tools/skill_tools/skills.py convert <file.md>
 
 The name, the description and the licence cross. The lines that route work
 inside the other tool — which model to use, which of its tools to allow — are
-dropped, and the output names each one it dropped, because your AI application
+dropped, and the output lists each one it dropped, because your AI application
 decides both and Bristol has no say in either. A file that states no description
 is refused rather than given one: a skill with no description never routes.
 
@@ -156,7 +156,7 @@ python3 src/tools/skill_tools/skills.py package <name>
 
 What comes back is a zip whose root is the skill's own folder, and a short
 statement of who wrote the skill, what its licence says and where that was read
-from. A skill you installed from somebody else leaves here naming them, never
+from. A skill you installed from somebody else leaves here crediting them, never
 Bristol. Loading it at the other end is a step you take in that assistant's own
 settings; nothing here reaches it, and nothing here can tell you it arrived.
 

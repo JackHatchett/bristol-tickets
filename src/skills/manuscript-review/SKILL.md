@@ -22,7 +22,7 @@ Reading finished prose rather than building it. Prose still being built is
 
 ## Procedure
 
-Four reads. The user's request names one.
+Four reads. The user's request picks one.
 
 1. **Zero-context reader test.** Read the raw prose with no lore, outline or
    reference material in hand: where attention held, where it drifted, what

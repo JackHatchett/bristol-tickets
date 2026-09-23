@@ -144,7 +144,7 @@ Ten fields. A requirement missing any of the first seven is not worked yet.
 - **A question that has to be put to an office or a professional becomes a
   card**, because the asking is an act the user takes on a day.
 - **The card carries the date, the link and what it blocks; the document carries
-  the research.** Neither restates the other, and the document names no card.
+  the research.** Neither restates the other, and the document cites no card.
 
 ## Procedure
 

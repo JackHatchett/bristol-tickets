@@ -41,6 +41,18 @@ note the epic's cards link to. This owns what a session does.
   files the user authors; the only write into them is the link, inserted at its
   anchor if absent and never otherwise.
 
+## The owner's own posts
+
+- **Each is a quote carrying a block identifier**, `^bsky-<record key>`, so one
+  post embeds in another note as `![[bluesky_YYYY-MM-DD#^bsky-<record key>]]`.
+  A post standing alone is a block quote with the identifier on its own line
+  after it; a post inside a conversation is one bullet holding the quote, its
+  line breaks kept as `<br>`, with the identifier at the end of that bullet.
+- **The identifier is the post's record key**, which never changes, so an embed
+  survives every rebuild. Never number posts by position on the page.
+- **Nothing on a page is bold** — `src/skills/note-formatting/SKILL.md`
+  §Emphasis. Asterisks inside a post's own text are its author's and stay.
+
 ## Running it
 
 - **A catch-up covering the last week is `--days 7`.** Widen the window rather
@@ -48,7 +60,7 @@ note the epic's cards link to. This owns what a session does.
   anything an earlier failure missed.
 - **A whole-history pass is `--all`**, and it is the same command.
 - **Use `--budget` where the host will not hold a long command**, and resume
-  from the day it names with `--from`. `--skip-existing` skips days already
+  from the day it gives with `--from`. `--skip-existing` skips days already
   written, which is for filling gaps rather than for rebuilding.
 - **Rebuild without `--skip-existing` after any change to how a page is
   built.** Skipping existing days leaves the old shape in place for every day
@@ -121,5 +133,5 @@ Work down this list; the earlier causes are far more common.
 
 - Every day the account posted has exactly one page, and no other day has one.
 - Running the copy twice over the same records changes no file.
-- The journal's template names none of these pages.
+- The journal's template links none of these pages.
 - Every journal page carrying a link has a page on the other end of it.

@@ -19,7 +19,7 @@ which ones you want when you install it.
 macOS, Python 3.10 or later, and an **agent host** — an AI application that
 loads per-project instructions, reads and writes a folder you choose, and runs
 commands in it. Without a host there is no agent: you get a working Kanban board
-and nothing else. [install.md](install.md) names what a host must do and which
+and nothing else. [install.md](install.md) says what a host must do and which
 ones are known to do it.
 
 ## What it is not

@@ -32,7 +32,7 @@ else:
     from .generate import ReportResult
     from .paths import resolve_reports_dir
 
-# The middle of each band in the effort scale, as a share of one full budget.
+# The middle of each band in the size scale, as a share of one full budget.
 SPEND = {"S": 0.05, "M": 0.3, "L": 0.75, "XL": 1.5}
 BANDS = "S under a tenth of a budget, M a tenth to a half, L a half to a whole, XL more than one"
 STANDING_KIND = "standing"
@@ -154,14 +154,14 @@ def render(facts: dict) -> str:
         lines += ["#### The projects", ""]
         for name, held in facts["epics"].items():
             unsized = f", {held['unsized']} unsized" if held["unsized"] else ""
-            lines.append(f"- **{name}** — {held['cards']} card(s), "
+            lines.append(f"- {name} — {held['cards']} card(s), "
                          f"{held['spend']:.2f} of a budget{unsized}")
         lines.append("")
     if facts["cards"]["standing"]:
         lines += ["#### The upkeep", ""]
         for card in facts["cards"]["standing"]:
             size = card["estimate"] or "unsized"
-            lines.append(f"- **#{card['id']}** {card['title']} — {size} · "
+            lines.append(f"- #{card['id']} {card['title']} — {size} · "
                          f"{card['owner']}")
         lines.append("")
     lines += ["---", "",

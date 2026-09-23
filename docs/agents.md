@@ -198,7 +198,7 @@ with the control its kind deserves:
   notebook is read whole or not at all, which is why Read holds one box;
   writing is granted a zone at a time, so Write holds one per zone;
 - **environment variables** as a name beside a value, with a picker for a value
-  that names a folder;
+  that gives a folder;
 - the **skills** attached to it as a tick list of every skill this
   installation can load;
 - and one field per key in the entry this build has no control of its own for,
@@ -211,7 +211,7 @@ what its charter file and its config key are named after.
 Three fields are marked required: **Name**, **Description** and **Charter**. A
 new agent's charter opens on the skeleton from
 `src/templates/identity_template.md` for you to fill in. Save is refused while
-one of the three is empty, and the refusal names the field.
+one of the three is empty, and the refusal states the field.
 
 Saving writes the charter and the config entry through the same tools a session
 runs, and those tools check everything before their first write: a refused save

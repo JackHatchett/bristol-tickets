@@ -124,7 +124,7 @@ Current events are this skill's normal case, and a course's never.
    §What the set is sized to.
 7. **Read the set back against four checks**, and fix what fails rather than
    noting it: every time-bound claim carries its date, every claim resting on one
-   account says so in its own sentence, every link resolves, and the hub names
+   account says so in its own sentence, every link resolves, and the hub lists
    what the set leaves unsettled.
 
 ## Failure modes

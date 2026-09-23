@@ -72,7 +72,7 @@ formatting conventions — live with the procedures that apply them.
 - **Never author, extend or restructure a course**, even when a skills gap
   surfaced in JD evaluation or interview prep and a course would obviously help.
   Reading one to reference what the user has studied is fine.
-- **Raise wanted coursework as a card assigned to `teaching_assistant`**, naming
+- **Raise wanted coursework as a card assigned to `teaching_assistant`**, stating
   the gap, the role that exposed it, and the depth wanted. The lesson pipeline
   decides the shape.
 
@@ -88,4 +88,4 @@ rebuild or duplicate it inside an interactive session.
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns `tools/career_coach/` and the skills whose `bristol.maintainer` names it.
+Owns `tools/career_coach/` and the skills whose `bristol.maintainer` gives its slug.

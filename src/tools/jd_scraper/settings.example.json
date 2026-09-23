@@ -9,8 +9,6 @@
     "_notes": "project_root is resolved per-instance via config, not hardcoded (the real instance root is data/*/career/ per the framework's generic-glob convention). applications_csv lives directly at project_root, not under applications/ -- it's the living/primary tracker, not historical data; its actual filename is instance-specific. Everything else under paths is historical/pipeline data and lives inside applications/."
   },
   "gmail": {
-    "credentials_file": "config/gmail_credentials.json",
-    "token_file": "config/gmail_token.json",
     "lookback_days": 1,
     "query": "(from:jobalert@linkedin.com OR from:alerts@indeed.com OR from:alerts@ziprecruiter.com OR from:no-reply@flexjobs.com OR from:noreply@jobs.lever.co OR from:greenhouse.io OR subject:\"job alert\" OR subject:\"new jobs for you\" OR subject:\"jobs matching\" OR subject:\"recommended jobs\")",
     "known_senders": [

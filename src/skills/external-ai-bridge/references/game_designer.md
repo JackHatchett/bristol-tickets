@@ -121,7 +121,7 @@ Two JSON file types move through each project's `handoffs/requests/` and
 ## The round trip
 
 1. **`game_designer` writes a REQUEST** into `handoffs/requests/` and tells the
-   user which file to paste into the Gem, or names the module in chat where no
+   user which file to paste into the Gem, or gives the module in chat where no
    file is needed.
 2. **The user runs it in the Gem offline**; the Gem proposes and the user
    approves or revises. Nothing is locked at this stage.

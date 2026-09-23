@@ -42,7 +42,7 @@ RECENT_CARDS = 8
 def all_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Every task on the board, every tab, with its epic joined."""
     return conn.execute(
-        "SELECT t.id, t.title, t.status, t.stage, t.pressure, t.sort_order, "
+        "SELECT t.id, t.title, t.status, t.stage, t.tier, t.sort_order, "
         "       t.estimate, t.assignee, t.block_reason, t.epic_id, "
         "       COALESCE(e.name, '(no epic)') AS epic, e.owner AS epic_owner "
         "FROM task t LEFT JOIN epic e ON t.epic_id = e.id"
@@ -74,7 +74,7 @@ def line(row: sqlite3.Row, blockers: dict) -> str:
         flag += f" [blocked: {reason}]"
     who = (row["assignee"] or "").strip() or f"(epic:{row['epic_owner']})"
     return (f"     #{row['id']:<4} {row['status']:5} {row['estimate'] or '-':>3} "
-            f"pr{row['pressure']:>3}  {row['title']}  <{who}>{flag}")
+            f"{sc.tier_word(row['tier']):8}  {row['title']}  <{who}>{flag}")
 
 
 def about(text: str | None) -> list[str]:
@@ -185,7 +185,7 @@ def main() -> None:
     print(f"\n{'=' * 72}\nBACKLOG ({len(backlog)})\n{'=' * 72}")
     if backlog:
         seen: set = set()
-        for r in sorted(backlog, key=lambda r: (r["epic"], -r["pressure"], r["id"])):
+        for r in sorted(backlog, key=lambda r: (r["epic"], r["sort_order"], r["id"])):
             if r["epic"] not in seen:
                 seen.add(r["epic"])
                 print(f"\n  under {r['epic']}")

@@ -43,7 +43,7 @@ counted, whatever its epic, and split into two lines: project work, and standing
 work — which a card finished under no epic belongs to. Each line carries its card
 count, its summed estimate as a share of one full usage budget, and its share of
 the window. Each size counts at the middle of its band, the bands being the
-effort scale in `src/skills/manage-tickets/SKILL.md`, and a card with no estimate
+size scale in `src/skills/manage-tickets/SKILL.md`, and a card with no estimate
 is reported as unsized rather than counted as nothing. A window nothing finished
 in writes no note and says so.
 
@@ -75,7 +75,7 @@ Resolved in `paths.py`, on the order
 `src/tools/config_tools/instance_pointer.py` states:
 
 1. `BRISTOL_REPORTS_DIR` — an explicit override, for testing.
-2. The per-machine instance pointer, whose `config_path` names the config file
+2. The per-machine instance pointer, whose `config_path` gives the config file
    even when Bristol Tickets runs as a relocated `.app` that cannot see the
    repo.
 3. `bristol/bristol_reports.local` — a git-ignored one-line absolute path,

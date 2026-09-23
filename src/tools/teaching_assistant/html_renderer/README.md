@@ -44,7 +44,7 @@ recognizable, so it is where a template change is caught.
   `config_tools/data_paths.py`**, which owns what a declaration means and finds
   the folder on a host that mounts the user's folders somewhere else.
 - **Nothing here expands a path itself**, and there is no guessed fallback: a
-  root declared nowhere is an error naming the key.
+  root declared nowhere is an error stating the key.
 
 ## progress.json
 

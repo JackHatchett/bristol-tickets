@@ -50,8 +50,8 @@ def main() -> None:
     sc.print_queue(conn, board, mine_q, me,
                    label="NEXT ACTION", show_owner=False)
 
-    sc.print_needs_you(mine_all)
-    sc.print_body(conn, db_path, me, mine_all, mine_q)
+    asked = sc.print_needs_you(mine_all, conn)
+    sc.print_body(conn, db_path, me, mine_all, mine_q, asked)
 
     # No handoff section by design — a session's carry-forward is a `doing` card
     # on the active board, never a narrative note.

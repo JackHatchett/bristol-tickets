@@ -23,7 +23,7 @@ PERSISTENT BROWSER PROFILE:
     2. Run:  python3 tools/jd_scraper.py --login
        (a browser window will open with no jobs to scrape, but you can navigate
         to FlexJobs/ZipRecruiter and log in manually)
-    3. See login_mode() below; it also auto-fills credentials.json if present.
+    3. See login_mode() below; it auto-fills what the keychain holds for each site.
     4. Set playwright_headless back to true when done.
 
 ROUTING:
@@ -360,34 +360,30 @@ def classify_host(url, playwright_hosts, skip_hosts):
 # Login mode helper
 # ---------------------------------------------------------------------------
 
+def _site_credentials(key):
+    """A site's username and password from the keychain, or {} where either
+    is missing, which leaves that site to a manual login."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import keyring_utils
+    try:
+        return {"username": keyring_utils.get_secret(f"{key}_username"),
+                "password": keyring_utils.get_secret(f"{key}_password")}
+    except KeyError:
+        return {}
+
+
 def login_mode(settings):
     """
     Open a headful browser with the persistent profile so you can log in to
     ZipRecruiter, FlexJobs, Indeed, or any other site that requires auth.
 
-    If config/credentials.json exists, credentials are auto-filled where supported.
+    A site's username and password are auto-filled where the keychain holds
+    them, under career_coach / <site>_username and <site>_password (ziprecruiter,
+    flexjobs, indeed); no file holds either. Store one with:
+      python3 src/tools/_shared/keychain.py set career_coach flexjobs_password
     Cookies are saved automatically to config/browser_profile/ when you close.
-
-    credentials.json format (create this file manually; it is gitignored):
-      {
-        "ziprecruiter": { "username": "your@email.com", "password": "yourpassword" },
-        "flexjobs":     { "username": "your@email.com", "password": "yourpassword" },
-        "indeed":       { "username": "your@email.com", "password": "yourpassword" }
-      }
     """
     BROWSER_PROFILE_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Load credentials if available
-    creds_file = BASE_DIR / "config" / "credentials.json"
-    creds = {}
-    if creds_file.exists():
-        with open(creds_file) as f:
-            creds = json.load(f) or {}
-        print(f"Credentials loaded for: {', '.join(k for k in creds.keys() if not k.startswith('_'))}")
-    else:
-        print(f"No credentials file found at {creds_file}.")
-        print("You can create it to enable auto-fill (see --login docstring).")
-        print("Or just log in manually in the browser.")
 
     # Sites to log into, in order
     login_sites = [
@@ -437,7 +433,7 @@ def login_mode(settings):
 
         for site in login_sites:
             name = site["name"]
-            site_creds = creds.get(site["cred_key"], {})
+            site_creds = _site_credentials(site["cred_key"])
 
             print(f"Opening {name}...")
             try:

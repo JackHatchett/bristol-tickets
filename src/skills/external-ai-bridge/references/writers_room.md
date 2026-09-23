@@ -38,7 +38,7 @@ Everything else writers_room does itself.
 
 One block, containing:
 
-- **The job**, in one line, named from the list above.
+- **The job**, in one line, taken from the list above.
 - **The reference set** — file and section pointers scoped to what the job
   needs, never the whole project. Withhold it entirely for a zero-context reader
   test; that is the point of the read.
@@ -46,7 +46,7 @@ One block, containing:
 - **The constraints** — the active project's content rules, what may be invented
   freely, and what must not be touched: settled beats, settled terms.
 
-**Scope the model to the pointers the brief names.** It reads those files and
+**Scope the model to the pointers the brief lists.** It reads those files and
 sections and flags a gap rather than wandering into the rest of the project.
 
 ## The return

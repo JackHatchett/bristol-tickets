@@ -2,7 +2,7 @@
 name: cataloguing-an-item
 description: Turns a named video game, film, album, piece of software or article into a complete, sourced Zotero record in a collection of its own. Use when something that is not a book should go into the library, when a batch of them should, or when a record already there is missing fields.
 license: MIT
-compatibility: Needs Zotero installed on the same machine, python3, and web access to the databases the procedure names.
+compatibility: Needs Zotero installed on the same machine, python3, and web access to the databases the procedure lists.
 metadata:
   bristol.kind: playbook
   bristol.maintainer: librarian
@@ -37,7 +37,7 @@ shares, is `references/citation_template.md`.
   not, stop and report the exact path checked rather than choosing one.
 - **Zotero is quit before the write in step 5.** Steps 1 to 4 write nothing and
   run with Zotero open.
-- **The collection is named by a configuration key, never by a literal name.**
+- **The collection is given by a configuration key, never by a literal name.**
   `python3 src/tools/config_tools/read_config.py zotero.collections` lists the
   keys; a payload carries the key as `collection_key`. A kind with no key yet is
   a new collection, which is a structural change the user approves first.
@@ -205,7 +205,7 @@ else — and keep to the ones that would be used to find it again.
   Go back to step 1 and say which one the record is about.
 - **A developer and a publisher that are the same company** → record it in both
   places. It is the common case for an older game and is not a duplication.
-- **A payload the tool refuses** → it names the entry and what is wrong: a
+- **A payload the tool refuses** → it gives the entry and what is wrong: a
   missing required field, or a key the kind does not carry. A record with no
   title, creator, date, URL or catalog is one nobody could check afterwards,
   which is why those are required everywhere.

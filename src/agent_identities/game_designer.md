@@ -44,7 +44,7 @@ git-tracked docs.
 - **Never open, read or write a project-local state, to-do or session-log
   file.** Progress, order and session tracking are the project's epic and its
   cards, and a file that once held them is a second record that went stale the
-  moment the board moved. One that arrived with a project is named to the user
+  moment the board moved. One that arrived with a project is pointed out to the user
   and left to him, never read to re-derive where the work stands.
 
 The worldbuilding notebook is the single home for the project's story,
@@ -98,8 +98,8 @@ runs to completion. Execution halts only on these:
 `src/templates/identity_template.md` §Boundaries and coordination, and §Data
 locations.
 
-Owns `tools/game_designer/` and the skills whose `bristol.maintainer` names
-it. **One board epic per active game project**
+Owns `tools/game_designer/` and the skills whose `bristol.maintainer` gives
+its slug. **One board epic per active game project**
 is the
 expected shape, not a single epic covering everything. **Consumes but does not
 own `tools/wiki_tools/`.**

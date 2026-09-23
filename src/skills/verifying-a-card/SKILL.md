@@ -10,7 +10,7 @@ metadata:
 ---
 # verifying-a-card
 
-Input: a build card. Operation: the check below. Output: a card that names how it
+Input: a build card. Operation: the check below. Output: a card that states how it
 will be checked, and a close that rests on that check having been run.
 
 Done means verified rather than written. Nothing here judges the work — that is
@@ -22,23 +22,23 @@ before it may say it is finished.
 
 - **On the card, as its last acceptance criterion**, in the Given/when/then
   shape the rest of them take. A build card's criteria are already the contract;
-  the verification is the criterion that names the evidence.
+  the verification is the criterion that states the evidence.
 - **Never as a second card.** A check filed as its own card is a check that can
   be closed without the work, and work that can be closed without the check.
 - **Never in a comment alone.** A comment records what a run produced; the
   criterion is what says a run is owed.
 
-## What a verification names
+## What a verification states
 
-Two things, and a step naming only one is not a verification.
+Two things, and a step stating only one is not a verification.
 
 - **What is run** — the command, the target, the file to open, the screen to
   look at. `python3 src/tools/test_tools/smoke.py governing_docs` is a
-  verification. "Tests pass" is not: it names no run.
+  verification. "Tests pass" is not: it specifies no run.
 - **What result would fail it** — the output that means the card is not done.
   A check nothing could fail is a sentence, not a check.
 
-**A verification that a person performs is still a verification**, and it names
+**A verification that a person performs is still a verification**, and it states
 the person's part the same way: what they open, and what they would be looking
 at that means it failed.
 
@@ -51,7 +51,7 @@ at that means it failed.
   than deciding the scope on the way past. A verification narrows a card, and
   narrowing one is not this pass's to do silently.
 - **A fix card takes the same treatment**, in its Expected: the expected line is
-  the check, and it names a run and a failing result or it names nothing.
+  the check, and it states a run and a failing result or it states nothing.
 
 ## When it cannot run here
 
@@ -60,7 +60,7 @@ at that means it failed.
   not granted: each is one sentence to him and a card that stays open, never a
   reason to run something else. Where the asking happens is
   `src/skills/manage-tickets/SKILL.md` §Asking the user for a decision.
-- **Never substitute a copy of what the check names.** A snapshot, a scratch
+- **Never substitute a copy of what the check specifies.** A snapshot, a scratch
   database, a duplicate folder: running against one proves the code and not the
   change, so it is preparation for the verification rather than the
   verification. Where a copy is what a session had, the comment says the check
@@ -77,7 +77,7 @@ at that means it failed.
 
 ## Closing on it
 
-1. **Run what the criterion names.**
+1. **Run what the criterion specifies.**
 2. **Put what it produced in the closing comment** — the counts, the failures,
    the output that decided it — rather than the fact that it was run.
 3. **Where it failed, the card stays open** and the comment says what failed.
@@ -86,7 +86,7 @@ at that means it failed.
 
 ## Failure modes
 
-- **A criterion saying the work will be tested** → it names no run and no
+- **A criterion saying the work will be tested** → it specifies no run and no
   failure; it is the story restated.
 - **A closing comment saying the checks pass** → the numbers are the evidence,
   and a reader who was not there has none without them.
@@ -99,6 +99,6 @@ at that means it failed.
 
 ## Audit
 
-**Whether any build card closed this session without a criterion naming a run,
+**Whether any build card closed this session without a criterion specifying a run,
 or with one whose run produced nothing in the comment.** Either is a card that
 says verified and means written.

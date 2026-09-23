@@ -84,11 +84,29 @@ def group(counts: dict) -> list[list[str]]:
     return [held for held in groups if len(held) > 1]
 
 
+def _archive() -> Path | None:
+    """The notebook's archive folder, whose content is superseded and is never
+    read (`src/skills/notebook-proposal/SKILL.md`), or None where config sets
+    none."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
+        import data_paths
+        import read_config
+        declared = read_config.get("markdown_notebook.archive_dir", None)
+        return data_paths.resolve(declared).resolve() if declared else None
+    except (Exception, SystemExit):
+        return None
+
+
 def read(folder: Path, min_uses: int = 2) -> list[dict]:
-    """Every name this folder spells more than one way, commonest first."""
+    """Every name this folder spells more than one way, commonest first. The
+    notebook's archive is skipped wherever the folder contains it."""
     counts: dict[str, int] = defaultdict(int)
     where: dict[str, set] = defaultdict(set)
+    archive = _archive()
     for note in sorted(folder.rglob("*.md")):
+        if archive is not None and archive in note.resolve().parents:
+            continue
         try:
             text = note.read_text(encoding="utf-8", errors="replace")
         except OSError:

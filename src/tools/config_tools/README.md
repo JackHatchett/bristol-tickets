@@ -1,6 +1,6 @@
 # Config Tools
 
-Four small programs that stand between the tracked, generic `/src` code and one
+Five small programs that stand between the tracked, generic `/src` code and one
 installation's real paths. Everything user-specific is read from the git-ignored
 `config/config.local.json`; nothing here contains a username, a home directory,
 or a cloud-provider path.
@@ -29,6 +29,16 @@ needs no quoting.
   Bristol Tickets is the one exception: it is self-contained and carries its own
   reader and writer for the same document.
 
+### active_project.py
+
+`python3 active_project.py <slug>` prints the project a session opens on, and
+why that one. An agent's projects are the entries of `projects.notebook_projects`
+and `projects.local_projects` under its folder grants; the session opens on
+`agents.<slug>.active_project` where that is one of them, and otherwise on
+the first listed. `--set <project>` writes the key when the user moves to
+another, and `--list` prints them all. The rule lives in this program's
+docstring and nowhere else.
+
 ### instance_pointer.py
 
 States, in one place, the order every resolver follows to find an installation:
@@ -44,7 +54,7 @@ Resolves declared locations and creates them at the moment of a write.
 - `resolve(declared)` — the absolute path a declaration refers to. Reads
   config, and touches the disk only for an absolute declared path that is not
   there: a host may reach the user's folders somewhere other than where config
-  names them, so such a path is looked for once more beside the project, which
+  gives them, so such a path is looked for once more beside the project, which
   is where a host that relocates those folders puts them and where they already
   are on a machine running the system directly. Nothing here asks which host it
   is.
@@ -63,7 +73,7 @@ Resolves declared locations and creates them at the moment of a write.
 - `agent_folder_grants(slug)` — the folder grants an agent declares in
   `agents.<slug>.key_data_paths`, each a declared folder and the access it
   carries. `folder_grant(entry)` normalizes one: an entry written before access
-  was recorded is a bare string and reads as `write`, and so does one naming an
+  was recorded is a bare string and reads as `write`, and so does one giving an
   access this build does not know, so a value from a later build never silently
   revokes a grant. What an agent may then do with a grant is
   `src/templates/identity_template.md` §Data locations.
