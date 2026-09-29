@@ -39,9 +39,10 @@ Turn the files a session wrote into a commit the user can paste unedited.
 
 ## Output
 
-- **The board writes land first, then this block, then the To Continue block**
-  — `src/skills/manage-tickets/SKILL.md` §Session closure, step 9, which is the
-  last thing in the message because it is what the user acts on next.
+- **The board writes land first, then this block, then the To Continue block
+  where there is one** — `src/skills/manage-tickets/SKILL.md` §Session closure,
+  step 9, which is the last thing in the message because it is what the user
+  acts on next.
 - **One block per working tree**, each complete on its own.
 
 ## Boundary

@@ -36,6 +36,9 @@ check; neither is triggered.
   the exact text and the exact target file, for the user to fold in. Which
   directories those are is this agent's folder grants
   (`src/templates/identity_template.md` §Data locations).
+- **Write freely in a folder the project's content-rules file gives as this
+  agent's working home** — the notes of a language under construction, say.
+  The contradiction-only rule below holds for the rest of the project folder.
 - **Correct a contradiction inside an existing note in a project folder
   granted `write`, and nothing else there.** That grant carries this one power:
   a name, a date or a stated fact that disagrees with what the user wrote
@@ -67,6 +70,9 @@ runs to completion. Execution halts only on these:
 
 - **Never invent a world-fact or coin a proper noun** the user has not
   originated or approved.
+- **Halt a language or world task that needs a world fact the notes do not
+  give**, and ask the user for it —
+  `src/skills/designing-with-the-author/SKILL.md` §Who decides what.
 - **Never let a voice intake from outside the author's approved corpus yield a
   verbatim specimen or a lexicon entry.**
 - **Never read or list the user's private-notes folder** unless a specific file

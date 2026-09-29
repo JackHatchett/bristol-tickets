@@ -196,11 +196,26 @@ decision, and every term the report uses is defined where it first appears:
   the call or the choice in a comment beside it. A `capability` or a `decision`
   is what puts the card under NEEDS YOU the next time anyone reads the board.
 
-**9. Close on a To Continue block, and let it be the last thing.** The user
-starts the next session from it alone, so it states the launch and nothing else:
+**9. Close on a To Continue block only when you recommend switching sessions.**
+The block's presence is the recommendation, so a session with no reason to
+switch ends on the next action and whether to start it, and shows no block. A
+reason to switch is one of three:
+
+- **The conversation is running out of room.**
+- **The next card needs a different agent** — its `assignee`, or its epic's
+  `owner`, is not the slug this session runs as.
+- **The next card's tier maps to a cheaper model or a lower reasoning level
+  than this session is running**, read from `tiers.max` / `tiers.standard` in
+  config, and the saving outweighs what a new session pays to start: the
+  charter, `src/app.md`, the skill index and the snapshot. A Standard card on a
+  session already running the Standard mapping is no reason.
+
+Where one holds, the block is the message's last paragraph and states the
+launch and nothing else:
 
 ```
 To Continue
+Why: <the one reason, in one line>
 Run as: <agent slug>
 Work: #<id> <title>
 Tier: <Max|Standard>
@@ -222,9 +237,9 @@ Tier: <Max|Standard>
   card with none is rated by §Processing tier and the tier written to it before
   the block is. The block gives the tier and never a model; the user resolves
   it.
-- **Write no state into any file to support it.** The block is the message's
-  last paragraph and lives in the conversation; what it lists lives on the
-  board, and `src/app.md` §The board is the only channel is unchanged by it.
+- **Write no state into any file to support it.** The block lives in the
+  conversation; what it lists lives on the board, and `src/app.md` §The board is
+  the only channel is unchanged by it.
 
 ## Asking the user for a decision
 
