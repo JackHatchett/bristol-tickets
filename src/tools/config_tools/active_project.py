@@ -19,7 +19,7 @@ config, so the choice holds for later sessions and no tracked file changes.
 CLI
 ---
     python3 active_project.py writers_room
-        -> obsidian_notes/30_chiropterad  (the only project)
+        -> obsidian_notes/30_novel  (the only project)
     python3 active_project.py writers_room --list
     python3 active_project.py writers_room --set obsidian_notes/31_other_novel
 

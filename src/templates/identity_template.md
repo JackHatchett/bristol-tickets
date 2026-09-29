@@ -399,10 +399,10 @@ Nine rules, and the one on words below:
   until someone clears it makes the same claim from the other end, and
   `src/app.md` §What a file may say already bars it as a status label on
   content. What the caller does with the output is not the procedure's business.
-- **Keep a negative where it describes a plausible failure mode; cut it where it is
-  the logical complement of the positive.** "Never make the user the transport"
-  earns its line because an agent will otherwise reach for it. "Do not leave the
-  field blank" after "fill in the field" earns nothing.
+- **Negatives follow §Words.** In a governing document, the fact a positive
+  leaves open includes a route an agent will otherwise reach for: "Never make
+  the user the transport" earns its line, and "Do not leave the field blank"
+  after "fill in the field" earns nothing.
 - **Keep rationale only where the rule under-determines a case the agent will
   meet.** Explain a rule when knowing why changes what the agent does at an edge
   it will actually reach. Otherwise state the rule and stop — a rule that holds
@@ -426,3 +426,11 @@ a line in chat — and not only for governing documents.
   states, defines, gives, sets, specifies or lists; a person names a child, a
   ship, a price, or someone to a post. "The card names the file" is the misuse,
   and "the card gives the file" is the sentence.
+- **State what is done and how, and stop.** "The copy runs each morning at 4:20"
+  is the sentence. A clause after it saying what does not happen, or spelling
+  out what the sentence already implies, reads to a later session as a rule
+  nobody set — a ban on exceptions that may exist, or a limit on what the fact
+  covers.
+- **A negative stands only where it states a fact the positive leaves open** —
+  an absence a reader would otherwise assume, such as a sound a language lacks
+  that a neighbouring language has.

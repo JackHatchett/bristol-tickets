@@ -22,8 +22,10 @@ snapshot, which happens first.
    snapshot the charter already ran. What is settled, what is open and what to
    work next are cards and their comments; a file saying any of it is a second
    record that goes stale (`src/app.md` §The board is the only channel).
-3. **Read that project's content-rules file** — its `AGENTS.md` or equivalent —
-   before authoring or judging any content in it. Read it the first time content
+3. **Read that project's content-rules file** — its `AGENTS.md`, or the
+   guidance hub this agent's `key_context_files` gives where the project keeps
+   its agent guidance apart from its notes — before authoring, proposing or
+   judging any content in it. Read it the first time content
    work begins in a session rather than only at session start. **Content rules
    bind every piece of work on that project**, including anything handed to a
    second model, which receives them in its brief
