@@ -46,8 +46,8 @@ before running anything in it.
 - **`config_tools/`** — read a config field, resolve a declared data location.
   Any agent, before touching a path outside the repo.
 - **`skill_tools/`** — the loader for Agent Skills: two roots, frontmatter-only
-  listing, and a quarantine a third-party skill leaves only after its code is
-  read. When a capability is packaged as a skill folder.
+  listing, and an import that adds a skill only when the scan of its code is
+  clean. When a capability is packaged as a skill folder.
 - **`agent_tools/`** — creating an agent: its charter, its config entry, its
   skill attachments and its board epic, from a mandate and its guardrails. When
   the fleet gains a member.

@@ -7,23 +7,17 @@ reads, so the app and a session cannot disagree about a name, a description or
 an origin. Attaching and removing are that tool's own commands, run the same
 way.
 
-The page performs the mechanical half of an import and stops there. Judging a
-skill is a read of its body and of every script it carries, and the app cannot
-read; the fetch therefore lands the skill in quarantine and files a card for
-``chief_of_staff``, whose procedure is ``src/skills/importing-a-skill``. What is
-quarantined stays invisible to every session until that judgment is made.
+Import fetches a skill, scans any Python it carries, and adds it to the list
+only when the scan is clean; every session can load it at once. A finding stops
+the import, and the page shows what was found and where. The result of a clean
+scan, and any code the scanner cannot read, is shown on the skill's row and in
+its view.
 
 A skill opens into a view of its own — its text, its files, its source and a
 tick box per agent — and attaching happens there, beside what is being
 attached. The page's bottom row therefore narrows the list rather than
 attaching: by text, by whether a skill came with Bristol or was downloaded, and
 by which agent holds it.
-
-The page offers no trust control. The user has no basis on which to press one,
-which is why the judgment was taken off him in the first place, and a button
-asking him to overrule it is that gate wearing another label. Wanting a
-quarantined skill sooner is said on its card, where every other decision about
-it already lives.
 """
 
 from __future__ import annotations
@@ -31,7 +25,6 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -59,28 +52,11 @@ from .theme import LAYOUT, space
 
 SKILLS_CLI = Path("src") / "tools" / "skill_tools" / "skills.py"
 
-# The three things the page has to say in its own words, kept together because
-# they are one vocabulary: importing, quarantine, and what ends it.
+# What the button does, in the page's own words.
 IMPORT_NOTE = (
-    "Import downloads the skill and stops there. It lands in quarantine, where "
-    "no session can use it, and a card asks chief_of_staff to read it and "
-    "decide. Nothing else changes and nothing is asked of you.")
-QUARANTINE_NOTE = (
-    "Downloaded, and nobody has read it yet, so no agent can use it. Each one "
-    "waits on the card beside it — say so on that card if you want it used.")
-
-# A quarantined skill's card. The body is the record-type skeleton every build
-# card takes, so a card filed here reads like one filed anywhere else.
-CARD_TITLE = "Judge and attach the skill {name}"
-CARD_BODY = """Story:
-As the user I want a skill fetched from the app judged and attached so that what I found in a browser becomes a capability an agent holds.
-
-Acceptance Criteria:
-1. Given {name}, quarantined from {origin}, when it is read, then it is judged against src/skills/importing-a-skill/SKILL.md and the case it falls to is named.
-2. Given it clears, when it is trusted, then it is attached to the agent whose work it serves and that agent is named here.
-3. Given it does not clear, when it is refused, then it stays in quarantine and this card returns to the user with what was read, what was not, and what would change the answer.
-
-It carries {code}."""
+    "Import scans the skill's Python first. A clean skill is added to the list "
+    "below and every session can use it straight away; if the scan finds a "
+    "risk, nothing is added and what it found is shown here.")
 
 
 # The three ways the list narrows. Each is one control on the bottom row, and
@@ -90,10 +66,6 @@ CAME_WITH = "Came with Bristol"
 DOWNLOADED = "Downloaded"
 ANY_AGENT = "Any agent"
 NO_AGENT = "No agent"
-
-
-def _utcnow() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 class SkillDialog(QDialog):
@@ -127,7 +99,9 @@ class SkillDialog(QDialog):
         description = QLabel(record.get("description", ""))
         description.setWordWrap(True)
 
-        facts = QLabel(f"{record['said_origin']}   ·   {record['said_contents']}")
+        facts = QLabel("   ·   ".join(part for part in (
+            record["said_origin"], record["said_contents"],
+            record.get("said_scan", "")) if part))
         facts.setObjectName("metaText")
         facts.setWordWrap(True)
 
@@ -213,13 +187,9 @@ class SkillDialog(QDialog):
 
 
 class SkillsTab(QWidget):
-    def __init__(self, conn, parent=None, on_card_filed=None) -> None:
+    def __init__(self, conn, parent=None) -> None:
         super().__init__(parent)
         self.conn = conn
-        # Called when this page files a card, so the board behind it can catch
-        # up. Absent in a bare construction (the smoke check), where there is no
-        # board to refresh.
-        self._on_card_filed = on_card_filed
         self._listing: dict = {"skills": [], "agents": {}}
 
         self.address = QLineEdit()
@@ -343,21 +313,11 @@ class SkillsTab(QWidget):
         self.holder.blockSignals(False)
 
     def _fill_list(self) -> None:
-        """Quarantined skills first, because they are the ones with something
-        outstanding; then everything a session can load."""
+        """Every skill a session can load, narrowed by the bottom row."""
         selected = self._selected_name()
         self.list.clear()
-        skills = [s for s in self._listing.get("skills", []) if self._shown(s)]
-        quarantined = [s for s in skills if s["root"] == "quarantined"]
-        loadable = [s for s in skills if s["root"] != "quarantined"]
-        for heading, note, group in (("Quarantined", QUARANTINE_NOTE, quarantined),
-                                     ("Loadable", "", loadable)):
-            if not group:
-                continue
-            self._add_heading(heading)
-            if note:
-                self._add_note(note)
-            for record in group:
+        for record in self._listing.get("skills", []):
+            if self._shown(record):
                 self._add_skill(record)
         if selected:
             self._select(selected)
@@ -382,43 +342,17 @@ class SkillsTab(QWidget):
             return False
         return True
 
-    def _add_heading(self, text: str) -> None:
-        item = QListWidgetItem(text)
-        item.setFlags(Qt.NoItemFlags)
-        font = item.font()
-        font.setBold(True)
-        item.setFont(font)
-        self.list.addItem(item)
-
-    def _add_note(self, text: str) -> None:
-        """A sentence under a heading saying what the reader is looking at. It
-        sits in the list rather than above it so it appears only when the
-        section it explains does."""
-        item = QListWidgetItem(text)
-        item.setFlags(Qt.NoItemFlags)
-        self.list.addItem(item)
-
     def _add_skill(self, record: dict) -> None:
         """Three lines: the name by itself, the three labelled facts, then the
         description. Nothing on the row has to be recognised to be understood.
         """
-        last = (self._said_deciding_card(record["name"])
-                if record["root"] == "quarantined" else record["said_holders"])
-        facts = "   ·   ".join((record["said_origin"],
-                                record["said_contents"], last))
+        facts = "   ·   ".join(part for part in (
+            record["said_origin"], record["said_contents"],
+            record.get("said_scan", ""), record["said_holders"]) if part)
         item = QListWidgetItem(
             f"{record['name']}\n{facts}\n{self._one_line_description(record)}")
         item.setData(Qt.UserRole, record)
         self.list.addItem(item)
-
-    def _said_deciding_card(self, name: str) -> str:
-        """The card that will decide a quarantined skill, found on the board by
-        the title an import gives it. The board is where the decision lives, so
-        it is where the number is read from rather than stored here."""
-        row = self.conn.execute(
-            "SELECT id FROM task WHERE title = ? ORDER BY id DESC LIMIT 1",
-            (CARD_TITLE.format(name=name),)).fetchone()
-        return f"Card #{row[0]} decides it" if row else "No card asks for it yet"
 
     def _one_line_description(self, record: dict) -> str:
         """The description cut to the width the list actually has, so a long one
@@ -486,36 +420,29 @@ class SkillsTab(QWidget):
         if code != 0:
             self.status.setText(err.strip() or "The fetch failed.")
             return
+        before = {s["path"] for s in self._listing.get("skills", [])}
         self.address.clear()
         self.reload()
-        record = self._quarantined_from(out)
+        record = self._installed(before)
         if record is None:
-            self.status.setText(out.strip().splitlines()[-1] if out.strip()
-                                else "Fetched.")
+            self.status.setText(out.strip().splitlines()[0] if out.strip()
+                                else "Imported.")
             return
-        task_id = self._file_card(record)
-        # Read again, so the new row names the card that will decide it.
-        self.reload()
         self._select(record["name"])
-        # Name, where from, what is in it, and who decides — the order the
-        # reader needs them in, and the same words the rows use.
-        self.status.setText(
-            f"{record['name']} is here. {record['said_origin']}. It carries "
-            f"{record['said_contents']}. No session can use it yet: card "
-            f"#{task_id} asks chief_of_staff to read it and decide.")
+        # Name, where from, what is in it and what the scan found — the same
+        # words the rows use.
+        said = (f"{record['name']} is in the list and ready to use. "
+                f"{record['said_origin']}. It carries {record['said_contents']}.")
+        if record.get("said_scan"):
+            said += f" {record['said_scan']}."
+        self.status.setText(said)
 
-    def _quarantined_from(self, output: str) -> dict | None:
-        """The skill the install just made, found by asking the loader again
-        rather than by parsing what install printed."""
-        names = {s["name"] for s in self._listing.get("skills", [])
-                 if s["root"] == "quarantined"}
-        for line in reversed(output.splitlines()):
-            for name in names:
-                if name in line:
-                    return self._record(name)
-        records = [s for s in self._listing.get("skills", [])
-                   if s["root"] == "quarantined"]
-        return records[0] if len(records) == 1 else None
+    def _installed(self, before: set[str]) -> dict | None:
+        """The skill the install just made: the one row the loader lists now
+        that it did not list before."""
+        new = [s for s in self._listing.get("skills", [])
+               if s["path"] not in before]
+        return new[0] if len(new) == 1 else None
 
     def _record(self, name: str) -> dict | None:
         for record in self._listing.get("skills", []):
@@ -523,42 +450,13 @@ class SkillsTab(QWidget):
                 return record
         return None
 
-    def _file_card(self, record: dict) -> int:
-        """File the judgment as a card, which is where the decision lives."""
-        scripts = record.get("scripts", [])
-        code = record["said_contents"] + (
-            f" — {', '.join(scripts)}" if scripts else "")
-        row = self.conn.execute(
-            "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM task "
-            "WHERE stage='active' AND status='todo'").fetchone()
-        stamp = _utcnow()
-        cur = self.conn.execute(
-            "INSERT INTO task (epic_id, title, description, status, stage, "
-            "sort_order, tier, assignee, reporter, estimate, record_type, "
-            "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (None,
-             CARD_TITLE.format(name=record["name"]),
-             CARD_BODY.format(name=record["name"], origin=record["origin"],
-                              code=code),
-             "todo", "active", row[0], "max", "chief_of_staff", "user", "S",
-             "build", stamp, stamp),
-        )
-        self.conn.commit()
-        if self._on_card_filed is not None:
-            self._on_card_filed()
-        return int(cur.lastrowid)
-
     def _open(self) -> None:
         """Open the selected skill's own view. Attaching happens in there, so
         this page reads again on the way out."""
         record = self._selected()
         if record is None:
             return
-        # A quarantined skill is not loadable, so `view` refuses it; `audit` is
-        # the read that exists for something nothing has judged, and it carries
-        # the same SKILL.md inside it.
-        command = "audit" if record["root"] == "quarantined" else "view"
-        code, out, err = self._run(command, record["name"])
+        code, out, err = self._run("view", record["name"])
         dialog = SkillDialog(self, record, sorted(self._listing.get("agents", {})),
                              out if code == 0 else (err.strip() or "Unreadable."),
                              self._run)

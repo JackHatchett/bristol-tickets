@@ -62,33 +62,29 @@ python3 src/tools/skill_tools/skills.py install <repo-url> <path-in-repo>
 
 or the same address pasted into the **Skills** tab.
 
-**What arrives is quarantined.** It lands in a hidden folder inside your install
-root, where no session can list it or load it, and Bristol prints an inventory
-of every file in it with its size, its hash, and a mark against anything that is
-executable code. Nothing runs.
+**It is scanned before anything is added.** Bristol scans every code file the
+skill carries for known-dangerous calls, with two scanners between them covering
+Python, shell, JavaScript, TypeScript and Ruby. A medium or high finding stops
+the import: nothing is added, and you see each finding with its file and line.
+So does a code file neither scanner reads, and a scanner that is not installed,
+which the refusal says how to install.
 
-**Then someone reads it.** Pasting an address into the Skills tab files a card
-for `chief_of_staff`, because judging a skill means reading its body and every
-script it carries, and an application cannot read. A session opens the card,
-reads, and either promotes the skill or leaves it in quarantine with the card
-saying what stopped it. You can overrule a refusal; that part is yours.
-
-**Promoting it is one command**, `skills.py trust <name>`, and it moves a folder
-and asserts nothing. What makes it safe is the reading that came before it.
+**A clean skill is ready at once.** It lands in the skill list, every session
+can use it, and Bristol prints an inventory of every file with its size, its
+hash, and a mark against anything that is executable code. Its row says what
+the scan found. Nothing runs.
 
 ## The audit, and what it does not check
 
-`skills.py audit <name>` prints where a skill came from, then a scan of its
-Python, then the skill's own text, then every script in full.
+`skills.py audit <name>` prints where a skill came from, then the scan again,
+then the skill's own text, then every script in full.
 
-The scanner is **bandit**, and it reads Python only. A skill's shell,
-JavaScript, Ruby or PowerShell goes unread and the report lists it. It does not
-follow data between files, it cannot tell a dangerous call used correctly from a
-safe one used wrongly, and code that is obfuscated or fetched while it runs
-reads to it as ordinary Python. A finding is a place to look. A clean report
+The scanners are **bandit**, for Python, and **semgrep**, for every language it
+supports. Neither follows data between files or tells a dangerous call used
+correctly from a safe one used wrongly, and code that is obfuscated or fetched
+while it runs reads to both as ordinary code. A low-severity note, such as a file importing
+`subprocess` at all, is shown on the skill without stopping it. A clean report
 says these particular tests matched nothing, and no more.
-
-Nothing here reviews a downloaded skill on your behalf.
 
 ## Something written for another tool
 
@@ -160,12 +156,8 @@ from. A skill you installed from somebody else leaves here crediting them, never
 Bristol. Loading it at the other end is a step you take in that assistant's own
 settings; nothing here reaches it, and nothing here can tell you it arrived.
 
-**A skill still in quarantine is refused.** Quarantine means nobody here has
-read it, and handing an unread skill to someone else is the thing quarantine
-exists to prevent.
-
-This changes nothing about how a skill arrives. Install, quarantine and trust
-work exactly as they did; this is a second door, facing out.
+This changes nothing about how a skill arrives; this is a second door, facing
+out.
 
 ## Removing one
 
@@ -173,6 +165,6 @@ work exactly as they did; this is a second door, facing out.
 python3 src/tools/skill_tools/skills.py remove <name>
 ```
 
-It deletes an installed or quarantined skill and detaches it from every agent
+It deletes an installed skill and detaches it from every agent
 that held it. It refuses a skill that came with Bristol: those are source under
 version control, and removing one is an edit to the repository.

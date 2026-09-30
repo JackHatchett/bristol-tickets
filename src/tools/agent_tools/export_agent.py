@@ -66,7 +66,7 @@ def skill_addresses(names: list[str]) -> list[dict]:
     """One record per attached skill: its name, and where it came from."""
     out = []
     for name in names:
-        found = skills.find_skill(name, include_quarantine=True)
+        found = skills.find_skill(name)
         if found is None:
             out.append({"name": name, "source": "unknown"})
             continue

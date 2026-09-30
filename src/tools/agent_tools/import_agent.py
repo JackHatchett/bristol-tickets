@@ -7,8 +7,8 @@ import_agent.py — read an agent file, then adopt the agent it describes.
 
 Two runs, because a file that arrives carrying a mandate is a stranger's
 statement of what an agent may do. The first run fetches every skill the file
-names into the skill quarantine, where nothing loads until it is trusted, and
-prints the agent's mandate and its guardrails for a person to read. The second
+names into the skill list, scanned on the way in, and prints the agent's
+mandate and its guardrails for a person to read. The second
 writes the charter and the config entry, and the agent is then an agent like any
 other — `src/templates/identity_template.md` §What of an agent can be imported.
 
@@ -91,8 +91,8 @@ def mandate_and_guardrails(charter: str) -> str:
 
 def fetch_skills(named: list[dict]) -> list[str]:
     """Install every addressed skill through skill_tools' own command, so an
-    imported skill and a hand-installed one arrive the same way and land in the
-    same quarantine. Returns one report line per skill."""
+    imported skill and a hand-installed one arrive the same way. Returns one
+    report line per skill."""
     installer = HERE.parents[0] / "skill_tools" / "skills.py"
     lines = []
     for record in named:
@@ -106,14 +106,14 @@ def fetch_skills(named: list[dict]) -> list[str]:
             lines.append(f"  {name}: MISSING — the file records no address, so "
                          f"it cannot be fetched")
             continue
-        if skills.find_skill(name, include_quarantine=True):
+        if skills.find_skill(name):
             lines.append(f"  {name}: already here, left as it is")
             continue
         done = subprocess.run(
             [sys.executable, str(installer), "install", record["address"]],
             capture_output=True, text=True)
         if done.returncode == 0:
-            lines.append(f"  {name}: fetched into quarantine from "
+            lines.append(f"  {name}: fetched and loadable, from "
                          f"{record['address']}")
         else:
             why = (done.stderr or done.stdout).strip().splitlines()
@@ -174,7 +174,7 @@ def accept(document: dict) -> int:
     write_config.set_key(f"agents.{slug}", entry)
 
     # Through skill_tools' own command, which refuses a name that is not
-    # loadable — so a quarantined skill stays unattached until it is trusted.
+    # loadable — so a skill whose fetch failed stays unattached.
     attached, held = [], []
     for record in document.get("skills", []):
         name = record.get("name", "")
@@ -195,9 +195,9 @@ def accept(document: dict) -> int:
     print(f"Config    agents.{slug}")
     print(f"Skills    attached: {', '.join(attached) or 'none'}")
     if held:
-        print(f"          not attached, because they are not loadable yet: "
+        print(f"          not attached, because they are not installed: "
               f"{', '.join(held)}")
-        print(f"          `skills.py trust <name>` after reading it, then "
+        print(f"          `skills.py install <address>`, then "
               f"`skills.py attach <name> --agent {slug}`")
     print(f"Epic      {epic[-1] if epic else 'add-epic produced no output'}")
 
@@ -234,8 +234,8 @@ def main(argv: list[str]) -> int:
     print("SKILLS IT NAMES")
     for line in fetch_skills(document.get("skills", [])):
         print(line)
-    print("\nNothing was trusted. A fetched skill is in quarantine until you "
-          "have read it — src/skills/importing-a-skill/SKILL.md.")
+    print("\nEach fetched skill is loadable now, with its scan shown by "
+          "`skills.py audit <name>` — src/skills/importing-a-skill/SKILL.md.")
     print(f"\nRead the mandate and the guardrails above. To adopt {slug}:")
     print(f"  python3 src/tools/agent_tools/import_agent.py {args.file} --accept")
     return 0

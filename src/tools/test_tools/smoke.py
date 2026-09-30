@@ -1788,29 +1788,46 @@ def check_bristol() -> list[str]:
                                    "scripts/run.py"],
                      "path": "/nowhere/with-code",
                      "source_url": "https://github.com/someone/repo/tree/abc1234def/skills/with-code"},
-                    {"name": "waiting", "directory": "waiting",
-                     "description": "A skill nothing has read.",
-                     "origin": "someone/other@0000000", "root": "quarantined",
+                    {"name": "scanned", "directory": "scanned",
+                     "description": "A skill whose scan found nothing.",
+                     "origin": "someone/other@0000000", "root": "installed",
                      "repo": "https://github.com/someone/other",
                      "commit": "0000000aaa", "license": "MIT",
-                     "license_source": "SKILL.md", "files": 2, "scripts": [],
-                     "holders": [], "file_list": ["SKILL.md", "references/x.md"],
-                     "path": "/nowhere/waiting",
-                     "source_url": "https://github.com/someone/other/tree/0000000aaa/waiting"},
+                     "license_source": "SKILL.md", "files": 2,
+                     "scripts": ["scripts/x.py"],
+                     "scan": {"scanners": ["bandit", "semgrep"], "ran": True,
+                              "missing": [], "unread": [], "findings": []},
+                     "holders": [], "file_list": ["SKILL.md", "scripts/x.py"],
+                     "path": "/nowhere/scanned",
+                     "source_url": "https://github.com/someone/other/tree/0000000aaa/scanned"},
                 ],
                 "agents": {"chief_of_staff": ["with-code"], "librarian": []},
             }
-            for _record in listing["skills"]:
-                _record["said_origin"] = _loader.origin_phrase(_record)
-                _record["said_contents"] = _loader.contents_phrase(_record)
-                _record["said_holders"] = _loader.holders_phrase(
-                    _record["holders"])
+            # What an import adds: a skill the listing did not hold before.
+            fresh = dict(listing["skills"][2], name="fresh", directory="fresh",
+                         path="/nowhere/fresh")
+
+            def _say(record):
+                record["said_origin"] = _loader.origin_phrase(record)
+                record["said_contents"] = _loader.contents_phrase(record)
+                record["said_scan"] = _loader.scan_phrase(record)
+                record["said_holders"] = _loader.holders_phrase(
+                    record["holders"])
+            for _record in listing["skills"] + [fresh]:
+                _say(_record)
             calls: list[tuple] = []
+
+            refused = ("Not imported: risky, because the scan found a risk. "
+                       "Nothing was added.\n  HIGH     B602 shell=True — scripts/x.py:7")
 
             def _stub_run(self, *args):
                 calls.append(args)
                 if args[:2] == ("list", "--json"):
                     return 0, _json.dumps(listing), ""
+                if args[:1] == ("install",):
+                    if "risky" in args[1]:
+                        return 1, "", refused
+                    listing["skills"].append(fresh)
                 return 0, f"stub ran {' '.join(args)}", ""
 
             _orig_run = SkillsTab._run
@@ -1820,23 +1837,38 @@ def check_bristol() -> list[str]:
                 texts = [stab.list.item(i).text()
                          for i in range(stab.list.count())]
                 rows = [t.splitlines()[0] for t in texts]
-                if rows[0] != "Quarantined" or rows[2] != "waiting":
-                    raise SmokeFailure("Skills does not put quarantined skills first")
-                # The page says what it is for before it is used: what Import
-                # does, and what quarantine is.
-                from ui.skills_tab import IMPORT_NOTE, QUARANTINE_NOTE
-                if rows[1] != QUARANTINE_NOTE:
-                    raise SmokeFailure("the Quarantined section does not say what quarantine is")
+                # One list, every row a skill: an import lands where a session
+                # loads from, and nothing is held in a section of its own.
+                if rows != ["native-one", "with-code", "scanned"]:
+                    raise SmokeFailure(f"Skills lists something other than the skills: {rows}")
+                from ui.skills_tab import IMPORT_NOTE
                 if stab.import_note.text() != IMPORT_NOTE:
                     raise SmokeFailure("the page does not say what Import does")
-                for phrase in ("quarantine", "no session can use it",
-                               "chief_of_staff"):
+                for phrase in ("scans", "every session can use it",
+                               "nothing is added"):
                     if phrase not in IMPORT_NOTE:
                         raise SmokeFailure(
                             f"the Import note does not say {phrase!r}")
-                # A quarantined row names the card that will decide it.
-                if "No card asks for it yet" not in texts[2]:
-                    raise SmokeFailure("a quarantined row does not name its card")
+                # A row carries what the import's scan found.
+                if "Scanned, nothing found" not in texts[2].splitlines()[1]:
+                    raise SmokeFailure("a scanned skill's row does not say what the scan found")
+                if _loader.scan_phrase(dict(listing["skills"][2], scan={
+                        "scanners": ["bandit"], "ran": True, "findings": [],
+                        "unread": ["scripts/x.ps1"]})) != "Code not fully scanned":
+                    raise SmokeFailure("code no scanner read reads as scanned")
+                # An import stops on anything short of a whole, clean scan.
+                if _loader.refusal({"ran": True, "findings": [], "unread": []}):
+                    raise SmokeFailure("a whole, clean scan is refused")
+                for partial in ({"ran": False, "findings": [], "unread": []},
+                                {"ran": True, "findings": [], "unread": ["a.ps1"]},
+                                {"ran": True, "unread": [], "findings": [
+                                    {"severity": "MEDIUM"}]}):
+                    if not _loader.refusal(partial):
+                        raise SmokeFailure(f"an import goes ahead on {partial}")
+                if _loader.scan_phrase(dict(listing["skills"][1], scan={})) != "Code not fully scanned":
+                    raise SmokeFailure("a skill never scanned reads as scanned")
+                if _loader.scan_phrase(listing["skills"][0]):
+                    raise SmokeFailure("a skill with no code carries a scan line")
                 # Every value below the name says what it is, so nothing on the
                 # row has to be recognised to be read.
                 coded_row = [t for t in texts if t.startswith("with-code")][0]
@@ -1875,10 +1907,9 @@ def check_bristol() -> list[str]:
                 listing["skills"].remove(long_one)
                 stab.reload()
 
-                # There is no trust control: the user has no basis on which to
-                # press one, and saying so on the card is the whole route.
+                # There is no trust control: an import is usable or refused.
                 if hasattr(stab, "trust_btn"):
-                    raise SmokeFailure("the page still offers a trust override")
+                    raise SmokeFailure("the page still offers a trust control")
                 if hasattr(stab, "attach_btn") or hasattr(stab, "detach_btn"):
                     raise SmokeFailure("attaching is still on the tab's bottom row")
                 stab._select("native-one")
@@ -1960,42 +1991,37 @@ def check_bristol() -> list[str]:
                 if native.source_btn is not None:
                     raise SmokeFailure("a native skill's view offers a source it has none of")
 
-                # The judgment is a card, and the card is chief_of_staff's.
-                before = mconn.execute("SELECT COUNT(*) FROM task").fetchone()[0]
-                task_id = stab._file_card(listing["skills"][2])
-                row = mconn.execute(
-                    "SELECT title, assignee, reporter, status, stage, description "
-                    "FROM task WHERE id=?", (task_id,)).fetchone()
-                if mconn.execute("SELECT COUNT(*) FROM task").fetchone()[0] != before + 1:
-                    raise SmokeFailure("importing a skill filed no card")
-                if row[1] != "chief_of_staff" or row[2] != "user":
-                    raise SmokeFailure("the import card is not chief_of_staff's")
-                if (row[3], row[4]) != ("todo", "active"):
-                    raise SmokeFailure("the import card did not land on the board")
-                if "waiting" not in row[0] or "two files, no code" not in row[5]:
-                    raise SmokeFailure("the import card does not name the skill and what it carries")
-
-                # An import reports the skill, where it came from, what is in
-                # it and the card that decides it, in that order.
+                # An import reports the skill, that it is usable, where it came
+                # from, what is in it, what the scan found and the card, in order.
                 report = stab.status.text()
                 if report:
                     raise SmokeFailure("the page reports before anything ran")
-                stab.address.setText("https://github.com/someone/other/tree/main/waiting")
+                stab.address.setText("https://github.com/someone/other/tree/main/fresh")
                 stab._import()
                 report = stab.status.text()
                 places = [report.find(bit) for bit in
-                          ("waiting", "Downloaded from someone/other@0000000",
-                           "two files, no code", "chief_of_staff")]
+                          ("fresh", "ready to use",
+                           "Downloaded from someone/other@0000000",
+                           "two files, one of them code", "Scanned, nothing found")]
                 if -1 in places or places != sorted(places):
                     raise SmokeFailure(
-                        f"the import report does not say the four things in order: {report!r}")
-                if "#" not in report:
-                    raise SmokeFailure("the import report names no card")
+                        f"the import report does not say the five things in order: {report!r}")
+                if stab._selected_name() != "fresh":
+                    raise SmokeFailure("the imported skill is not selected in the list")
+                # A scan finding stops the import: nothing is added, and the
+                # page shows what was found and where.
+                count = len(listing["skills"])
+                stab.address.setText("https://github.com/someone/risky/tree/main/risky")
+                stab._import()
+                if len(listing["skills"]) != count:
+                    raise SmokeFailure("a skill the scan flagged was added")
+                if "scripts/x.py:7" not in stab.status.text():
+                    raise SmokeFailure("a refused import does not show what the scan found")
 
             finally:
                 SkillsTab._run = _orig_run
-            ok.append("Skills reads one listing, says what it is for, narrows "
-                      "three ways, and attaches from a skill's own view")
+            ok.append("Skills reads one listing, imports into it with the scan shown, "
+                      "narrows three ways, and attaches from a skill's own view")
 
             skills_win = MainWindow(mconn)
             names = [b.text() for b in skills_win._tab_buttons]

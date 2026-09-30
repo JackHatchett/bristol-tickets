@@ -2,6 +2,8 @@
 # The split a reader installs from is requirements.txt (the board) and
 # requirements-tools.txt (everything else).
 PySide6
+bandit
+semgrep
 requests
 playwright
 Pillow

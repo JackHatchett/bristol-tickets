@@ -100,7 +100,7 @@ def main(argv: list[str]) -> int:
         print("propose_skill: the proposed text is empty.", file=sys.stderr)
         return 1
 
-    found = skills.find_skill(args.skill, include_quarantine=True)
+    found = skills.find_skill(args.skill)
     verb = "Patch" if found else "Add"
     title = f"{verb} {args.skill} — {args.change}"
 

@@ -16,3 +16,7 @@
 
 # --- src/tools/bristol/, src/tools/test_control/ (PySide6 GUIs) ---
 PySide6
+
+# --- src/tools/skill_tools/skills.py (the scans every skill import runs) ---
+bandit
+semgrep

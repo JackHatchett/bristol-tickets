@@ -202,9 +202,9 @@ definition, a slash command, a prompt-pack entry. Everything above governs the
 result; this lists what differs at the input.
 
 - **The conversion is `python3 src/tools/skill_tools/skills.py convert
-  <file.md>`, and it lands in quarantine.** A foreign body is third-party content
-  and is read before it is trusted, exactly as an installed skill is —
-  `src/tools/skill_tools/README.md`.
+  <file.md>`, and the result is loadable at once.** A foreign body is
+  third-party content, so read it before relying on it —
+  `src/skills/importing-a-skill/SKILL.md`.
 - **Only `name`, `description` and `license` cross.** `tools`, `model` and a
   client's own extensions exist so a dispatcher can route a card to a configured
   worker, and a Bristol session's model and tool surface belong to its host.
