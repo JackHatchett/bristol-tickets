@@ -6,7 +6,7 @@ knows how to do is a skill it opens when a task calls for one. Nothing in the
 charter lists those skills, so adding one changes what the agent can do without
 the charter changing at all.
 
-Seven ship with Bristol. In full, an agent is three things: an entry in your
+Nine ship with Bristol. In full, an agent is three things: an entry in your
 configuration, holding its paths and settings; a charter, a Markdown file under
 `src/agent_identities/` that it reads in full at the start of every session,
 holding who it is, what it is for and what it may not do; and skills, folders of
@@ -168,6 +168,37 @@ anything behind a credential is always your own step.
 
 **Needs** a `data/<instance>/clients/` folder, which it builds with you at
 intake.
+
+---
+
+## business_advisor
+
+**For** one business of yours, from the idea to open doors and then running it.
+
+Before opening it works the sequence a concept has to survive: the form the
+business takes, what it registers as and with whom, the licences and permits its
+activities trigger, what a lender will read, and what each step costs and how
+long it takes. After opening it keeps the recurring obligations — filings,
+renewals, records, payroll and tax deadlines. It reads the authority's own pages
+rather than recalling them, and stops where it cannot reach them.
+
+**Needs** a folder for the business's documents, declared in its entry.
+
+---
+
+## qa_engineer
+
+**For** checking what the other agents built, before you rely on it.
+
+It runs a skill, a feature of Bristol Tickets or a finished card against what
+that work claims, on test copies rather than your real files, and records what
+actually happened at each step. Every defect becomes a card for the agent that
+built the thing; it fixes nothing itself, so nothing is judged finished by the
+agent that wrote it. Give it a folder to test in, such as a notebook made for
+testing, and it works there; otherwise it builds the few files a test needs in a
+folder of its own.
+
+**Needs** its own `data/<instance>/qa/` folder, which its entry declares.
 
 ---
 

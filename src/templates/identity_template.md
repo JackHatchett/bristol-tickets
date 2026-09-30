@@ -100,14 +100,14 @@ rather than relaxed: a charter loads whole and resident, so two of them in one
 session are two mandates and two guardrail sets with nothing saying which wins.
 Adding roles around the rule is how it goes without ever being repealed.
 
-**`chief_of_staff` is one job carrying two more.** Architecture, board
+**`chief_of_staff` is one job carrying one more.** Architecture, board
 governance, system maintenance and authority over fleet behaviour pass no test
 between them: one mandate whose subject is the system itself, one guardrail set,
 and an authority a second agent cannot hold without two agents editing the same
-governing documents. The two it also carries are separate jobs — **review**,
-because what is written here is judged by whoever wrote it, and **execution**,
-whose mandate is to build to a decision rather than to make one. Every other
-agent in the fleet is one job by these tests.
+governing documents. The one it also carries is a separate job —
+**execution**, whose mandate is to build to a decision rather than to make one.
+**Review** is `qa_engineer`'s, because what is written here must not be judged
+by whoever wrote it. Every other agent in the fleet is one job by these tests.
 
 **The cost of switching agents decides none of this.** A switch is one config
 write — `active_agent`, from Bristol Tickets' Settings picker or
