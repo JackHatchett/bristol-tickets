@@ -72,8 +72,8 @@ decides, and `src/skills/importing-a-skill/SKILL.md` is how. And that same
 folder is where Bristol puts anything you install afterwards, so it reads and
 writes there rather than only reading.
 
-[docs/skills.md](docs/skills.md) is the rest: installing one, the quarantine it
-lands in, the audit and what it does not check, and where to browse.
+[docs/skills.md](docs/skills.md) is the rest: installing one, the scan it
+passes on the way in and what that scan does not check, and where to browse.
 
 ## Install
 

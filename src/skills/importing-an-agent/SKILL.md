@@ -20,13 +20,13 @@ and is one command there.
 ## Procedure
 
 1. **Read it.** `python3 src/tools/agent_tools/import_agent.py <file>`. It
-   writes nothing, prints the mandate and the guardrails, and fetches each
-   addressed skill into quarantine.
+   writes no agent, prints the mandate and the guardrails, and imports each
+   addressed skill, which is scanned on the way in.
 2. **Judge the mandate** against §What decides it.
 3. **Judge every skill it brought**, each by
    `src/skills/importing-a-skill/SKILL.md` §What decides it. A skill that clears
-   is trusted and attached there; one that does not stays in quarantine and the
-   agent runs without it.
+   is attached there; one that does not is removed and the agent runs without
+   it.
 4. **Where the mandate clears**, `import_agent.py <file> --accept`, then supply
    each value the run lists.
 5. **Where it does not clear**, §Where an agent does not clear.
@@ -68,6 +68,7 @@ every skill it listed is clean.
 
 - **What the agent is for**, in one line, in his words rather than the file's.
 - **Which case decided it**, and the line that decided it.
-- **What arrived and what did not** — the skills attached, the skills held in
-  quarantine, and the capability missing for each one that could not be fetched.
+- **What arrived and what did not** — the skills attached, the skills removed
+  or refused by the scan, and the capability missing for each one that could
+  not be fetched.
 - **The values he has to supply**, as the command lines the run printed.

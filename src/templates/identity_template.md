@@ -123,8 +123,8 @@ make switching cheaper, never a reason to merge two mandates into one agent.
 Import is settled one part at a time, and a part that can be imported is never
 refused because another part cannot.
 
-- **Skills import whole.** A third-party skill lands in quarantine and becomes
-  loadable once `chief_of_staff` has read it and trusted it —
+- **Skills import whole.** A third-party skill is scanned as it is fetched and
+  is loadable at once when the scan is clean —
   `src/tools/skill_tools/README.md` owns the mechanism and
   `src/skills/importing-a-skill/SKILL.md` the judgment.
 - **A config entry imports as associations** — which skills, which data roots,
@@ -133,9 +133,9 @@ refused because another part cannot.
   one, so the same skill serves as many agents as list it.
 - **A charter's role description imports as content to read.** A downloaded
   description of what a role does is prose, and the user adopts it into a
-  charter by reading it. It is inert until then: `skills.py convert` writes a
-  foreign definition into quarantine as a skill, and a file describing a whole
-  agent writes nothing at all until the run that adopts it.
+  charter by reading it. `skills.py convert` writes a foreign definition in as
+  a skill, and a file describing a whole agent writes nothing at all until the
+  run that adopts it.
 - **A whole agent travels as one file** — its charter, its config entry with
   every local value taken out, and the address of each skill it lists.
   `src/tools/agent_tools/README.md` §The agent file owns the format, and

@@ -235,10 +235,8 @@ the name of your own notebook folder.
 
 Two runs rather than one, because a file arriving with a mandate in it is a
 stranger's statement of what an agent may do. The first writes nothing: it
-prints the mandate and the guardrails, and fetches the skills into quarantine
-where nothing loads until it is read. Reading the mandate is what grants it, and
-that reading is yours. Judging whether a downloaded skill is safe is not — that
-is a read, and reading is what agents are for.
+prints the mandate and the guardrails, and imports the skills, each scanned on
+the way in. Reading the mandate is what grants it, and that reading is yours.
 
 The wider ecosystem publishes no whole agents. What it publishes is skills, and
 role descriptions written for other tools, each a single Markdown file saying

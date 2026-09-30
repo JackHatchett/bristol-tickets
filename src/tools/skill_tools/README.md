@@ -3,8 +3,8 @@
 The loader for Agent Skills — the open format at
 `github.com/agentskills/agentskills`, where a skill is a directory holding a
 `SKILL.md` whose YAML frontmatter carries `name` and `description`. This file
-owns the *mechanism*: the two roots, the disclosure contract, and the
-quarantine. Converting a Bristol file into a skill is
+owns the *mechanism*: the two roots, the disclosure contract, and the scan
+every import passes. Converting a Bristol file into a skill is
 `src/skills/skill-conversion/SKILL.md`. Style contract:
 `src/templates/identity_template.md` §The governing-doc style contract.
 
@@ -33,13 +33,17 @@ never an error.
   per-agent allowlist would be a smaller system than the one that exists, where
   any agent may load any skill; `list --agent` therefore prints every loadable
   skill and marks the attached ones rather than filtering.
-- **A third-party skill lands in `<install_dir>/.quarantine/` and is invisible
-  to `list` and `view` until `trust` promotes it.** Installing shows the file
-  inventory with sizes and hashes, marking every file that is executable code.
+- **An import scans the skill before anything is added, and adds it only when
+  every code file was scanned and nothing found is medium or high.** A scanner
+  that could not run, and a code file no scanner reads, stop it the same way;
+  nothing reaches the install root, and the refusal gives each finding's file
+  and line. A clean skill lands in the install root, listed and loadable at once,
+  and installing shows the file inventory with sizes and hashes, marking every
+  file that is executable code.
 - **An installed skill carries its provenance in a `.origin.json` beside its
   `SKILL.md`** — repository, path inside it, resolved commit, licence, and where
-  that licence was read from. Written inside the skill directory so the record
-  moves with it through quarantine and trust and cannot orphan; dotted, so a
+  that licence was read from, and the import's scan. Written inside the skill directory so the record
+  moves with it and cannot orphan; dotted, so a
   client reading the skill by the specification never sees it. It is written
   only under the git-ignored install root, never into `src/skills/`.
 - **A licence is recorded as it is found, never detected.** The skill's own
@@ -47,19 +51,15 @@ never an error.
   repository root; a file is recorded by its own first line. A source stating no
   licence anywhere is recorded as `absent`, which is a different fact from a
   blank field.
-- **A surface over this loader routes to the same decision and never makes its
-  own.** Bristol Tickets' Skills tab performs the mechanical half of an import
-  and files the judgment as a card, because judging a skill is a read of its
-  body and every script it carries, and an application cannot read.
-- **Nothing here runs a skill's code.** `audit` scans and prints it; a session
-  reads it and decides. A report never promotes a skill: `trust` is a separate
-  command, and it consults no scanner.
-- **`chief_of_staff` decides what a session may load, and the board carries the
-  decision.** The judgment follows a read of the body and of every script, never
-  a report; the procedure and its four cases are
-  `src/skills/importing-a-skill/SKILL.md`. A skill that does not clear stays in
-  quarantine and the card returns to the user with what stopped it — a refusal
-  the user may overrule, which is the only part of importing that is theirs.
+- **A surface over this loader imports through `install` and nothing else.**
+  Bristol Tickets' Skills tab runs it, shows the skill in the list when it
+  lands, and shows the refusal where the scan stopped it.
+- **Nothing here runs a skill's code.** The scan reads it; `audit` scans and
+  prints it again.
+- **A session reading a skill before relying on it follows
+  `src/skills/importing-a-skill/SKILL.md`**, which also covers removing a skill
+  that does not clear. The scan reads code; the body is the half nothing
+  scans.
 - **Capability is judged here; authority is granted by the user.** A skill is a
   procedure a session may load, and judging one is reading. A mandate is the
   grant of power itself and is authored rather than imported —
@@ -75,16 +75,14 @@ python3 skills.py view <name>
 python3 skills.py install <repo-url> <path-in-repo> [--name NAME]
 python3 skills.py convert <file.md> [--name NAME] [--description TEXT]
 python3 skills.py audit <name>
-python3 skills.py trust <name>
 python3 skills.py attach <name> --agent <slug>
 python3 skills.py detach <name> --agent <slug>
 python3 skills.py remove <name>
 python3 skills.py package <name> [--out DIR]
 ```
 
-- **`list`** — every loadable skill as name, origin and description, plus a
-  closing line listing anything quarantined. **`--json`** returns every skill
-  including the quarantined ones, what each carries, and each agent's
+- **`list`** — every loadable skill as name, origin and description.
+  **`--json`** returns every skill, what each carries, its scan, and each agent's
   attachments, as data. It is one read, which is what stops a surface built on
   it and a session reading the same loader from disagreeing about a name, a
   description or an origin. `--agent <slug>` puts that agent's
@@ -92,24 +90,26 @@ python3 skills.py package <name> [--out DIR]
   repository and commit a skill was installed from; a skill carrying no record
   reads as its root, which is all that is known about it.
   - **A `--json` record carries its three facts already worded** —
-    `said_origin`, `said_contents`, `said_holders`, beside the raw `root`,
-    `files`, `scripts` and `holders` they are built from. A surface shows the
+    `said_origin`, `said_contents`, `said_scan`, `said_holders`, beside the raw `root`,
+    `files`, `scripts`, `scan` and `holders` they are built from. A surface shows the
     worded form so the app, a detail view and an import report tell a reader the
     same fact in the same words; the raw fields are for anything that has to
     count or compare, alongside `path`, `file_list` and `source_url` — the
     skill's directory, everything in it, and the web address of the exact
     commit and folder it came from, which is what a surface needs to open a
-    skill rather than only name it. The wording is `origin_phrase`, `contents_phrase` and
-    `holders_phrase`, and it is written for someone who has never seen this
+    skill rather than only name it. The wording is `origin_phrase`, `contents_phrase`,
+    `scan_phrase` and `holders_phrase`, and it is written for someone who has never seen this
     system: a skill came with Bristol or states where it was downloaded from, a
     count agrees with the noun beside it, and a skill carrying code does not
     read like one carrying none.
 - **`view`** — one skill's `SKILL.md` in full. This is the on-demand load.
 - **`install`** — shallow-clones the hub repository into a temporary directory,
-  copies the named skill into quarantine, and prints the inventory. It refuses a
-  name already present in either root.
-- **`convert`** — writes a foreign markdown definition into quarantine as a
-  skill. A subagent definition, a slash command and a prompt-pack entry are one
+  scans the named skill there, and copies it into the install root when the scan
+  is clean, then prints the inventory and the scan. It refuses a name already
+  present in either root. An address with no path inside the repository, or a
+  file at its top level, reads the top level as the skill.
+- **`convert`** — writes a foreign markdown definition into the install root
+  as a skill. A subagent definition, a slash command and a prompt-pack entry are one
   object, a markdown body under frontmatter, and the half of that frontmatter
   which routes work — `tools`, `model`, a client's own extensions — has no reader
   here, because a Bristol session's model and tool surface belong to its host.
@@ -122,9 +122,6 @@ python3 skills.py package <name> [--out DIR]
   in the body alone is not a declaration and the output says as much.
 - **`audit`** — the skill's provenance record, then a scan of its code, then its
   `SKILL.md`, then the full text of every script it carries.
-- **`trust`** — moves a quarantined skill into the install root, where `list`
-  and `view` can reach it. It moves a directory and asserts nothing; what makes
-  the move safe is the read that preceded it.
 - **A native skill declares the scripts it runs** in
   `metadata.bristol.scripts`, and `smoke.py`'s `skill_declarations` target
   checks each one is on disk. A command mentioned only in a sentence cannot be
@@ -142,7 +139,7 @@ python3 skills.py package <name> [--out DIR]
   ground here, given where anything does, and reported as uncovered where the
   table lists nothing. That is a statement about the table rather than a guess
   about the skill.
-- **`remove`** — delete an installed or quarantined skill and detach it from
+- **`remove`** — delete an installed skill and detach it from
   every agent that held it. The directory goes before the detachments, so a
   filesystem that refuses the delete leaves the attachments intact rather than
   leaving an agent listing a skill that is gone. It refuses a native skill: those
@@ -153,20 +150,16 @@ python3 skills.py package <name> [--out DIR]
   the declared staging location or a directory given with `--out`. The origin
   record travels inside it, and the output states in words who wrote the skill,
   what its licence says and where that was read: a skill installed from
-  elsewhere leaves here giving that source, never this one. **A quarantined
-  skill is refused**, because quarantine is the state of not having been read
-  and passing an unread skill to somebody else is what the quarantine exists to
-  stop. **Nothing about how a skill arrives changes here.** This is a second
-  door facing outward, and it shares no mechanism with `install`, `trust` or
-  the judgment between them. What a receiving host does with the archive is
+  elsewhere leaves here giving that source, never this one. **Nothing about how
+  a skill arrives changes here.** This is a second door facing outward, and it
+  shares no mechanism with `install`. What a receiving host does with the archive is
   that host's and that person's: nothing here reaches it and nothing here can
   report that it arrived.
 - **`attach` / `detach`** — add or remove one skill name in
   `agents.<slug>.skills`, written through `config_tools/write_config.py`. The
   attachment is a name in the agent's config entry and never a copy of the
   skill, so one skill serves as many agents as name it and detaching from one
-  leaves the others as they were. `attach` refuses a name `list` does not show,
-  which is what makes a quarantined skill unattachable until it is trusted.
+  leaves the others as they were. `attach` refuses a name `list` does not show.
 
 ## What a skill records about itself
 
@@ -283,20 +276,29 @@ property of `list`.
 
 ## The scanner
 
-`audit` runs **bandit**, invoked as a module of the interpreter running
-`skills.py` so it is found wherever that interpreter's packages are. Bristol
-never installs it, and an interpreter without it produces a report saying so
-above the source, which is then the whole of the evidence.
+Two scanners, run by `install` and again by `audit`, and `requirements.txt`
+lists both.
 
-- **What it checks.** Python source, parsed to an AST and matched against its
+- **bandit** reads Python, invoked as a module of the interpreter running
+  `skills.py` so it is found wherever that interpreter's packages are.
+- **semgrep** reads shell, JavaScript, TypeScript, Ruby and Python, with the
+  registry's default security rules and its bash rules, fetched at scan time.
+  Code in any other language — PowerShell, Perl, zsh — is read by neither, and
+  stops the import. It is found beside the
+  interpreter or on PATH.
+- **What stops an import.** A finding of medium or high severity, from either;
+  semgrep's ERROR and WARNING map to high and medium. A scanner the code needs
+  that could not run, including semgrep unable to fetch its rules. A code file
+  neither scanner read. A low finding — among them bandit's notice that a file
+  imports `subprocess` or `pickle` at all, which most tools with code do — is
+  recorded and shown on the skill.
+- **What bandit checks.** Python source, parsed to an AST and matched against its
   published tests for known-dangerous calls: a shell in `subprocess`, `eval` and
   `exec`, `pickle` and `yaml.load` over untrusted bytes, weak hashes and ciphers,
   credentials written into the source, disabled certificate verification,
   predictable temporary files.
-- **What it does not.** Any language but Python, so a skill's shell, JavaScript,
-  Ruby and PowerShell go unread and the report lists them. Dataflow across
-  files. Intent — a call it reports may be the right one and a call it passes may
-  be the wrong one. Code that is obfuscated, encoded, or fetched at run time,
-  which reads to it as ordinary Python.
-- **A finding is a place to look, not a verdict**, and a clean report says only
-  that these tests matched nothing.
+- **What neither does.** Dataflow across files. Intent — a call reported may be
+  the right one and a call passed may be the wrong one. Code that is
+  obfuscated, encoded, or fetched at run time, which reads to both as ordinary
+  code.
+- **A clean report says only that these tests matched nothing.**

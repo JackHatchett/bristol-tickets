@@ -342,7 +342,7 @@ class MainWindow(QMainWindow):
         self._agents_tab_index = self._add_page(self.agents_tab, "Agents")
 
 
-        self.skills_tab = SkillsTab(self.conn, on_card_filed=self._refresh_board)
+        self.skills_tab = SkillsTab(self.conn)
         self._skills_tab_index = self._add_page(self.skills_tab, "Skills")
 
         self.courses_tab = CoursesTab()

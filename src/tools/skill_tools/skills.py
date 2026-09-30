@@ -14,19 +14,20 @@ Progressive disclosure is the contract, not a suggestion. `list` reads each
 SKILL.md only as far as the frontmatter terminator and never touches the body;
 `view` is the only command that loads a body.
 
-A third-party skill lands in `<install_dir>/.quarantine/<name>/` and is invisible
-to `list` and `view` until `trust` promotes it. `audit` prints every script it
-carries. Nothing here executes a skill's code.
+An imported skill lands in `<install_dir>/<name>/` and is listed and loadable at
+once. `audit` prints every script it carries. Nothing here executes a skill's
+code.
 
 An installed skill carries a `.origin.json` beside its SKILL.md holding the
 repository, the path inside it, the resolved commit and the licence found, so
 `list` can name where a skill came from and `audit` can answer both questions
 without a second lookup. A source stating no licence records that as absent.
 
-`audit` opens with a scan of the skill's code by `bandit`, run as a module of
-this interpreter and never installed from here. What it reads and what it does
-not is README.md §The scanner. A report is evidence: `trust` consults no scanner
-and stays a command a person runs.
+`install` scans the skill's code before anything is added: `bandit` for Python
+and `semgrep` for every language. The import stops on a medium or high finding,
+on a scanner that could not run, and on a code file no scanner read; a clean
+skill lands with the result recorded beside its provenance. `audit` runs the
+same scan again. What each reads is README.md §The scanner.
 
 CLI
 ---
@@ -36,7 +37,6 @@ CLI
     python3 skills.py install <repo-url> <path-in-repo> [--name NAME]
     python3 skills.py convert <file.md> [--name NAME] [--description TEXT]
     python3 skills.py audit <name>
-    python3 skills.py trust <name>
     python3 skills.py attach <name> --agent SLUG
     python3 skills.py detach <name> --agent SLUG
     python3 skills.py package <name> [--out DIR]
@@ -60,11 +60,8 @@ import data_paths  # noqa: E402
 import read_config  # noqa: E402
 import write_config  # noqa: E402
 
-QUARANTINE = ".quarantine"
-
 # What an installed skill carries about where it came from, written beside its
-# SKILL.md so the record moves with the directory through quarantine and trust
-# and can never orphan. Dotted, so a client reading the skill by the
+# SKILL.md so the record moves with the directory and can never orphan. Dotted, so a client reading the skill by the
 # specification never sees it.
 ORIGIN_FILE = ".origin.json"
 
@@ -80,13 +77,32 @@ ABSENT = "absent"
 
 SCRIPT_SUFFIXES = {".py", ".sh", ".bash", ".zsh", ".js", ".mjs", ".ts", ".rb", ".pl", ".ps1"}
 
-# The scanner `audit` runs over a skill's code, invoked as a module so it is
-# found wherever this interpreter's packages are rather than on PATH. Bristol
-# never installs it: an absent scanner is a report that says so, not a failure.
+# The scanner `install` and `audit` run over a skill's code, invoked as a module
+# so it is found wherever this interpreter's packages are rather than on PATH.
+# requirements.txt lists it; an import whose Python it cannot scan stops.
 # What it reads and what it does not is `src/tools/skill_tools/README.md`
 # §The scanner.
 SCANNER = "bandit"
 SCANNER_READS = ".py"
+
+# The second scanner, for every other language a skill's code is written in.
+# Its rules come from the semgrep registry at scan time: the default security
+# set, and the registry's bash rules, which the default set leaves out.
+POLYGLOT = "semgrep"
+POLYGLOT_CONFIGS = ("p/default", "r/bash")
+
+# The code files semgrep's rules parse. Semgrep lists every file it opened, and
+# a generic rule opens files in languages it has no parser for, so a file
+# counts as read only where its language is one of these.
+POLYGLOT_READS = {".sh", ".bash", ".js", ".mjs", ".ts", ".rb", ".py"}
+
+# Semgrep's severities, put on bandit's scale so one rule decides both.
+POLYGLOT_SEVERITY = {"ERROR": "HIGH", "WARNING": "MEDIUM", "INFO": "LOW"}
+
+# The severities that stop an import. A LOW finding includes the notice that a
+# file imports subprocess or pickle at all, which most tools with code do; it is
+# recorded and shown on the skill.
+BLOCKING_SEVERITIES = {"MEDIUM", "HIGH"}
 
 # The only top-level frontmatter keys a conversion carries across. The
 # specification defines a small set (src/skills/skill-conversion/SKILL.md
@@ -132,7 +148,7 @@ TOOLSET_GROUND = {
     "tasks": "the board — ticket_tools/ticket_write.py writes it and "
              "ticket_tools/status_common.py reads it",
     "skills": "the loader — skill_tools/skills.py, which lists, installs, "
-              "audits, trusts and attaches",
+              "audits and attaches",
     "memory": "nothing, deliberately: a session's memory is the board — "
               "src/app.md §The board is the only channel",
 }
@@ -166,11 +182,6 @@ def installed_root() -> Path | None:
     return data_paths.resolve(declared)
 
 
-def quarantine_root() -> Path | None:
-    root = installed_root()
-    return None if root is None else root / QUARANTINE
-
-
 def _skill_dirs(root: Path | None) -> list[Path]:
     if root is None or not root.is_dir():
         return []
@@ -180,12 +191,9 @@ def _skill_dirs(root: Path | None) -> list[Path]:
     )
 
 
-def find_skill(name: str, *, include_quarantine: bool = False) -> tuple[Path, str] | None:
+def find_skill(name: str) -> tuple[Path, str] | None:
     """Return (directory, origin) for a skill by directory name."""
-    roots = [(native_root(), "native"), (installed_root(), "installed")]
-    if include_quarantine:
-        roots.append((quarantine_root(), "quarantined"))
-    for root, origin in roots:
+    for root, origin in ((native_root(), "native"), (installed_root(), "installed")):
         for d in _skill_dirs(root):
             if d.name == name:
                 return d, origin
@@ -375,11 +383,6 @@ def cmd_list(args) -> int:
     if slug:
         print(f"\nWhat is marked yours is attached to {slug} and matched first; "
               f"every other skill listed is reachable the same way.")
-
-    pending = _skill_dirs(quarantine_root())
-    if pending:
-        names = ", ".join(d.name for d in pending)
-        print(f"\nQuarantined, not loadable until trusted: {names}")
     return 0
 
 
@@ -442,6 +445,22 @@ def contents_phrase(record: dict) -> str:
     return f"{total}, {_spell(scripts)} of them code"
 
 
+def scan_phrase(record: dict) -> str:
+    """What the import's scan found, for a downloaded skill carrying code.
+    Empty for a skill with no code and for a native one."""
+    if record.get("root") == "native" or not record.get("scripts"):
+        return ""
+    scan_record = record.get("scan") or {}
+    if not scan_record.get("scanners") or scan_record.get("unread") \
+            or not scan_record.get("ran"):
+        return "Code not fully scanned"
+    found = len(scan_record.get("findings", []))
+    if not found:
+        return "Scanned, nothing found"
+    return (f"Scanned, {_spell(found)} low-severity note"
+            + ("" if found == 1 else "s"))
+
+
 def holders_phrase(holders: list[str]) -> str:
     """Which agents hold a skill, including when the answer is none."""
     return "Held by " + (", ".join(holders) if holders else "no agent")
@@ -468,14 +487,16 @@ def _skill_record(skill_dir: Path, root_name: str) -> dict:
         "scripts": scripts,
         "path": str(skill_dir),
         "source_url": source_url(record),
+        "scan": record.get("scan", {}),
     }
     fields["said_origin"] = origin_phrase(fields)
     fields["said_contents"] = contents_phrase(fields)
+    fields["said_scan"] = scan_phrase(fields)
     return fields
 
 
 def _listing() -> dict:
-    """Every skill on this machine, loadable and quarantined, plus which agent
+    """Every skill on this machine, plus which agent
     attaches which. One read, so a surface and a session cannot disagree about a
     name, a description or an origin.
 
@@ -485,8 +506,7 @@ def _listing() -> dict:
     """
     skills = []
     for root, root_name in ((native_root(), "native"),
-                            (installed_root(), "installed"),
-                            (quarantine_root(), "quarantined")):
+                            (installed_root(), "installed")):
         for d in _skill_dirs(root):
             skills.append(_skill_record(d, root_name))
     agents = {slug: attached_to(slug) for slug in _agent_slugs()}
@@ -509,8 +529,7 @@ def cmd_attach(args) -> int:
     _require_agent(args.agent)
     if not _known_skill(args.name):
         raise SystemExit(
-            f"no loadable skill '{args.name}'. `list` names what is loadable; a "
-            f"quarantined skill has to be trusted first.")
+            f"no skill '{args.name}'. `list` gives every skill there is.")
     attached = attached_to(args.agent)
     if args.name in attached:
         print(f"{args.name} is already attached to {args.agent}")
@@ -535,8 +554,7 @@ def cmd_detach(args) -> int:
 def cmd_view(args) -> int:
     found = find_skill(args.name)
     if found is None:
-        print(f"No skill named '{args.name}'. A quarantined skill must be trusted first.",
-              file=sys.stderr)
+        print(f"No skill named '{args.name}'.", file=sys.stderr)
         return 1
     skill_dir, _ = found
     print((skill_dir / "SKILL.md").read_text(encoding="utf-8"), end="")
@@ -572,10 +590,9 @@ def resolve_address(address: str) -> tuple[str, str, str | None]:
     if remainder[:1] == ["-"]:
         remainder = remainder[1:]
     if not remainder:
-        raise AddressError(
-            f"'{address}' names the repository {owner}/{repo} and no path "
-            f"inside it, so it names no skill. Open the skill's own folder and "
-            f"paste that address, or pass the path as a second argument.")
+        # A repository whose SKILL.md sits at its top level is the skill; the
+        # install checks for that file and says so where it is missing.
+        return f"{scheme}://{host}/{owner}/{repo}.git", "", None
     view = remainder[0]
     if view not in {"tree", "blob"}:
         raise AddressError(
@@ -583,23 +600,18 @@ def resolve_address(address: str) -> tuple[str, str, str | None]:
             f"path inside {owner}/{repo} cannot be told apart. Paste the "
             f"address the repository shows while you are looking at the skill's "
             f"folder.")
-    if len(remainder) < 3:
+    if len(remainder) < 2:
         raise AddressError(
-            f"'{address}' names a ref in {owner}/{repo} and no path after it, "
-            f"so it names no skill.")
+            f"'{address}' has no ref after /{view}/ in {owner}/{repo}.")
     ref = remainder[1]
     inside = remainder[2:]
     if view == "blob":
         inside = inside[:-1]
-        if not inside:
-            raise AddressError(
-                f"'{address}' names a file at the root of {owner}/{repo}, "
-                f"which is not a skill directory.")
     return f"{scheme}://{host}/{owner}/{repo}.git", "/".join(inside), ref
 
 
 def cmd_install(args) -> int:
-    root = quarantine_root()
+    root = installed_root()
     if root is None:
         print("config declares no skills.install_dir; nowhere to install to.", file=sys.stderr)
         return 1
@@ -640,14 +652,28 @@ def cmd_install(args) -> int:
                       file=sys.stderr)
         source = clone / path
         if not (source / "SKILL.md").is_file():
-            print(f"{path} holds no SKILL.md in {repo}.", file=sys.stderr)
+            where = path or "The top level of the repository"
+            print(f"{where} holds no SKILL.md in {repo}. Open the skill's own "
+                  f"folder and paste that address.", file=sys.stderr)
             return 1
         name = args.name or read_frontmatter(source / "SKILL.md").get("name") or source.name
-        if find_skill(name, include_quarantine=True) is not None:
+        if find_skill(name) is not None:
             print(f"A skill named '{name}' is already present.", file=sys.stderr)
             return 1
+        # Scanned where it was fetched, so a skill the scan stops never
+        # reaches the folder sessions load from.
+        staged = Path(tmp) / "staged" / name
+        shutil.copytree(source, staged, ignore=shutil.ignore_patterns(".git"))
+        checked = scan_record(staged)
+        why = refusal(checked)
+        if why:
+            lines = "\n".join(f"  {line}" for line in
+                              scan_report_lines(checked)[1:])
+            print(f"Not imported: {name}, because {why}. Nothing was added.\n"
+                  f"{lines}", file=sys.stderr)
+            return 1
         target = data_paths.ensure_dir(root) / name
-        shutil.copytree(source, target)
+        shutil.copytree(staged, target)
         rows = _inventory(target)
         commit = subprocess.run(
             ["git", "-C", str(clone), "rev-parse", "HEAD"],
@@ -655,28 +681,25 @@ def cmd_install(args) -> int:
         ).stdout.strip() or ABSENT
         licence, licence_source = find_licence(clone, source)
         record = {"repo": repo, "path": path, "commit": commit,
-                  "license": licence, "license_source": licence_source}
+                  "license": licence, "license_source": licence_source,
+                  "scan": checked}
         (target / ORIGIN_FILE).write_text(
             json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
     total = sum(r[1] for r in rows)
-    print(f"Quarantined at {target}")
-    print(f"From {repo} {path} at {commit[:12]}")
+    print(f"Installed at {target}, listed and loadable now")
+    print(f"From {repo} {path or '(top level)'} at {commit[:12]}")
     print(f"Licence: {licence} (from {licence_source})")
-    print(f"{len(rows)} files, {total} bytes. Not listed and not loadable until trusted.\n")
+    print(f"{len(rows)} files, {total} bytes.\n")
     width = max(len(str(r[0])) for r in rows)
     for rel, size, digest in rows:
         mark = "*" if _is_script(rel) else " "
         print(f"{mark} {str(rel):<{width}}  {size:>9}  {digest[:16]}")
-    # A skill of Markdown and one carrying scripts are not the same risk, so
-    # they do not close on the same sentence.
     if any(_is_script(rel) for rel, _size, _digest in rows):
-        print("\n* is executable code. Read every one of them before trusting "
-              "the skill:")
-    else:
-        print("\nNo executable code. The body is the whole of what there is to "
-              "read:")
-    print(f"    python3 skills.py audit {name}")
+        print("\n* is executable code.")
+    print()
+    for line in scan_report_lines(record["scan"]):
+        print(line)
     print_compatibility(target)
     return 0
 
@@ -825,7 +848,7 @@ def print_compatibility(source: Path) -> None:
                 print(f"    {name}: {ground}." if ground
                       else f"    {name}: nothing here is declared as covering "
                            f"that ground.")
-    print("  It installs and trusts either way; this is what to expect from it, "
+    print("  It installs either way; this is what to expect from it, "
           "not a refusal.")
 
 
@@ -839,7 +862,7 @@ def normalise_name(raw: str) -> str:
 
 
 def cmd_convert(args) -> int:
-    """Write a foreign markdown definition into quarantine as a skill folder.
+    """Write a foreign markdown definition into the install root as a skill folder.
 
     A subagent definition, a slash command and a prompt-pack entry are one object
     — a markdown body under frontmatter — and the half of that frontmatter which
@@ -850,7 +873,7 @@ def cmd_convert(args) -> int:
     if not source.is_file():
         print(f"{source} is not a file.", file=sys.stderr)
         return 1
-    root = quarantine_root()
+    root = installed_root()
     if root is None:
         print("config declares no skills.install_dir; nowhere to convert into.",
               file=sys.stderr)
@@ -869,7 +892,7 @@ def cmd_convert(args) -> int:
     if not name:
         print("No usable skill name; pass --name.", file=sys.stderr)
         return 1
-    if find_skill(name, include_quarantine=True) is not None:
+    if find_skill(name) is not None:
         print(f"A skill named '{name}' is already present.", file=sys.stderr)
         return 1
 
@@ -883,7 +906,7 @@ def cmd_convert(args) -> int:
         f"---\n{header}---\n{body.lstrip(chr(10))}", encoding="utf-8")
 
     dropped = [k for k in fields if k not in CONVERT_KEEPS]
-    print(f"Quarantined at {target}")
+    print(f"Installed at {target}, listed and loadable now")
     if dropped:
         print(f"Dropped, no reader in Bristol: {', '.join(sorted(dropped))}")
     needs = declared_dependencies(source)
@@ -897,10 +920,7 @@ def cmd_convert(args) -> int:
     if len(description) > DESCRIPTION_ROUTING_LIMIT:
         print(f"description is {len(description)} characters; past "
               f"{DESCRIPTION_ROUTING_LIMIT} a client's index truncates it and the "
-              f"routing signal is what is lost. Rewrite it before trusting.")
-    print(f"Not listed and not loadable until trusted:\n"
-          f"    python3 skills.py audit {name}\n"
-          f"    python3 skills.py trust {name}")
+              f"routing signal is what is lost. Rewrite it in {target / 'SKILL.md'}.")
     return 0
 
 
@@ -919,46 +939,140 @@ def scan(skill_dir: Path) -> dict | None:
     return report if isinstance(report, dict) else None
 
 
-def scan_lines(skill_dir: Path) -> list[str]:
-    """The scan section of an audit: what the scanner found, and what it did not
-    read. Named per file rather than summarised, since the point of the section
-    is to send a reader to a line."""
-    unread = sorted(str(rel) for rel, _, _ in _inventory(skill_dir)
-                    if _is_script(rel) and rel.suffix.lower() != SCANNER_READS)
-    report = scan(skill_dir)
+def _polyglot_command() -> str | None:
+    """The semgrep executable installed beside this interpreter, or on PATH."""
+    beside = Path(sys.executable).parent / POLYGLOT
+    if beside.is_file():
+        return str(beside)
+    return shutil.which(POLYGLOT)
+
+
+def polyglot_scan(skill_dir: Path) -> dict | None:
+    """Semgrep's report over a skill's directory, or None where it could not
+    run — not installed, or its rules could not be fetched."""
+    command = _polyglot_command()
+    if command is None:
+        return None
+    args = [command, "--json", "--quiet", "--metrics=off"]
+    for config in POLYGLOT_CONFIGS:
+        args += ["--config", config]
+    proc = subprocess.run(args + [str(skill_dir)], capture_output=True,
+                          text=True)
+    try:
+        report = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(report, dict) or any(
+            e.get("level") == "error" and "config" in e.get("message", "").lower()
+            for e in report.get("errors", [])):
+        return None
+    return report
+
+
+def _relative(name: str, skill_dir: Path) -> str:
+    path = Path(name)
+    try:
+        return str(path.resolve().relative_to(skill_dir.resolve()))
+    except ValueError:
+        return path.name
+
+
+def scan_record(skill_dir: Path) -> dict:
+    """Every scan of a skill's code, as the record an import keeps beside the
+    provenance: whether each scanner the code needed ran, each finding on one
+    severity scale, and the code files no scanner read. A skill with no code
+    records a scan with nothing to read."""
+    scripts = [str(rel) for rel, _, _ in _inventory(skill_dir) if _is_script(rel)]
+    record = {"scanners": [], "ran": True, "missing": [], "findings": [],
+              "unread": []}
+    if not scripts:
+        return record
+    read: set[str] = set()
+    if any(name.endswith(SCANNER_READS) for name in scripts):
+        report = scan(skill_dir)
+        if report is None:
+            record["ran"] = False
+            record["missing"].append(SCANNER)
+        else:
+            record["scanners"].append(SCANNER)
+            read |= {n for n in scripts if n.endswith(SCANNER_READS)}
+            for issue in report.get("results", []):
+                record["findings"].append({
+                    "scanner": SCANNER,
+                    "severity": str(issue.get("issue_severity", "?")).upper(),
+                    "test": issue.get("test_id", "?"),
+                    "text": issue.get("issue_text", ""),
+                    "file": _relative(issue.get("filename", ""), skill_dir),
+                    "line": issue.get("line_number", "?"),
+                })
+    report = polyglot_scan(skill_dir)
     if report is None:
-        return [f"=== scan ===",
-                f"No scanner. {SCANNER} is not installed for this interpreter, so "
-                f"nothing has read this code but you.",
-                f"    {Path(sys.executable).name} -m pip install {SCANNER}"]
-    out = [f"=== scan ({SCANNER}) ==="]
-    for issue in report.get("results", []):
-        where = Path(issue.get("filename", "")).name
-        out.append(f"{issue.get('issue_severity', '?'):<8} "
-                   f"{issue.get('test_id', '?')} {issue.get('issue_text', '')} "
-                   f"— {where}:{issue.get('line_number', '?')}")
+        record["ran"] = False
+        record["missing"].append(POLYGLOT)
+    else:
+        record["scanners"].append(POLYGLOT)
+        read |= {_relative(n, skill_dir)
+                 for n in report.get("paths", {}).get("scanned", [])
+                 if Path(n).suffix.lower() in POLYGLOT_READS}
+        for issue in report.get("results", []):
+            extra = issue.get("extra", {})
+            record["findings"].append({
+                "scanner": POLYGLOT,
+                "severity": POLYGLOT_SEVERITY.get(
+                    str(extra.get("severity", "")).upper(), "HIGH"),
+                "test": str(issue.get("check_id", "?")).rsplit(".", 1)[-1],
+                "text": " ".join(str(extra.get("message", "")).split())[:200],
+                "file": _relative(issue.get("path", ""), skill_dir),
+                "line": issue.get("start", {}).get("line", "?"),
+            })
+    record["unread"] = sorted(n for n in scripts if n not in read)
+    return record
+
+
+def blocking(record: dict) -> list[dict]:
+    """The findings in a scan record that stop an import."""
+    return [f for f in record.get("findings", [])
+            if str(f.get("severity", "")).upper() in BLOCKING_SEVERITIES]
+
+
+def scan_report_lines(record: dict) -> list[str]:
+    """A scan record as lines a reader can act on, each finding sent to a file
+    and a line."""
+    out = [f"=== scan ({', '.join(record.get('scanners', [])) or 'none'}) ==="]
+    for name in record.get("missing", []):
+        out.append(f"Not scanned: {name} is not installed for this interpreter, "
+                   f"or its rules could not be fetched.")
+        out.append(f"    {Path(sys.executable).name} -m pip install {name}")
+    for f in record.get("findings", []):
+        out.append(f"{f['severity']:<8} {f['test']} {f['text']} "
+                   f"— {f['file']}:{f['line']}")
+    if record.get("unread"):
+        out.append("No scanner reads these: " + ", ".join(record["unread"]))
     if len(out) == 1:
-        out.append("Nothing found.")
-    for error in report.get("errors", []):
-        out.append(f"unread    {error.get('filename', '?')}: {error.get('reason', '')}")
-    if unread:
-        out.append(f"Not read by {SCANNER}, which reads {SCANNER_READS} only: "
-                   + ", ".join(unread))
-    out.append("A report is evidence. Trust is yours to give, and nothing here "
-               "gives it.")
+        out.append("Nothing found." if record.get("scanners")
+                   else "No code to scan.")
     return out
 
 
+def refusal(record: dict) -> str:
+    """Why an import stops, or '' where it goes ahead. Every code file has to
+    have been read by a scanner that ran, and nothing it found may be medium or
+    high."""
+    if not record.get("ran"):
+        return "a scanner it needs could not run"
+    if blocking(record):
+        return "the scan found a risk"
+    if record.get("unread"):
+        return "some of its code is in a language no scanner here reads"
+    return ""
+
+
 def cmd_audit(args) -> int:
-    root = quarantine_root()
-    candidates = [d for d in _skill_dirs(root) if d.name == args.name]
-    if not candidates:
-        found = find_skill(args.name)
-        if found is None:
-            print(f"No skill named '{args.name}'.", file=sys.stderr)
-            return 1
-        candidates = [found[0]]
-    skill_dir = candidates[0]
+    found = find_skill(args.name)
+    if found is None:
+        print(f"No skill named '{args.name}'.", file=sys.stderr)
+        return 1
+    skill_dir = found[0]
 
     record = read_origin(skill_dir)
     if record:
@@ -966,7 +1080,7 @@ def cmd_audit(args) -> int:
         for key in ("repo", "path", "commit", "license", "license_source"):
             print(f"{key}: {record.get(key, ABSENT)}")
         print()
-    for line in scan_lines(skill_dir):
+    for line in scan_report_lines(scan_record(skill_dir)):
         print(line)
     print()
     print(f"=== {skill_dir}/SKILL.md ===")
@@ -981,39 +1095,15 @@ def cmd_audit(args) -> int:
     return 0
 
 
-def cmd_trust(args) -> int:
-    root = quarantine_root()
-    staged = [d for d in _skill_dirs(root) if d.name == args.name]
-    if not staged:
-        print(f"'{args.name}' is not quarantined.", file=sys.stderr)
-        return 1
-    destination = data_paths.ensure_dir(installed_root()) / args.name
-    if destination.exists():
-        print(f"{destination} already exists.", file=sys.stderr)
-        return 1
-    shutil.move(str(staged[0]), str(destination))
-    print(f"Trusted. {args.name} is now listed and loadable at {destination}")
-    return 0
-
-
 def cmd_package(args) -> int:
     """Write a loadable skill out as a zip another host can take.
 
     The archive's root is the skill's own directory, which is the shape every
     reader of the specification expects. Nothing about how a skill arrives
     changes here: this is a second door, facing out.
-
-    A quarantined skill is refused. Quarantine is the state of not having been
-    read, and passing an unread skill to somebody else is the one thing the
-    quarantine exists to stop.
     """
     found = find_skill(args.name)
     if found is None:
-        staged = [d for d in _skill_dirs(quarantine_root()) if d.name == args.name]
-        if staged:
-            print(f"'{args.name}' is quarantined. A skill nobody here has read "
-                  f"is not a skill to hand to somebody else.", file=sys.stderr)
-            return 1
         print(f"No skill named '{args.name}'.", file=sys.stderr)
         return 1
     skill_dir, origin = found
@@ -1066,13 +1156,13 @@ def cmd_package(args) -> int:
 
 
 def cmd_remove(args) -> int:
-    """Delete an installed or quarantined skill, and detach it everywhere.
+    """Delete an installed skill, and detach it everywhere.
 
     A native skill is source under version control; removing one is an edit to
     the repository and is refused here, so this command can never be the route
     by which published code disappears.
     """
-    found = find_skill(args.name, include_quarantine=True)
+    found = find_skill(args.name)
     if found is None:
         print(f"No skill named '{args.name}'.", file=sys.stderr)
         return 1
@@ -1094,9 +1184,8 @@ def cmd_remove(args) -> int:
     for slug in holders:
         write_config.set_key(ATTACHMENTS.format(slug=slug),
                              [n for n in attached_to(slug) if n != args.name])
-    where = "quarantine" if origin == "quarantined" else "the install root"
     held = f" It was attached to {', '.join(holders)}." if holders else ""
-    print(f"Removed {args.name} from {where}.{held}")
+    print(f"Removed {args.name} from the install root.{held}")
     return 0
 
 
@@ -1109,13 +1198,12 @@ def main(argv: list[str]) -> int:
     p_list.add_argument("--agent", help="put this agent's attached skills first")
     p_list.add_argument(
         "--json", action="store_true",
-        help="every skill, quarantined ones included, and each agent's "
-             "attachments, as data")
+        help="every skill, with its scan, and each agent's attachments, as data")
 
     p_view = sub.add_parser("view", help="load one skill's body")
     p_view.add_argument("name")
 
-    p_install = sub.add_parser("install", help="fetch a skill into quarantine")
+    p_install = sub.add_parser("install", help="fetch a skill, scan it and make it loadable")
     p_install.add_argument(
         "repo", metavar="address",
         help="the address of the skill's folder, or the repository's git URL")
@@ -1126,7 +1214,7 @@ def main(argv: list[str]) -> int:
     p_install.add_argument("--name", help="override the installed directory name")
 
     p_convert = sub.add_parser(
-        "convert", help="write a foreign markdown definition into quarantine as a skill")
+        "convert", help="write a foreign markdown definition in as a skill")
     p_convert.add_argument("source", help="the markdown file to convert")
     p_convert.add_argument("--name", help="override the skill and directory name")
     p_convert.add_argument("--description",
@@ -1134,9 +1222,6 @@ def main(argv: list[str]) -> int:
 
     p_audit = sub.add_parser("audit", help="print a skill's SKILL.md and every script it carries")
     p_audit.add_argument("name")
-
-    p_trust = sub.add_parser("trust", help="promote a quarantined skill to loadable")
-    p_trust.add_argument("name")
 
     p_attach = sub.add_parser("attach", help="attach a skill to an agent")
     p_attach.add_argument("name")
@@ -1147,7 +1232,7 @@ def main(argv: list[str]) -> int:
     p_detach.add_argument("--agent", required=True)
 
     p_remove = sub.add_parser(
-        "remove", help="delete an installed or quarantined skill and detach it")
+        "remove", help="delete an installed skill and detach it")
     p_remove.add_argument("name")
 
     p_package = sub.add_parser(
@@ -1160,7 +1245,7 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
     return {
         "list": cmd_list, "view": cmd_view, "install": cmd_install,
-        "convert": cmd_convert, "audit": cmd_audit, "trust": cmd_trust,
+        "convert": cmd_convert, "audit": cmd_audit,
         "attach": cmd_attach, "detach": cmd_detach, "remove": cmd_remove,
         "package": cmd_package,
     }[args.command](args)

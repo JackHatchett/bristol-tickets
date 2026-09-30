@@ -198,8 +198,8 @@ def main(argv: list[str]) -> int:
     # not leave an agent half-created.
     unknown = [s for s in args.skill if not skills._known_skill(s)]
     if unknown:
-        print(f"not loadable: {', '.join(unknown)}. `skills.py list` names what "
-              f"is, and a quarantined skill has to be trusted first.",
+        print(f"no such skill: {', '.join(unknown)}. `skills.py list` gives "
+              f"every skill there is.",
               file=sys.stderr)
         return 1
 

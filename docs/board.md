@@ -32,10 +32,10 @@ takes the address of a new one. A skill opens into a view of its own — its tex
 its files, its source and a tick box per agent — and that is where a skill is
 attached to an agent. The row of controls under the list narrows the list
 instead: by text, by whether a skill came with Bristol or was downloaded, and by
-which agent holds it. Pasting an address fetches that skill into quarantine and
-files a card for `chief_of_staff` to read and judge it, because that judgment is
-a read and an application cannot read. [skills.md](skills.md) is the whole of
-it.
+which agent holds it. Pasting an address and pressing Import scans the skill's
+code and, when the scan is clean, adds it to the list, ready for every session;
+a scan that finds a risk stops the import and shows what it found.
+[skills.md](skills.md) is the whole of it.
 
 **Agents** lists the agents this installation configures, and creates or edits
 any of them through a form holding everything an agent is, charter included, so
