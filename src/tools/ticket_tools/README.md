@@ -372,8 +372,12 @@ a human skims, not a log.
   a skill name, a section mark or a term this system coined is unreadable to the
   person the board is for; say what the thing does in plain English, and name a
   file only as the place a named thing sits.
-- **Put what the user has to do in its own line**, wherever a comment asks
-  anything of him, so it is not buried in a report of what changed.
+- **Open every comment with who it is for** — `@user`, or `@` and the slug of
+  the agent that acts on it next. A comment that needs nothing of the user is
+  addressed to that agent, and working detail only an agent needs goes there.
+- **Follow `@user` with the one thing he should do next, as a plain
+  instruction** — "Please check the place names changed on the map document" —
+  with every term in it explained, before any report of what changed.
 - **Bullets, not paragraphs.** One idea per bullet, ≤ ~15 words.
 - **2–4 short headers.** Ticket: `Goal` / `Done so far` / `Needs next`.
 - **Hard length cap.** Past ~10 lines or ~8 bullets, cut it, or move durable

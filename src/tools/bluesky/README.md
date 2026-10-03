@@ -181,6 +181,8 @@ time.
 | `link_window_days` | how far back a run looks for journal pages written late |
 | `link_into_journal` | whether a journal page gains a link back |
 | `fetch_workers` | how many days are worked at once |
+| `index_file` | the filename, inside `notes_folder`, of the note listing every day page; unset, no index is written |
+| `index_related` | the links the index's Related Notes section holds, each a whole `[[target\|label]]` |
 
 **The app password `purge.py` signs in with is in the OS keychain**, under the
 service `bristol.bluesky` and the key `app_password`, and in no file at all.

@@ -48,13 +48,13 @@ not re-derive one. Precedence, identical for every agent:
   `owner` is your slug.**
 - **Treat a card left for you as an ordinary card in your queue** — the
   `assignee` makes it yours to decide on, not an order. There is no inbox.
-- **`doing` outranks every `todo`, including a blocked one.** Nothing moves a
-  card down this queue: not a comment, not how big it looks.
+- **`doing` outranks every `todo`, including a blocked one.**
 - **Pass over a card with an unmet blocker, take the next in order, and return
   to it in place once every blocker is done.** Never work its unblocked part in
   passing.
 
-**3. A card's tier and size move nothing in any queue** —
+**3. Only board order moves a card in any queue** — never a comment, the
+user's included, and never its tier or size:
 `src/tools/ticket_tools/README.md` §Board conventions.
 
 **4. Read a card's links and attached images before acting on it.** The ticket
@@ -97,9 +97,6 @@ the snapshot above.
   work down as far as `session.work_whole_queue` allows — on, the whole queue;
   off, that one card. Read it when the scope decision is made, never at session
   start.
-
-**A comment never promotes a ticket or reroutes execution**: comments, user ones
-included, are context, not ordering.
 
 ## Phase 4 — Closure
 
@@ -152,9 +149,6 @@ you write:
   a charter's safety gate conflict, the charter wins.
 - **A declared staging location is a container, not a file left behind.**
 
-**Every file is written for a person to read.** Only one already shaped like
-configuration — a list, a mapping, a table of values — may be terse.
-
 Write the current state as plain assertion and stop.
 
 ## What you say to the user
@@ -165,6 +159,9 @@ In chat, and in a comment the user acts on:
   is and where it lives, never the name alone.
 - **Report a change against the board goal it serves**, never as a list of
   edits.
+- **Before drafting anything in the user's name for anyone outside this
+  system, say in a line what it will say, to whom and why, and wait for his
+  yes.** The draft lands where he can rewrite it, and he sends it himself.
 
 ## Content is yours; behavior is chief_of_staff's
 

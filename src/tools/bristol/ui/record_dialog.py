@@ -83,7 +83,7 @@ from .theme import (
 # sync with the format rules in src/skills/manage-tickets/SKILL.md (§Record types).
 BUILD_TEMPLATE = (
     "Story:\n"
-    "As [owner] I want [what should change] so that [why it matters].\n"
+    "As [the person served, by their role] I want [what should change] so that [why it matters].\n"
     "\n"
     "Acceptance Criteria:\n"
     "1. Given [starting state], when [action], then [expected result].\n"
