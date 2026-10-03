@@ -17,7 +17,9 @@ an `icon.icns` next to this file to give the app a custom icon (optional; the
 OPTIONS block picks it up only if present).
 """
 
+import importlib.util
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -71,18 +73,73 @@ VERSION = payload.version(project_root()) or "0.0.0"
 DATA_FILES = [f for f in ("schema.sql", "ACKNOWLEDGEMENTS.md") if (HERE / f).exists()]
 DATA_FILES += stage_payload()
 
+EXCLUDES = ["tkinter", "setuptools", "pip", "pkg_resources", "py2app",
+            "pydoc_data", "test"]
+
+# Standard-library modules no scanner and no tool of Bristol's reaches for:
+# windows, demos, an editor, and the installer bootstrap.
+STDLIB_LEFT_OUT = {"turtle", "turtledemo", "idlelib", "ensurepip", "venv",
+                   "antigravity", "this", "lib2to3", "distutils", "_tkinter"}
+
+
+def standard_library() -> tuple[list[str], list[str]]:
+    """Every standard-library package and module this interpreter has, as
+    py2app's (packages, includes).
+
+    py2app keeps only what the app itself imports. The scanners the bundle
+    carries run from a folder py2app never reads, so their imports are
+    invisible to it, and a module they need and the app does not would be
+    missing. The whole library ships instead, which is what any scanner
+    version may reach for.
+    """
+    packages, modules = [], []
+    for name in sorted(sys.stdlib_module_names):
+        if name in STDLIB_LEFT_OUT or name in EXCLUDES:
+            continue
+        try:
+            spec = importlib.util.find_spec(name)
+        except (ImportError, ValueError):
+            continue
+        if spec is None or spec.origin in (None, "built-in", "frozen"):
+            continue
+        (packages if spec.submodule_search_locations else modules).append(name)
+    return packages, modules
+
+
+STDLIB_PACKAGES, STDLIB_MODULES = standard_library()
+
+# Where the bundle carries the scanners, beside its own library. The path is
+# src/tools/skill_tools/skills.py CARRIED_SCANNERS, which is what finds them.
+SCANNERS_IN_BUNDLE = Path("Contents") / "Resources" / "scanners"
+
+
+def carry_scanners(bundle: Path) -> None:
+    """Install the scanners scanners.txt names into the bundle, where the
+    app's interpreter finds them on an import."""
+    target = bundle / SCANNERS_IN_BUNDLE
+    if target.exists():
+        shutil.rmtree(target)
+    subprocess.run([sys.executable, "-m", "pip", "install", "--quiet",
+                    "--disable-pip-version-check", "--target", str(target),
+                    "-r", str(HERE / "scanners.txt")], check=True)
+    # The launchers pip writes name this build machine's interpreter, which a
+    # downloaded app does not have; skills.py starts each scanner itself.
+    launchers = target / "bin"
+    if launchers.is_dir():
+        shutil.rmtree(launchers)
+
+
 OPTIONS = {
     "argv_emulation": False,
     # Bundle the ui/ and reports/ packages, named explicitly: reports/ is
     # reached only through a guarded import inside the epic closure.
-    "packages": ["ui", "reports"],
+    "packages": ["ui", "reports", *STDLIB_PACKAGES],
     # epic_closure is reached the same guarded way, from the epic dialog, so
     # nothing in the import graph would carry it in on its own. finishing is
     # imported outright by three ui modules and named here beside it.
-    "includes": ["sqlite3", "epic_closure", "finishing"],
+    "includes": ["sqlite3", "epic_closure", "finishing", *STDLIB_MODULES],
     # A board draws no Tk windows and installs no packages at runtime.
-    "excludes": ["tkinter", "setuptools", "pip", "pkg_resources", "py2app",
-                 "pydoc_data", "test"],
+    "excludes": EXCLUDES,
     "plist": {
         # CFBundleName holds no space; CFBundleDisplayName carries the name
         # with one.
@@ -114,6 +171,8 @@ if "py2app" in sys.argv:
 
     bundle = HERE / "dist" / "BristolTickets.app"
     if bundle.is_dir():
+        # Before the slim, whose last act signs the bundle again.
+        carry_scanners(bundle)
         before, after = slim.slim(bundle)
         mb = 1024 * 1024
         print(f"slim: {before / mb:.0f} MB → {after / mb:.0f} MB")

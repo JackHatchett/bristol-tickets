@@ -3975,6 +3975,23 @@ def check_agent_tools() -> list[str]:
         ok.append("an imported agent's charter lands in the data folder, and its "
                   "instance token resolves to this installation's")
 
+    # Every agent file Bristol ships reads as one, and each skill it fetches is
+    # named by a folder address the importer can resolve.
+    sys.path.insert(0, str(TOOLS / "skill_tools"))
+    import import_agent
+    import skills as skill_loader
+    shipped = sorted((root / "src" / "addons").glob("*.agent.json"))
+    for agent_file in shipped:
+        document = import_agent.load(agent_file)
+        for record in document.get("skills", []):
+            if record.get("source") == "address":
+                skill_loader.resolve_address(record["address"])
+            elif record.get("source") != "native":
+                raise SmokeFailure(f"{agent_file.name} names {record.get('name')} "
+                                   f"with no address to fetch it from")
+    ok.append(f"{len(shipped)} shipped agent files read, and every skill in "
+              f"them has an address or ships with Bristol")
+
     # Neither tool can reach a network or a model: the whole point of the form
     # is that an agent can be made with the machine offline.
     reaches_out = ("socket", "urllib", "http.client", "requests", "ssl",

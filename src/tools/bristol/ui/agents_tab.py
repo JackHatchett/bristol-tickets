@@ -946,11 +946,18 @@ class AgentsTab(QWidget):
     def _create(self) -> None:
         self._show(None)
 
+    def _addons_folder(self) -> str:
+        """Where the agent files Bristol ships sit, which is where a picker for
+        one opens; the home folder where this build ships none."""
+        root = config_file.project_root()
+        addons = root / "src" / "addons" if root else None
+        return str(addons if addons and addons.is_dir() else Path.home())
+
     def _import(self) -> None:
         """Adopt an agent from its file: read it, show what it asks for, and
         write it only on Accept."""
         chosen, _ = QFileDialog.getOpenFileName(
-            self, "Import Agent", str(Path.home()),
+            self, "Import Agent", self._addons_folder(),
             "Agent files (*.agent.json);;All files (*)")
         if not chosen:
             return

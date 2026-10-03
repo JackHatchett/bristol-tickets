@@ -18,9 +18,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -69,6 +72,11 @@ def build(root: Path) -> Path:
             "make_release: the bundle carries no payload, so a download would "
             "install nothing. Check payload.stage against setup.py."
         )
+    verify_seal(app)
+    return app
+
+
+def verify_seal(app: Path) -> None:
     seal = subprocess.run(
         ["codesign", "--verify", "--deep", "--strict", str(app)],
         capture_output=True, text=True)
@@ -80,7 +88,83 @@ def build(root: Path) -> Path:
             "Anything that changes the bundle after py2app writes it has to "
             "sign it again — slim.reseal is what does that."
         )
-    return app
+
+
+# Run by the app's own interpreter, from the skills.py the app installs: what
+# an import in the downloaded app does, minus the window.
+SCAN_PROBE = """
+import json, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import skills
+out = {}
+for folder in sys.argv[2:]:
+    record = skills.scan_record(Path(folder))
+    out[Path(folder).name] = {"refusal": skills.refusal(record),
+                              "scanners": record["scanners"],
+                              "missing": record["missing"],
+                              "unread": record["unread"]}
+print(json.dumps(out))
+"""
+
+# Two skills the check imports: one whose code is ordinary, and one that hands
+# its input to a shell, which both scanners report as high severity.
+PROBE_SKILLS = {
+    "clean": {"scripts/tally.py": "import json\nprint(json.dumps({'n': 1}))\n",
+              "scripts/hello.sh": "#!/bin/sh\necho hello\n"},
+    "risky": {"scripts/run.py": "import subprocess\nimport sys\n"
+                                "subprocess.call(sys.argv[1], shell=True)\n"},
+}
+
+
+def check_scanners(app: Path) -> None:
+    """Scan two skills with the bundle's own interpreter, in the environment
+    the app gives a tool it starts. The clean one has to pass with both
+    scanners run, and the risky one has to be refused: a bundle failing either
+    would turn away every skill carrying code, or let a risky one in."""
+    contents = app / "Contents"
+    tools = (contents / "Resources" / payload.PAYLOAD_DIR_NAME / "src" / "tools"
+             / "skill_tools")
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    # The app's launcher sets PYTHONHOME for everything it starts, and keeps
+    # bytecode out of the bundle, whose signature a written file would break.
+    env.update(PYTHONHOME=str(contents / "Resources"),
+               PYTHONDONTWRITEBYTECODE="1")
+    with tempfile.TemporaryDirectory() as tmp:
+        folders = []
+        for name, files in PROBE_SKILLS.items():
+            for rel, text in files.items():
+                path = Path(tmp) / name / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding="utf-8")
+            (Path(tmp) / name / "SKILL.md").write_text(
+                f"---\nname: {name}\ndescription: A probe.\n---\n",
+                encoding="utf-8")
+            folders.append(str(Path(tmp) / name))
+        print("$ scan two probe skills with the bundle's interpreter")
+        done = subprocess.run(
+            [str(contents / "MacOS" / "python"), "-c", SCAN_PROBE, str(tools),
+             *folders], capture_output=True, text=True, env=env, cwd=tmp)
+    try:
+        seen = json.loads(done.stdout.strip().splitlines()[-1])
+    except (IndexError, json.JSONDecodeError):
+        raise SystemExit(
+            "make_release: the bundle's interpreter could not run the scan.\n"
+            f"stdout:\n{done.stdout}\nstderr:\n{done.stderr}")
+    clean, risky = seen["clean"], seen["risky"]
+    problems = []
+    if clean["refusal"] or clean["missing"] or clean["unread"]:
+        problems.append(f"a clean skill was refused: {clean}")
+    if sorted(clean["scanners"]) != ["bandit", "semgrep"]:
+        problems.append(f"not both scanners ran: {clean}")
+    if risky["refusal"] != "the scan found a risk":
+        problems.append(f"a risky skill was not refused for its risk: {risky}")
+    if problems:
+        raise SystemExit("make_release: the bundle's scan is wrong.\n  "
+                         + "\n  ".join(problems)
+                         + f"\nstderr:\n{done.stderr}")
+    print("  a clean skill imports, scanned by bandit and semgrep; "
+          "a risky one is refused")
 
 
 def package(app: Path, version: str) -> tuple[Path, str]:
@@ -113,6 +197,8 @@ def main() -> None:
     if not args.skip_checks:
         checks(root)
     app = build(root)
+    check_scanners(app)
+    verify_seal(app)
     archive, digest = package(app, version)
 
     print(f"\nBristol Tickets {version}")

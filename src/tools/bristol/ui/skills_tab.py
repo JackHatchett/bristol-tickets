@@ -60,11 +60,12 @@ STANDING_KIND = "standing"  # create_tickets.EPIC_KIND_STANDING
 
 SKILLS_CLI = Path("src") / "tools" / "skill_tools" / "skills.py"
 
-# A skill folder that exists, in the add-on repository career_coach ships from.
+# A skill folder that exists, in the sample-skills repository career_coach's
+# skills ship from.
 # It is the New Skill window's example: well formed, and live, so following it
 # lands on a page whose address can be pasted straight back.
 EXAMPLE_SKILL = ("https://github.com/JackHatchett/bristol-career-coach/"
-                 "tree/main/skills/jd-evaluation")
+                 "tree/main/jd-evaluation")
 
 # The three ways the list narrows. Each is one control on the top row, and the
 # picker's own name is the option that turns it off.
