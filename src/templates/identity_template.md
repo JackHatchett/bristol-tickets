@@ -422,6 +422,8 @@ Nine rules, and the one on words below:
 This holds for everything an agent writes — a file, a card, a comment, a note,
 a line in chat — and not only for governing documents.
 
+- **Every file is written for a person to read.** Only one already shaped
+  like configuration — a list, a mapping, a table of values — may be terse.
 - **Only a person names something.** A document, a rule, a card or a field
   states, defines, gives, sets, specifies or lists; a person names a child, a
   ship, a price, or someone to a post. "The card names the file" is the misuse,

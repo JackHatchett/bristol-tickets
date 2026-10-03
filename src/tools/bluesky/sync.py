@@ -81,6 +81,51 @@ def journal_path(day, folder):
     return data_paths.resolve(folder) / f"{day:%Y}" / f"{day:%m}" / f"{day:%Y-%m-%d}.md"
 
 
+def first_alias(page_file):
+    """The first alias in a page's frontmatter, which is the page's title."""
+    lines = page_file.read_text(encoding="utf-8").splitlines()
+    for index, line in enumerate(lines):
+        if line.strip() == "aliases:" and index + 1 < len(lines):
+            return lines[index + 1].strip().removeprefix("- ").strip()
+        if index and line.strip() == "---":
+            break
+    return page_file.stem
+
+
+def write_index(folder, prefix):
+    """Rewrite the index of day pages from the pages on disk.
+
+    Every page in the folder is listed once, whichever run wrote it. The note
+    keeps the created stamp it already carries and is written only when its
+    contents would differ.
+    """
+    name = setting("index_file")
+    if not name:
+        return False
+    root = data_paths.resolve(folder)
+    index_file = root / name
+    pages = []
+    for page in root.rglob(f"{prefix}*.md"):
+        stamp = page.stem[len(prefix):]
+        try:
+            day = datetime.strptime(stamp, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        pages.append((day, page.stem, first_alias(page)))
+    created = None
+    if index_file.exists():
+        for line in index_file.read_text(encoding="utf-8").splitlines():
+            if line.startswith("created: "):
+                created = line.removeprefix("created: ").strip()
+                break
+    created = created or datetime.now().strftime("%Y-%m-%d %H:%M")
+    text = render.render_index(pages, created, setting("index_related", []))
+    if index_file.exists() and index_file.read_text(encoding="utf-8") == text:
+        return False
+    index_file.write_text(text, encoding="utf-8")
+    return True
+
+
 def link_into_journal(journal_file, page_file):
     """One line naming the day's Bluesky page, added to a file Jack authors.
 
@@ -310,6 +355,8 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
 
     print(f"{written} pages written or updated"
           + (f", {skipped} already there" if skipped else ""))
+    if not dry_run and write_index(folder, prefix):
+        print("index of day pages rewritten")
     return 0
 
 

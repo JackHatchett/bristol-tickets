@@ -34,6 +34,10 @@ note the epic's cards link to. This owns what a session does.
 
 - **Correct what generates a page, then run it again.** An edit to the page
   itself is gone the next time its day falls inside the window.
+- **Every run rewrites the index of day pages**, the note `index_file` gives
+  inside the notes folder, from the pages on disk: each page once, newest year
+  first, months in calendar order under it. It is generated like the pages and
+  is never edited by hand; it is written only when its contents would differ.
 - **A shape change is a change to `src/tools/bluesky/render.py`**, and
   `src/app.md` §Content is yours; behavior is chief_of_staff's decides who may
   make it.

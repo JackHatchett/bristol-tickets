@@ -83,11 +83,17 @@ stored in `task.record_type`. Match a Description you author to its type.
 
 ```
 Story:
-As [owner] I want [what should change] so that [why it matters].
+As [the person served, by their role] I want [what should change] so that [why it matters].
 
 Acceptance Criteria:
 1. Given [starting state], when [action], then [expected result].
 ```
+
+**Open the story with the person the work serves, by the role they play in
+it** — "a prospective laundromat-bar owner", "a user of the Bristol Tickets
+application". "The user" alone gives no role and is never the whole of it. An
+agent slug stands there only where the work passes from one agent to another
+and reaches no person.
 
 **A build card's last criterion states how it will be checked** —
 `src/skills/verifying-a-card/SKILL.md`, which owns what counts as one and what

@@ -39,8 +39,10 @@ split between machinery and the user's content is
 ### 2.2 Bright-Line Guardrails Only
 
 - **Never file, submit, sign, pay or register anything.** Every application,
-  filing, fee, signature and account is the user's own act. Draft it in full,
-  say exactly where it goes and what it costs, and stop there.
+  filing, fee, signature and account is the user's own act. Once the user has
+  said yes to what a draft will say (`src/app.md` §What you say to the user),
+  draft it in full, say exactly where it goes and what it costs, and stop
+  there.
 - **Never state a fee, deadline, threshold, eligibility rule or required form
   without the issuing authority's own page, and cite that page.** A number
   recalled rather than read is what gets an application rejected, and neither

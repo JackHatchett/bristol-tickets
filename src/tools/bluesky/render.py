@@ -247,3 +247,47 @@ def render_page(day, sections, journal_link=None, created=None):
     while lines and lines[-1] == "":
         lines.pop()
     return "\n".join(lines) + "\n"
+
+
+INDEX_TITLE = "My Bluesky Posts"
+INDEX_ALIASES = (INDEX_TITLE, "Bluesky Index")
+
+
+def render_index(pages, created, related=()):
+    """The one note listing every day page, newest year first.
+
+    `pages` is (date, page stem, link text) for each day page in the folder.
+    Within a year the months run January to December and the days run in
+    order, which is how the journal's own folders read. `related` is the
+    Related Notes section's links, each a whole `[[target|label]]`.
+    """
+    pages = sorted(pages)
+    lines = ["---", "aliases:"]
+    lines += [f"  - {alias}" for alias in INDEX_ALIASES]
+    lines += ["tags:", "  - ai/answer",
+              f"created: {created}", "---", "",
+              f"# {INDEX_TITLE}", "",
+              "Every day I posted on Bluesky, one page per day, newest year first",
+              "", "## Details", ""]
+    if pages:
+        lines.append(f"- {len(pages)} days, from {pages[0][0]:%Y-%m-%d} "
+                     f"to {pages[-1][0]:%Y-%m-%d}")
+    else:
+        lines.append("- 0 days")
+    lines += ["- Each page is generated from the Bluesky archive by the daily "
+              "sync, so edits to a page are overwritten",
+              "- Posts pruned from the archive appear on no page"]
+    for year in sorted({day.year for day, _, _ in pages}, reverse=True):
+        lines += ["", f"## {year}", ""]
+        month = None
+        for day, stem, label in pages:
+            if day.year != year:
+                continue
+            if day.month != month:
+                month = day.month
+                lines.append(f"- {day:%B}")
+            lines.append(f"\t- [[{stem}|{label}]]")
+    if related:
+        lines += ["", "## Related Notes", ""]
+        lines += [f"- {link}" for link in related]
+    return "\n".join(lines) + "\n"
