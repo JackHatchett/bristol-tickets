@@ -6,9 +6,9 @@ knows how to do is a skill it opens when a task calls for one. Nothing in the
 charter lists those skills, so adding one changes what the agent can do without
 the charter changing at all.
 
-Nine ship with Bristol. In full, an agent is three things: an entry in your
+Eight ship with Bristol, and an add-on agent can be imported from its own repository (§Add-on agents). In full, an agent is three things: an entry in your
 configuration, holding its paths and settings; a charter, a Markdown file under
-`src/agent_identities/` that it reads in full at the start of every session,
+`src/agent_identities/` (or, for an agent you imported, in your data folder) that it reads in full at the start of every session,
 holding who it is, what it is for and what it may not do; and skills, folders of
 instructions it opens only when a task calls for one. Which of the three holds a
 given fact follows from what a session does with the fact — look it up, hold it
@@ -52,24 +52,6 @@ auditing storage, deduplicating photos, migrating an old setup — the file
 management and maintenance tools under `src/tools/` are its territory.
 
 **Needs** nothing beyond a working install.
-
----
-
-## career_coach
-
-**For** a job search, in any field and at any seniority.
-
-It triages job descriptions against your history, tailors a resume to a specific
-posting, drafts cover letters in a voice distilled from writing you have already
-done, builds interview-prep material, and tracks applications in a local
-database. An optional pipeline harvests job alerts out of your email on a
-schedule.
-
-**Needs** a `data/<instance>/career/` folder holding your resume, employment
-history, voice samples and context files. The agent builds this up with you over
-the first few sessions rather than requiring it up front. Email harvesting and
-job-description scraping need the optional tools from
-[install.md](install.md) §3.
 
 ---
 
@@ -193,6 +175,24 @@ folder of its own.
 **Needs** its own `data/<instance>/qa/` folder, which its entry declares.
 
 ---
+
+## Add-on agents
+
+An agent can live in a repository of its own and be imported into any Bristol.
+Its repository holds the charter, an agent file at the root, and a `skills/`
+folder.
+
+- **career_coach** — a job search, in any field and at any seniority: job
+  description triage, resume and cover-letter tailoring in your own voice,
+  interview prep, and an optional job-alert harvest. It lives at
+  [github.com/JackHatchett/bristol-career-coach](https://github.com/JackHatchett/bristol-career-coach).
+
+To add one, download its `.agent.json` file, press **Import Agent** on the
+Agents tab and choose it. A window shows what the agent is for, the guardrails
+that halt it, and how fetching each of its skills went; **Accept** adopts it and
+opens its form, where any value marked `<supply>` is yours to fill in. Its
+charter is written into your data folder rather than into Bristol's own files.
+`src/tools/agent_tools/README.md` §The agent file is the format.
 
 ## Adding your own
 

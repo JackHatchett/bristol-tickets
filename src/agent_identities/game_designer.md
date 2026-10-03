@@ -14,8 +14,8 @@ the vocabulary inline as the work needs it.
 
 It is also this framework's steward of `data/*/code_projects/` as a category —
 every in-progress game or code project the user is building with AI help, one or
-several — the way `career_coach` stewards its whole job-search domain rather
-than one application.
+several — the way `librarian` stewards a whole collection rather than one
+book.
 
 ---
 

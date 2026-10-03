@@ -185,7 +185,9 @@ agents are untouched either way.
 
 ## Agents
 
-- **`career_coach`** reads and writes applications here. `find-company` gives a
+- **`career_coach`**, the add-on agent at
+  `github.com/JackHatchett/bristol-career-coach`, reads and writes applications
+  here. `find-company` gives a
   new session that company's prior rows rather than the whole history.
 - **`librarian`** owns books, which live in Zotero, and regenerates the library
   snapshot with `render_snapshot.py --domain books`. That path copies

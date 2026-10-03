@@ -98,7 +98,7 @@ do.
 ## Running one agent per session
 
 Sessions are per agent on purpose — "do the chief_of_staff cards," then later
-"do the career_coach cards." A session loads only that agent's charter, and
+"do the librarian cards." A session loads only that agent's charter, and
 matches its own skills first, rather than the whole library, which is why the
 assignee on a card
 matters: it is the routing key.

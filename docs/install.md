@@ -197,20 +197,18 @@ clone is that folder.
 ### The optional toolkit
 
 Everything else under `src/tools/` is a toolkit the agents reach for — photo
-processing, job-description scraping, OCR — and none of it is needed to run the
+processing, document conversion, OCR — and none of it is needed to run the
 board. Install it when you want one of those tools:
 
 ```bash
 pip install -r requirements-tools.txt
 ```
 
-Three of them then need a step pip cannot perform:
+One of them then needs a step pip cannot perform:
 
 | Tool | Extra step |
 | --- | --- |
-| Job-description scraping (`src/tools/jd_scraper/`) | `playwright install chromium` |
 | PDF-to-Markdown OCR (`src/tools/document_tools/`) | `brew install tesseract ghostscript poppler` |
-| Gmail harvesting (`jd_scraper/gmail_harvest.py`) | A Google Cloud OAuth credential file — see that tool's own README |
 
 ### Building the release
 

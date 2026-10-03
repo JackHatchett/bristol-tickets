@@ -114,3 +114,60 @@ are two commands rather than one with a flag.
 Bristol Tickets' Agents tab is a front end to these two commands and to
 `skills.py`, and writes nothing itself —
 `src/tools/bristol/ui/agents_tab.py`.
+
+## The agent file
+
+One agent as one JSON file, `<slug>.agent.json`, so it can be handed to another
+installation. What may cross and what may not is
+`src/templates/identity_template.md` §What of an agent can be imported.
+
+| Key | What it holds |
+| --- | --- |
+| `bristol_agent` | The format, `1`. A file declaring another is refused. |
+| `slug` | The agent's name, which its config key and charter file take. |
+| `charter` | The whole charter document, as text. |
+| `entry` | The config entry, less `identity` and `skills`, which the importer writes itself. |
+| `skills` | One record per skill: `name`, and `source` — `native`, `address`, `unrecorded` or `unknown`. |
+
+- **Nothing local crosses.** In `entry`, an absolute path and every
+  environment variable's value read `<supply>`; the instance slug reads
+  `<instance>` and the notebook's folder name `<notebook>`, and the importer
+  resolves both to its own.
+- **A skill crosses as its address, never its bytes.** An `address` record
+  carries the web address of the skill's folder, and may carry `repository`,
+  `path`, `commit` and `licence`; the importer fetches it from there. A
+  `native` skill is one every Bristol ships. `unrecorded` and `unknown` name a
+  skill the importer has to find for itself.
+- **An add-on agent is published as a repository** holding its charter, this
+  file at its root, and a `skills/` folder the file's addresses point into.
+
+## export_agent.py
+
+```
+python3 export_agent.py <slug> [--out PATH]
+```
+
+Writes the agent file for one agent here. It takes no judgment.
+
+## import_agent.py
+
+```
+python3 import_agent.py <file.agent.json>            # read it, fetch its skills
+python3 import_agent.py <file.agent.json> --accept   # write the agent
+```
+
+- **The first run writes no agent.** It prints the mandate and the guardrails,
+  and installs each addressed skill through `skills.py install`, scanned on the
+  way in.
+- **The second run is the grant.** It writes the charter into the folder
+  declared at `imported_agents.install_dir`, writes the config entry, attaches
+  every named skill that is loadable, opens the agent's board epic, and lists
+  the values left for this installation to supply.
+- **An imported charter lives with the user's data, never in
+  `src/agent_identities/`.** That folder is the published tree, and an agent
+  adopted from elsewhere is this installation's, as an installed skill is.
+- **A slug already in use, or a charter already on disk, stops it** before
+  anything is written.
+
+Bristol Tickets' Agents tab runs both: Import Agent reads the file, shows the
+first run's report, and Accept runs the second.

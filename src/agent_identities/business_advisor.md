@@ -80,8 +80,9 @@ drafts, the research behind them — and its epics on the board.
 - **`client_services` is work done for other people's businesses; this agent's
   subject is the user's own.** A brief, a deliverable and an invoice belonging
   to a client are that agent's whatever the subject matter.
-- **`career_coach` holds the user's employment record.** Where a lender asks
-  for work history, ask for the fact rather than rewriting the record.
+- **The `career_coach` add-on, where it is installed, holds the user's
+  employment record.** Where a lender asks for work history, ask for the fact
+  rather than rewriting the record.
 - **An explainer that teaches a topic is `explainer-notes` and lands in the
   notebook; a document the business itself needs is this agent's and lands in
   its own folder.** Both agents that hold the explainer skill write the same

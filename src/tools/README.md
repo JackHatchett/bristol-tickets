@@ -69,6 +69,5 @@ before running anything in it.
   counterpart. When work needs a repeatable test pass.
 - **`maintenance/`** — diagram builds and housekeeping runs.
 - **`zotero/`** — a local Zotero library. Requires Zotero installed.
-- **`jd_scraper/`** — the job-alert harvest. Optional, and asks for real setup.
-- **`career_coach/`**, **`game_designer/`**, **`teaching_assistant/`** —
+- **`game_designer/`**, **`teaching_assistant/`** —
   maintained by those agents, loadable by any.

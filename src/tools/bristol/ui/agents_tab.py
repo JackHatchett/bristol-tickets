@@ -3,7 +3,8 @@
 Every fact on this page comes from ``src/tools/agent_tools/agents.py list
 --json`` and ``skill_tools/skills.py list --json``, the same readers a session
 uses, so the app and a session cannot disagree. Writing goes through
-``create_agent.py``, ``agents.py edit`` and ``skills.py attach``/``detach`` —
+``create_agent.py``, ``import_agent.py``, ``agents.py edit`` and
+``skills.py attach``/``detach`` —
 the tools that own each part — so an agent made here and one made at the command
 line are the same object.
 
@@ -68,6 +69,7 @@ from .theme import CARD_ROLE, LAYOUT, agent_caption, space
 
 AGENTS_CLI = Path("src") / "tools" / "agent_tools" / "agents.py"
 CREATE_CLI = Path("src") / "tools" / "agent_tools" / "create_agent.py"
+IMPORT_CLI = Path("src") / "tools" / "agent_tools" / "import_agent.py"
 SKILLS_CLI = Path("src") / "tools" / "skill_tools" / "skills.py"
 PATHS_CLI = Path("src") / "tools" / "config_tools" / "data_paths.py"
 NOTEBOOK_CLI = Path("src") / "tools" / "config_tools" / "notebook.py"
@@ -795,6 +797,49 @@ class AgentDialog(QDialog):
         return args
 
 
+class ImportAgentDialog(QDialog):
+    """An agent file's mandate and guardrails, and what came of fetching its
+    skills, read before the agent is adopted. Accept is the grant; nothing of
+    the agent is written until it is pressed —
+    ``src/skills/importing-an-agent/SKILL.md``."""
+
+    def __init__(self, parent, slug: str, report: str) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Import Agent")
+        self.setModal(True)
+        self.setMinimumWidth(LAYOUT["dialog_min_w"])
+        self.setMinimumHeight(LAYOUT["agent_dialog_min_h"] // 2)
+
+        heading = QLabel(f"Import {agent_caption(slug)}?")
+        heading.setObjectName("dialogHeading")
+
+        self.report = QPlainTextEdit(report)
+        self.report.setReadOnly(True)
+
+        cancel = QPushButton("Cancel")
+        cancel.setAutoDefault(False)
+        cancel.setDefault(True)
+        cancel.clicked.connect(self.reject)
+        self.accept_btn = QPushButton("Accept")
+        self.accept_btn.setObjectName("globalCreateBtn")
+        self.accept_btn.setAutoDefault(False)
+        self.accept_btn.clicked.connect(self.accept)
+
+        row = QHBoxLayout()
+        row.setSpacing(space("md"))
+        row.addStretch(1)
+        row.addWidget(cancel)
+        row.addWidget(self.accept_btn)
+
+        column = QVBoxLayout(self)
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
+                                  space("xl"))
+        column.setSpacing(space("lg"))
+        column.addWidget(heading)
+        column.addWidget(self.report, 1)
+        column.addLayout(row)
+
+
 class AgentsTab(QWidget):
     def __init__(self, parent=None, on_agents_changed=None) -> None:
         super().__init__(parent)
@@ -807,6 +852,8 @@ class AgentsTab(QWidget):
         self.new_btn = QPushButton("New Agent")
         self.new_btn.setObjectName("globalCreateBtn")
         self.new_btn.clicked.connect(self._create)
+        self.import_btn = QPushButton("Import Agent")
+        self.import_btn.clicked.connect(self._import)
 
         # Each agent is a card, and a card opens on a click.
         self.list = card_list()
@@ -816,6 +863,7 @@ class AgentsTab(QWidget):
         top = QHBoxLayout()
         top.setSpacing(space("md"))
         top.addStretch(1)
+        top.addWidget(self.import_btn)
         top.addWidget(self.new_btn)
 
 
@@ -897,6 +945,56 @@ class AgentsTab(QWidget):
 
     def _create(self) -> None:
         self._show(None)
+
+    def _import(self) -> None:
+        """Adopt an agent from its file: read it, show what it asks for, and
+        write it only on Accept."""
+        chosen, _ = QFileDialog.getOpenFileName(
+            self, "Import Agent", str(Path.home()),
+            "Agent files (*.agent.json);;All files (*)")
+        if not chosen:
+            return
+        try:
+            slug = json.loads(Path(chosen).read_text(encoding="utf-8"))["slug"]
+        except (OSError, ValueError, KeyError, TypeError):
+            notify(self, "Not Imported", f"{chosen} is not an agent file.")
+            return
+        self.import_btn.setEnabled(False)
+        self.import_btn.setText("Reading…")
+        # Repainted before the skills are fetched, so the page shows it is
+        # working rather than freezing.
+        self.import_btn.repaint()
+        try:
+            code, out, err = self._run(IMPORT_CLI, chosen)
+        finally:
+            self.import_btn.setText("Import Agent")
+            self.import_btn.setEnabled(True)
+        if code != 0:
+            notify(self, "Not Imported", err.strip() or out.strip()
+                   or "The agent file could not be read.")
+            return
+        # The skills it fetched are installed whatever is decided next, so the
+        # Skills tab shows them either way.
+        # The command-line run closes on what to type next; here the next step
+        # is the Accept button, so the report stops before it.
+        report = out.split("\nEach fetched skill is loadable now")[0]
+        dialog = ImportAgentDialog(self, slug, report.strip())
+        accepted = dialog.exec() == QDialog.Accepted
+        if accepted:
+            code, out, err = self._run(IMPORT_CLI, chosen, "--accept")
+            if code != 0:
+                notify(self, "Not Imported", err.strip() or out.strip())
+                accepted = False
+        self.reload()
+        if not accepted:
+            return
+        if self._on_agents_changed is not None:
+            self._on_agents_changed()
+        # The new agent opens as a form, where any value the file left for this
+        # installation to supply reads <supply> and is filled in place.
+        record = next((a for a in self._agents if a["slug"] == slug), None)
+        if record is not None:
+            self._show(record)
 
     def _open(self) -> None:
         record = self._selected()

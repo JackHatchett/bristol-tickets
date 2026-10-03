@@ -83,7 +83,6 @@ CARD_ROLE = Qt.UserRole + 1  # structured payload the delegate paints from
 # alphabetically. Mirrors src/agent_identities/*.md.
 FLEET_AGENTS = [
     "user",
-    "career_coach",
     "chief_of_staff",
     "client_services",
     "game_designer",
