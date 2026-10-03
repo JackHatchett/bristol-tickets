@@ -37,11 +37,13 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QDialog,
     QFileDialog,
     QFormLayout,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -49,6 +51,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPlainTextEdit,
     QPushButton,
+    QRadioButton,
     QScrollArea,
     QSplitter,
     QVBoxLayout,
@@ -57,15 +60,17 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local; see module docstring
 
-from .dialogs import confirm
+from .dialogs import confirm, notify
 from .growing_edit import GrowingTextEdit
 from .settled_combo import SettledComboBox, fill_words
-from .theme import LAYOUT, space
+from .row_card import card_list
+from .theme import CARD_ROLE, LAYOUT, agent_caption, space
 
 AGENTS_CLI = Path("src") / "tools" / "agent_tools" / "agents.py"
 CREATE_CLI = Path("src") / "tools" / "agent_tools" / "create_agent.py"
 SKILLS_CLI = Path("src") / "tools" / "skill_tools" / "skills.py"
 PATHS_CLI = Path("src") / "tools" / "config_tools" / "data_paths.py"
+NOTEBOOK_CLI = Path("src") / "tools" / "config_tools" / "notebook.py"
 
 # What an agent cannot be without. The form marks each one and refuses a save
 # while one is empty.
@@ -73,13 +78,101 @@ REQUIRED = ["slug", "description", "charter"]
 FIELD_NAMES = {"slug": "Name", "description": "Description",
                "charter": "Charter"}
 
-# The notebook zones, as `config`'s markdown_notebook §ZONES defines them: the
-# notebook is read whole or not at all, and writing is granted one zone at a
-# time. Archive is a write too — a file may be moved into it — and is stored on
-# its own key because moving in is the only write it takes.
-WRITE_ZONES = [("workspace", "AI Workspace"), ("inbox", "Inbox")]
-ARCHIVE_LABEL = "Archive (move files in)"
-READ_LABEL = "Full Notebook"
+# What an agent may do in the notebook — src/tools/config_tools/notebook.py.
+NOTEBOOK_MODES = [("per_folder", "Per Folder"), ("read_all", "Read All"),
+                  ("write_all", "Write All")]
+FOLDER_ACCESS = [("read", "Read"), ("write", "Write"), ("hide", "Hide")]
+
+
+class NotebookAccess(QWidget):
+    """Per Folder, Read All or Write All, and under Per Folder one row per
+    folder attached in Settings with Read, Write and Hide.
+
+    The rows are read from Settings each time the window opens, so a folder
+    attached or detached there is here or gone. Choices are kept while Read All
+    or Write All is chosen, so going back to Per Folder brings them back.
+    """
+
+    def __init__(self, entry: dict, folders: list[str]) -> None:
+        super().__init__()
+        entry = entry if isinstance(entry, dict) else {}
+        mode = entry.get("mode") if entry.get("mode") in dict(NOTEBOOK_MODES) \
+            else "per_folder"
+        self._kept = dict(entry.get("folders") or {}) if "mode" in entry else {}
+        self._legacy = "mode" not in entry and bool(entry)
+
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(space("sm"))
+
+        modes = QHBoxLayout()
+        modes.setSpacing(space("lg"))
+        self.mode_group = QButtonGroup(self)
+        self.mode_buttons: dict[str, QRadioButton] = {}
+        for value, label in NOTEBOOK_MODES:
+            button = QRadioButton(label)
+            button.setChecked(value == mode)
+            self.mode_group.addButton(button)
+            self.mode_buttons[value] = button
+            modes.addWidget(button)
+        modes.addStretch(1)
+        column.addLayout(modes)
+
+        self.rows = QWidget()
+        grid = QGridLayout(self.rows)
+        grid.setContentsMargins(space("lg"), space("sm"), 0, 0)
+        grid.setHorizontalSpacing(space("lg"))
+        grid.setVerticalSpacing(space("xs"))
+        self.choices: dict[str, dict[str, QRadioButton]] = {}
+        for row, folder in enumerate(folders):
+            name = QLabel(folder)
+            name.setObjectName("metaText")
+            grid.addWidget(name, row, 0)
+            group = QButtonGroup(self.rows)
+            buttons = {}
+            for col, (value, label) in enumerate(FOLDER_ACCESS, start=1):
+                button = QRadioButton(label)
+                button.setChecked(self._kept.get(folder, "hide") == value)
+                group.addButton(button)
+                buttons[value] = button
+                grid.addWidget(button, row, col)
+            self.choices[folder] = buttons
+        grid.setColumnStretch(len(FOLDER_ACCESS) + 1, 1)
+        column.addWidget(self.rows)
+        self.mode_group.buttonToggled.connect(lambda *_: self._sync())
+        self._sync()
+
+    def _sync(self) -> None:
+        self.rows.setVisible(self.mode() == "per_folder" and bool(self.choices))
+
+    def mode(self) -> str:
+        return next((v for v, b in self.mode_buttons.items() if b.isChecked()),
+                    "per_folder")
+
+    def values(self) -> dict:
+        chosen = dict(self._kept)
+        for folder, buttons in self.choices.items():
+            chosen[folder] = next(v for v, b in buttons.items() if b.isChecked())
+        return {"mode": self.mode(), "folders": chosen}
+
+    def changed_from(self, entry: dict) -> bool:
+        """Whether saving would change what the entry says."""
+        if self._legacy:
+            return True
+        entry = entry if isinstance(entry, dict) else {}
+        before = {"mode": entry.get("mode", "per_folder"),
+                  "folders": dict(entry.get("folders") or {})}
+        now = self.values()
+        for folder in self.choices:
+            before["folders"].setdefault(folder, "hide")
+        return now != before
+
+    def args(self) -> list[str]:
+        out = ["--notebook-mode", self.mode()]
+        for folder, access in self.values()["folders"].items():
+            if folder in self.choices:
+                out += ["--notebook-folder", f"{folder}={access}"]
+        return out
 
 
 def _required(label: str) -> str:
@@ -425,19 +518,8 @@ class AgentDialog(QDialog):
         self.context_files.set_values(
             record["key_context_files"] if record else [])
 
-        notebook = record["notebook_access"] if record else {}
-        self.notebook_read = QCheckBox(READ_LABEL)
-        self.notebook_read.setChecked(bool(notebook.get("read")))
-        self.zone_boxes: dict[str, QCheckBox] = {}
-        held_zones = list(notebook.get("write_zones") or [])
-        known = [z for z, _ in WRITE_ZONES]
-        for zone, label in WRITE_ZONES + [(z, z) for z in held_zones
-                                          if z not in known]:
-            box = QCheckBox(label)
-            box.setChecked(zone in held_zones)
-            self.zone_boxes[zone] = box
-        self.archive_moves = QCheckBox("Archive")
-        self.archive_moves.setChecked(bool(notebook.get("archive_moves")))
+        self.notebook = NotebookAccess(
+            record["notebook_access"] if record else {}, self._attached(run))
 
         self.env = EnvList(run)
         self.env.set_values(record["env"] if record else {})
@@ -465,7 +547,7 @@ class AgentDialog(QDialog):
         form.addRow("Charter File", identity_row)
         form.addRow("Folders", self.data_paths)
         form.addRow("Context Files", self.context_files)
-        form.addRow("Notebook", self._zone_group())
+        form.addRow("Notebook", self.notebook)
         form.addRow("Environment Variables", self.env)
         form.addRow("Skills", self.skills)
         if record and record["extra"]:
@@ -497,12 +579,8 @@ class AgentDialog(QDialog):
         split.setStretchFactor(0, 3)
         split.setStretchFactor(1, 4)
 
-        heading = QLabel(slug)
+        heading = QLabel(agent_caption(slug) if self._record else slug)
         heading.setObjectName("dialogHeading")
-
-        self.problem = QLabel()
-        self.problem.setObjectName("formCaption")
-        self.problem.setWordWrap(True)
 
         self.save_btn = QPushButton("Create" if self.creating else "Save")
         self.save_btn.setObjectName("globalCreateBtn")
@@ -524,39 +602,20 @@ class AgentDialog(QDialog):
         column.setSpacing(space("lg"))
         column.addWidget(heading)
         column.addWidget(split, 1)
-        column.addWidget(self.problem)
         column.addLayout(row)
 
         if self.creating:
             self._start_from_skeleton()
 
-    def _zone_group(self) -> QWidget:
-        """Read and Write, each with the zones it grants.
-
-        The notebook is read whole or not at all — `config`'s markdown_notebook
-        §ZONES — so Read holds one zone, and Write holds the ones granted a zone
-        at a time.
-        """
-        holder = QWidget()
-        column = QVBoxLayout(holder)
-        column.setContentsMargins(0, 0, 0, 0)
-        column.setSpacing(space("sm"))
-        # The row's label sits on the first line of its field, so the first
-        # line is left empty and Read begins under Notebook rather than beside
-        # it.
-        column.addSpacing(QFontMetrics(self.font()).lineSpacing())
-        for title, boxes in (("Read", [self.notebook_read]),
-                             ("Write", list(self.zone_boxes.values())
-                              + [self.archive_moves])):
-            label = QLabel(title)
-            label.setObjectName("sectionHeader")
-            column.addWidget(label)
-            for box in boxes:
-                indent = QHBoxLayout()
-                indent.setContentsMargins(space("lg"), 0, 0, 0)
-                indent.addWidget(box)
-                column.addLayout(indent)
-        return holder
+    @staticmethod
+    def _attached(run) -> list[str]:
+        """The folders attached in Settings, read fresh."""
+        code, out, _ = run(NOTEBOOK_CLI, "show", "--json")
+        try:
+            return [f["folder"] for f in json.loads(out)["folders"]] \
+                if code == 0 else []
+        except (json.JSONDecodeError, KeyError, TypeError):
+            return []
 
     def _pick_charter(self) -> None:
         root = config_file.project_root()
@@ -618,12 +677,7 @@ class AgentDialog(QDialog):
             "charter": self.charter.toPlainText(),
             "key_data_paths": self.data_paths.values(),
             "key_context_files": self.context_files.values(),
-            "notebook_access": {
-                "read": self.notebook_read.isChecked(),
-                "write_zones": [z for z, box in self.zone_boxes.items()
-                                if box.isChecked()],
-                "archive_moves": self.archive_moves.isChecked(),
-            },
+            "notebook_access": self.notebook.values(),
             "env": self.env.values(),
             "skills": checked,
         }
@@ -637,23 +691,24 @@ class AgentDialog(QDialog):
         return empty
 
     def _refuse(self, message: str) -> None:
-        self.problem.setText(message)
+        """A save that did not land is the one thing this window says in
+        words, and it says it in a box the user has to dismiss."""
+        notify(self, "Not Saved", message)
 
     def _save(self) -> None:
         values = self.values()
         empty = self.missing()
         if empty:
             named = ", ".join(FIELD_NAMES[name] for name in empty)
-            self._refuse(f"Nothing was saved. Fill in {named}.")
+            self._refuse(f"Fill in {named}.")
             return
         try:
             extra = self.extra.values()
         except ValueError as exc:
-            self._refuse(f"Nothing was saved. {exc}")
+            self._refuse(str(exc))
             return
         if self.creating and values["slug"] in self._taken:
-            self._refuse(f"Nothing was saved. '{values['slug']}' is already an "
-                         f"agent; open it to change what it says.")
+            self._refuse(f"'{values['slug']}' is already an agent.")
             return
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -696,11 +751,9 @@ class AgentDialog(QDialog):
         args = [values["slug"],
                 "--description", values["description"],
                 "--charter-file", str(charter_file),
-                "--notebook-read", "yes" if notebook["read"] else "no",
-                "--archive-moves",
-                "yes" if notebook["archive_moves"] else "no"]
-        for zone in notebook["write_zones"]:
-            args += ["--write-zone", zone]
+                "--notebook-mode", notebook["mode"]]
+        for folder, access in notebook["folders"].items():
+            args += ["--notebook-folder", f"{folder}={access}"]
         for grant in values["key_data_paths"]:
             args += [_grant_option(grant), grant["path"]]
         for declared in values["key_context_files"]:
@@ -730,17 +783,8 @@ class AgentDialog(QDialog):
                 args += ["--context-file", declared]
             if not values["key_context_files"]:
                 args += ["--no-context-files"]
-        notebook, before = values["notebook_access"], was["notebook_access"]
-        if notebook["read"] != bool(before.get("read")):
-            args += ["--notebook-read", "yes" if notebook["read"] else "no"]
-        if notebook["write_zones"] != list(before.get("write_zones") or []):
-            for zone in notebook["write_zones"]:
-                args += ["--write-zone", zone]
-            if not notebook["write_zones"]:
-                args += ["--no-write-zones"]
-        if notebook["archive_moves"] != bool(before.get("archive_moves")):
-            args += ["--archive-moves",
-                     "yes" if notebook["archive_moves"] else "no"]
+        if self.notebook.changed_from(was["notebook_access"]):
+            args += self.notebook.args()
         if values["env"] != was["env"]:
             for name, value in values["env"].items():
                 args += ["--env", f"{name}={value}"]
@@ -764,35 +808,22 @@ class AgentsTab(QWidget):
         self.new_btn.setObjectName("globalCreateBtn")
         self.new_btn.clicked.connect(self._create)
 
-        self.status = QLabel()
-        self.status.setObjectName("formCaption")
-        self.status.setWordWrap(True)
-
-        self.list = QListWidget()
-        self.list.setObjectName("searchResults")
+        # Each agent is a card, and a card opens on a click.
+        self.list = card_list()
+        self.list.itemClicked.connect(lambda *_: self._open())
         self.list.itemActivated.connect(lambda *_: self._open())
-        self.list.currentItemChanged.connect(lambda *_: self._sync_actions())
-
-        self.open_btn = QPushButton("Open")
-        self.open_btn.clicked.connect(self._open)
 
         top = QHBoxLayout()
         top.setSpacing(space("md"))
         top.addStretch(1)
         top.addWidget(self.new_btn)
 
-        actions = QHBoxLayout()
-        actions.setSpacing(space("md"))
-        actions.addStretch(1)
-        actions.addWidget(self.open_btn)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(space("lg"))
         layout.addLayout(top)
-        layout.addWidget(self.status)
         layout.addWidget(self.list, 1)
-        layout.addLayout(actions)
 
         self.reload()
 
@@ -824,10 +855,11 @@ class AgentsTab(QWidget):
         if code != 0:
             self._agents = []
             self.list.clear()
-            self.setEnabled(False)
-            self.status.setText(err.strip() or "The agent reader failed.")
+            # The failure stands where the agents would, as the list's one row.
+            self.list.addItem(err.strip() or "The agent reader failed.")
+            self.list.setEnabled(False)
             return
-        self.setEnabled(True)
+        self.list.setEnabled(True)
         try:
             self._agents = json.loads(out)
         except json.JSONDecodeError:
@@ -839,20 +871,20 @@ class AgentsTab(QWidget):
         except (json.JSONDecodeError, TypeError, KeyError):
             self._skills = []
         self._fill_list()
-        self._sync_actions()
 
     def _fill_list(self) -> None:
         self.list.clear()
         active = config_file.get("active_agent", "")
         for agent in self._agents:
-            name = agent["slug"] + ("   ·   active" if agent["slug"] == active
-                                    else "")
-            item = QListWidgetItem(f"{name}\n{agent['description']}")
+            item = QListWidgetItem()
             item.setData(Qt.UserRole, agent["slug"])
+            item.setData(CARD_ROLE, {
+                "title": agent_caption(agent["slug"]),
+                "description": agent["description"],
+                "meta": "",
+                "pills": ["Active"] if agent["slug"] == active else [],
+            })
             self.list.addItem(item)
-
-    def _sync_actions(self) -> None:
-        self.open_btn.setEnabled(self.list.currentItem() is not None)
 
     def _selected(self):
         item = self.list.currentItem()
@@ -875,8 +907,8 @@ class AgentsTab(QWidget):
         dialog = AgentDialog(self, record, self._run,
                              {a["slug"] for a in self._agents}, self._skills)
         dialog.exec()
+        self.list.clearSelection()
         if dialog.status:
-            self.status.setText(dialog.status)
             self.reload()
             if self._on_agents_changed is not None:
                 self._on_agents_changed()

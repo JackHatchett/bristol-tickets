@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: game_designer
+  bristol.subtitle: Coach design decisions through questions
 ---
 # socratic-design-coaching
 

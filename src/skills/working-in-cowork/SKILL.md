@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/config_tools/data_paths.py src/tools/test_tools/smoke.py
+  bristol.subtitle: Work around Cowork's sandbox limits
 ---
 # working-in-cowork
 

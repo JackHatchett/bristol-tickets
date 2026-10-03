@@ -42,7 +42,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .theme import LAYOUT, space
+from .theme import LAYOUT, agent_caption, space
 
 # The two facets. Each is a key in the state and a section in the panel.
 ASSIGNEE = "assignee"
@@ -168,7 +168,7 @@ def assignee_options(conn: sqlite3.Connection, state: FilterState) -> list[tuple
               "WHERE stage='active'")}
     present.update({"user"}, state.assignees)
     rest = sorted(name for name in present if name != "user")
-    return [(name, name) for name in ["user", *rest]]
+    return [(name, agent_caption(name)) for name in ["user", *rest]]
 
 
 def epic_options(conn: sqlite3.Connection, state: FilterState) -> list[tuple]:
@@ -307,9 +307,6 @@ class FilterMenu(QWidget):
         scroll.setWidget(holder)
         body.addWidget(scroll)
 
-        footer = QLabel("Counts are cards on the Board.")
-        footer.setObjectName("formCaption")
-        body.addWidget(footer)
 
     # ----- opening ----------------------------------------------------------
 

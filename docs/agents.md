@@ -94,23 +94,15 @@ simply has nothing to curate yet.
 
 **For** teaching yourself something.
 
-It builds and maintains a course: a syllabus, a sequence of lessons, exercises,
-quizzes, and a progress record you can navigate across several courses at once.
-The pipeline is subject-independent — a programming language, a branch of
-mathematics, a trade skill, a spoken language. It renders any lesson to a
-readable HTML page. It is the sole author of coursework; no other agent writes
-into a course.
+It teaches whatever you are teaching yourself. For a topic you want to
+understand rather than be examined on — often something current — it writes an
+explainer: one hub note and three to seven single-idea notes in your notebook,
+linked to each other and to the notes you already keep, the whole set one
+sitting's reading. Ask it about a topic without saying which you want and it
+offers that alongside simply answering in the chat. It can also walk you
+through a feature of Bristol at your own machine, one step at a time.
 
-A course is not the only shape it makes. For a topic you want to understand
-rather than be examined on — often something current — it writes an explainer:
-one hub note and three to seven single-idea notes in your notebook, linked to
-each other and to the notes you already keep, the whole set one sitting's
-reading. Ask it about a topic without saying which you want and it offers you
-both, alongside simply answering in the chat.
-
-**Needs** a Markdown notebook, where courses live as one folder each. Its
-lesson-production stages can optionally be routed to an external AI tool; left
-alone, it does every stage itself.
+**Needs** a Markdown notebook for explainers.
 
 ---
 
@@ -225,9 +217,10 @@ with the control its kind deserves:
   pickers — you choose a real folder or file, and the path is stored in the
   portable spelling `src/tools/config_tools/data_paths.py` owns, so it still
   resolves on another machine;
-- **notebook access** as a tick box per zone, under Read and Write. The
-  notebook is read whole or not at all, which is why Read holds one box;
-  writing is granted a zone at a time, so Write holds one per zone;
+- **notebook access** as Per Folder, Read All or Write All. Per Folder lists
+  every folder attached in Settings, each with Read, Write or Hide; a folder
+  attached or detached there appears or disappears here, and the per-folder
+  choices are kept while Read All or Write All is chosen;
 - **environment variables** as a name beside a value, with a picker for a value
   that gives a folder;
 - the **skills** attached to it as a tick list of every skill this

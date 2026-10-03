@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/bluesky/sync.py src/tools/bluesky/install_schedule.py src/tools/test_tools/smoke.py
+  bristol.subtitle: Sync your Bluesky posts to the notebook
 ---
 # bluesky-sync
 

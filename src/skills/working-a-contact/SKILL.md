@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/personal_db/personal_write.py src/tools/personal_db/contacts_due.py
+  bristol.subtitle: Record a person and what they're owed
 ---
 
 # working-a-contact

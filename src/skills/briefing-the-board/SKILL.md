@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/ticket_tools/brief.py
+  bristol.subtitle: Explain the whole board from scratch
 ---
 
 # briefing-the-board

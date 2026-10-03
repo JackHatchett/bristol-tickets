@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: game_designer
+  bristol.subtitle: Write up a proposed game design change
 ---
 # design-proposals
 

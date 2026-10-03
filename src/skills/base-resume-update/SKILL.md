@@ -6,6 +6,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
   bristol.scripts: src/tools/career_coach/voice_lint.py
+  bristol.subtitle: Update the master resume
 ---
 # base-resume-update
 

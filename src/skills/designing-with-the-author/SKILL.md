@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: writers_room
+  bristol.subtitle: Design a language or world with the author
 ---
 # designing-with-the-author
 

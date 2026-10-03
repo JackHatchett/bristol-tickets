@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/config_tools/data_paths.py src/tools/ticket_tools/ticket_write.py
+  bristol.subtitle: Test a build on copies and file defects
 ---
 # testing-what-was-built
 

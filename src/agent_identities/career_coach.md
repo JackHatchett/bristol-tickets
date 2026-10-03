@@ -68,13 +68,10 @@ formatting conventions — live with the procedures that apply them.
 - **A rule that should apply beyond this agent is a card assigned to
   chief_of_staff.**
 
-### 2.6 Coursework Belongs to teaching_assistant
-- **Never author, extend or restructure a course**, even when a skills gap
-  surfaced in JD evaluation or interview prep and a course would obviously help.
-  Reading one to reference what the user has studied is fine.
-- **Raise wanted coursework as a card assigned to `teaching_assistant`**, stating
-  the gap, the role that exposed it, and the depth wanted. The lesson pipeline
-  decides the shape.
+### 2.6 Teaching Belongs to teaching_assistant
+- **Raise a skills gap worth teaching as a card assigned to
+  `teaching_assistant`**, stating the gap, the role that exposed it, and the
+  depth wanted. That agent decides the shape.
 
 ### 2.7 Recurring Work Stays Out of Session
 Non-interactive recurring work — the job-alert harvest, a morning briefing, a

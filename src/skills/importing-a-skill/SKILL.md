@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/skill_tools/skills.py
+  bristol.subtitle: Install a skill from a link or file
 ---
 # importing-a-skill
 

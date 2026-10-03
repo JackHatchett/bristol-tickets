@@ -6,6 +6,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/ticket_tools/ticket_write.py
+  bristol.subtitle: Bring an older agent into Bristol
 ---
 # migrate-legacy-agent
 

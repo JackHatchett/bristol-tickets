@@ -24,7 +24,6 @@ pieces it composes live in sibling modules:
     theme_manager.py ThemeManagerDialog (the themes on offer, edited)
     palette_form.py  PaletteForm (one palette, a row per colour)
     skills_tab.py    SkillsTab (what a session can load, and importing one)
-    courses_tab.py   CoursesTab (every course, and the control that opens one)
     agents_tab.py    AgentsTab (who is in the fleet, created and edited by form)
 
 Each file stays small enough for an external consultant to ingest and edit in
@@ -68,7 +67,6 @@ from .kanban_column import KanbanColumn
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
 from .agents_tab import AgentsTab
-from .courses_tab import CoursesTab
 from .settings_tab import SettingsTab
 from .skills_tab import SkillsTab
 from .theme import (
@@ -342,11 +340,10 @@ class MainWindow(QMainWindow):
         self._agents_tab_index = self._add_page(self.agents_tab, "Agents")
 
 
-        self.skills_tab = SkillsTab(self.conn)
+        self.skills_tab = SkillsTab(self.conn,
+                                    on_ticket_filed=self._refresh_board)
         self._skills_tab_index = self._add_page(self.skills_tab, "Skills")
 
-        self.courses_tab = CoursesTab()
-        self._courses_tab_index = self._add_page(self.courses_tab, "Courses")
 
         self.settings_tab = SettingsTab(
             on_appearance_changed=self._preview_appearance, conn=self.conn)
@@ -502,14 +499,10 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):  # noqa: N802 (Qt override)
         """Leave nothing behind: a splitter save still waiting on its debounce,
-        so a drag made just before quitting survives the restart, and the study
-        server if the Courses tab started one."""
+        so a drag made just before quitting survives the restart."""
         if self._splitter_save_timer.isActive():
             self._splitter_save_timer.stop()
             self._save_pane_geometry()
-        # The study server is a child process, and a child that outlives the
-        # window goes on holding its port with nothing to stop it.
-        self.courses_tab.shutdown()
         super().closeEvent(event)
 
     # ----- What the board is showing ---------------------------------------
@@ -585,7 +578,9 @@ class MainWindow(QMainWindow):
     def _build_header(self) -> QWidget:
         """The one header bar: identity at the left, the view tabs beside it,
         Refresh and Create at the right, everything on one vertical centre line
-        and closed by a single hairline. Every control here acts on every tab."""
+        and closed by a single hairline. Refresh and Create act on tickets, so
+        they are shown only on the pages that show tickets — see
+        _sync_pane_to_page."""
         header = QWidget()
         header.setObjectName("appHeader")
         bar = QHBoxLayout(header)
@@ -648,6 +643,11 @@ class MainWindow(QMainWindow):
         cards = index in self._card_page_indexes
         self.detail_pane.setVisible(cards and not self._pane_collapsed)
         self.pane_reveal.setVisible(cards and self._pane_collapsed)
+        # Refresh and Create belong to the same pages: they sit in the header
+        # above the detail column there, and a page with no tickets carries
+        # neither. Kept out of the pane itself so a collapsed pane keeps them.
+        self.refresh_btn.setVisible(cards)
+        self.global_create_btn.setVisible(cards)
 
     # ----- Menu bar ---------------------------------------------------------
 
@@ -934,7 +934,6 @@ class MainWindow(QMainWindow):
         self._sync_backlog_bar()
         self._load_archive(self.filters)
         self._execute_global_search()
-        # Skills and courses are not in the database and take no filter; they
-        # are reloaded here so one Refresh means the same thing on every tab.
+        # Skills are not in the database and take no filter; they are
+        # reloaded here so one Refresh means the same thing on every tab.
         self.skills_tab.reload()
-        self.courses_tab.reload()

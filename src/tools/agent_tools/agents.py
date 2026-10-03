@@ -46,6 +46,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[0] / "config_tools"))
 sys.path.insert(0, str(HERE.parents[0] / "skill_tools"))
 import data_paths  # noqa: E402
+import notebook  # noqa: E402
+notebook_module = notebook
 import read_config  # noqa: E402
 import write_config  # noqa: E402
 
@@ -204,9 +206,9 @@ def _render(agent: dict) -> str:
         lines.append(f"  data       {grant['path']}  ({grant['access']})")
     for declared in agent["key_context_files"]:
         lines.append(f"  context    {declared}")
-    lines.append(f"  notebook   read={bool(notebook.get('read'))} "
-                 f"write_zones={','.join(notebook.get('write_zones') or []) or '-'} "
-                 f"archive_moves={bool(notebook.get('archive_moves'))}")
+    access = notebook_module.normalised(notebook, notebook_module.attached())
+    chosen = ",".join(f"{f}={a}" for f, a in access["folders"].items()) or "-"
+    lines.append(f"  notebook   mode={access['mode']} folders={chosen}")
     for name, value in agent["env"].items():
         lines.append(f"  env        {name}={value}")
     for name in agent["skills"]:
@@ -271,10 +273,11 @@ def main(argv: list[str]) -> int:
     editing.set_defaults(grants=None)
     editing.add_argument("--context-file", action="append")
     editing.add_argument("--no-context-files", action="store_true")
-    editing.add_argument("--notebook-read", choices=("yes", "no"))
-    editing.add_argument("--write-zone", action="append")
-    editing.add_argument("--no-write-zones", action="store_true")
-    editing.add_argument("--archive-moves", choices=("yes", "no"))
+    editing.add_argument("--notebook-mode", choices=notebook.MODES)
+    editing.add_argument("--notebook-folder", action="append",
+                         metavar="FOLDER=ACCESS",
+                         help="read, write or hide for one attached folder; "
+                              "repeatable, and folders not given keep theirs")
     editing.add_argument("--env", action="append", metavar="NAME=VALUE")
     editing.add_argument("--no-env", action="store_true")
     editing.add_argument("--extra-file",
@@ -335,22 +338,20 @@ def main(argv: list[str]) -> int:
                 raise EditError("--extra-file holds a JSON object or nothing")
             changes["extra"] = loaded
 
-        notebook = dict(agent["notebook_access"])
-        touched = False
-        if args.notebook_read is not None:
-            notebook["read"] = args.notebook_read == "yes"
-            touched = True
-        if args.write_zone:
-            notebook["write_zones"] = args.write_zone
-            touched = True
-        elif args.no_write_zones:
-            notebook["write_zones"] = []
-            touched = True
-        if args.archive_moves is not None:
-            notebook["archive_moves"] = args.archive_moves == "yes"
-            touched = True
-        if touched:
-            changes["notebook_access"] = notebook
+        if args.notebook_mode is not None or args.notebook_folder:
+            before = agent["notebook_access"]
+            chosen = dict(before.get("folders") or {}) \
+                if isinstance(before, dict) and "mode" in before else {}
+            for item in args.notebook_folder or []:
+                folder, _, access = item.rpartition("=")
+                if access not in notebook_module.ACCESS or not folder:
+                    raise EditError(
+                        f"--notebook-folder takes FOLDER=read|write|hide: {item}")
+                chosen[folder] = access
+            mode = args.notebook_mode or (before.get("mode")
+                                          if isinstance(before, dict) else None) \
+                or notebook_module.DEFAULT_MODE
+            changes["notebook_access"] = {"mode": mode, "folders": chosen}
 
         if not changes:
             print("nothing to change; name at least one field.", file=sys.stderr)

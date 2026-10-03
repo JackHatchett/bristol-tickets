@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
+  bristol.subtitle: Prepare for an upcoming interview
 ---
 # interview-prep
 

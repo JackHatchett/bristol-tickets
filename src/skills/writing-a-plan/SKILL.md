@@ -6,6 +6,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/config_tools/data_paths.py
+  bristol.subtitle: Write a planning document
 ---
 # writing-a-plan
 
@@ -26,11 +27,11 @@ rests on.
   `markdown_notebook.projects_dir` instead** — what the project is, its phases,
   and how it is worked, linking the plans that belong to it. One project note;
   a plan for each defined body of work inside it.
-- **An agent whose `notebook_access` reaches the workspace zone writes the file
-  itself** — `config`'s `markdown_notebook` §ZONES defines the zones, and
-  `agents.<slug>.notebook_access` lists the ones that agent reaches.
+- **An agent whose `notebook_access` lets it write where `plans_dir` is writes
+  the file itself** — `python3 src/tools/config_tools/notebook.py access
+  <slug>` says.
 - **Every other agent gives its plan to the user in chat**, because `plans_dir`
-  and `agent_output_dir` both sit inside that same zone. Producing planning
+  and `agent_output_dir` both sit inside that same workspace. Producing planning
   material is content any agent may write; writing into the notebook is access,
   and that config key is what grants it.
 - **A plan that changes how an agent works is still behavior** — `src/app.md`

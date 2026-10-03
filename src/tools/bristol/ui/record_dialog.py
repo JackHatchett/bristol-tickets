@@ -60,6 +60,9 @@ from .theme import (
     EPIC_KIND_CHOICES,
     EPIC_STATUS_CHOICES,
     FLEET_AGENTS,
+    fill_agents,
+    fleet_agents,
+    select_agent,
     LAYOUT,
     STAGE_CHOICES,
     STATUS_CHOICES,
@@ -254,7 +257,7 @@ class UnifiedRecordDialog(QDialog):
         # Owner is a picker of the fleet agents + 'user' so ownership
         # is always a real, spellable slug.
         self.owner_edit = QComboBox()
-        self.owner_edit.addItems(FLEET_AGENTS)
+        fill_agents(self.owner_edit, fleet_agents())
         self.originator_edit = QLineEdit()
 
         if record_id is None:
@@ -521,7 +524,7 @@ class UnifiedRecordDialog(QDialog):
             self.recordtype_combo.currentIndex(),
             self.stage_combo.currentData(),
             self.status_combo.currentData(),
-            self.owner_edit.currentText(),
+            self.owner_edit.currentData(),
             self.originator_edit.text(),
             self.epic_combo.currentIndex(),
             self.tier_combo.currentData(),
@@ -586,12 +589,7 @@ class UnifiedRecordDialog(QDialog):
         """Point the Owner picker at ``value``. If a legacy record carries an
         owner not in FLEET_AGENTS, add it as an option so editing never silently
         rewrites its owner."""
-        value = (value or "user").strip() or "user"
-        idx = self.owner_edit.findText(value)
-        if idx < 0:
-            self.owner_edit.addItem(value)
-            idx = self.owner_edit.findText(value)
-        self.owner_edit.setCurrentIndex(idx)
+        select_agent(self.owner_edit, value)
 
     def _current_record_type(self) -> str:
         return self.recordtype_combo.currentData() or "build"
@@ -833,7 +831,7 @@ class UnifiedRecordDialog(QDialog):
             stage = self.stage_combo.currentData()
             tier = self.tier_combo.currentData()
             epic_id = self.epic_combo.currentData() or fallback_epic or self.fallback_epic_id
-            owner = self.owner_edit.currentText().strip() or "user"
+            owner = (self.owner_edit.currentData() or "user").strip() or "user"
             originator = self.originator_edit.text().strip() or "user"
             estimate = self.estimate_combo.currentData() or None
             record_type = self._current_record_type()

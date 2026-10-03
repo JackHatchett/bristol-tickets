@@ -6,6 +6,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
   bristol.scripts: src/tools/personal_db/personal_write.py
+  bristol.subtitle: Open and close a job-hunting session
 ---
 # session-closure
 

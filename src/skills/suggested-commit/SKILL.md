@@ -6,6 +6,7 @@ compatibility: Needs git available to the user; the procedure runs no git comman
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.subtitle: Write the git commands for a session's changes
 ---
 # suggested-commit
 

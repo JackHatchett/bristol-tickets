@@ -39,8 +39,8 @@ formatting standard, repairs what does not conform, and writes
 `--dir` and `--notebook` override the two configured folders.
 
 - **`--write` and `--rename` are the user's own commands.** `recipes_dir` and
-  the notebook around it sit outside the writable zones (`config`'s
-  `markdown_notebook` §ZONES), so an agent runs the dry run, reports what it
+  the notebook around it sit in folders no agent writes in by default
+  (`src/skills/notebook-proposal/SKILL.md` §What the agent may do where), so an agent runs the dry run, reports what it
   would change, and hands over the command to run.
 - **The filename convention is `recipe_<snake_case>.md`.** A name disagreeing
   with its H1 is flagged rather than renamed, because every recipe is reached by

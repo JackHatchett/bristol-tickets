@@ -103,18 +103,13 @@ def charter_text(slug: str, role: str, guardrails: list[str],
 
 
 def notebook_access(choice: str) -> dict:
-    """The zones a new agent reaches — config's markdown_notebook §ZONES.
+    """What a new agent may do in the notebook — config_tools/notebook.py.
 
-    `write` grants both writable zones and the move into the archive, which is
-    the whole of what an agent may write; `read` grants the notebook without
-    them; `none` grants nothing.
+    `read` and `write` reach the whole notebook; `none` starts per folder with
+    every folder hidden, to be opened one at a time.
     """
-    writes = choice == "write"
-    return {
-        "read": choice in {"read", "write"},
-        "write_zones": ["workspace", "inbox"] if writes else [],
-        "archive_moves": writes,
-    }
+    mode = {"read": "read_all", "write": "write_all"}.get(choice, "per_folder")
+    return {"mode": mode, "folders": {}}
 
 
 class _Grant(argparse.Action):
@@ -162,12 +157,13 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--notebook", choices=("read", "write", "none"),
                         default="none",
                         help="notebook access as a whole; default none")
-    parser.add_argument("--notebook-read", choices=("yes", "no"),
-                        help="read the notebook; overrides --notebook")
-    parser.add_argument("--write-zone", action="append", default=[],
-                        help="a notebook zone this agent writes; repeatable")
-    parser.add_argument("--archive-moves", choices=("yes", "no"),
-                        help="may move a file into the notebook archive")
+    parser.add_argument("--notebook-mode",
+                        choices=("per_folder", "read_all", "write_all"),
+                        help="overrides --notebook")
+    parser.add_argument("--notebook-folder", action="append", default=[],
+                        metavar="FOLDER=ACCESS",
+                        help="read, write or hide for one attached folder; "
+                             "repeatable")
     parser.add_argument("--no-epic", action="store_true",
                         help="skip the board epic, where one already exists")
     args = parser.parse_args(argv)
@@ -236,18 +232,17 @@ def main(argv: list[str]) -> int:
         "key_data_paths": data_paths.folder_grants(args.grants),
         "notebook_access": notebook_access(args.notebook),
     }
-    # The three parts stated one at a time win over the shorthand, so the form
-    # and the command line express the same access.
-    if args.notebook_read is not None:
-        entry["notebook_access"]["read"] = args.notebook_read == "yes"
-    if args.write_zone:
-        entry["notebook_access"]["write_zones"] = args.write_zone
-    elif args.notebook_read is not None or args.archive_moves is not None:
-        entry["notebook_access"].setdefault("write_zones", [])
-        if not args.write_zone and args.notebook == "none":
-            entry["notebook_access"]["write_zones"] = []
-    if args.archive_moves is not None:
-        entry["notebook_access"]["archive_moves"] = args.archive_moves == "yes"
+    # The mode and folders stated one at a time win over the shorthand, so the
+    # form and the command line express the same access.
+    if args.notebook_mode is not None:
+        entry["notebook_access"]["mode"] = args.notebook_mode
+    for item in args.notebook_folder:
+        folder, _, access = item.rpartition("=")
+        if access not in ("read", "write", "hide") or not folder:
+            print(f"--notebook-folder takes FOLDER=read|write|hide: {item}",
+                  file=sys.stderr)
+            return 1
+        entry["notebook_access"]["folders"][folder] = access
     if env:
         entry["env"] = env
     write_config.set_key(f"agents.{slug}", entry)

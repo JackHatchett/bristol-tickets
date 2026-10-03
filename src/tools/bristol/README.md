@@ -44,7 +44,6 @@ bristol/
 │   ├── setup_wizard.py  first-run setup: folders, board, config, pointer
 │   ├── settings_tab.py  SettingsTab — app and session choices, stored in config
 │   ├── skills_tab.py    SkillsTab — what a session can load, and importing one
-│   ├── courses_tab.py   CoursesTab — every course, and the control that opens one
 │   └── main_window.py   MainWindow — toolbar, tabs, filters, search, inspector
 ├── reports/             the analytic report a closing epic writes (own README)
 │   ├── paths.py         where the report goes (env → .local → config)

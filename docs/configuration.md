@@ -162,15 +162,12 @@ Point both at whatever vendor's models you run; nothing in the code gives one.
 | `key_context_files` | Files this agent reads on sight. Declarative. |
 | `key_data_paths` | The folders this agent reaches, one **folder grant** each: `{ "path": "…", "access": "read" | "write" }`. The setup wizard creates them. Add and remove one in Bristol Tickets' Agents tab rather than by hand. |
 | `env` | Environment variables this agent's tools expect. |
-| `notebook_access` | `{ "read": bool, "write_zones": [ … ], "archive_moves": bool }` — which zones of your notebook this agent reaches. The zone names are `workspace` and `inbox`; an empty list is an agent that reads your notebook and never writes in it. |
+| `notebook_access` | `{ "mode": "per_folder" \| "read_all" \| "write_all", "folders": { "<attached folder>": "read" \| "write" \| "hide" } }` — what this agent may do in your notebook. Read All and Write All reach the whole notebook; Per Folder reaches each attached folder as `folders` says, and a folder with no entry is hidden. Set it in the agent's window in Bristol Tickets. |
 | `skills` | The skills attached to this agent, by name, in the order a session matches them. A skill named by no agent is available to every agent. Set it with `skills.py attach` and `detach` rather than by hand. |
 | `active_project` | Optional. Which of the agent's projects a session opens on, where it has more than one. An agent's projects are the `projects` entries under its folder grants; without this key a session opens on the first one listed. A session writes it when you say you are working the other one — `src/tools/config_tools/active_project.py`. |
 
 An agent whose tools need a value no other agent has declares its own key beside
-these. `teaching_assistant` has one, `lesson_pipeline.stages`, which routes each
-stage of lesson production to whoever runs it;
-`src/skills/lesson-pipeline/SKILL.md` states the legal values
-and which stage takes none.
+these.
 
 **A fact about an agent goes here or in its charter, never both.** The test and
 what each field costs are `src/templates/identity_template.md` §What an agent is
@@ -181,28 +178,30 @@ introduce your own.
 
 ### `markdown_notebook`
 
-**Optional.** A folder of Markdown notes you edit yourself, outside the
-repository. Delete the block if you do not keep one.
+A folder of Markdown notes you edit yourself. A fresh installation keeps one
+inside its own data, with `inbox`, `ai_workspace` and `archive` attached; point
+it at your own in Settings, Notebook.
 
-Access is granted by zone rather than one bit per agent. `workspace_dir` and
-`inbox_dir` are writable in full; `archive_dir` takes files moved in from one of
-them and nothing else; every other top-level folder is yours to author, and a
-fact whose home is one of them reaches you as a summary in `agent_output_dir`.
-Which zones a given agent reaches is its `notebook_access`.
+`notes_dir` is the notebook, and `folders` lists the subfolders of it Bristol
+knows about, each written from the notebook down. Repointing the notebook
+detaches every folder, because one notebook's folders mean nothing in another.
+What each agent may do in each attached folder is its `notebook_access`; a fact
+whose home is a folder an agent may only read reaches you as a summary in
+`agent_output_dir`. A folder grant in an agent's `key_data_paths` for a folder
+deeper than any attached one decides that folder.
 
-A zone is the default, not the last word. A folder grant in an agent's
-`key_data_paths` that gives a folder in here decides that folder — so one agent
-can be given write access to your recipes without any other agent gaining it,
-and without the zone model changing.
+The other keys are **locations**: where a tool or an agent puts one kind of
+note. Each is repointable in Settings, Locations, which marks any that is not
+on disk.
 
 | Key | Meaning |
 | --- | --- |
 | `notes_dir` | The notebook root. |
-| `workspace_dir` | The agent workspace. Writable, and the other keys below sit inside it. |
-| `inbox_dir` | Your capture inbox. Writable. |
+| `folders` | The attached subfolders. Edited in Settings, Notebook. |
+| `workspace_dir` | The agent workspace; the other keys below usually sit inside it. |
+| `inbox_dir` | Your capture inbox. |
 | `assistant_prompts_dir` | The notebook assistant's custom-prompt notes. Inside `workspace_dir`, and it must match the assistant's own prompts-folder setting. |
-| `archive_dir` | Where an agent may move a file from a writable zone. |
-| `courses_dir` | Where `teaching_assistant` writes courses. |
+| `archive_dir` | Where an agent may move a file it may write, where it may also write here. Its contents are retired, and no agent reads them. |
 | `recipes_dir` | Where `librarian` keeps recipes. Yours to author, so no agent writes here without a folder grant that says so. |
 | `agent_output_dir` | Where agents drop drafts for you to review. |
 | `reports_dir` | Where a closing epic writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |

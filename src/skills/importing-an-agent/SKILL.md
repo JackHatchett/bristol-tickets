@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/agent_tools/import_agent.py
+  bristol.subtitle: Adopt an agent someone else exported
 ---
 # importing-an-agent
 

@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/config_tools/data_paths.py src/tools/document_tools/check_prompts.py
+  bristol.subtitle: Maintain the notebook assistant's prompts
 ---
 # notebook-prompt-library
 
@@ -21,8 +22,8 @@ The assistant that runs these prompts, and what its output is worth, are
 
 - **Resolve `markdown_notebook.assistant_prompts_dir` through
   `src/tools/config_tools/data_paths.py`**, never a literal path. The folder
-  sits in the notebook's workspace zone, so an agent may write in it —
-  `config`'s `markdown_notebook` §ZONES.
+  sits in the agent workspace, which an agent may write in where its
+  `notebook_access` says so — `src/skills/notebook-proposal/SKILL.md`.
 - **The assistant's own `customPromptsFolder` setting must name that same
   folder.** The setting is the plugin's and the config key is Bristol's; a
   disagreement between them is what makes a prompt invisible.
@@ -70,7 +71,7 @@ because the assistant invents one otherwise.
 - **Carry the global header's keys —** `aliases`, `tags`, `created`, `status`,
   `source_url` (`template_000_header.md`) — **on any note no more specific
   template covers.**
-- **Name a destination in a writable zone.** A prompt whose output belongs in a
+- **Name a destination in a folder an agent may write in.** A prompt whose output belongs in a
   folder the user authors returns the text to the user instead of writing it.
 - **Emit the note and nothing else.** No preamble, no explanation of what it
   did — `src/skills/external-ai-bridge/SKILL.md` §1 invariant 4.

@@ -11,6 +11,8 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import QSizePolicy, QTextEdit
 
+from .theme import control_height, space
+
 
 class GrowingTextEdit(QTextEdit):
     """A text field ``min_lines`` tall that grows to ``max_lines`` and then
@@ -38,6 +40,10 @@ class GrowingTextEdit(QTextEdit):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setTabChangesFocus(True)
+        # Drawn with the slimmer padding the stylesheet gives a growing field,
+        # so one line of it is exactly as tall as a button beside it.
+        self.setProperty("growing", True)
+        self.document().setDocumentMargin(space("xs"))
         self.document().documentLayout().documentSizeChanged.connect(
             lambda _size: self._fit())
         self._fit()
@@ -57,7 +63,12 @@ class GrowingTextEdit(QTextEdit):
                      int(self.document().documentMargin() * 2) + 2)
         content = self.document().size().height()
         floor, ceiling = line * self._min_lines, line * self._max_lines
-        self.setFixedHeight(int(min(max(content, floor), ceiling) + chrome))
+        height = int(min(max(content, floor), ceiling) + chrome)
+        if self._min_lines == 1:
+            # A one-line field shares a row with a button, so it is never
+            # shorter than one.
+            height = max(height, control_height())
+        self.setFixedHeight(height)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)

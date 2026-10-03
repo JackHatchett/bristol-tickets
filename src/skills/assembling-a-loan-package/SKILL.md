@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: business_advisor
   bristol.scripts: src/tools/config_tools/data_paths.py src/tools/ticket_tools/ticket_write.py
+  bristol.subtitle: Build a small-business loan package
 ---
 # assembling-a-loan-package
 

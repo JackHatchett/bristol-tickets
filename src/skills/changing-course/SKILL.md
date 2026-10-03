@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/ticket_tools/ticket_write.py
+  bristol.subtitle: Re-plan the board when a plan changes
 ---
 # changing-course
 

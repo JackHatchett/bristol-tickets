@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/wiki_tools/name_variants.py src/tools/ticket_tools/ticket_write.py
+  bristol.subtitle: Find where notes contradict themselves
 ---
 
 # checking-a-wiki-for-disagreements

@@ -207,7 +207,8 @@ def find_skill(name: str) -> tuple[Path, str] | None:
 def read_frontmatter(skill_md: Path) -> dict[str, str]:
     """Parse the top-level scalar fields of a SKILL.md, reading no further than
     the frontmatter's closing delimiter. Nested blocks are skipped rather than
-    parsed: `list` needs `name` and `description` and nothing else.
+    parsed, except a Bristol key under `metadata` (`  bristol.subtitle: …`),
+    which is kept under its dotted name.
     """
     fields: dict[str, str] = {}
     with skill_md.open(encoding="utf-8") as fh:
@@ -217,6 +218,11 @@ def read_frontmatter(skill_md: Path) -> dict[str, str]:
         for line in fh:
             if line.rstrip() == "---":
                 break
+            if line[:1] in {" ", "\t"} and line.strip().startswith("bristol.") \
+                    and ":" in line:
+                key, _, value = line.strip().partition(":")
+                fields[key.strip()] = value.strip().strip('"').strip("'")
+                continue
             if line[:1] in {" ", "\t", "#", "\n"} or ":" not in line:
                 continue
             key, _, value = line.partition(":")
@@ -461,6 +467,45 @@ def scan_phrase(record: dict) -> str:
             + ("" if found == 1 else "s"))
 
 
+# Words a title leaves lowercase unless they open it: articles, conjunctions
+# and short prepositions.
+TITLE_SMALL = {"a", "an", "the", "and", "but", "or", "nor", "for", "so", "yet",
+               "as", "at", "by", "in", "of", "on", "to", "per", "via", "vs",
+               "with", "from", "into"}
+# Words a title writes in capitals, because that is how they are read.
+TITLE_UPPER = {"ai", "api", "csv", "html", "jd", "pdf", "qa", "ui", "url"}
+
+
+def title_phrase(name: str) -> str:
+    """A skill's name as a person reads it: checking-a-wiki-for-disagreements
+    is Checking a Wiki for Disagreements. The name itself stays as written,
+    since the Agent Skills standard requires the hyphenated form."""
+    words = [w for w in name.replace("_", "-").split("-") if w]
+    out = []
+    for i, word in enumerate(words):
+        low = word.lower()
+        if low in TITLE_UPPER:
+            out.append(low.upper())
+        elif i and low in TITLE_SMALL:
+            out.append(low)
+        else:
+            out.append(low[:1].upper() + low[1:])
+    return " ".join(out)
+
+
+def subtitle_phrase(fields: dict) -> str:
+    """What a skill does, short: its bristol.subtitle where it declares one,
+    otherwise its description's first sentence."""
+    if fields.get("subtitle_declared"):
+        return fields["subtitle_declared"]
+    text = fields.get("description", "").strip()
+    for stop in (". ", " — ", " (", ": "):
+        end = text.find(stop)
+        if end > 0:
+            text = text[:end]
+    return text.rstrip(".")
+
+
 def holders_phrase(holders: list[str]) -> str:
     """Which agents hold a skill, including when the answer is none."""
     return "Held by " + (", ".join(holders) if holders else "no agent")
@@ -488,7 +533,10 @@ def _skill_record(skill_dir: Path, root_name: str) -> dict:
         "path": str(skill_dir),
         "source_url": source_url(record),
         "scan": record.get("scan", {}),
+        "subtitle_declared": fm.get("bristol.subtitle", ""),
     }
+    fields["title"] = title_phrase(fields["name"])
+    fields["subtitle"] = subtitle_phrase(fields)
     fields["said_origin"] = origin_phrase(fields)
     fields["said_contents"] = contents_phrase(fields)
     fields["said_scan"] = scan_phrase(fields)

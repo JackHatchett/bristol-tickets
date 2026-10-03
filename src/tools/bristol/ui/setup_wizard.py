@@ -679,8 +679,14 @@ def build_config(root: Path, instance_dir: Path, slug: str, agents: list[str],
         (INSTANCE_TOKEN, slug),
         (HOME_TOKEN, str(Path.home())),
     ]
-    if notebook:
-        mapping.append((NOTEBOOK_TOKEN, notebook))
+    # With no notebook chosen, Bristol keeps one of its own inside the
+    # installation's data, holding an inbox, a workspace and an archive. A
+    # notebook the user chose already has folders of its own, and they are
+    # attached in Settings rather than guessed at.
+    own_notebook = not notebook
+    if own_notebook:
+        notebook = str(instance_dir / "notebook")
+    mapping.append((NOTEBOOK_TOKEN, notebook))
     if zotero:
         mapping.append((ZOTERO_TOKEN, zotero))
 
@@ -692,9 +698,8 @@ def build_config(root: Path, instance_dir: Path, slug: str, agents: list[str],
         if key == "_notes" or key in agents
     }
 
-    if not notebook:
-        config.pop("markdown_notebook", None)
-        _drop_env_values_containing(config, NOTEBOOK_TOKEN)
+    if not own_notebook and isinstance(config.get("markdown_notebook"), dict):
+        config["markdown_notebook"]["folders"] = []
     if not zotero:
         config.pop("zotero", None)
         _drop_env_values_containing(config, ZOTERO_TOKEN)
@@ -715,6 +720,14 @@ def build_config(root: Path, instance_dir: Path, slug: str, agents: list[str],
 def _declared_dirs(root: Path, config: dict, instance_dir: Path) -> list[Path]:
     """Every folder the configuration says this installation owns."""
     dirs = [instance_dir, instance_dir / "tickets"]
+    # Bristol's own notebook, where it is inside the installation: the folder
+    # and the folders attached to it.
+    nb = config.get("markdown_notebook") or {}
+    notes = Path(str(nb.get("notes_dir", ""))).expanduser()
+    if nb.get("notes_dir") and notes.is_absolute() and \
+            instance_dir in notes.parents:
+        dirs.append(notes)
+        dirs += [notes / f for f in nb.get("folders") or []]
     for body in config.get("agents", {}).values():
         if not isinstance(body, dict):
             continue

@@ -42,7 +42,7 @@ value no other agent has declares its own key beside them:
 | `key_context_files` | Files this agent reads on sight. |
 | `key_data_paths` | The folders it reaches, each with the access it carries. |
 | `env` | The environment variables its tools expect. |
-| `notebook_access` | Which zones of the Markdown notebook it reaches. |
+| `notebook_access` | What it may do in the Markdown notebook: per folder, or read or write all of it — `src/tools/config_tools/notebook.py`. |
 | `skills` | The skills attached to this agent, in the order they are matched. |
 | `active_project` | Optional: the project a session opens on, where the agent holds more than one. |
 
@@ -207,9 +207,9 @@ them.
 
 - **Write only in a folder whose grant says `write`.** What you would have
   written into a folder granted `read` goes to the user as a proposal instead.
-- **A grant decides the folder it gives; the notebook zones decide the rest.**
-  Where a grant gives a folder inside the Markdown notebook, that folder's
-  access is the grant's, whichever zone it sits in.
+- **A grant decides the folder it gives; `notebook_access` decides the
+  notebook.** Where a grant gives a folder deeper inside the Markdown notebook
+  than any attached folder, that folder's access is the grant's.
 - **The grant wins where a charter also states a folder's access**, and a
   charter written from here states none.
 - **A grant says where you may write, never what a file there is for.**
@@ -261,10 +261,11 @@ folder grant is what carries the authority to act on it.
   Everything outside the repository is unversioned — `/data`, the notebook, the
   user's folders — so nothing removed there comes back by checking it out
   again, and a file you edited rather than produced is the user's.
-- **The notebook is decided by its zones** —
-  `src/skills/notebook-proposal/SKILL.md` §The three zones. A zone an agent may
-  write in is a zone it may remove this system's own output from, and a
-  read-only zone stays read-only whatever else it sits inside.
+- **The notebook is decided by `notebook_access`** —
+  `src/skills/notebook-proposal/SKILL.md` §What the agent may do where. A
+  folder an agent may write in is one it may remove this system's own output
+  from, and a folder it may only read stays read-only whatever else it sits
+  inside.
 - **Never report deletion as impossible, and never leave the user to clean up
   after you.** A host whose shell cannot remove a file has another route, and
   that host's own skill gives it.
