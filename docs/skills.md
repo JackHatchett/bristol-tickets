@@ -46,9 +46,9 @@ You attach one on the **Skills** tab by ticking the agent in the skill's own
 view, or from the command line:
 
 ```bash
-python3 src/tools/skill_tools/skills.py list --agent career_coach
-python3 src/tools/skill_tools/skills.py attach cover-letter --agent career_coach
-python3 src/tools/skill_tools/skills.py detach cover-letter --agent career_coach
+python3 src/tools/skill_tools/skills.py list --agent librarian
+python3 src/tools/skill_tools/skills.py attach explainer-notes --agent librarian
+python3 src/tools/skill_tools/skills.py detach explainer-notes --agent librarian
 ```
 
 ## Installing one somebody else wrote

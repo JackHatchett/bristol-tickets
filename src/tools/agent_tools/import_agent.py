@@ -151,23 +151,39 @@ def placeholders(entry: dict, prefix: str = "") -> list[str]:
     return out
 
 
+def charter_home(slug: str) -> tuple[Path, str] | None:
+    """Where an imported agent's charter is written, as (absolute path, the
+    declaration config records): the folder declared at
+    `imported_agents.install_dir`, which is the user's data rather than the
+    published tree. None where config declares no such folder."""
+    declared = read_config.get("imported_agents.install_dir", None)
+    if not declared:
+        return None
+    path = data_paths.resolve(declared) / f"{slug}.md"
+    return path, data_paths.declare(path)
+
+
 def accept(document: dict) -> int:
     slug = document["slug"]
-    root = data_paths.project_root()
-    charter_path = root / "src" / "agent_identities" / f"{slug}.md"
 
     if slug in read_config.get("agents", {}):
         print(f"'{slug}' is already an agent here. Rename the one in the file, "
               f"or extend the one you have.", file=sys.stderr)
         return 1
+    home = charter_home(slug)
+    if home is None:
+        print("config declares no imported_agents.install_dir; nowhere to "
+              "write the charter.", file=sys.stderr)
+        return 1
+    charter_path, identity = home
     if charter_path.exists():
-        print(f"{charter_path.relative_to(root)} already exists.", file=sys.stderr)
+        print(f"{identity} already exists.", file=sys.stderr)
         return 1
 
     notebook = data_paths.notebook_root()
     entry = localise(document["entry"], data_paths.instance_slug(),
                      notebook.name if notebook else None)
-    entry = {"identity": f"src/agent_identities/{slug}.md", **entry}
+    entry = {"identity": identity, **entry}
 
     charter_path.parent.mkdir(parents=True, exist_ok=True)
     charter_path.write_text(document["charter"], encoding="utf-8")
@@ -191,7 +207,7 @@ def accept(document: dict) -> int:
         capture_output=True, text=True)
     epic = (made.stdout or made.stderr).strip().splitlines()
 
-    print(f"Charter   src/agent_identities/{slug}.md")
+    print(f"Charter   {identity}")
     print(f"Config    agents.{slug}")
     print(f"Skills    attached: {', '.join(attached) or 'none'}")
     if held:
@@ -222,14 +238,15 @@ def main(argv: list[str]) -> int:
     slug = document["slug"]
     entry = document["entry"]
 
+    if args.accept:
+        # The mandate was read on the first run; this run is the grant.
+        return accept(document)
+
     print(f"AGENT     {slug}")
     print(f"          {entry.get('description', '(no description)')}")
     print()
     print(mandate_and_guardrails(document["charter"]))
     print()
-
-    if args.accept:
-        return accept(document)
 
     print("SKILLS IT NAMES")
     for line in fetch_skills(document.get("skills", [])):

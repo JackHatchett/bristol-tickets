@@ -1485,7 +1485,7 @@ def check_bristol() -> list[str]:
                 raise SmokeFailure("setup did not write config.local.json")
             if not (scratch_root / "data" / "tester" / "personal").is_dir():
                 raise SmokeFailure("setup did not create a chosen agent's data folder")
-            if (scratch_root / "data" / "tester" / "career").exists():
+            if (scratch_root / "data" / "tester" / "clients").exists():
                 raise SmokeFailure("setup created a folder for an agent that was not chosen")
             written = json.loads(pointer.read_text())
             if written["instance_slug"] != "tester" or \
@@ -2211,6 +2211,17 @@ def check_bristol() -> list[str]:
                 raise SmokeFailure("a refused save reported a write")
             ok.append("New Agent opens on a starting charter and refuses a save "
                       "naming every empty field")
+
+            if agents_page.import_btn.text() != "Import Agent":
+                raise SmokeFailure("the Agents tab offers no Import Agent")
+            reading = _agents_tab.ImportAgentDialog(
+                None, "addon_smoke", "AGENT     addon_smoke")
+            if reading.report.toPlainText() != "AGENT     addon_smoke" or \
+                    not reading.report.isReadOnly():
+                raise SmokeFailure("the import window does not show the "
+                                   "agent file's report, read-only")
+            ok.append("Import Agent is on the Agents tab, and its window shows "
+                      "the report it is accepting")
 
             # Cramping is a geometry fault, which is the one thing an offscreen
             # render settles honestly: every field tall enough for what it
@@ -3920,6 +3931,49 @@ def check_agent_tools() -> list[str]:
                 again[0]["identity"] != moved:
             raise SmokeFailure("a fresh read did not find what was entered")
         ok.append("a fresh read finds the agent and everything entered into it")
+
+        # An agent adopted from a file keeps its charter with the user's data,
+        # never in the published tree, and its tokens resolve to this
+        # installation's own names. Its writes are pinned to the scratch data
+        # root, so the board it opens an epic on is the scratch one.
+        planted = json.loads(config_file_path.read_text())
+        planted["imported_agents"] = {"install_dir": "data/smoke/agents"}
+        config_file_path.write_text(json.dumps(planted, indent=2))
+        agent_file = Path(tmp) / "addon_smoke.agent.json"
+        agent_file.write_text(json.dumps({
+            "bristol_agent": 1, "slug": "addon_smoke",
+            "charter": "# addon_smoke.md — Agent Charter\n",
+            "entry": {"description": "An add-on.",
+                      "key_data_paths": [{"path": "data/<instance>/addon",
+                                          "access": "write"}],
+                      "env": {"ADDON_HOME": "<supply>"}},
+            "skills": []}))
+        pinned = {**os.environ, "DATA_ROOT": str(scratch / "data"),
+                  "INSTANCE_SLUG": "smoke"}
+        importer = scratch / "src" / "tools" / "agent_tools" / "import_agent.py"
+        for extra in ([], ["--accept"]):
+            done = subprocess.run(
+                [sys.executable, str(importer), str(agent_file), *extra],
+                capture_output=True, text=True, cwd=str(scratch), env=pinned)
+            if done.returncode != 0:
+                raise SmokeFailure(f"import_agent {' '.join(extra) or 'read'} "
+                                   f"failed: {(done.stderr or done.stdout).strip()}")
+            if not extra and "addon_smoke" in json.loads(
+                    config_file_path.read_text())["agents"]:
+                raise SmokeFailure("reading an agent file wrote the agent")
+        if (scratch / "src" / "agent_identities" / "addon_smoke.md").exists():
+            raise SmokeFailure("an imported charter was written into the "
+                               "published tree")
+        imported = json.loads(config_file_path.read_text())["agents"]["addon_smoke"]
+        if imported["identity"] != "data/smoke/agents/addon_smoke.md" or \
+                not (scratch / imported["identity"]).is_file():
+            raise SmokeFailure(f"the imported charter is not where config says: "
+                               f"{imported['identity']}")
+        if imported["key_data_paths"] != [{"path": "data/smoke/addon",
+                                           "access": "write"}]:
+            raise SmokeFailure("an agent file's instance token did not resolve")
+        ok.append("an imported agent's charter lands in the data folder, and its "
+                  "instance token resolves to this installation's")
 
     # Neither tool can reach a network or a model: the whole point of the form
     # is that an agent can be made with the machine offline.

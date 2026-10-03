@@ -9,7 +9,7 @@ see src/tools/zotero/ and src/skills/add-book/SKILL.md:
                       --location ... --ats ... --date-evaluated ... --cover-letter ...
                       --contact ... --referral ... --jd-link ... --year YYYY --fit-notes ...]
   update-application  --id N  [any of the same fields]
-  find-company        --company C     # "have I applied here?" lookup for career_coach
+  find-company        --company C     # "have I applied here?" lookup
   render              [--domain all|applications|contacts|books]
 
 DB is SoT; mutating subcommands re-render the affected snapshot automatically

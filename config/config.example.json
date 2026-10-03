@@ -140,34 +140,6 @@
         }
       }
     },
-    "career_coach": {
-      "identity": "src/agent_identities/career_coach.md",
-      "description": "Job search: triages job descriptions, tailors your resume and cover letters in your own voice, and preps you for interviews.",
-      "key_context_files": [
-        "data/<your-instance>/career/foundation/context/00_INDEX.md"
-      ],
-      "key_data_paths": [
-        {
-          "path": "data/<your-instance>/career",
-          "access": "write"
-        }
-      ],
-      "env": {
-        "CAREER_COACH_DIR": "/path/to/project/data/<your-instance>/career",
-        "PERSONAL_DB_DIR": "/path/to/project/data/<your-instance>/personal",
-        "PERSONAL_DB_FILENAME": "personal.db",
-        "PERSONAL_SNAPSHOT_BASE": "/path/to/project/data/<your-instance>/system/logs",
-        "CAREER_SNAPSHOT_DIR": "/path/to/project/data/<your-instance>/system/logs/applications_snapshots"
-      },
-      "notebook_access": {
-        "mode": "per_folder",
-        "folders": {
-          "inbox": "read",
-          "ai_workspace": "read",
-          "archive": "read"
-        }
-      }
-    },
     "client_services": {
       "identity": "src/agent_identities/client_services.md",
       "description": "Work you do for other people. Holds each client's brief, drafts the deliverables, and never sends anything itself.",
@@ -268,6 +240,10 @@
     "root": "/path/to/project/src/skills",
     "files": [],
     "install_dir": "data/<your-instance>/skills"
+  },
+  "imported_agents": {
+    "_notes": "Where an agent adopted from an agent file keeps its charter. Inside the git-ignored data folder, because an imported charter is this installation's, never part of the published tree. Written by src/tools/agent_tools/import_agent.py --accept.",
+    "install_dir": "data/<your-instance>/agents"
   },
   "code_projects": {
     "notes": "OPTIONAL. Application code held as instance data, distinct from the notebook and from src/. Blockers and history live on the board, never in a project-local state file.",

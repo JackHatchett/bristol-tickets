@@ -47,9 +47,9 @@ host it is: the project's own parent answers, whichever host that is.
 
 CLI
 ---
-    python3 data_paths.py --agent career_coach
-    python3 data_paths.py --agent career_coach --access write
-    python3 data_paths.py --agent career_coach --ensure
+    python3 data_paths.py --agent librarian
+    python3 data_paths.py --agent librarian --access write
+    python3 data_paths.py --agent librarian --ensure
     python3 data_paths.py --key important_paths.personal_db
     python3 data_paths.py --path data/<instance>/system/logs --ensure
     python3 data_paths.py --declare /an/absolute/path/just/picked

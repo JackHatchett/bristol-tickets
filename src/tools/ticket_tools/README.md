@@ -50,7 +50,7 @@ by other agents — coordination visibility only, never its own queue.
 
 ### agent_status.py
 The same reader for every other agent, requiring an `agent_slug` argument
-(`python3 agent_status.py career_coach`). Scoped to that agent's own epics and
+(`python3 agent_status.py librarian`). Scoped to that agent's own epics and
 cards, and printing no fleet section.
 
 - **Each front end holds its own slug, its own headings, and — for

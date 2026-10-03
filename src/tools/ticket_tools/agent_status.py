@@ -27,7 +27,7 @@ def main() -> None:
     if len(sys.argv) < 2 or not sys.argv[1]:
         sys.exit(
             "agent_status: ERROR — agent_slug is required, e.g.\n"
-            "  python3 agent_status.py career_coach\n"
+            "  python3 agent_status.py librarian\n"
             "(chief_of_staff should use cos_status.py instead)"
         )
     me = sys.argv[1]

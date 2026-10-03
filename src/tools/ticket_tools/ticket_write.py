@@ -16,7 +16,7 @@ Usage:
     python3 ticket_write.py add-epic --name "..." --owner "..."
         [--type "..."] [--description "..."] [--next-action "..."]
         [--status not started|in progress|completed|on hold]
-        Owner should be a single agent slug (e.g. "career_coach") for an
+        Owner should be a single agent slug (e.g. "librarian") for an
         epic that belongs to one agent; only use a descriptive multi-agent
         string ("librarian (execution), chief_of_staff (coordination)") for
         genuinely shared work. Tasks inherit ownership from their epic (see

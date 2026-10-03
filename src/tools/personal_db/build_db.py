@@ -22,7 +22,7 @@ SCHEMA_VERSION = "3"
 DOMAINS = [
     ("applications", "Job Applications", "personal_db", "applications",
      "applications.xlsx", "v_application_stats", 10,
-     "Applications domain (career_coach)."),
+     "Applications domain (the career_coach add-on)."),
     ("books", "Book Library", "zotero", "items", "library.xlsx", None, 20,
      "Books domain (librarian). Source of truth is Zotero, not this DB — "
      "read through src/tools/zotero/zotero_export.py."),
