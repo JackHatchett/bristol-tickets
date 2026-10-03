@@ -13,4 +13,4 @@ think and write.
 `tools/writing_tools/voice_capture.md` is the other method: sample-first, for
 sentence-level craft the person cannot articulate.
 A skill that drafts in the person's voice owns how its profile is consumed —
-the career_coach add-on's `cover-letter`, for one.
+career_coach's `cover-letter`, for one.

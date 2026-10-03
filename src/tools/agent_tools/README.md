@@ -138,8 +138,10 @@ installation. What may cross and what may not is
   `path`, `commit` and `licence`; the importer fetches it from there. A
   `native` skill is one every Bristol ships. `unrecorded` and `unknown` name a
   skill the importer has to find for itself.
-- **An add-on agent is published as a repository** holding its charter, this
-  file at its root, and a `skills/` folder the file's addresses point into.
+- **An agent Bristol offers but does not run by default ships as an agent file
+  in `src/addons/`**, and its skills are fetched from the repository its
+  addresses name. `src/addons/career_coach.agent.json` installs its skills from
+  `github.com/JackHatchett/bristol-career-coach`, one folder per skill.
 
 ## export_agent.py
 

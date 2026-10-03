@@ -1,0 +1,5 @@
+# The two scanners the downloaded app carries, so it checks a skill's code on
+# import as a source install does. setup.py installs exactly these into the
+# bundle; src/tools/skill_tools/README.md §The scanner says what each reads.
+bandit==1.9.4
+semgrep==1.179.0

@@ -6,7 +6,7 @@ knows how to do is a skill it opens when a task calls for one. Nothing in the
 charter lists those skills, so adding one changes what the agent can do without
 the charter changing at all.
 
-Eight ship with Bristol, and an add-on agent can be imported from its own repository (§Add-on agents). In full, an agent is three things: an entry in your
+Eight ship with Bristol, and more can be added from `src/addons/` (§Add-on agents). In full, an agent is three things: an entry in your
 configuration, holding its paths and settings; a charter, a Markdown file under
 `src/agent_identities/` (or, for an agent you imported, in your data folder) that it reads in full at the start of every session,
 holding who it is, what it is for and what it may not do; and skills, folders of
@@ -178,17 +178,17 @@ folder of its own.
 
 ## Add-on agents
 
-An agent can live in a repository of its own and be imported into any Bristol.
-Its repository holds the charter, an agent file at the root, and a `skills/`
-folder.
+Bristol ships agents you can add when you want them, each as one file in
+`src/addons/`. Its skills download from GitHub as it is added.
 
 - **career_coach** — a job search, in any field and at any seniority: job
   description triage, resume and cover-letter tailoring in your own voice,
-  interview prep, and an optional job-alert harvest. It lives at
-  [github.com/JackHatchett/bristol-career-coach](https://github.com/JackHatchett/bristol-career-coach).
+  interview prep, and an optional job-alert harvest. Its skills live at
+  [github.com/JackHatchett/bristol-career-coach](https://github.com/JackHatchett/bristol-career-coach),
+  which doubles as the place to practise adding a single skill.
 
-To add one, download its `.agent.json` file, press **Import Agent** on the
-Agents tab and choose it. A window shows what the agent is for, the guardrails
+To add one, press **Import Agent** on the Agents tab and choose its file; the
+picker opens on `src/addons/`. A window shows what the agent is for, the guardrails
 that halt it, and how fetching each of its skills went; **Accept** adopts it and
 opens its form, where any value marked `<supply>` is yours to fill in. Its
 charter is written into your data folder rather than into Bristol's own files.

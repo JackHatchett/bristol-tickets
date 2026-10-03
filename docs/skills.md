@@ -67,7 +67,9 @@ skill carries for known-dangerous calls, with two scanners between them covering
 Python, shell, JavaScript, TypeScript and Ruby. A medium or high finding stops
 the import: nothing is added, and you see each finding with its file and line.
 So does a code file neither scanner reads, and a scanner that is not installed,
-which the refusal says how to install.
+which the refusal says how to install. The downloaded app carries both scanners
+inside it, so nothing needs installing there; running from a clone, they come
+with `requirements.txt`.
 
 **A clean skill is ready at once.** It lands in the skill list, every session
 can use it, and Bristol prints an inventory of every file with its size, its

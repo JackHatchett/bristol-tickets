@@ -279,6 +279,16 @@ property of `list`.
 Two scanners, run by `install` and again by `audit`, and `requirements.txt`
 lists both.
 
+- **The downloaded app carries both.** Its build installs the versions
+  `src/tools/bristol/scanners.txt` pins into the bundle's
+  `Contents/Resources/scanners`, keeps the whole standard library they may
+  import, and refuses to publish unless a clean skill passes and a risky one is
+  refused when scanned by the bundle's own interpreter
+  (`src/tools/bristol/make_release.py` `check_scanners`). `carried_scanners()`
+  is how this file finds them there; semgrep is started through its Python
+  command line, because its launcher looks for a second program on a PATH a
+  bundle does not have.
+
 - **bandit** reads Python, invoked as a module of the interpreter running
   `skills.py` so it is found wherever that interpreter's packages are.
 - **semgrep** reads shell, JavaScript, TypeScript, Ruby and Python, with the

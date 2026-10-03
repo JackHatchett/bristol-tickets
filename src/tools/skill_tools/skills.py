@@ -48,6 +48,7 @@ import argparse
 import hashlib
 import json
 import re
+import os
 import shutil
 import subprocess
 import sys
@@ -98,6 +99,16 @@ POLYGLOT_READS = {".sh", ".bash", ".js", ".mjs", ".ts", ".rb", ".py"}
 
 # Semgrep's severities, put on bandit's scale so one rule decides both.
 POLYGLOT_SEVERITY = {"ERROR": "HIGH", "WARNING": "MEDIUM", "INFO": "LOW"}
+
+# Where the downloaded app carries both scanners: a folder of packages beside
+# the bundle's own library, which src/tools/bristol/setup.py fills at build
+# time. The app runs this file with its own interpreter, Contents/MacOS/python,
+# so the folder is found from that interpreter's place in the bundle.
+CARRIED_SCANNERS = Path("Resources") / "scanners"
+# Semgrep's Python command line, called directly. `python -m semgrep` exits
+# with a deprecation notice, and its `semgrep` launcher hands most commands
+# back to a `pysemgrep` it expects on PATH, which a bundle has no PATH for.
+POLYGLOT_ENTRY = "from semgrep.console_scripts.pysemgrep import main; main()"
 
 # The severities that stop an import. A LOW finding includes the notice that a
 # file imports subprocess or pickle at all, which most tools with code do; it is
@@ -972,13 +983,34 @@ def cmd_convert(args) -> int:
     return 0
 
 
+def carried_scanners() -> Path | None:
+    """The scanners the downloaded app carries, or None outside the app, where
+    the interpreter's own packages hold them."""
+    here = Path(sys.executable).resolve().parent
+    if here.name != "MacOS":
+        return None
+    folder = here.parent / CARRIED_SCANNERS
+    return folder if folder.is_dir() else None
+
+
+def scanner_env() -> dict[str, str]:
+    """The environment a scanner runs in: this one, with the app's scanner
+    folder put first on the import path where the app carries one."""
+    env = dict(os.environ)
+    carried = carried_scanners()
+    if carried is not None:
+        env["PYTHONPATH"] = os.pathsep.join(
+            p for p in (str(carried), env.get("PYTHONPATH", "")) if p)
+    return env
+
+
 def scan(skill_dir: Path) -> dict | None:
     """The scanner's findings over a skill's directory, or None where it could
     not run. A scanner that finds something exits non-zero, so the report is
     taken from what it printed rather than from its status."""
     proc = subprocess.run(
         [sys.executable, "-m", SCANNER, "-q", "-f", "json", "-r", str(skill_dir)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, env=scanner_env(),
     )
     try:
         report = json.loads(proc.stdout)
@@ -987,12 +1019,16 @@ def scan(skill_dir: Path) -> dict | None:
     return report if isinstance(report, dict) else None
 
 
-def _polyglot_command() -> str | None:
-    """The semgrep executable installed beside this interpreter, or on PATH."""
+def _polyglot_command() -> list[str] | None:
+    """How semgrep is started: from the app's own scanner folder, the
+    executable installed beside this interpreter, or one on PATH."""
+    if carried_scanners() is not None:
+        return [sys.executable, "-c", POLYGLOT_ENTRY]
     beside = Path(sys.executable).parent / POLYGLOT
     if beside.is_file():
-        return str(beside)
-    return shutil.which(POLYGLOT)
+        return [str(beside)]
+    found = shutil.which(POLYGLOT)
+    return [found] if found else None
 
 
 def polyglot_scan(skill_dir: Path) -> dict | None:
@@ -1001,11 +1037,11 @@ def polyglot_scan(skill_dir: Path) -> dict | None:
     command = _polyglot_command()
     if command is None:
         return None
-    args = [command, "--json", "--quiet", "--metrics=off"]
+    args = [*command, "--json", "--quiet", "--metrics=off"]
     for config in POLYGLOT_CONFIGS:
         args += ["--config", config]
     proc = subprocess.run(args + [str(skill_dir)], capture_output=True,
-                          text=True)
+                          text=True, env=scanner_env())
     try:
         report = json.loads(proc.stdout)
     except json.JSONDecodeError:

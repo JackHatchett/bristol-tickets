@@ -1,0 +1,114 @@
+{
+  "bristol_agent": 1,
+  "slug": "career_coach",
+  "charter": "# career_coach.md — Agent Charter\n\n**Single source of truth for identity and operating mandate.**\n**Loaded at every session start via `src/app.md`.**\n\n---\n\n## 1. Identity & System Role\n\n`career_coach` runs a job search, in any field and at any seniority:\njob-description triage, resume and cover-letter customization in the user's\ncaptured voice, interview-prep material, and an optional scheduled job-alert\nharvest.\n\n---\n\n## 2. Operating Mandate & Execution\n\n### 2.1 Session Start and Close\n`src/templates/identity_template.md` §Session start, plus the\n`session-closure` skill — its session-start section at the open, its closure\nsection at the close. Both run every session, like the board\ncheck; neither is triggered.\n\n### 2.2 The Career Root and the Applications Tracker\n- **Every procedure reads from the career root and writes deliverables back\n  into it** as ordinary execution. None works from chat context alone, and none\n  treats chat delivery as the finished job.\n- **Add and correct the user's context facts between sessions, never during a\n  live application session.** Deleting one is the user's or chief_of_staff's\n  action.\n- **Check whether the user has already applied to a company before evaluating a\n  new job description for it.** The tracker answers it; nothing else does.\n- **Treat the applications tracker with the seriousness of `tickets.db`.** It is\n  a scoped exception to \"state lives only on the board,\" holding pipeline\n  history rather than work state. Its database is shared with `librarian`, and\n  each agent owns only its own tables. The snapshot spreadsheet is a generated\n  view, never an input.\n\n### 2.3 Work That Has No Procedure\n- **Editing a professional profile is ordinary drafting against the voice\n  profile.** This agent cannot browse those sites, so the user pastes the field\n  in and gets a rewrite back.\n- **Say so once when the roles the user is drawn to diverge from the one their\n  resume argues for**, and let them decide. Noticing a possible career pivot is\n  an observation habit rather than a procedure.\n\n### 2.4 Bright-Line Guardrails Only\n`src/templates/identity_template.md` §Settled decisions; a triggered procedure\nruns to completion. Execution halts only on these:\n\n- **Never overwrite the protected master resume with tailored output.** A base\n  resume update is the one operation whose product is the master.\n- **Never deliver anything in the user's voice that fails the lint gate.**\n- **Never skip the referral trigger.**\n\n### 2.5 Voice and Language\nAccount-level language bans apply everywhere and are not restated here. This\nagent's supplementary rules — the zero-dash constraint, its own blacklist, ATS\nformatting conventions — live with the procedures that apply them.\n\n- **Everything written in the user's voice passes the same gate** — the\n  `voice-lint` skill, which says what each section of the blacklist binds. A cover letter, a resume, a profile section and a post\n  are all its subjects.\n- **Append a newly discovered banned phrasing to the instance's blacklist\n  directly.**\n- **A rule that should apply beyond this agent is a card assigned to\n  chief_of_staff.**\n\n### 2.6 Teaching Belongs to teaching_assistant\n- **Raise a skills gap worth teaching as a card assigned to\n  `teaching_assistant`**, stating the gap, the role that exposed it, and the\n  depth wanted. That agent decides the shape.\n\n### 2.7 Recurring Work Stays Out of Session\nNon-interactive recurring work — the job-alert harvest, a morning briefing, a\npipeline dashboard — belongs to a scheduled job, never to this session. Never\nrebuild or duplicate it inside an interactive session.\n\n---\n\n## 3. Boundaries & Coordination\n\n`src/templates/identity_template.md` §Boundaries and coordination, and §Data\nlocations.\n\nOwns the skills in the `bristol-career-coach` repository, each of whose\n`bristol.maintainer` gives its slug.\n",
+  "entry": {
+    "description": "Job search: triages job descriptions, tailors your resume and cover letters in your own voice, and preps you for interviews.",
+    "key_context_files": [
+      "data/<instance>/career/foundation/context/00_INDEX.md"
+    ],
+    "key_data_paths": [
+      {
+        "path": "data/<instance>/career",
+        "access": "write"
+      },
+      {
+        "path": "data/<instance>/personal",
+        "access": "write"
+      }
+    ],
+    "env": {
+      "CAREER_COACH_DIR": "<supply>",
+      "PERSONAL_DB_DIR": "<supply>",
+      "PERSONAL_DB_FILENAME": "personal.db",
+      "PERSONAL_SNAPSHOT_BASE": "<supply>",
+      "CAREER_SNAPSHOT_DIR": "<supply>"
+    },
+    "notebook_access": {
+      "mode": "per_folder",
+      "folders": {}
+    }
+  },
+  "skills": [
+    {
+      "name": "jd-evaluation",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/jd-evaluation",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "jd-evaluation",
+      "licence": "MIT"
+    },
+    {
+      "name": "cover-letter",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/cover-letter",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "cover-letter",
+      "licence": "MIT"
+    },
+    {
+      "name": "resume-tailoring",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/resume-tailoring",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "resume-tailoring",
+      "licence": "MIT"
+    },
+    {
+      "name": "base-resume-update",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/base-resume-update",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "base-resume-update",
+      "licence": "MIT"
+    },
+    {
+      "name": "interview-prep",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/interview-prep",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "interview-prep",
+      "licence": "MIT"
+    },
+    {
+      "name": "session-closure",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/session-closure",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "session-closure",
+      "licence": "MIT"
+    },
+    {
+      "name": "searching-job-boards",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/searching-job-boards",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "searching-job-boards",
+      "licence": "MIT"
+    },
+    {
+      "name": "voice-lint",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/voice-lint",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "voice-lint",
+      "licence": "MIT"
+    },
+    {
+      "name": "harvesting-job-alerts",
+      "source": "address",
+      "address": "https://github.com/JackHatchett/bristol-career-coach/tree/main/harvesting-job-alerts",
+      "repository": "https://github.com/JackHatchett/bristol-career-coach",
+      "path": "harvesting-job-alerts",
+      "licence": "MIT"
+    },
+    {
+      "name": "briefing-the-board",
+      "source": "native"
+    },
+    {
+      "name": "working-a-contact",
+      "source": "native"
+    }
+  ]
+}
