@@ -56,7 +56,7 @@ coloured, never how far apart two things sit.
 | Scale | Steps | Governs |
 | --- | --- | --- |
 | `SPACE` | `xs` `sm` `md` `lg` `xl` `2xl` | Every gap, pad, margin, stripe width and inset. |
-| `RADIUS` | `sm` `md` `lg` `xl` `pill` | Corners. `sm` a checkbox, `md` a control, `lg` a card or panel, `xl` a modal, `pill` a full round. |
+| `RADIUS` | `sm` `md` `lg` `xl` `pill` | Corners. `sm` a checkbox or a tag, `md` a control, `lg` a card or panel, `xl` a modal, `pill` a full round. |
 | `TYPE` | `caption` `body` `title` `section` `display` | Font point size. `caption` a badge or metadata line, `body` running text, `title` a card title, `section` a section heading, `display` the largest thing on screen. |
 
 `LAYOUT` sits beside the scales and holds what sizes the window rather than the
@@ -66,8 +66,31 @@ the height its option list scrolls past, and the minimum sizes of the wizard and
 the dialogs. Reach for it only when the thing being sized is a window or a pane,
 never for a gap.
 
+**Every control that can share a row is `control_height()` tall** — a button,
+a text field, a picker, a date. The stylesheet fixes the height and zeroes the
+vertical padding, so nothing on a row is a pixel off from its neighbour. A
+label or a tick box that has to sit on that row's centre line takes the same
+height as its minimum. A button drawn as text — a view tab, a link, a chip, an
+example under a field — is not a control on a row and is exempt by name in the
+stylesheet.
+
+**A button is one of four ranks, chosen by object name and never styled
+outside them.**
+
+| Rank | Object name | For |
+| --- | --- | --- |
+| Primary | `globalCreateBtn` | The one action a page or window exists for: Create, Import, Save. |
+| Secondary | none | Every other action. |
+| Quiet | `linkRow`, `filterClear`, `exampleLink` | Text that acts: a link, a clear, an example that opens its page. |
+| Destructive | `deleteBtn` | An action that cannot be undone, and only inside the window of the thing it destroys. |
+
+**A list of things a person opens is a list of cards**, drawn by
+`row_card.RowCardDelegate` from `card_list()`: the board card's surface, a
+Title Case name, one muted line, meta text and neutral pills. A card opens on
+one click, so the list carries no Open button.
+
 **Size a row from its font's metrics plus a spacing step, never from a fixed
-height.** A pill row is `QFontMetrics(font).height() + space("sm")`, so a change
+height.** A tag row is `QFontMetrics(font).height() + space("md")`, so a change
 to the type scale carries the row with it.
 
 ## Answering an instruction given as intent
@@ -95,6 +118,18 @@ key every scheme has to gain, which is a change to `theme.py` and to this file.
 
 ## Words on screen
 
+- **A page explains itself by where things are and what they are called,
+  never by a sentence.** No help text, no caption saying what a button does,
+  and no status line reporting what the last action did: half of users never
+  read them. Put a control where a user expects it and label it with what it
+  does. What a field takes is shown by an example under it, and that example is
+  real enough to follow.
+- **Only a failure is said in words**, in `dialogs.notify()`, because it is the
+  one message a user must see. A success shows itself: the value in the
+  control, the new card in the list, the window that opens next.
+- **Field labels, section headings and a list's own rows are not help text**,
+  and a count or a filter notice that says what a view is holding back is
+  state, not help.
 - **A name is Title Case; a sentence is sentence case.** A tab, a section
   heading, a field label, a picker option and a button all name something and are
   Title Cased. A tooltip, a placeholder, a notice and a checkbox whose label is a
@@ -117,7 +152,8 @@ key every scheme has to gain, which is a change to `theme.py` and to this file.
 Two surfaces write a card, and each has its own job.
 
 - **Settings writes each choice at the moment it is made**, one key per
-  control, and carries no Save button. The status line gives the row it wrote.
+  control, and carries no Save button. A write that fails says so in a dialog
+  naming the row.
 - **The detail pane edits a selected card in place**: status, stage, owner,
   epic, tier, size and Blocked are live controls, and comments, links and
   image attachments post from it. Blocked says what kind of thing has stopped the

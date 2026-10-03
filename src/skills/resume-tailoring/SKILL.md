@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: career_coach
   bristol.scripts: src/tools/career_coach/voice_lint.py
+  bristol.subtitle: Tailor the resume to one job
 ---
 # resume-tailoring
 

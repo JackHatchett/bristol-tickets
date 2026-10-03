@@ -39,8 +39,8 @@ carries a request from one agent to another; anything the assistant produces
 that would be work state is discarded rather than filed.
 
 **The assistant writes only where any agent may write** — `config`'s
-`markdown_notebook` §ZONES. A prompt that emits a note gives a destination in a
-writable zone, and a prompt aimed at a folder the user authors returns its
+`src/skills/notebook-proposal/SKILL.md` §What the agent may do where. A prompt that emits a note gives a destination in a
+folder an agent may write in, and a prompt aimed at a folder the user authors returns its
 output to the user instead.
 
 ## How any party should use this

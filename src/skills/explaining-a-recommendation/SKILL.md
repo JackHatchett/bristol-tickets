@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.subtitle: Present a recommendation and its alternatives
 ---
 # explaining-a-recommendation
 

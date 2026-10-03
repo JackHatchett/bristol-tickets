@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: writers_room
+  bristol.subtitle: Draft and shape prose with the author
 ---
 # prose-drafting
 

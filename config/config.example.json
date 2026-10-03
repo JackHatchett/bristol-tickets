@@ -49,13 +49,17 @@
     }
   },
   "markdown_notebook": {
-    "notes": "OPTIONAL. A Markdown notebook outside the repo: a folder of Markdown notes you hand-edit in a desktop notebook app. ZONES: agent access is granted by zone, never as one bit per agent. WRITABLE - workspace_dir and inbox_dir, in full: the agent workspace and the capture inbox, with courses_dir, agent_output_dir and reports_dir inside the first of them. MOVE TARGET - archive_dir: a file moves into it from a writable zone, and that is the only write it takes. READ-ONLY - every other top-level folder, which you author; a fact whose home is one of them goes to agent_output_dir as a summary for you to fold in. Each agent's notebook_access entry names the zones that agent reaches. reports_dir is read by Bristol's report writer, which falls back to an env var, a local pointer file, then nothing.",
+    "notes": "The Markdown notebook: a folder of Markdown notes you hand-edit, and the subfolders of it Bristol knows about. Edited in Bristol Tickets' Settings tab, Notebook. notes_dir is the notebook; it can be repointed and never removed, and repointing detaches every folder. folders lists the attached subfolders, each written from the notebook down; an agent working folder by folder reaches nothing outside them. What each agent may do in each is its notebook_access — src/tools/config_tools/notebook.py. A fresh installation's notebook sits inside its own data with inbox, ai_workspace and archive attached. The *_dir keys below are locations rather than permissions: where a tool or an agent puts a particular kind of note, each repointable in Settings, Locations.",
     "notes_dir": "/path/to/notebook",
+    "folders": [
+      "inbox",
+      "ai_workspace",
+      "archive"
+    ],
     "workspace_dir": "/path/to/notebook/ai_workspace",
     "inbox_dir": "/path/to/notebook/inbox",
-    "assistant_prompts_dir": "/path/to/notebook/ai_workspace/assistant-prompts",
     "archive_dir": "/path/to/notebook/archive",
-    "courses_dir": "/path/to/notebook/ai_workspace/courses",
+    "assistant_prompts_dir": "/path/to/notebook/ai_workspace/assistant-prompts",
     "recipes_dir": "/path/to/notebook/recipes",
     "agent_output_dir": "/path/to/notebook/ai_workspace/agent_output",
     "reports_dir": "/path/to/notebook/ai_workspace/bristol_reports"
@@ -84,7 +88,7 @@
     "project_local_nicknames_caveat": "Note here any word a project's own historical files use in a different sense than this config does."
   },
   "agents": {
-    "_notes": "One entry per agent, keyed by slug. The fields and what each holds are src/templates/identity_template.md, What an agent is made of; that section also states which facts about an agent belong here rather than in its charter. key_data_paths is a folder grant per entry: the folder, and whether the agent may write in it or only read it.",
+    "_notes": "One entry per agent, keyed by slug. The fields and what each holds are src/templates/identity_template.md, What an agent is made of; that section also states which facts about an agent belong here rather than in its charter. notebook_access is a mode (per_folder, read_all or write_all) and a read, write or hide choice per attached notebook folder — src/tools/config_tools/notebook.py. key_data_paths is a folder grant per entry: the folder, and whether the agent may write in it or only read it.",
     "chief_of_staff": {
       "identity": "src/agent_identities/chief_of_staff.md",
       "description": "Operates and maintains the system itself. The only agent that changes how any agent works.",
@@ -98,12 +102,12 @@
         }
       ],
       "notebook_access": {
-        "read": true,
-        "write_zones": [
-          "workspace",
-          "inbox"
-        ],
-        "archive_moves": true
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
       },
       "skills": [
         "importing-a-skill",
@@ -128,12 +132,12 @@
         "ZOTERO_DATA_DIR": "/path/to/Zotero"
       },
       "notebook_access": {
-        "read": true,
-        "write_zones": [
-          "workspace",
-          "inbox"
-        ],
-        "archive_moves": true
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
       }
     },
     "career_coach": {
@@ -156,9 +160,12 @@
         "CAREER_SNAPSHOT_DIR": "/path/to/project/data/<your-instance>/system/logs/applications_snapshots"
       },
       "notebook_access": {
-        "read": true,
-        "write_zones": [],
-        "archive_moves": false
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "read",
+          "ai_workspace": "read",
+          "archive": "read"
+        }
       }
     },
     "client_services": {
@@ -172,12 +179,12 @@
         }
       ],
       "notebook_access": {
-        "read": true,
-        "write_zones": [
-          "workspace",
-          "inbox"
-        ],
-        "archive_moves": true
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
       }
     },
     "game_designer": {
@@ -191,12 +198,12 @@
         }
       ],
       "notebook_access": {
-        "read": true,
-        "write_zones": [
-          "workspace",
-          "inbox"
-        ],
-        "archive_moves": true
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
       },
       "skills": [
         "inline-teaching",
@@ -206,7 +213,7 @@
     },
     "teaching_assistant": {
       "identity": "src/agent_identities/teaching_assistant.md",
-      "description": "Builds and maintains courses for whatever you are teaching yourself: syllabus, lessons, exercises, quizzes and progress.",
+      "description": "Teaches whatever you are teaching yourself: short explainers in your notebook, and walkthroughs of Bristol's own features.",
       "key_context_files": [],
       "key_data_paths": [
         {
@@ -215,26 +222,19 @@
         }
       ],
       "env": {
-        "TEACHING_ASSISTANT_DIR": "/path/to/project/data/<your-instance>/teaching",
-        "TEACHING_ASSISTANT_COURSES_DIR": "/path/to/notebook/courses"
-      },
-      "lesson_pipeline": {
-        "stages": {
-          "plan": "teaching_assistant",
-          "materials": "teaching_assistant",
-          "lint": "teaching_assistant"
-        }
+        "TEACHING_ASSISTANT_DIR": "/path/to/project/data/<your-instance>/teaching"
       },
       "notebook_access": {
-        "read": true,
-        "write_zones": [
-          "workspace",
-          "inbox"
-        ],
-        "archive_moves": true
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
       },
       "skills": [
-        "inline-teaching"
+        "explainer-notes",
+        "guided-walkthrough"
       ]
     },
     "writers_room": {
@@ -248,12 +248,12 @@
         }
       ],
       "notebook_access": {
-        "read": true,
-        "write_zones": [
-          "workspace",
-          "inbox"
-        ],
-        "archive_moves": true
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
       },
       "skills": [
         "notebook-proposal"

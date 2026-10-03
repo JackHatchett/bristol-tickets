@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: librarian
   bristol.scripts: src/tools/config_tools/read_config.py src/tools/zotero/build_records.py
+  bristol.subtitle: Catalogue a game, film or album in Zotero
 ---
 
 # cataloguing-an-item

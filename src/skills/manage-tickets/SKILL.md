@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/bristol/app.py src/tools/ticket_tools/ticket_write.py
+  bristol.subtitle: Write and update cards on the board
 ---
 
 # manage-tickets

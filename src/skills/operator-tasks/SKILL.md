@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: client_services
+  bristol.subtitle: List the client steps only you can do
 ---
 # operator-tasks
 

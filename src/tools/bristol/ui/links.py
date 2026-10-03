@@ -406,13 +406,6 @@ class AddLinkDialog(QDialog):
         label_row.addWidget(self.label_input, 1)
         v.addLayout(label_row)
 
-        hint = QLabel(
-            "A path opens in whichever app owns that file type. To force a "
-            "particular app, paste that app's URL scheme instead."
-        )
-        hint.setObjectName("metaText")
-        hint.setWordWrap(True)
-        v.addWidget(hint)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)

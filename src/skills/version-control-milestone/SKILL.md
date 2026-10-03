@@ -6,6 +6,7 @@ compatibility: Needs git available to the user in the project folder.
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.subtitle: Save a project milestone with git
 ---
 # version-control-milestone
 

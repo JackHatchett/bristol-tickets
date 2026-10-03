@@ -6,6 +6,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: writers_room
   bristol.scripts: src/tools/config_tools/active_project.py
+  bristol.subtitle: Open and close a novel session
 ---
 # writers-room-project-context
 

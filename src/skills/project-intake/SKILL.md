@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: client_services
+  bristol.subtitle: Set up a new client or project
 ---
 # project-intake
 

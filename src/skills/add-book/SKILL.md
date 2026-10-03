@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: librarian
   bristol.scripts: src/tools/personal_db/render_snapshot.py src/tools/zotero/build_reading_lists.py src/tools/zotero/zotero_export.py
+  bristol.subtitle: Add a book to the library
 ---
 # add-book
 

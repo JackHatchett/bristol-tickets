@@ -37,7 +37,8 @@ def fill_words(combo: QComboBox, choices, *, hint: str | None = None) -> QComboB
 class SettledComboBox(QComboBox):
     """A combo whose value survives a wheel gesture and a stray arrow key.
 
-    ``picked`` carries the chosen text and fires only on a deliberate choice,
+    ``picked`` carries the chosen item's data where it has any, and its text
+    otherwise, and fires only on a deliberate choice,
     so a listener that writes somewhere durable can connect to it directly.
     Loading a value with ``setCurrentText`` never emits it.
     """
@@ -49,7 +50,8 @@ class SettledComboBox(QComboBox):
         self.activated.connect(self._on_activated)
 
     def _on_activated(self, index: int) -> None:
-        text = self.itemText(index)
+        data = self.itemData(index)
+        text = data if isinstance(data, str) and data else self.itemText(index)
         if text:
             self.picked.emit(text)
 

@@ -7,13 +7,14 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/config_tools/data_paths.py
+  bristol.subtitle: The shape every agent-written note takes
 ---
 # note-formatting
 
 Input: a note about to be written or edited in the user's Markdown notebook.
 Operation: the rules below. Output: a note in the notebook's own shape.
 
-Which zone of the notebook takes the write, and what happens when the note
+Which folder of the notebook takes the write, and what happens when the note
 belongs in one the user authors, is `src/skills/notebook-proposal/SKILL.md`.
 What may be changed in a note already there — and what goes to the user first —
 is `src/templates/identity_template.md` §Changing a file that is already there.
@@ -27,9 +28,8 @@ only in §Headings and spacing.
 Two boundaries, both stated here so neither has to be guessed at:
 
 - **A skill defining the sections of a particular kind of file wins for those
-  sections** — a lesson, an exercise and a quiz are
-  `src/skills/content-generation/SKILL.md` §File shapes. The filename,
-  frontmatter, Title Case, spacing and links below still hold.
+  sections.** The filename, frontmatter, Title Case, spacing and links below
+  still hold.
 - **A note the notebook assistant emits from a prompt is
   `src/skills/notebook-prompt-library/SKILL.md` §What a prompt may emit**, which
   takes its shape from the notebook's own templates. This governs what an agent
@@ -148,7 +148,7 @@ source_url: https://example.org/the-account-this-note-rests-on
   takes.
 - **Leave a section the user wrote as it stands.**
 - **Strip the clauses from a section an agent wrote earlier** when you next open
-  that note in a writable zone, and leave its links.
+  that note in a folder the agent may write in, and leave its links.
 
 ## Failure modes
 

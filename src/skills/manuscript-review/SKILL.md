@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: writers_room
+  bristol.subtitle: Read finished prose and report back
 ---
 # manuscript-review
 

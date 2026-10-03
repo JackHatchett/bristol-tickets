@@ -6,6 +6,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/skill_tools/skills.py
+  bristol.subtitle: Turn a procedure file into a skill
 ---
 # skill-conversion
 
@@ -110,6 +111,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/<dir>/<script>.py src/tools/<dir>/<other>.py
+  bristol.subtitle: What the skill does, in eight words or fewer
 ```
 
 - **`bristol.kind`** — `playbook` or `protocol`, the shape the file had.
@@ -119,6 +121,11 @@ metadata:
   none. A command mentioned only in a sentence is prose and nothing can check it;
   this is the field `smoke.py`'s `skill_declarations` target reads, so a renamed
   or deleted tool fails there rather than mid-task.
+- **`bristol.subtitle`** — what the skill does, for a person scanning a list:
+  eight words or fewer, sentence case, no closing period. `description` stays
+  what it is, the sentence an agent matches a task against; the subtitle is
+  what Bristol Tickets shows. A skill without one is shown by its
+  description's first sentence.
 - **No field carries state, order, status or assignment** — `src/app.md` §The
   board is the only channel owns all four.
 

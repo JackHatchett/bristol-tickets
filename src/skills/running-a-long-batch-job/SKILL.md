@@ -6,6 +6,7 @@ compatibility: Runs anywhere python3 does; the shell time limit it is written ag
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.subtitle: Run a job over thousands of items
 ---
 # running-a-long-batch-job
 

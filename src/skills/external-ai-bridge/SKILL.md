@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: protocol
   bristol.maintainer: chief_of_staff
+  bristol.subtitle: Hand work to another AI and check it
 ---
 # external-ai-bridge
 
@@ -57,7 +58,7 @@ A thin bridge states which one it uses; that choice drives its sync trigger.
 | Memory model | How it is briefed | Refresh trigger | Reference bridge |
 |---|---|---|---|
 | **Persistent KB, manual refresh** | Curated files uploaded once to the tool's own knowledge store; they persist across chats. | Re-upload the affected file when its source changes. | `career_coach/gemini_gem_bridge.md`, `game_designer/gemini_gem_bridge.md` |
-| **Stateless, re-pointed each request** | No persistent store; the needed files and prompt are handed in fresh every session. | None — each brief is current by construction. | `teaching_assistant/copilot_bridge.md`, `writers_room/second_model_bridge.md` |
+| **Stateless, re-pointed each request** | No persistent store; the needed files and prompt are handed in fresh every session. | None — each brief is current by construction. | `writers_room/second_model_bridge.md` |
 | **Local-LLM session** | Contract lives in the runtime's system-prompt field; static reference is pinned or embedded; live files are read and written from shared disk. | Live files read fresh each session; static pins re-embedded on change. | `career_coach/local_fallback.md` |
 
 ### 1b. Return format
@@ -98,7 +99,6 @@ in one line**, and nothing here overrides it.
 | Role (config key) | Owner | For |
 |---|---|---|
 | `inline_coding` | `game_designer` | hand-writing and editing project code in the editor, not chat |
-| `course_materials` | `teaching_assistant` | writing and linting lesson materials from an approved plan (pipeline stages 2 and 3) |
 | `notebook_qa` | any | notebook-only Q&A and retrieval, with no repo or system context |
 | `notebook_prompt_library` | `chief_of_staff` | maintaining the notebook assistant's own custom prompts — the same tool as `notebook_qa`, a different job |
 
@@ -122,8 +122,6 @@ Reference triggers, each in the charter given:
 
 - **`game_designer`** → the next action is writing or editing project code →
   the configured `inline_coding` agent.
-- **`teaching_assistant`** → a `materials` or `lint` stage routed out → the
-  configured `course_materials` engine, resolved by `lesson_pipeline.stages`.
 - **Any agent** → notebook-only retrieval → the configured `notebook_qa` agent.
 - **`chief_of_staff`** → a prompt in the assistant's library is being added,
   corrected or indexed → the configured `notebook_prompt_library` agent, per
@@ -149,8 +147,8 @@ A `references/<agent>.md` is short. It:
 - `assets/protocol_template.md` — how to write a contract with an outside
   party.
 - `references/career_coach.md`, `references/career_coach_local_fallback.md`,
-  `references/chief_of_staff.md`, `references/game_designer.md`,
-  `references/teaching_assistant.md` and `references/writers_room.md` — one
+  `references/chief_of_staff.md`, `references/game_designer.md` and
+  `references/writers_room.md` — one
   agent's delta each.
 - `src/skills/notebook-prompt-library/SKILL.md` — the procedure behind
   `references/chief_of_staff.md`.

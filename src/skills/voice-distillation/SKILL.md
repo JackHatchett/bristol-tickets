@@ -5,6 +5,7 @@ license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: writers_room
+  bristol.subtitle: Capture how the author writes
 ---
 # voice-distillation
 

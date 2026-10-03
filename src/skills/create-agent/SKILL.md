@@ -6,6 +6,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/agent_tools/create_agent.py src/tools/ticket_tools/create_tickets.py
+  bristol.subtitle: Set up a new agent
 ---
 # create-agent
 

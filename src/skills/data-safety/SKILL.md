@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: librarian
   bristol.scripts: src/tools/personal_db/render_snapshot.py src/tools/zotero/zotero_export.py
+  bristol.subtitle: Rules for writing to the library safely
 ---
 # data-safety
 

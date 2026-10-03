@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/ticket_tools/ticket_write.py
+  bristol.subtitle: Check finished work against its criteria
 ---
 # reviewing-finished-work
 

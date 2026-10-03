@@ -26,10 +26,6 @@ DOMAINS = [
     ("books", "Book Library", "zotero", "items", "library.xlsx", None, 20,
      "Books domain (librarian). Source of truth is Zotero, not this DB — "
      "read through src/tools/zotero/zotero_export.py."),
-    ("learning", "Course Progress", "personal_db", "learning_progress",
-     "learning.xlsx", "v_learning_stats", 30,
-     "Where the learner stands in a course. Read by the study interface, "
-     "never by an agent deciding a next action."),
     ("contacts", "Contacts", "personal_db", "contact",
      "contacts.xlsx", "v_contact_stats", 40,
      "Who is owed what, and since when. The state layer beside the people "

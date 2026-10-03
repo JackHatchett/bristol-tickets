@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/skill_tools/skills.py src/tools/skill_tools/propose_skill.py
+  bristol.subtitle: Turn a finished session into a skill
 ---
 # mining-a-session-for-a-skill
 

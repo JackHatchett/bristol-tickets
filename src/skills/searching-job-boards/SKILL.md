@@ -6,6 +6,7 @@ compatibility: Needs a web fetch tool for the direct reads and a browser the use
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
+  bristol.subtitle: Find a company's open job postings
 ---
 # searching-job-boards
 

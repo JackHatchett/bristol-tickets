@@ -70,8 +70,9 @@ python3 agents.py edit <slug> [--identity …] [--description "…"]
                               [--charter-file <path>]
                               [--data-path …]... [--read-path …]...
                               [--context-file …]...
-                              [--notebook-read yes|no] [--write-zone …]...
-                              [--archive-moves yes|no] [--env NAME=VALUE]...
+                              [--notebook-mode per_folder|read_all|write_all]
+                              [--notebook-folder FOLDER=read|write|hide]...
+                              [--env NAME=VALUE]...
                               [--extra-file <json>]
 ```
 
@@ -103,11 +104,12 @@ are two commands rather than one with a flag.
   the old one, and refuses a path outside the repository or one already taken.
 - **Skills are `skill_tools/skills.py`'s.** Attaching and detaching go through
   its own commands, here as everywhere.
-- **Notebook access is written one part at a time** — `--notebook-read`,
-  `--write-zone` and `--archive-moves` — because `config`'s markdown_notebook
-  §ZONES grants them separately: the notebook is read whole or not at all, and
-  writing is granted a zone at a time. `create_agent.py` takes the same three,
-  and its `--notebook` shorthand sets all three at once.
+- **Notebook access is a mode and a choice per attached folder** —
+  `--notebook-mode` and `--notebook-folder FOLDER=read|write|hide`, shaped by
+  `src/tools/config_tools/notebook.py`. A folder not given keeps its choice, so
+  switching to Read All and back loses nothing. `create_agent.py` takes the
+  same two, and its `--notebook read|write|none` shorthand is Read All, Write
+  All, or Per Folder with every folder hidden.
 
 Bristol Tickets' Agents tab is a front end to these two commands and to
 `skills.py`, and writes nothing itself —

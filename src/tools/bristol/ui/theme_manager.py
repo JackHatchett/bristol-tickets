@@ -110,14 +110,6 @@ class ThemeManagerDialog(QDialog):
         heading = QLabel("Manage Themes")
         heading.setObjectName("dialogHeading")
 
-        blurb = QLabel(
-            "Every theme this installation offers. The shipped ones are "
-            "starting points: rename them, change their colours, delete the "
-            "ones you do not want, and put them all back with Restore Shipped "
-            "Themes."
-        )
-        blurb.setObjectName("formCaption")
-        blurb.setWordWrap(True)
 
         self.list = QListWidget()
         self.list.setObjectName("themeList")
@@ -211,7 +203,6 @@ class ThemeManagerDialog(QDialog):
                                   space("xl"))
         column.setSpacing(space("lg"))
         column.addWidget(heading)
-        column.addWidget(blurb)
         column.addLayout(columns, 1)
         column.addWidget(self.notice)
         column.addWidget(buttons)
@@ -568,9 +559,8 @@ class ThemeManagerDialog(QDialog):
 
     def _read_notice(self) -> None:
         lines = self.complaints()
-        self.notice.setText("\n".join(lines) if lines else
-                            f"Every pair of text and surface clears "
-                            f"{CONTRAST_MIN}:1.")
+        self.notice.setText("\n".join(lines))
+        self.notice.setVisible(bool(lines))
         # Drawn against the canvas the selected palette names, so the line that
         # says what is unreadable never becomes the unreadable thing.
         self.notice.setStyleSheet(f"color: {readable_on(self.form.ground())};")

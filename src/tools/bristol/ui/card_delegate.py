@@ -43,6 +43,7 @@ from PySide6.QtWidgets import QStyle, QStyledItemDelegate
 from .theme import (
     C,
     CARD_ROLE,
+    agent_caption,
     _is_checked,
     size_label,
     tier_label,
@@ -93,7 +94,7 @@ class CardDelegate(QStyledItemDelegate):
     @property
     def PILL_H(self) -> int:
         """Height of a pill: the small font's line box plus its own pad."""
-        return QFontMetrics(self._small_font()).height() + space("sm")
+        return QFontMetrics(self._small_font()).height() + space("md")
 
     @property
     def FOOT_H(self) -> int:
@@ -181,7 +182,7 @@ class CardDelegate(QStyledItemDelegate):
         w = self._pill_width(text, font) if width is None else width
         h = self.PILL_H
         rect = QRectF(x, y, w, h)
-        corner = radius("pill")
+        corner = radius("sm")
         painter.setPen(Qt.NoPen)
         painter.setBrush(QColor(bg))
         painter.drawRoundedRect(rect, corner, corner)
@@ -313,7 +314,7 @@ class CardDelegate(QStyledItemDelegate):
         if epic_name:
             pills.append((epic_name, C["AMBER_BG"], C["AMBER_TX"]))
 
-        owner = data.get("owner", "") or "user"
+        owner = agent_caption(data.get("owner", "") or "user")
         issue_id = data.get("issue_id")
         prefix = f"#{issue_id}  ·  " if issue_id is not None else ""
         left_text = prefix + owner

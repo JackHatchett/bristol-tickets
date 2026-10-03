@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: teaching_assistant
   bristol.scripts: src/tools/skill_tools/skills.py
+  bristol.subtitle: Walk the user through a feature step by step
 ---
 # guided-walkthrough
 

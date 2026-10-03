@@ -6,6 +6,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: game_designer
   bristol.scripts: src/tools/config_tools/active_project.py
+  bristol.subtitle: Open and close a game project session
 ---
 # game-designer-project-context
 

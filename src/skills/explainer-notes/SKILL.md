@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: teaching_assistant
   bristol.scripts: src/tools/config_tools/data_paths.py
+  bristol.subtitle: Explain a topic as linked notes
 ---
 # explainer-notes
 
@@ -15,9 +16,8 @@ to seven single-idea notes in the Markdown notebook, linked to each other and to
 the notes already there.
 
 **An explainer is not a course.** Nothing here produces learning objectives,
-exercises, quizzes, checkpoints or a rendered page —
-`src/skills/content-generation/SKILL.md` owns those, and a subject that wants
-them wants a course.
+exercises, quizzes, checkpoints or a rendered page; a subject that wants them
+wants a course, which this system does not build.
 
 ## What the set is sized to
 
@@ -65,7 +65,7 @@ them wants a course.
 - **Search the notebook for an existing note on a concept before writing one.**
   An explainer that restates a note the user already wrote has done the one
   thing this skill exists to prevent.
-- **Write nothing into the folders the user authors.** Which zones take a write
+- **Write nothing into the folders the user authors.** Which folders take a write
   is `src/skills/notebook-proposal/SKILL.md`.
 - **The hub links every note in the set, and every note links back to the hub.**
 

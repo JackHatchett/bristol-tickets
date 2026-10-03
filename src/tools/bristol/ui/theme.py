@@ -92,6 +92,61 @@ FLEET_AGENTS = [
     "writers_room",
 ]
 
+# Words a caption leaves lowercase unless they open it, and words it capitalises
+# whole. The same rule src/tools/skill_tools/skills.py title_phrase applies to a
+# skill's name.
+_CAPTION_SMALL = {"a", "an", "the", "and", "but", "or", "nor", "for", "so",
+                  "yet", "as", "at", "by", "in", "of", "on", "to", "per",
+                  "via", "vs", "with", "from", "into"}
+_CAPTION_UPPER = {"ai", "api", "csv", "html", "jd", "pdf", "qa", "ui", "url"}
+
+
+def agent_caption(slug: str | None) -> str:
+    """An agent's slug as a person reads it: chief_of_staff is Chief of Staff,
+    qa_engineer is QA Engineer, user is User. The slug is what every control
+    stores; this is only what it shows."""
+    words = [w for w in (slug or "user").replace("-", "_").split("_") if w]
+    out = []
+    for i, word in enumerate(words):
+        low = word.lower()
+        if low in _CAPTION_UPPER:
+            out.append(low.upper())
+        elif i and low in _CAPTION_SMALL:
+            out.append(low)
+        else:
+            out.append(low[:1].upper() + low[1:])
+    return " ".join(out)
+
+
+def fleet_agents() -> list[str]:
+    """'user' and then every agent this installation configures, read from
+    config at call time so a new agent is an owner the moment it exists.
+    FLEET_AGENTS stands in where no configuration can be read."""
+    try:
+        import config_file  # bristol-local; absent in a bare import of theme
+        slugs = sorted(config_file.agent_slugs())
+    except Exception:  # noqa: BLE001 - any failure falls back to the list
+        slugs = []
+    return ["user", *slugs] if slugs else list(FLEET_AGENTS)
+
+
+def fill_agents(combo, slugs) -> None:
+    """Load a picker with agents: the caption shown, the slug as item data."""
+    for slug in slugs:
+        combo.addItem(agent_caption(slug), slug)
+
+
+def select_agent(combo, slug: str | None) -> None:
+    """Seat a picker on an agent, adding it where a legacy record carries one
+    the list does not, so editing never silently rewrites who owns a card."""
+    slug = (slug or "user").strip() or "user"
+    index = combo.findData(slug)
+    if index < 0:
+        combo.addItem(agent_caption(slug), slug)
+        index = combo.findData(slug)
+    combo.setCurrentIndex(index)
+
+
 # ---------------------------------------------------------------------------
 # Design tokens — spacing, corner radius, type size
 # ---------------------------------------------------------------------------
@@ -107,6 +162,8 @@ TYPE = {"caption": 8, "body": 10, "title": 11, "section": 12, "display": 14}
 # split. Not a spacing scale — these size the window itself, and a module that
 # needs one names it here rather than writing the number.
 LAYOUT = {
+    "control_h": 34,       # every button, field and picker on a row: one height
+    "filter_field_max_w": 420,  # a Filter field, before its pickers
     "window_min_w": 1240,
     "window_min_h": 780,
     "window_w": 1960,
@@ -222,6 +279,12 @@ BLOCK_REASON_HINT = (
 def space(step: str) -> int:
     """A gap or pad, by name."""
     return SPACE[step]
+
+
+def control_height() -> int:
+    """The one height every button, text field, picker and date field is drawn
+    at, so controls sharing a row line up whatever kind each one is."""
+    return LAYOUT["control_h"]
 
 
 def radius(step: str) -> int:
@@ -2142,6 +2205,8 @@ def apply_scheme(app, theme: str | None, mode: str | None,
     set_scheme(resolve_scheme(
         theme, mode, is_dark_scheme(app) if app is not None else False))
     if app is not None:
+        from .popups import install as install_popups
+        install_popups(app)
         app.setStyleSheet(build_style_sheet())
 
 
@@ -2556,7 +2621,7 @@ def build_style_sheet() -> str:
     chevron = chevron_image(C["INK_SOFT"])
     chevron_up = chevron_image(C["INK_SOFT"], "up")
     check = check_image(C["ON_ACCENT"])
-    arrow_rule = (f"QComboBox::down-arrow {{ image: url({chevron}); "
+    arrow_rule = (f"QComboBox::down-arrow, QDateEdit::down-arrow {{ image: url({chevron}); "
                   f"width: {space('lg')}px; height: {space('md')}px; }}"
                   if chevron else "")
     spin_arrow_rule = (
@@ -2566,6 +2631,7 @@ def build_style_sheet() -> str:
         f"width: {space('lg')}px; height: {space('md')}px; }}"
         if chevron and chevron_up else "")
     check_rule = f"image: url({check});" if check else ""
+    ctl = control_height() - 2  # inside the 1px border every control draws
     s_xs, s_sm, s_md, s_lg, s_xl, s_2xl = (space("xs"), space("sm"), space("md"),
                                            space("lg"), space("xl"), space("2xl"))
     return f"""
@@ -2741,7 +2807,7 @@ QPushButton#filterChip {{
     background-color: {C['NEUTRAL_BG']};
     color: {C['NEUTRAL_TX']};
     border: none;
-    border-radius: {radius('pill')}px;
+    border-radius: {r_sm}px;
     padding: {s_sm}px {s_lg}px;
     font-weight: 600;
 }}
@@ -2797,7 +2863,7 @@ QListWidget#searchResults::item:selected, QListWidget#themeList::item:selected {
 QListWidget#searchResults::item:hover, QListWidget#themeList::item:hover {{
     background: {C['HOVER_BG']};
 }}
-QComboBox, QLineEdit, QSpinBox, QTextEdit {{
+QComboBox, QLineEdit, QAbstractSpinBox, QTextEdit {{
     background-color: {C['SURFACE']};
     border: 1px solid {C['BORDER']};
     border-radius: {r_md}px;
@@ -2806,7 +2872,7 @@ QComboBox, QLineEdit, QSpinBox, QTextEdit {{
     selection-background-color: {C['ACCENT']};
     selection-color: {C['ON_ACCENT']};
 }}
-QComboBox:focus, QLineEdit:focus, QSpinBox:focus, QTextEdit:focus {{
+QComboBox:focus, QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus {{
     border: 1px solid {C['ACCENT']};
 }}
 /* A required field that is currently empty. Set via the dynamic property
@@ -2820,15 +2886,53 @@ QLineEdit[fieldMissing="true"]:focus, QTextEdit[fieldMissing="true"]:focus {{
 QLabel[fieldMissing="true"] {{ color: {C['MISSING']}; font-weight: 600; }}
 /* A formCaption carries its own missing state. */
 QLabel#formCaption[fieldMissing="true"] {{ color: {C['MISSING']}; font-weight: 600; }}
+/* A picker opens this app's own list rather than the platform's menu: a raised
+   surface with a rounded corner, room around every option, and the same
+   selected fill a list row takes. popups.py makes its window transparent so
+   the corner is the one drawn here, and as wide as its longest option. */
+QComboBox {{ combobox-popup: 0; }}
 QComboBox QAbstractItemView {{
     background-color: {C['SURFACE']};
     color: {C['INK']};
     border: 1px solid {C['BORDER']};
-    selection-background-color: {C['ACCENT']};
-    selection-color: {C['ON_ACCENT']};
+    border-radius: {r_lg}px;
+    padding: {s_sm}px;
+    outline: 0;
+    selection-background-color: {C['SEL_BG']};
+    selection-color: {C['ACCENT_DK']};
+}}
+QComboBox QAbstractItemView::item {{
+    min-height: {s_2xl}px;
+    padding: {s_xs}px {s_lg}px;
+    border-radius: {r_md}px;
+}}
+QComboBox QAbstractItemView::item:hover {{
+    background-color: {C['HOVER_BG']};
+}}
+QComboBox QAbstractItemView::item:selected {{
+    background-color: {C['SEL_BG']};
+    color: {C['ACCENT_DK']};
+}}
+/* A growing text field takes slimmer vertical padding, so one line of it is
+   one control tall (growing_edit.py fixes the height). */
+QTextEdit[growing="true"] {{ padding: {s_sm}px {s_md}px; }}
+/* A choice that opens a section of a window: a round mark beside a heading. */
+QRadioButton {{ color: {C['INK']}; background: transparent; spacing: {s_md}px; }}
+QRadioButton#choiceHeading {{ font-weight: 700; }}
+QRadioButton::indicator {{
+    width: {s_lg}px;
+    height: {s_lg}px;
+    border: 1px solid {C['BORDER']};
+    border-radius: {s_lg // 2 + 1}px;
+    background-color: {C['SURFACE']};
+}}
+QRadioButton::indicator:hover {{ border-color: {C['ACCENT']}; }}
+QRadioButton::indicator:checked {{
+    background-color: {C['ACCENT']};
+    border-color: {C['ACCENT']};
 }}
 /* A picker reads as a picker: the drop-down carries a chevron of its own. */
-QComboBox::drop-down {{
+QComboBox::drop-down, QDateEdit::drop-down {{
     border: none;
     width: {s_2xl}px;
     subcontrol-origin: padding;
@@ -2923,9 +3027,12 @@ QPushButton::menu-indicator {{ width: 0px; image: none; }}
 QPushButton#globalCreateBtn {{
     background-color: {C['ACCENT']};
     color: {C['ON_ACCENT']};
-    border: none;
+    border: 1px solid {C['ACCENT']};
 }}
-QPushButton#globalCreateBtn:hover {{ background-color: {C['CREATE_HOVER']}; }}
+QPushButton#globalCreateBtn:hover {{
+    background-color: {C['CREATE_HOVER']};
+    border-color: {C['CREATE_HOVER']};
+}}
 /* The id selector outranks the generic :disabled rule, so the primary button
    needs its own unclickable look or it would stay accent-filled while dead. */
 QPushButton#globalCreateBtn:disabled {{
@@ -2933,12 +3040,52 @@ QPushButton#globalCreateBtn:disabled {{
     border: 1px solid {C['BORDER']};
     color: {C['DISABLED_TX']};
 }}
+/* A button whose window holds something that is not on disk. */
+QPushButton[missing="true"] {{
+    border: 1px solid {C['MISSING']};
+    color: {C['MISSING']};
+}}
 QPushButton#deleteBtn {{
     background-color: {C['DELETE_BG']};
     color: {C['ON_ACCENT']};
-    border: none;
+    border: 1px solid {C['DELETE_BG']};
 }}
-QPushButton#deleteBtn:hover {{ background-color: {C['DELETE_HOVER']}; }}
+QPushButton#deleteBtn:hover {{
+    background-color: {C['DELETE_HOVER']};
+    border-color: {C['DELETE_HOVER']};
+}}
+/* One height for every control that can share a row. Padding and border are
+   zeroed vertically and the height is fixed outright, so a field, a picker, a
+   date and a button beside each other line up to the pixel. */
+QPushButton, QLineEdit, QComboBox, QAbstractSpinBox {{
+    min-height: {ctl}px;
+    max-height: {ctl}px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}}
+/* Text-like buttons are not controls on a row: they keep their own height. */
+QPushButton#viewTab, QPushButton#linkRow, QPushButton#filterClear,
+QPushButton#filterChip, QPushButton#paneToggle, QPushButton#paneReveal,
+QPushButton#attachRemoveBtn, QPushButton#exampleLink {{
+    min-height: 0px;
+    max-height: 9999px;
+}}
+QPushButton#viewTab {{ padding: {s_md}px {s_lg}px; }}
+QPushButton#linkRow, QPushButton#attachRemoveBtn {{ padding: {s_xs}px 0px; }}
+QPushButton#filterClear, QPushButton#paneToggle,
+QPushButton#paneReveal {{ padding: {s_xs}px {s_md}px; }}
+QPushButton#filterChip {{ padding: {s_sm}px {s_lg}px; }}
+/* An example under a field: faint, like a placeholder, and a link on hover
+   because it opens the page it shows. */
+QPushButton#exampleLink {{
+    background: transparent;
+    border: none;
+    padding: {s_xs}px 0px;
+    text-align: left;
+    color: {C['INK_SOFT']};
+    font-weight: 400;
+}}
+QPushButton#exampleLink:hover {{ color: {C['ACCENT']}; text-decoration: underline; }}
 """
 
 

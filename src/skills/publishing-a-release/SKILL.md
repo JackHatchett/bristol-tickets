@@ -7,6 +7,7 @@ metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
   bristol.scripts: src/tools/bristol/make_release.py src/tools/bristol/app.py src/tools/test_tools/smoke.py src/tools/config_tools/instance_pointer.py
+  bristol.subtitle: Publish a Bristol release on GitHub
 ---
 # publishing-a-release
 

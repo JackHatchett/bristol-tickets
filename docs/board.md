@@ -43,13 +43,6 @@ an agent can be made and corrected with no AI and no text editor.
 [agents.md](agents.md) §Without an AI, and without a text editor describes the
 form field by field.
 
-**Courses** lists every course that has been rendered, how many lessons each
-has and where you last stopped in it. **Study** starts a small server on your
-own machine and opens the course in your browser, on the lesson you had open
-last; **Stop serving** ends it, and closing the app does too. The lesson is
-drawn by the browser rather than by the app, so it keeps the styling the pages
-were built with. [studying.md](studying.md) is the whole of it.
-
 **Settings** holds every choice this installation makes, the agent your next
 session runs as included.
 

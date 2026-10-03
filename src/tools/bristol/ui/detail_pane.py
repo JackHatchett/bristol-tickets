@@ -59,7 +59,9 @@ from .theme import (
     STATUS_CHOICES,
     TIER_CHOICES,
     TIER_HINT,
-    FLEET_AGENTS,
+    fill_agents,
+    fleet_agents,
+    select_agent,
     LAYOUT,
     _fmt_dt,
     _get_epic_badge,
@@ -97,7 +99,7 @@ class DetailPane(QWidget):
         # ----- header: number and title, and the collapse control -----------
         head = QHBoxLayout()
         head.setSpacing(space("md"))
-        self.title = QLabel("Select a card to read and edit it here.")
+        self.title = QLabel("")
         self.title.setWordWrap(True)
         title_font = QFont()
         title_font.setPointSize(type_size("section"))
@@ -123,7 +125,7 @@ class DetailPane(QWidget):
         self.status_combo = fill_words(QComboBox(), STATUS_CHOICES)
         self.stage_combo = fill_words(QComboBox(), STAGE_CHOICES)
         self.owner_combo = QComboBox()
-        self.owner_combo.addItems(FLEET_AGENTS)
+        fill_agents(self.owner_combo, fleet_agents())
         self.epic_combo = QComboBox()
         self.size_combo = fill_words(QComboBox(), SIZE_CHOICES,
                                        hint=SIZE_HINT)
@@ -158,8 +160,9 @@ class DetailPane(QWidget):
         self.stage_combo.currentIndexChanged.connect(
             lambda _index: self._write_placement(
                 "stage", self.stage_combo.currentData()))
-        self.owner_combo.currentTextChanged.connect(
-            lambda value: self._write_field("assignee", value))
+        self.owner_combo.currentIndexChanged.connect(
+            lambda _index: self._write_field(
+                "assignee", self.owner_combo.currentData()))
         self.epic_combo.currentIndexChanged.connect(self._write_epic)
         self.size_combo.currentIndexChanged.connect(self._write_size)
         self.block_combo.currentIndexChanged.connect(self._write_block_reason)
@@ -319,7 +322,7 @@ class DetailPane(QWidget):
         self.task_id = None
         self.epic_id = None
         self._loading = True
-        self.title.setText("Select a card to read and edit it here.")
+        self.title.setText("")
         self.controls.setVisible(False)
         self.desc.clear()
         self._fit_description()
@@ -429,12 +432,7 @@ class DetailPane(QWidget):
     def _select_owner(self, value: str | None) -> None:
         """A legacy owner outside the fleet list is added rather than silently
         rewritten — same contract as the dialog's picker."""
-        value = (value or "user").strip() or "user"
-        index = self.owner_combo.findText(value)
-        if index < 0:
-            self.owner_combo.addItem(value)
-            index = self.owner_combo.findText(value)
-        self.owner_combo.setCurrentIndex(index)
+        select_agent(self.owner_combo, value)
 
     def _load_epics(self, current_epic_id: int | None) -> None:
         """Only active epics are offered, plus the one this ticket already

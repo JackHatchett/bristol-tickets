@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 import re
 import subprocess
@@ -558,31 +559,6 @@ def check_bristol() -> list[str]:
         theme.DEFAULT_THEME, theme.DEFAULT_MODE, False))
     ok.append("a card paints under every scheme")
 
-    # The Courses tab against a courses root that is not there. A root is
-    # declared long before it exists, so the tab that raises on one is the tab
-    # a fresh clone opens on.
-    import os
-
-    from ui.courses_tab import CoursesTab
-
-    was = os.environ.get("TEACHING_ASSISTANT_COURSES_DIR")
-    os.environ["TEACHING_ASSISTANT_COURSES_DIR"] = str(
-        Path(tempfile.gettempdir()) / "smoke_no_courses_here")
-    try:
-        courses = CoursesTab()
-    finally:
-        if was is None:
-            os.environ.pop("TEACHING_ASSISTANT_COURSES_DIR", None)
-        else:
-            os.environ["TEACHING_ASSISTANT_COURSES_DIR"] = was
-    if courses.list.count():
-        raise SmokeFailure("the Courses tab lists a course with no courses root")
-    if not courses.status.text().strip():
-        raise SmokeFailure("the Courses tab says nothing about an absent courses root")
-    if courses.study_btn.isEnabled():
-        raise SmokeFailure("the Courses tab offers Study with nothing to study")
-    courses.shutdown()
-    ok.append("the Courses tab reports an absent courses root and offers nothing")
 
     schema = TOOLS / "bristol" / "schema.sql"
     if schema.exists():
@@ -677,12 +653,19 @@ def check_bristol() -> list[str]:
         for key, column in win.columns.items():
             if column.findChildren(QPushButton):
                 raise SmokeFailure(f"the {key} column header carries a control")
+        win._show_page(win._settings_tab_index)
+        if not (win.refresh_btn.isHidden() and win.global_create_btn.isHidden()):
+            raise SmokeFailure("Refresh and Create show on a page with no tickets")
+        for page_index in sorted(win._card_page_indexes):
+            win._show_page(page_index)
+            if win.refresh_btn.isHidden() or win.global_create_btn.isHidden():
+                raise SmokeFailure("Refresh and Create are missing from a ticket page")
         win._show_page(0)
         win.refresh_btn.click()
         if win.columns["todo"].list_widget.count() != 1:
             raise SmokeFailure("Refresh did not reload the board from another tab")
         win._show_page(win._board_tab_index)
-        ok.append("Refresh and Create are the header's; the board's row "
+        ok.append("Refresh and Create are the header's on the ticket pages only; the board's row "
                   "narrows the board and nothing more; a column header holds "
                   "no control")
 
@@ -1424,8 +1407,23 @@ def check_bristol() -> list[str]:
                 raise SmokeFailure("unchosen agents survived into the config")
             if cfg["active_agent"] != "chief_of_staff":
                 raise SmokeFailure("active_agent was not set from the chosen agents")
-            if "markdown_notebook" in cfg or "zotero" in cfg:
+            if "zotero" in cfg:
                 raise SmokeFailure("a skipped integration was written into the config")
+            # No notebook chosen: Bristol keeps its own inside the instance,
+            # with its three folders attached and created at setup.
+            own = cfg.get("markdown_notebook") or {}
+            if own.get("notes_dir") != str(scratch_root / "data" / "tester" / "notebook") \
+                    or own.get("folders") != ["inbox", "ai_workspace", "archive"]:
+                raise SmokeFailure(f"a skipped notebook did not become Bristol's own: {own}")
+            made = wiz._declared_dirs(scratch_root, cfg, scratch_root / "data" / "tester")
+            if scratch_root / "data" / "tester" / "notebook" / "inbox" not in made:
+                raise SmokeFailure("Bristol's own notebook folders are not created at setup")
+            chosen_nb = wiz.build_config(
+                root=scratch_root, instance_dir=scratch_root / "data" / "tester",
+                slug="tester", agents=["chief_of_staff"],
+                notebook=str(scratch_root / "elsewhere"), zotero="")
+            if chosen_nb["markdown_notebook"].get("folders") != []:
+                raise SmokeFailure("a chosen notebook arrives with folders attached")
             blob = json.dumps(cfg)
             for token in ("<your-instance>", "/path/to/project", "/path/to/notebook",
                           "/path/to/Zotero"):
@@ -1692,6 +1690,14 @@ def check_bristol() -> list[str]:
                                        "is still offered")
                 if hasattr(tab, "save_btn"):
                     raise SmokeFailure("a Save button still stands on Settings")
+                # Where things are: one button opens the notebook and its
+                # folders, one every other location, and both windows build.
+                if tab.notebook_btn.text() != "Notebook…" or \
+                        tab.locations_btn.text() != "Locations…":
+                    raise SmokeFailure("Settings does not offer Notebook and Locations")
+                from ui.folders import LocationsDialog, NotebookDialog
+                NotebookDialog(tab).close()
+                LocationsDialog(tab).close()
                 tab.suggested_commit.setChecked(
                     not config_file.get(config_file.SUGGESTED_COMMIT, True))
                 if config_file.get(config_file.SUGGESTED_COMMIT) is not \
@@ -1708,9 +1714,12 @@ def check_bristol() -> list[str]:
                 # other: it loads from the configuration, moves only on a
                 # deliberate choice, and reaches the file on that choice.
                 picker = tab.next_agent
-                if picker.currentText() not in config_file.agent_slugs():
+                if picker.currentData() not in config_file.agent_slugs():
                     raise SmokeFailure("the agent picker does not show a configured agent")
-                if picker.currentText() != config_file.get("active_agent"):
+                from ui.theme import agent_caption as _agent_caption
+                if picker.currentText() != _agent_caption(picker.currentData()):
+                    raise SmokeFailure("the agent picker shows a slug, not a name")
+                if picker.currentData() != config_file.get("active_agent"):
                     raise SmokeFailure("the agent picker opens on an agent that is not active")
                 if not picker.isEnabled():
                     raise SmokeFailure("the agent picker is not selectable")
@@ -1734,10 +1743,10 @@ def check_bristol() -> list[str]:
                         "a wheel gesture or an arrow key moved the agent picker")
 
                 # Loading a value is not a choice; choosing one is.
-                picker.setCurrentText("librarian")
+                picker.setCurrentIndex(picker.findData("librarian"))
                 if chosen:
                     raise SmokeFailure("loading a value into the agent picker wrote it")
-                picker.activated.emit(picker.findText("librarian"))
+                picker.activated.emit(picker.findData("librarian"))
                 if chosen != ["librarian"]:
                     raise SmokeFailure("choosing an agent did not report the choice")
                 if config_file.get("active_agent") != "librarian":
@@ -1832,31 +1841,51 @@ def check_bristol() -> list[str]:
 
             _orig_run = SkillsTab._run
             SkillsTab._run = _stub_run
+            import ui.skills_tab as _skills_mod
+            from ui.theme import CARD_ROLE as _CARD_ROLE
             try:
+                for _r in listing["skills"] + [fresh]:
+                    _r["title"] = _loader.title_phrase(_r["name"])
+                    _r["subtitle"] = _loader.subtitle_phrase(_r)
                 stab = SkillsTab(mconn)
-                texts = [stab.list.item(i).text()
-                         for i in range(stab.list.count())]
-                rows = [t.splitlines()[0] for t in texts]
-                # One list, every row a skill: an import lands where a session
-                # loads from, and nothing is held in a section of its own.
-                if rows != ["native-one", "with-code", "scanned"]:
-                    raise SmokeFailure(f"Skills lists something other than the skills: {rows}")
-                from ui.skills_tab import IMPORT_NOTE
-                if stab.import_note.text() != IMPORT_NOTE:
-                    raise SmokeFailure("the page does not say what Import does")
-                for phrase in ("scans", "every session can use it",
-                               "nothing is added"):
-                    if phrase not in IMPORT_NOTE:
-                        raise SmokeFailure(
-                            f"the Import note does not say {phrase!r}")
-                # A row carries what the import's scan found.
-                if "Scanned, nothing found" not in texts[2].splitlines()[1]:
-                    raise SmokeFailure("a scanned skill's row does not say what the scan found")
+
+                def _cards():
+                    return [stab.list.item(i).data(_CARD_ROLE)
+                            for i in range(stab.list.count())
+                            if stab.list.item(i).data(Qt.UserRole)]
+
+                def _named():
+                    return [c["title"] for c in _cards()]
+
+                # One list, every row a skill, ordered by the name a person
+                # reads and shown in Title Case.
+                if _named() != ["Native One", "Scanned", "With Code"]:
+                    raise SmokeFailure(f"Skills lists something other than the skills: {_named()}")
+                if _loader.title_phrase("checking-a-wiki-for-disagreements") != \
+                        "Checking a Wiki for Disagreements":
+                    raise SmokeFailure("a skill's name is not put in Title Case")
+                # The page explains nothing in sentences and reports nothing.
+                for gone in ("import_note", "status", "address", "open_btn",
+                             "remove_btn"):
+                    if hasattr(stab, gone):
+                        raise SmokeFailure(f"the Skills page still carries {gone}")
+                if stab.search.placeholderText() != "Filter":
+                    raise SmokeFailure("the narrowing field is not labelled Filter")
+                cards = {c["title"]: c for c in _cards()}
+                if cards["Scanned"]["meta"].find("Scanned, nothing found") < 0:
+                    raise SmokeFailure("a scanned skill's card does not say what the scan found")
+                if cards["With Code"]["pills"] != ["Chief of Staff"]:
+                    raise SmokeFailure("a card does not carry the agents holding it")
+                if "Downloaded from someone/repo@abc1234" not in cards["With Code"]["meta"]:
+                    raise SmokeFailure("a card does not say where a skill was downloaded from")
+                if "Came with Bristol" not in cards["Native One"]["meta"]:
+                    raise SmokeFailure("a card still expects the reader to know 'native'")
+                if cards["Native One"]["description"] != "A native skill":
+                    raise SmokeFailure("a card does not carry the skill's subtitle")
                 if _loader.scan_phrase(dict(listing["skills"][2], scan={
                         "scanners": ["bandit"], "ran": True, "findings": [],
                         "unread": ["scripts/x.ps1"]})) != "Code not fully scanned":
                     raise SmokeFailure("code no scanner read reads as scanned")
-                # An import stops on anything short of a whole, clean scan.
                 if _loader.refusal({"ran": True, "findings": [], "unread": []}):
                     raise SmokeFailure("a whole, clean scan is refused")
                 for partial in ({"ran": False, "findings": [], "unread": []},
@@ -1865,94 +1894,42 @@ def check_bristol() -> list[str]:
                                     {"severity": "MEDIUM"}]}):
                     if not _loader.refusal(partial):
                         raise SmokeFailure(f"an import goes ahead on {partial}")
-                if _loader.scan_phrase(dict(listing["skills"][1], scan={})) != "Code not fully scanned":
-                    raise SmokeFailure("a skill never scanned reads as scanned")
                 if _loader.scan_phrase(listing["skills"][0]):
                     raise SmokeFailure("a skill with no code carries a scan line")
-                # Every value below the name says what it is, so nothing on the
-                # row has to be recognised to be read.
-                coded_row = [t for t in texts if t.startswith("with-code")][0]
-                native_row = [t for t in texts if t.startswith("native-one")][0]
-                facts = coded_row.splitlines()[1]
-                if "Held by chief_of_staff" not in facts:
-                    raise SmokeFailure("Skills does not say the agents are the holders")
-                if "Downloaded from someone/repo@abc1234" not in facts:
-                    raise SmokeFailure("Skills does not say where a skill was downloaded from")
-                if "Came with Bristol" not in native_row.splitlines()[1]:
-                    raise SmokeFailure("Skills still expects the reader to know 'native'")
-                if "Held by no agent" not in native_row.splitlines()[1]:
-                    raise SmokeFailure("Skills leaves an unheld skill's holders unsaid")
-                # A skill carrying code does not read like one that carries none,
-                # and a count agrees with the noun beside it.
-                coded = [s for s in listing["skills"] if s["scripts"]][0]
-                plain = [s for s in listing["skills"] if not s["scripts"]][0]
-                if coded["said_contents"] == plain["said_contents"]:
-                    raise SmokeFailure("Skills describes code and no code identically")
-                if "no code" not in plain["said_contents"]:
-                    raise SmokeFailure("Skills does not say when a skill carries no code")
                 if _loader.contents_phrase({"files": 1, "scripts": []}) != "one file, no code":
                     raise SmokeFailure("a count and its noun disagree in number")
-                # A description longer than the list is cut visibly rather than
-                # running under the right-hand edge.
-                long_one = dict(plain, name="long-one",
-                                description="word " * 400, holders=[])
-                long_one["said_holders"] = _loader.holders_phrase([])
-                listing["skills"].append(long_one)
-                stab.reload()
-                drawn = [t for t in
-                         (stab.list.item(i).text() for i in range(stab.list.count()))
-                         if t.startswith("long-one")][0].splitlines()[2]
-                if len(drawn) >= len(long_one["description"]):
-                    raise SmokeFailure("Skills does not cut a long description to the row")
-                listing["skills"].remove(long_one)
-                stab.reload()
+                if _loader.subtitle_phrase({"description": "Deepfake detection — and more. Use when"}) \
+                        != "Deepfake detection":
+                    raise SmokeFailure("a skill with no subtitle is not cut to its first phrase")
 
-                # There is no trust control: an import is usable or refused.
-                if hasattr(stab, "trust_btn"):
-                    raise SmokeFailure("the page still offers a trust control")
-                if hasattr(stab, "attach_btn") or hasattr(stab, "detach_btn"):
-                    raise SmokeFailure("attaching is still on the tab's bottom row")
-                stab._select("native-one")
-                if stab.remove_btn.isEnabled():
-                    raise SmokeFailure("a native skill can be removed from the app")
-                stab._select("with-code")
-                if not stab.open_btn.isEnabled():
-                    raise SmokeFailure("a selected skill cannot be opened")
-
-                # The bottom row narrows the list three ways, and they narrow
-                # together.
                 from ui.skills_tab import (
                     ANY_AGENT,
                     ANY_SOURCE,
                     CAME_WITH,
                     NO_AGENT,
+                    NewSkillDialog,
                     SkillDialog,
                 )
-
-                def _named():
-                    return [stab.list.item(i).text().splitlines()[0]
-                            for i in range(stab.list.count())
-                            if stab.list.item(i).data(Qt.UserRole)]
-
                 stab.search.setText("scripts")
-                if _named() != ["with-code"]:
+                if _named() != ["With Code"]:
                     raise SmokeFailure(f"the text filter does not narrow: {_named()}")
                 stab.search.clear()
                 stab.source.setCurrentText(CAME_WITH)
-                if _named() != ["native-one"]:
+                if _named() != ["Native One"]:
                     raise SmokeFailure(f"the source filter does not narrow: {_named()}")
                 stab.source.setCurrentText(ANY_SOURCE)
-                stab.holder.setCurrentText("chief_of_staff")
-                if _named() != ["with-code"]:
+                stab.holder.setCurrentText("Chief of Staff")
+                if _named() != ["With Code"]:
                     raise SmokeFailure(f"the agent filter does not narrow: {_named()}")
                 stab.holder.setCurrentText(NO_AGENT)
-                if "with-code" in _named():
+                if "With Code" in _named():
                     raise SmokeFailure("the no-agent filter keeps a held skill")
                 stab.holder.setCurrentText(ANY_AGENT)
                 if len(_named()) != 3:
                     raise SmokeFailure("clearing the filters does not restore the list")
 
-                # A skill opens, and that is where its agents are chosen.
+                # A skill opens, and that is where its agents are chosen and a
+                # downloaded one is removed.
                 writes: list[tuple] = []
 
                 def _dialog_run(*args):
@@ -1965,10 +1942,8 @@ def check_bristol() -> list[str]:
                                   ["chief_of_staff", "librarian"],
                                   "---\nname: with-code\n---\nthe body",
                                   _dialog_run)
-                if "the body" not in dlg.body.toPlainText():
-                    raise SmokeFailure("a skill's view does not show its SKILL.md")
-                if dlg.body.toPlainText() != dlg.body.toPlainText() or not dlg.body.isReadOnly():
-                    raise SmokeFailure("a skill's view offers to edit published source")
+                if "the body" not in dlg.body.toPlainText() or not dlg.body.isReadOnly():
+                    raise SmokeFailure("a skill's view does not show its SKILL.md read-only")
                 if dlg.files.count() != len(coded_record["file_list"]):
                     raise SmokeFailure("a skill's view does not list its files")
                 if dlg.source_btn is None or coded_record["source_url"] not in dlg.source_btn.toolTip():
@@ -1981,8 +1956,22 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure("ticking an agent did not attach through the loader")
                 if ("detach", "with-code", "--agent", "chief_of_staff") not in writes:
                     raise SmokeFailure("unticking an agent did not detach through the loader")
+                asked: list[str] = []
+                _real_confirm = _skills_mod.dialogs.confirm
+                _skills_mod.dialogs.confirm = (
+                    lambda parent, title, body, label, *a, **k:
+                    asked.append(title) or False)
+                try:
+                    dlg._remove()
+                finally:
+                    _skills_mod.dialogs.confirm = _real_confirm
+                if not asked or ("remove", "with-code") in writes or dlg.removed:
+                    raise SmokeFailure("Remove deleted a skill without a confirmation")
+                removes = [b for b in dlg.findChildren(QPushButton)
+                           if b.text() == "Remove"]
+                if len(removes) != 1:
+                    raise SmokeFailure("a downloaded skill's view does not offer Remove")
 
-                # A native skill opens and reads, and offers no edit either.
                 native = SkillDialog(None, listing["skills"][0],
                                      ["chief_of_staff"], "native text",
                                      _dialog_run)
@@ -1990,38 +1979,85 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure("a native skill's view does not read")
                 if native.source_btn is not None:
                     raise SmokeFailure("a native skill's view offers a source it has none of")
+                if any(b.text() == "Remove" for b in native.findChildren(QPushButton)):
+                    raise SmokeFailure("a native skill can be removed from the app")
 
-                # An import reports the skill, that it is usable, where it came
-                # from, what is in it, what the scan found and the card, in order.
-                report = stab.status.text()
-                if report:
-                    raise SmokeFailure("the page reports before anything ran")
-                stab.address.setText("https://github.com/someone/other/tree/main/fresh")
-                stab._import()
-                report = stab.status.text()
-                places = [report.find(bit) for bit in
-                          ("fresh", "ready to use",
-                           "Downloaded from someone/other@0000000",
-                           "two files, one of them code", "Scanned, nothing found")]
-                if -1 in places or places != sorted(places):
-                    raise SmokeFailure(
-                        f"the import report does not say the five things in order: {report!r}")
-                if stab._selected_name() != "fresh":
-                    raise SmokeFailure("the imported skill is not selected in the list")
-                # A scan finding stops the import: nothing is added, and the
-                # page shows what was found and where.
-                count = len(listing["skills"])
-                stab.address.setText("https://github.com/someone/risky/tree/main/risky")
-                stab._import()
-                if len(listing["skills"]) != count:
-                    raise SmokeFailure("a skill the scan flagged was added")
-                if "scripts/x.py:7" not in stab.status.text():
-                    raise SmokeFailure("a refused import does not show what the scan found")
+                # Import is one field in a window of its own, with a live
+                # example under it, and a refused import keeps the window.
+                filed: list[tuple] = []
+                imp = NewSkillDialog(None, lambda *a: _stub_run(stab, *a),
+                                     lambda t, b: filed.append((t, b)) or "")
+                if imp.go_btn.isEnabled():
+                    raise SmokeFailure("New Skill can be pressed with nothing chosen")
+                if not (imp.request_fields.isHidden() and imp.import_fields.isHidden()):
+                    raise SmokeFailure("New Skill opens with a section already open")
+                imp.request_choice.setChecked(True)
+                if imp.request_fields.isHidden() or not imp.import_fields.isHidden():
+                    raise SmokeFailure("choosing Request does not open only its fields")
+                imp.title.setText("Tide tables")
+                if imp.go_btn.isEnabled():
+                    raise SmokeFailure("a request can be sent without its body")
+                imp.request.setPlainText("Read the local tide tables.")
+                imp._go()
+                if filed != [("Tide tables", "Read the local tide tables.")] or not imp.filed:
+                    raise SmokeFailure(f"a request did not file as asked: {filed}")
+                if not stab._standing_epic() is None and not isinstance(stab._standing_epic(), int):
+                    raise SmokeFailure("the standing epic lookup returns something else")
+                # What a request files: the card's title, column, owner and
+                # body, through the board's own writer.
+                ran: list[list] = []
 
+                class _Done:
+                    returncode, stdout, stderr = 0, "OK", ""
+
+                _real_sp_run = _skills_mod.subprocess.run
+                _skills_mod.subprocess.run = lambda args, **k: ran.append(args) or _Done()
+                try:
+                    problem = stab._file_request("Tide tables", "Read them.")
+                finally:
+                    _skills_mod.subprocess.run = _real_sp_run
+                if problem or not ran:
+                    raise SmokeFailure(f"a request did not reach the ticket writer: {problem!r}")
+                filed_args = ran[0]
+                for flag, value in (("--title", "New Skill: Tide tables"),
+                                    ("--description", "Read them."),
+                                    ("--stage", "active"), ("--status", "todo"),
+                                    ("--assignee", "chief_of_staff"),
+                                    ("--reporter", "user")):
+                    if filed_args[filed_args.index(flag) + 1] != value:
+                        raise SmokeFailure(f"a request files {flag} wrong: {filed_args}")
+                if filed_args[2] != "add-task" or "ticket_write.py" not in filed_args[1]:
+                    raise SmokeFailure("a request is not filed through ticket_write add-task")
+                imp = NewSkillDialog(None, lambda *a: _stub_run(stab, *a),
+                                     lambda t, b: "")
+                imp.import_choice.setChecked(True)
+                if imp.go_btn.text() != "Import" or imp.import_fields.isHidden():
+                    raise SmokeFailure("choosing Import does not open the import")
+                if not imp.example.text().startswith("Example: https://github.com/"):
+                    raise SmokeFailure("the Import window carries no example address")
+                refusals: list[str] = []
+                _real_notify = _skills_mod.dialogs.notify
+                _skills_mod.dialogs.notify = (lambda parent, title, body, *a, **k:
+                                              refusals.append(body))
+                try:
+                    count = len(listing["skills"])
+                    imp.address.setText("https://github.com/someone/risky/tree/main/risky")
+                    imp._go()
+                    if len(listing["skills"]) != count or imp.imported:
+                        raise SmokeFailure("a skill the scan flagged was added")
+                    if not any("scripts/x.py:7" in r for r in refusals):
+                        raise SmokeFailure("a refused import does not show what the scan found")
+                    imp.address.setText("https://github.com/someone/other/tree/main/fresh")
+                    imp._go()
+                    if not imp.imported or len(listing["skills"]) != count + 1:
+                        raise SmokeFailure("a clean import did not land")
+                finally:
+                    _skills_mod.dialogs.notify = _real_notify
             finally:
                 SkillsTab._run = _orig_run
-            ok.append("Skills reads one listing, imports into it with the scan shown, "
-                      "narrows three ways, and attaches from a skill's own view")
+            ok.append("Skills shows cards in Title Case, filters from the top row, "
+                      "imports in a window of its own, and attaches and removes "
+                      "from a skill's own view")
 
             skills_win = MainWindow(mconn)
             names = [b.text() for b in skills_win._tab_buttons]
@@ -2113,19 +2149,22 @@ def check_bristol() -> list[str]:
                 if filled._edit_args(values, filled.extra.values(), blank_file,
                                      blank_file) != [record["slug"]]:
                     raise SmokeFailure("an untouched form would still have written")
-            # Each kind of property gets its own kind of control, and every
-            # zone an agent holds has a box, including one this build predates.
-            if set(filled.zone_boxes) < set(record["notebook_access"]
-                                            .get("write_zones") or []):
-                raise SmokeFailure(
-                    f"a write zone {record['slug']} holds has no box: "
-                    f"{sorted(filled.zone_boxes)}")
-            if filled.notebook_read.isChecked() != bool(
-                    record["notebook_access"].get("read")):
-                raise SmokeFailure("the Read box disagrees with the entry")
-            if filled.archive_moves.isChecked() != bool(
-                    record["notebook_access"].get("archive_moves")):
-                raise SmokeFailure("the Archive box disagrees with the entry")
+            # Notebook access is a mode and, under Per Folder, one row per
+            # attached folder; a choice survives a trip through Read All.
+            access = filled.notebook
+            stored = record["notebook_access"]
+            if access.mode() != stored.get("mode", "per_folder"):
+                raise SmokeFailure("the notebook mode disagrees with the entry")
+            if access.choices:
+                first = next(iter(access.choices))
+                access.choices[first]["write"].setChecked(True)
+                access.mode_buttons["read_all"].setChecked(True)
+                if not access.rows.isHidden():
+                    raise SmokeFailure("Read All still shows the folder rows")
+                access.mode_buttons["per_folder"].setChecked(True)
+                if access.values()["folders"].get(first) != "write" \
+                        or access.rows.isHidden():
+                    raise SmokeFailure("a folder choice was lost going through Read All")
             if filled.extra.isVisibleTo(filled) != bool(record["extra"]):
                 raise SmokeFailure(
                     "the Other Keys section shows for an agent with no such keys"
@@ -2154,12 +2193,20 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure(
                         f"a blank form requires the wrong fields: {blank.missing()}")
             blank.charter.setPlainText("")
-            blank._save()
+            import ui.agents_tab as _agents_tab
+            refused_with: list[str] = []
+            _real_agent_notify = _agents_tab.notify
+            _agents_tab.notify = (lambda parent, title, body, *a, **k:
+                                  refused_with.append(body))
+            try:
+                blank._save()
+            finally:
+                _agents_tab.notify = _real_agent_notify
+            said_back = " ".join(refused_with)
             for field in ("Name", "Description", "Charter"):
-                if field not in blank.problem.text():
+                if field not in said_back:
                     raise SmokeFailure(
-                        f"a refused save does not name {field}: "
-                        f"{blank.problem.text()!r}")
+                        f"a refused save does not name {field}: {said_back!r}")
             if blank.status:
                 raise SmokeFailure("a refused save reported a write")
             ok.append("New Agent opens on a starting charter and refuses a save "
@@ -3396,9 +3443,14 @@ def check_published_files() -> list[str]:
         needles |= {str(name) for name in json.loads(private)
                     if len(str(name)) > 2}
     # A repository's own address is a published fact, and it names the account
-    # that hosts it. Clone lines are masked before the scan for that reason.
+    # that hosts it. Clone lines are masked before the scan for that reason, and
+    # so is the address of any other repository on that same account — an
+    # add-on the app links to is published the same way.
     origin = git_cfg("remote.origin.url")
     published = {u for u in (origin, origin.removesuffix(".git")) if len(u) > 2}
+    account = origin.removesuffix(".git").rsplit("/", 1)[0] + "/"
+    sibling = (re.compile(re.escape(account) + r"[A-Za-z0-9._-]+")
+               if account.count("/") >= 3 else None)
 
     hits: list[str] = []
     for path in _tracked_files(root):
@@ -3410,6 +3462,8 @@ def check_published_files() -> list[str]:
             continue
         for url in published:
             text = text.replace(url, "")
+        if sibling is not None:
+            text = sibling.sub("", text)
         rel = path.relative_to(root)
         for needle in needles:
             if needle.lower() in text.lower():
@@ -3792,8 +3846,9 @@ def check_agent_tools() -> list[str]:
             "--charter-file", str(written),
             "--data-path", "data/scratch",
             "--read-path", "data/reference",
-            "--notebook-read", "yes", "--write-zone", "workspace",
-            "--archive-moves", "yes",
+            "--notebook-mode", "per_folder",
+            "--notebook-folder", "inbox=write",
+            "--notebook-folder", "journal=read",
             "--env", "SMOKE_HOME=/elsewhere", cwd=scratch)
         if code != 0:
             raise SmokeFailure(f"editing an agent failed: {(err or out).strip()}")
@@ -3803,9 +3858,9 @@ def check_agent_tools() -> list[str]:
             raise SmokeFailure("the edited charter is not what was supplied")
         if after["description"] != "A scratch agent, renamed.":
             raise SmokeFailure("the description did not reach the entry")
-        if after["notebook_access"] != {"read": True,
-                                        "write_zones": ["workspace"],
-                                        "archive_moves": True}:
+        if after["notebook_access"] != {"mode": "per_folder",
+                                        "folders": {"inbox": "write",
+                                                    "journal": "read"}}:
             raise SmokeFailure(
                 f"notebook access is not what was set: {after['notebook_access']}")
         if after["env"] != {"SMOKE_HOME": "/elsewhere"}:
@@ -3980,6 +4035,70 @@ def check_ticket_tier() -> list[str]:
     return ok
 
 
+def check_notebook_access() -> list[str]:
+    """What an agent may do in the notebook, and every location config holds.
+
+    Pure functions over a configuration held in memory, so nothing on disk is
+    read or written.
+    """
+    sys.path.insert(0, str(TOOLS / "config_tools"))
+    import locations
+    import notebook
+
+    ok: list[str] = []
+    data = {"markdown_notebook": {"notes_dir": "/nb", "folders": ["inbox", "journal", "journal/private"]},
+            "agents": {"a": {"notebook_access": {"mode": "per_folder", "folders": {
+                "inbox": "write", "journal": "read", "journal/private": "hide",
+                "gone": "write"}}}}}
+    folders = notebook.attached(data)
+    entry = data["agents"]["a"]["notebook_access"]
+    if notebook.effective(entry, folders) != {"inbox": "write", "journal": "read",
+                                              "journal/private": "hide"}:
+        raise SmokeFailure("a choice for a folder that is not attached was honoured")
+    if notebook.may(entry, folders, "journal/private/x.md") != "hide" \
+            or notebook.may(entry, folders, "journal/2026/x.md") != "read" \
+            or notebook.may(entry, folders, "elsewhere/x.md") != "hide":
+        raise SmokeFailure("the deepest attached folder does not decide a path")
+    ok.append("per folder: the deepest attached folder decides, and unattached is hidden")
+
+    notebook.set_access("a", "read_all", None, data)
+    if notebook.may(data["agents"]["a"]["notebook_access"], folders, "elsewhere/x.md") != "read":
+        raise SmokeFailure("Read All does not reach the whole notebook")
+    notebook.set_access("a", "per_folder", None, data)
+    if notebook.effective(data["agents"]["a"]["notebook_access"], folders)["inbox"] != "write":
+        raise SmokeFailure("a per-folder choice was lost going through Read All")
+    ok.append("Read All reaches everything, and Per Folder comes back with its choices")
+
+    notebook.detach("journal", data)
+    if "journal" in data["agents"]["a"]["notebook_access"]["folders"] \
+            or "journal" in notebook.attached(data):
+        raise SmokeFailure("detaching a folder left it with an agent")
+    notebook.repoint("/other", data)
+    if notebook.attached(data) or data["agents"]["a"]["notebook_access"]["folders"]:
+        raise SmokeFailure("repointing the notebook kept the old notebook's folders")
+    if data["agents"]["a"]["notebook_access"]["mode"] != "per_folder":
+        raise SmokeFailure("repointing the notebook changed an agent's mode")
+    ok.append("detaching drops a folder from every agent; repointing clears the list")
+
+    found: list = []
+    locations._walk({"markdown_notebook": {"notes_dir": "/nb", "folders": ["x"],
+                                           "reports_dir": "/nb/reports"},
+                     "important_paths": {"tickets_db": "data/i/tickets.db"},
+                     "agents": {"a": {"identity": "src/agent_identities/a.md",
+                                      "env": {"HOME_DIR": "/somewhere", "MODE": "fast"},
+                                      "key_data_paths": [{"path": "data/i/a", "access": "write"}]}},
+                     "keyword_scan": {"keywords": ["x/y"]}}, [], found)
+    got = {tuple(p) for p, _ in found}
+    wanted = {("markdown_notebook", "reports_dir"), ("important_paths", "tickets_db"),
+              ("agents", "a", "identity"), ("agents", "a", "env", "HOME_DIR"),
+              ("agents", "a", "key_data_paths", 0, "path")}
+    if got != wanted:
+        raise SmokeFailure(f"Locations lists the wrong keys: {sorted(got ^ wanted)}")
+    ok.append("Locations lists every path config holds and nothing else, "
+              "leaving the notebook folder to the Notebook window")
+    return ok
+
+
 TARGETS = {
     "bristol": check_bristol,
     "agent_tools": check_agent_tools,
@@ -3994,6 +4113,7 @@ TARGETS = {
     "bluesky_images": check_bluesky_images,
     "published_files": check_published_files,
     "ticket_tier": check_ticket_tier,
+    "notebook_access": check_notebook_access,
 }
 
 

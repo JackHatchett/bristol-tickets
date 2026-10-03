@@ -2,7 +2,7 @@
 """
 personal_write.py — write CLI for personal.db.
 
-Subcommands for the applications and learning domains — books live in Zotero,
+Subcommands for the applications and contacts domains — books live in Zotero,
 see src/tools/zotero/ and src/skills/add-book/SKILL.md:
 
   add-application     --company C --role R [--status ... --fit-verdict ... --gaps ...
@@ -10,11 +10,7 @@ see src/tools/zotero/ and src/skills/add-book/SKILL.md:
                       --contact ... --referral ... --jd-link ... --year YYYY --fit-notes ...]
   update-application  --id N  [any of the same fields]
   find-company        --company C     # "have I applied here?" lookup for career_coach
-  record-progress     --course C --lesson N --kind opened|reading|quiz|exercise
-                      [--item X --score S]
-  clear-progress      --course C --lesson N --kind ... [--item X]
-  find-place          [--course C]    # where to reopen a course, or every course
-  render              [--domain all|applications|learning|books]
+  render              [--domain all|applications|contacts|books]
 
 DB is SoT; mutating subcommands re-render the affected snapshot automatically
 unless --no-render is passed. Write-safety via db_common (MEMORY journal).
@@ -266,93 +262,6 @@ def find_contact(args) -> None:
     conn.close()
 
 
-KINDS = ("opened", "reading", "quiz", "exercise")
-
-
-def record(course: str, lesson: int, kind: str,
-           item: str = "", score: str | None = None) -> None:
-    """One thing the learner did. Doing it again updates that row."""
-    if kind not in KINDS:
-        raise ValueError("kind must be one of %s" % ", ".join(KINDS))
-    conn = dbc.connect()
-    conn.execute("""
-        INSERT INTO learning_progress(course,lesson,kind,item,score,recorded_at)
-        VALUES(?,?,?,?,?,?)
-        ON CONFLICT(course,lesson,kind,item) DO UPDATE SET
-          score=excluded.score,
-          recorded_at=excluded.recorded_at
-    """, (course, lesson, kind, item or "", score, _now()))
-    conn.commit()
-    conn.close()
-
-
-def clear(course: str, lesson: int, kind: str, item: str = "") -> int:
-    """Undo one recorded thing. Returns how many rows went."""
-    conn = dbc.connect()
-    cur = conn.execute(
-        "DELETE FROM learning_progress WHERE course=? AND lesson=? AND kind=? AND item=?",
-        (course, lesson, kind, item or ""))
-    conn.commit()
-    n = cur.rowcount
-    conn.close()
-    return n
-
-
-def marks(course: str, lesson: int) -> list[dict]:
-    """Every row recorded against one lesson: kind, item and score."""
-    conn = dbc.connect()
-    rows = conn.execute(
-        "SELECT kind, item, score, recorded_at FROM learning_progress "
-        "WHERE course=? AND lesson=? ORDER BY kind, item", (course, lesson)).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-
-def place(course: str | None = None) -> list[dict]:
-    """The lesson each course was last opened at, newest first."""
-    conn = dbc.connect()
-    if course:
-        rows = conn.execute(
-            "SELECT course, lesson, recorded_at FROM v_learning_place WHERE course=?",
-            (course,)).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT course, lesson, recorded_at FROM v_learning_place "
-            "ORDER BY recorded_at DESC").fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-
-def record_progress(args) -> None:
-    try:
-        record(args.course, args.lesson, args.kind, args.item, args.score)
-    except ValueError as exc:
-        sys.exit("record-progress: %s" % exc)
-    what = "%s lesson %s %s" % (args.course, args.lesson, args.kind)
-    print("\u2713 recorded %s%s" % (what, (" (%s)" % args.item) if args.item else ""))
-    if not args.no_render:
-        _rerender("learning")
-
-
-def clear_progress(args) -> None:
-    n = clear(args.course, args.lesson, args.kind, args.item)
-    what = "%s lesson %s %s" % (args.course, args.lesson, args.kind)
-    print("\u2713 cleared %s%s" % (what, (" (%s)" % args.item) if args.item else "")
-          if n else "nothing recorded for %s" % what)
-    if n and not args.no_render:
-        _rerender("learning")
-
-
-def find_place(args) -> None:
-    rows = place(args.course)
-    if not rows:
-        print("No course has been opened yet." if not args.course
-              else "%s has not been opened yet." % args.course)
-        return
-    for r in rows:
-        print("  %s \u2014 lesson %s (opened %s)" % (r["course"], r["lesson"], r["recorded_at"]))
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="personal.db write CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -431,26 +340,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     fc = sub.add_parser("find-contact"); fc.add_argument("--name", required=True)
     fc.set_defaults(func=find_contact)
-
-    g = sub.add_parser("record-progress")
-    g.add_argument("--course", required=True)
-    g.add_argument("--lesson", type=int, required=True)
-    g.add_argument("--kind", required=True, choices=KINDS)
-    g.add_argument("--item", default="")
-    g.add_argument("--score")
-    g.add_argument("--no-render", action="store_true")
-    g.set_defaults(func=record_progress)
-
-    c = sub.add_parser("clear-progress")
-    c.add_argument("--course", required=True)
-    c.add_argument("--lesson", type=int, required=True)
-    c.add_argument("--kind", required=True, choices=KINDS)
-    c.add_argument("--item", default="")
-    c.add_argument("--no-render", action="store_true")
-    c.set_defaults(func=clear_progress)
-
-    w = sub.add_parser("find-place"); w.add_argument("--course")
-    w.set_defaults(func=find_place)
 
     r = sub.add_parser("render"); r.add_argument("--domain", default="all")
     r.set_defaults(func=lambda args: _rerender(args.domain))

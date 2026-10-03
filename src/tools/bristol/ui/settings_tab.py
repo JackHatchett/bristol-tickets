@@ -50,12 +50,15 @@ except ImportError:  # pragma: no cover - only a stripped bundle reaches this
     default_window = standing_report = None
 
 from .dialogs import notify
+from .folders import LocationsDialog, NotebookDialog, any_missing
 from .settled_combo import SettledComboBox, fill_words
 from .theme import (
     LIGHT_MODE,
     MODE_CHOICES,
     NO_DARK_HALF,
     appearance_choice,
+    control_height,
+    fill_agents,
     collection_differences,
     install_collection,
     register_collection,
@@ -78,6 +81,15 @@ WORK_SCOPE_CHOICES = [
     (False, "One Ticket"),
     (True, "Whole Queue"),
 ]
+
+
+def _label(text: str) -> QLabel:
+    """A row's label, as tall as the control beside it and centred in that
+    height, so the words sit on the control's centre line."""
+    label = QLabel(text)
+    label.setMinimumHeight(control_height())
+    label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+    return label
 
 
 def _heading(text: str) -> QLabel:
@@ -156,6 +168,9 @@ class SettingsTab(QWidget):
         # No text of its own: the row label carries the words, so the box sits
         # in the control column with every picker.
         self.suggested_commit = QCheckBox()
+        # As tall as every other control in the form, so the box is centred on
+        # its label rather than sitting at the top of the row.
+        self.suggested_commit.setMinimumHeight(control_height())
         self.suggested_commit.toggled.connect(
             lambda on: self._write(config_file.SUGGESTED_COMMIT, on,
                                    "Git Commit on Session Close"))
@@ -171,10 +186,10 @@ class SettingsTab(QWidget):
         form.setVerticalSpacing(space("lg"))
 
         form.addRow(_heading("Bristol Tickets"))
-        form.addRow("Ticket Destination", self.new_ticket)
-        form.addRow("Theme", self.theme)
-        form.addRow("Light && Dark", self.mode)
-        form.addRow("Themes", self.manage)
+        form.addRow(_label("Ticket Destination"), self.new_ticket)
+        form.addRow(_label("Theme"), self.theme)
+        form.addRow(_label("Light & Dark"), self.mode)
+        form.addRow(_label("Themes"), self.manage)
         # Standing work is asked for rather than generated: a project epic
         # reports when it closes, and upkeep has no such moment, so the window
         # is the user's to name. The dates open on the last thirty days, so the
@@ -205,32 +220,52 @@ class SettingsTab(QWidget):
         report_row.addWidget(self.report_btn)
         report_row.addStretch(1)
 
+        # Where things are. Each button opens the window that repoints them,
+        # and carries the missing mark while anything it holds is not on disk.
+        self.notebook_btn = QPushButton("Notebook…")
+        self.notebook_btn.clicked.connect(
+            lambda: self._open_folders(NotebookDialog))
+        self.locations_btn = QPushButton("Locations…")
+        self.locations_btn.clicked.connect(
+            lambda: self._open_folders(LocationsDialog))
+        form.addRow(_heading("Folders"))
+        form.addRow(_label("Notebook"), self.notebook_btn)
+        form.addRow(_label("Locations"), self.locations_btn)
+
         form.addRow(_heading("Agent Sessions"))
-        form.addRow("Agent", self.next_agent)
-        form.addRow("Work Scope", self.work_scope)
-        form.addRow("Git Commit on Session Close", self.suggested_commit)
+        form.addRow(_label("Agent"), self.next_agent)
+        form.addRow(_label("Work Scope"), self.work_scope)
+        form.addRow(_label("Git Commit on Session Close"), self.suggested_commit)
         form.addRow(_heading("Reports"))
-        form.addRow("Standing Work", report_row)
-
-        self.status = QLabel()
-        self.status.setObjectName("formCaption")
-        self.status.setWordWrap(True)
-
-        buttons = QHBoxLayout()
-        buttons.setSpacing(space("lg"))
-        buttons.addWidget(self.status, 1)
+        form.addRow(_label("Standing Work"), report_row)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(space("xl"))
         layout.addLayout(form)
-        layout.addLayout(buttons)
         layout.addStretch(1)
 
         # Raised while reload() seats every control, so seating a stored value
         # is never mistaken for someone choosing it.
         self._loading = False
         self.reload()
+
+    def _open_folders(self, window) -> None:
+        window(self).exec()
+        self._mark_missing()
+
+    def _mark_missing(self) -> None:
+        """Put the missing mark on whichever folder button holds something
+        that is not on disk."""
+        try:
+            notebook, located = any_missing()
+        except Exception:  # noqa: BLE001 - a bare build has no tools to ask
+            notebook = located = False
+        for button, missing in ((self.notebook_btn, notebook),
+                                (self.locations_btn, located)):
+            button.setProperty("missing", missing)
+            button.style().unpolish(button)
+            button.style().polish(button)
 
     def _write_standing_report(self) -> None:
         """Write the report for the window on the page, and say where it went.
@@ -381,9 +416,7 @@ class SettingsTab(QWidget):
         try:
             config_file.update({key: value})
         except OSError as exc:
-            self.status.setText(f"{caption} not saved: {exc}")
-            return
-        self.status.setText(f"{caption} saved.")
+            notify(self, f"{caption} Not Saved", str(exc))
 
     def _load_agents(self) -> None:
         """Offer the configured agents, opened on the active one.
@@ -399,9 +432,9 @@ class SettingsTab(QWidget):
         if isinstance(active, str) and active and active not in slugs:
             slugs = [active, *slugs]
         self.next_agent.clear()
-        self.next_agent.addItems(slugs)
+        fill_agents(self.next_agent, slugs)
         if active in slugs:
-            self.next_agent.setCurrentText(active)
+            self.next_agent.setCurrentIndex(self.next_agent.findData(active))
         self.next_agent.setEnabled(bool(slugs))
 
     def reload(self) -> None:
@@ -437,8 +470,4 @@ class SettingsTab(QWidget):
         self._seat(self.mode, mode)
         self._seat_modes()
         self.setEnabled(placed)
-        # An unplaced clone has nothing to write to, and says so where a save
-        # result would otherwise appear.
-        self.status.setText(
-            "" if placed else "No configuration file yet — run File → Setup…"
-        )
+        self._mark_missing()
