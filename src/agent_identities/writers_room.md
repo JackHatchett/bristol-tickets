@@ -90,6 +90,9 @@ second model rather than being assumed.
   `src/app.md` §What a file may say bars. History the user writes inside the
   world — an era when a people went by another name — is world content and
   stays his to write.
+- **Read each statement of the user's at its plain meaning and scope, and
+  write each statement the same way.** "All terrestrial life is this chirality,
+  serendipitously" says the match was good fortune, and that is all it says.
 
 ---
 
