@@ -1,10 +1,10 @@
-"""ui/folders.py — the two windows Settings opens on where things are: the
-Markdown notebook and its attached folders, and every other location the
-configuration points at.
+"""ui/folders.py — the windows Settings opens on where things are: the
+Markdown notebook and its attached folders, the dashboards agents keep up, and
+every other location the configuration points at.
 
-Both read and write through command-line tools rather than the file itself —
-``src/tools/config_tools/notebook.py`` and ``locations.py`` — so a session and
-the app change these the same way. A location that is not on disk is marked
+Each reads and writes through a command-line tool rather than the file itself —
+``src/tools/config_tools/notebook.py``, ``dashboards.py`` and ``locations.py`` —
+so a session and the app change these the same way. A location that is not on disk is marked
 where it is listed, and the button that opens its window carries the same mark,
 so a folder moved or renamed outside Bristol shows up in Settings and is fixed
 there.
@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
     QFrame,
+    QInputDialog,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -40,6 +41,7 @@ from .theme import LAYOUT, space
 
 NOTEBOOK_CLI = Path("src") / "tools" / "config_tools" / "notebook.py"
 LOCATIONS_CLI = Path("src") / "tools" / "config_tools" / "locations.py"
+DASHBOARDS_CLI = Path("src") / "tools" / "config_tools" / "dashboards.py"
 MISSING = "Missing"
 
 
@@ -211,6 +213,106 @@ class NotebookDialog(QDialog):
             return
         if self._say(*run(NOTEBOOK_CLI, "detach", folder), "Not Detached"):
             self.reload()
+
+
+def known_dashboards() -> list[dict]:
+    code, out, _ = run(DASHBOARDS_CLI, "show", "--json")
+    try:
+        return json.loads(out) if code == 0 else []
+    except json.JSONDecodeError:
+        return []
+
+
+class DashboardsDialog(QDialog):
+    """The dashboards Bristol knows about, with Add and Remove. Which of them
+    each agent may write is chosen in that agent's profile, from this list."""
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Dashboards")
+        self.setModal(True)
+        self.setMinimumWidth(LAYOUT["dialog_min_w"])
+        self.setMinimumHeight(LAYOUT["wizard_min_h"])
+
+        heading = QLabel("Dashboards")
+        heading.setObjectName("dialogHeading")
+
+        self.list = QListWidget()
+        self.list.setObjectName("searchResults")
+        self.list.currentItemChanged.connect(lambda *_: self._sync())
+        self.add_btn = QPushButton("Add…")
+        self.add_btn.clicked.connect(self._add)
+        self.remove_btn = QPushButton("Remove")
+        self.remove_btn.clicked.connect(self._remove)
+        actions = QHBoxLayout()
+        actions.setSpacing(space("md"))
+        actions.addWidget(self.add_btn)
+        actions.addWidget(self.remove_btn)
+        actions.addStretch(1)
+
+        close = QPushButton("Close")
+        close.setObjectName("globalCreateBtn")
+        close.clicked.connect(self.accept)
+        foot = QHBoxLayout()
+        foot.addStretch(1)
+        foot.addWidget(close)
+
+        column = QVBoxLayout(self)
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
+                                  space("xl"))
+        column.setSpacing(space("md"))
+        column.addWidget(heading)
+        column.addSpacing(space("sm"))
+        column.addWidget(_caption("Known Dashboards"))
+        column.addWidget(self.list, 1)
+        column.addLayout(actions)
+        column.addSpacing(space("lg"))
+        column.addLayout(foot)
+        self.reload()
+
+    def reload(self) -> None:
+        self.list.clear()
+        for d in known_dashboards():
+            shown = d["name"] + (f"   ·   {d['url']}" if d.get("url") else "")
+            item = QListWidgetItem(shown)
+            item.setData(Qt.UserRole, d["name"])
+            item.setToolTip("\n".join(d.get("paths") or []))
+            self.list.addItem(item)
+        self._sync()
+
+    def _sync(self) -> None:
+        self.remove_btn.setEnabled(self.list.currentItem() is not None)
+
+    def _add(self) -> None:
+        name, ok = QInputDialog.getText(self, "Add a Dashboard", "Name")
+        if not ok or not name.strip():
+            return
+        url, ok = QInputDialog.getText(self, "Add a Dashboard",
+                                       "Where it is published")
+        if not ok:
+            return
+        code, out, err = run(DASHBOARDS_CLI, "add", "--name", name.strip(),
+                             "--url", url.strip())
+        if code != 0:
+            dialogs.notify(self, "Not Added", (err or out).strip() or "Nothing changed.")
+            return
+        self.reload()
+
+    def _remove(self) -> None:
+        item = self.list.currentItem()
+        if item is None:
+            return
+        name = item.data(Qt.UserRole)
+        if not dialogs.confirm(
+                self, "Remove This Dashboard?",
+                f"{name} leaves the list, and every agent's choice for it is "
+                f"dropped. The dashboard itself is not touched.", "Remove"):
+            return
+        code, out, err = run(DASHBOARDS_CLI, "remove", name)
+        if code != 0:
+            dialogs.notify(self, "Not Removed", (err or out).strip() or "Nothing changed.")
+            return
+        self.reload()
 
 
 class LocationsDialog(QDialog):

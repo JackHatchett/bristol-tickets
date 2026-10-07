@@ -46,7 +46,9 @@ src/tools/personal_db/
   build_db.py         create or patch the DB from schema.sql; seed meta and the registry
   render_snapshot.py  the renderer: applications from this DB, books from Zotero
   personal_write.py   the write CLI
-  contacts_due.py     who is owed something today, read from v_contact_due alone
+  contacts_due.py     who is owed something today, and which friends are resting
+  silence.py          the silence windows, and how long an item has been silent
+  close_stale.py      closes every open item past its window, daily
   install_due_schedule.py  the due list on the machine's own daily schedule
   snapshot_archive.py the dated series and its retention policy
 
@@ -68,12 +70,29 @@ data/<instance>/system/logs/<domain>_snapshots/
   Excel formulas over the sheet, so they follow the data.
 - **`contact`, `contact_ask`, `contact_link`** — who is owed what, and since
   when. A contact is one person, once: name, aliases, how the user knows them,
-  where they are now, a `cadence_days` and the date of the last exchange. An ask
+  where they are now, a `cadence_days`, the date of the last exchange, and an
+  optional `email` and `linkedin_url`. `is_friend` is 1 for a friend, whose row
+  on the career dashboard is durable rather than dropped once nothing on it is
+  live; `reference_status` is `none`, `to_ask`, `asked`, `yes` or `declined`. An ask
   is one outstanding thing between them, with a `direction` saying who the next
   move waits on — `us` or `them` — a `due_on` and a `status`. A link joins a
   contact to an application, a document or a client, by `target_id` in this
   database or by `target_path`. No application, document or job identifier is a
   column on `contact`: a person is attached to many of them over time.
+- **An introduction is an `applications` row whose `intro_stage` is set**,
+  with `contact_link` rows labelled `introducer` (or `referrer`) and `intro
+  target`; one friend may hold both. The stage runs `to_ask`, `asked`,
+  `introduced`, `submitted`, `interviewing`, and closes as `offer`, `rejected`,
+  `no_response` or `dropped`. It is a column of its own because `status` is
+  where the application stands with the employer, a different question.
+  `v_introduction` gives each one's people and `move` — `us` or `them` while it
+  is open, NULL once closed — so whose move it is has one answer.
+  `intro_stage_on` is the date the stage was last set, which the writers fill
+  whenever they set a stage.
+- **`v_friend_rest`** — each friend inside the 21-day rest after an
+  introduction through them closed, with `next_ask_on`, the day the next ask is
+  fine. A referral at the friend's own company starts no rest, and a friend
+  with one still open is not listed. Outside the rest a friend has no row.
 - **`v_contact_due`** — one view answering one question, who is owed something
   today: a contact whose cadence has come round, and an open ask past its
   `due_on`, each row saying which of the two it is. `v_contact_stats` counts
@@ -109,8 +128,16 @@ python3 personal_write.py update-contact --id 1 --last-contact-on 2026-09-19
 python3 personal_write.py add-ask --contact 1 --kind referral --direction them \
     --subject "what the ask is" --due-on 2026-10-01
 python3 personal_write.py close-ask --id 3 [--status dropped] [--keep-last-contact]
+python3 personal_write.py update-contact --id 1 --friend --reference-status to_ask \
+    --email a@example.org --linkedin-url https://www.linkedin.com/in/a-person/
+python3 personal_write.py add-introduction --introducer 1 --target 2 --company X \
+    --role Y [--stage asked]
+python3 personal_write.py update-application --id 42 --intro-stage submitted
 python3 personal_write.py add-link --contact 1 --kind application --target-id 42
 python3 personal_write.py find-contact --name Nickname
+
+python3 close_stale.py [--dry-run]
+python3 personal_write.py reopen --id 67 [--status Interviewing]
 
 python3 contacts_due.py [--json] [--capture]
 python3 install_due_schedule.py [--install] [--hour 7] [--minute 30]
@@ -121,6 +148,9 @@ python3 snapshot_archive.py --dir <...>/library_snapshots --stem library
 python3 snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
 ```
 
+- **`build_db.py` adds a column schema.sql gives a table and an older
+  database lacks**, by comparing the two, so schema.sql stays the one place a
+  column is declared.
 - **`find-contact` matches the name and the aliases**, and `add-contact`
   refuses a name already recorded unless it is given `--anyway`. A second row
   for one person is the failure this domain exists to avoid, and a different
@@ -129,12 +159,26 @@ python3 snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
   unless it is given `--keep-last-contact`. Closing an ask is the commonest
   moment two people were last in touch, and a cadence measured from a date
   nobody updates comes due for ever.
-- **`contacts_due.py` reads `v_contact_due` and nothing else**, prints overdue
-  before due-today, and prints nothing at all when nothing is due.
+- **`contacts_due.py` reads `v_contact_due` and `v_friend_rest`**, prints the
+  resting friends, then overdue before due-today, and prints nothing at all
+  when nothing is due and nobody is resting. The capture carries what is due
+  alone.
 - **`--capture` writes the day's list into the notebook's capture inbox** as one
   dated note, rewritten by a second run the same day, and writes nothing when
   nothing is due. That is how a contact coming due reaches the user: calling a
   friend is his and not an agent's, so it is never a card.
+- **An open item closes itself once it is silent past its window** — 30 days
+  for an application nobody at the company has answered, 21 after a recruiter
+  screen or an interview, 30 for an introduction or an application waiting on
+  a referral. `silence.py` holds the windows and the reading of the last
+  touch: the date evaluated (a partial date read as the end of its period),
+  `last_touch_on`, `intro_stage_on`, and the asks about it.
+  `dashboard_data.py` hides the same items, from the same module.
+- **`close_stale.py` runs inside the daily morning briefing**, writes each close
+  through `personal_write.py` (status No response, an introduction's stage
+  no_response, its open asks dropped with nobody's last contact moved), and
+  prints the one "Closed for silence:" line the briefing carries.
+  `personal_write.py reopen` brings one back with a fresh window.
 - **`install_due_schedule.py` puts that capture on a daily schedule**, through
   `src/tools/_shared/install_schedule.py`, which is the same installer the
   Bluesky copy uses. Run it on the machine that will hold the schedule: it takes

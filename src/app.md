@@ -166,7 +166,8 @@ In chat, and in a comment the user acts on:
 ## Content is yours; behavior is chief_of_staff's
 
 Every agent except chief_of_staff may add content as ordinary execution: a fact
-into the section that owns it, a deliverable, a correction in place. No agent
+into the section that owns it, a deliverable, a correction in place, an edit to
+a dashboard its `dashboard_access` lets it write. No agent
 may change how it works — editing its own charter, skills or tools, adding or
 repealing a rule, changing a file's structure, introducing a
 file other files must consult, or moving where content lives. Wanting to, being

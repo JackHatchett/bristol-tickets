@@ -5,6 +5,7 @@ render_snapshot.py — generate the xlsx snapshot views, one per domain.
 Two xlsx snapshots, from two different sources of truth:
   books        -> Zotero          -> <snapshot_base>/library_snapshots/library.xlsx
   applications -> personal.db     -> <snapshot_base>/applications_snapshots/applications.xlsx
+  contacts     -> personal.db     -> <snapshot_base>/contacts_snapshots/contacts.xlsx
 
 Books live in Zotero: personal.db holds no books domain, so the
 library snapshot is read through tools/zotero/zotero_export.py, which copies
@@ -101,6 +102,8 @@ SPECS = {
             ("Cadence (days)", "cadence_days", 14),
             ("Last Contact", "last_contact_on", 14),
             ("Open Asks", "open_asks", 10), ("Next Due", "next_due", 14),
+            ("Friend", "is_friend", 8), ("Reference", "reference_status", 12),
+            ("Email", "email", 28), ("LinkedIn", "linkedin_url", 36),
         ],
         # The sheet is one row per person with what is outstanding beside them,
         # since a reader opening it is asking who is owed something rather than
@@ -111,12 +114,15 @@ SPECS = {
                            WHERE a.contact_id = c.id AND a.status = 'open')
                              AS open_asks,
                          (SELECT MIN(d.due_on) FROM v_contact_due d
-                           WHERE d.contact_id = c.id) AS next_due
+                           WHERE d.contact_id = c.id) AS next_due,
+                         CASE c.is_friend WHEN 1 THEN 'Y' END AS is_friend,
+                         c.reference_status, c.email, c.linkedin_url
                   FROM contact c
                   ORDER BY LOWER(c.name)""",
-        # F = Last Contact, G = Open Asks
+        # F = Last Contact, G = Open Asks, I = Friend
         "stats": [
             ("Contacts", "=COUNTA(Contacts!A2:A100000)"),
+            ("Friends", '=COUNTIF(Contacts!I:I,"Y")'),
             ("With An Open Ask", '=COUNTIF(Contacts!G:G,">0")'),
             ("Never Contacted", '=COUNTBLANK(Contacts!F2:F100000)'),
         ],

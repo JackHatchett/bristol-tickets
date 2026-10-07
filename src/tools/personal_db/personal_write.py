@@ -10,6 +10,7 @@ see src/tools/zotero/ and src/skills/add-book/SKILL.md:
                       --contact ... --referral ... --jd-link ... --year YYYY --fit-notes ...]
   update-application  --id N  [any of the same fields]
   find-company        --company C     # "have I applied here?" lookup
+  add-introduction    --introducer ID --target ID --company C [--role R --stage S ...]
   render              [--domain all|applications|contacts|books]
 
 DB is SoT; mutating subcommands re-render the affected snapshot automatically
@@ -29,9 +30,14 @@ import db_common as dbc  # noqa: E402
 
 APP_FIELDS = [
     "company", "role", "fit_notes", "fit_verdict", "gaps", "location",
-    "ats_platform", "date_evaluated", "cover_letter", "status", "contact",
-    "referral", "jd_link", "year",
+    "ats_platform", "date_evaluated", "cover_letter", "status", "intro_stage",
+    "intro_stage_on", "last_touch_on", "contact", "referral", "jd_link", "year",
 ]
+# An introduction's stage, in order while it is open, then the ways it closes.
+# Whose move each open stage waits on is v_introduction in schema.sql.
+INTRO_OPEN = ("to_ask", "asked", "introduced", "submitted", "interviewing")
+INTRO_CLOSED = ("offer", "rejected", "no_response", "dropped")
+INTRO_STAGES = INTRO_OPEN + INTRO_CLOSED
 RENDER = Path(__file__).resolve().parent / "render_snapshot.py"
 
 
@@ -47,6 +53,8 @@ def _now() -> str:
 
 def add_application(args) -> None:
     vals = {f: getattr(args, f) for f in APP_FIELDS if getattr(args, f) is not None}
+    if vals.get("intro_stage") and "intro_stage_on" not in vals:
+        vals["intro_stage_on"] = datetime.date.today().isoformat()
     if not vals.get("company"):
         sys.exit("add-application: --company is required")
     vals["created_at"] = vals["updated_at"] = _now()
@@ -65,6 +73,8 @@ def add_application(args) -> None:
 
 def update_application(args) -> None:
     sets = {f: getattr(args, f) for f in APP_FIELDS if getattr(args, f) is not None}
+    if sets.get("intro_stage") and "intro_stage_on" not in sets:
+        sets["intro_stage_on"] = datetime.date.today().isoformat()
     if not sets:
         sys.exit("update-application: nothing to update")
     sets["updated_at"] = _now()
@@ -78,6 +88,33 @@ def update_application(args) -> None:
     print(f"✓ updated application id={args.id} ({changed} row change)" if changed
           else f"⚠ no application with id={args.id}")
     if changed and not args.no_render:
+        _rerender("applications")
+
+
+def reopen(args) -> None:
+    """Bring back an application or introduction closed for silence, with a
+    fresh window from today. The user saying it is still alive is the whole of
+    what this needs."""
+    conn = dbc.connect()
+    row = conn.execute("SELECT id, company, role, intro_stage FROM applications "
+                       "WHERE id=?", (args.id,)).fetchone()
+    if row is None:
+        conn.close()
+        sys.exit(f"reopen: no application with id={args.id}")
+    today = datetime.date.today().isoformat()
+    sets = {"last_touch_on": today, "updated_at": _now()}
+    if row["intro_stage"]:
+        sets.update(intro_stage=args.intro_stage or "asked", intro_stage_on=today,
+                    status=args.status or "Pending (referral gated)")
+    else:
+        sets["status"] = args.status or "Applied"
+    conn.execute(f"UPDATE applications SET {','.join(f'{c}=?' for c in sets)} WHERE id=?",
+                 [*sets.values(), args.id])
+    conn.commit()
+    conn.close()
+    print(f"✓ reopened application id={args.id}: {row['company']} — {row['role'] or ''} "
+          f"[{sets['status']}, silent from {today}]")
+    if not args.no_render:
         _rerender("applications")
 
 
@@ -97,6 +134,43 @@ def find_company(args) -> None:
               f"[{r['status']}, {r['fit_verdict']}, {r['date_evaluated'] or r['year']}]")
 
 
+def add_introduction(args) -> None:
+    """One applications row and the people on it, written together.
+
+    The introducer and the target may be the same friend — a referral at the
+    friend's own company — and then that contact carries both labels.
+    """
+    conn = dbc.connect()
+    for cid in (args.introducer, args.target):
+        if conn.execute("SELECT 1 FROM contact WHERE id=?", (cid,)).fetchone() is None:
+            conn.close()
+            sys.exit(f"add-introduction: no contact with id={cid}")
+    vals = {"company": args.company, "role": args.role, "intro_stage": args.stage,
+            "status": args.status, "jd_link": args.jd_link,
+            "intro_stage_on": args.on or datetime.date.today().isoformat(),
+            "date_evaluated": args.on or datetime.date.today().isoformat(),
+            "year": int((args.on or datetime.date.today().isoformat())[:4])}
+    vals = {k: v for k, v in vals.items() if v is not None}
+    vals["created_at"] = vals["updated_at"] = _now()
+    cols = list(vals)
+    cur = conn.execute(
+        f"INSERT INTO applications ({','.join(cols)}) VALUES ({','.join('?'*len(cols))})",
+        [vals[c] for c in cols])
+    app_id = cur.lastrowid
+    for cid, label in ((args.introducer, "introducer"), (args.target, "intro target")):
+        conn.execute(
+            "INSERT INTO contact_link (contact_id, target_kind, target_id, label) "
+            "VALUES (?, 'application', ?, ?)", (cid, app_id, label))
+    conn.commit()
+    row = conn.execute("SELECT stage, move FROM v_introduction WHERE app_id=?",
+                       (app_id,)).fetchone()
+    conn.close()
+    print(f"✓ introduction application id={app_id}: {args.company} — {args.role or ''} "
+          f"[{row['stage']}, " + (f"{row['move']}'s move]" if row['move'] else "closed]"))
+    if not args.no_render:
+        _rerender("applications")
+
+
 # ---------------------------------------------------------------------------
 # contacts — the person, what is outstanding with them, and what they are
 # attached to. Every write goes through db_common.connect(), as the
@@ -104,7 +178,9 @@ def find_company(args) -> None:
 # ---------------------------------------------------------------------------
 
 CONTACT_FIELDS = ["name", "aliases", "how_known", "company", "title",
-                  "cadence_days", "last_contact_on", "notes"]
+                  "cadence_days", "last_contact_on", "email", "linkedin_url",
+                  "is_friend", "reference_status", "notes"]
+REFERENCE_STATUSES = ("none", "to_ask", "asked", "yes", "declined")
 ASK_KINDS = ("reconnect", "referral", "application-submit", "recommendation",
              "intro", "favour-owed", "other")
 ASK_STATUSES = ("open", "done", "dropped")
@@ -275,6 +351,12 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--date-evaluated", dest="date_evaluated")
         sp.add_argument("--cover-letter", dest="cover_letter")
         sp.add_argument("--status"); sp.add_argument("--contact")
+        sp.add_argument("--intro-stage", dest="intro_stage", choices=INTRO_STAGES,
+                        help="an introduction's stage; leave unset on any other row")
+        sp.add_argument("--intro-stage-on", dest="intro_stage_on",
+                        help="YYYY-MM-DD the stage was reached; default today")
+        sp.add_argument("--last-touch-on", dest="last_touch_on",
+                        help="YYYY-MM-DD of the last exchange about it")
         sp.add_argument("--referral"); sp.add_argument("--jd-link", dest="jd_link")
         sp.add_argument("--year", type=int)
         sp.add_argument("--no-render", action="store_true")
@@ -285,6 +367,29 @@ def build_parser() -> argparse.ArgumentParser:
     f = sub.add_parser("find-company"); f.add_argument("--company", required=True)
     f.set_defaults(func=find_company)
 
+    ro = sub.add_parser("reopen", help="bring back an item closed for silence")
+    ro.add_argument("--id", type=int, required=True)
+    ro.add_argument("--status", help="default Applied, or Pending (referral gated) "
+                                     "for an introduction")
+    ro.add_argument("--intro-stage", dest="intro_stage", choices=INTRO_STAGES,
+                    help="an introduction's stage; default asked")
+    ro.add_argument("--no-render", action="store_true")
+    ro.set_defaults(func=reopen)
+
+    ai = sub.add_parser("add-introduction")
+    ai.add_argument("--introducer", type=int, required=True,
+                    help="contact id of the friend making the introduction")
+    ai.add_argument("--target", type=int, required=True,
+                    help="contact id of the person introduced to; the introducer's "
+                         "own id for a referral at the friend's own company")
+    ai.add_argument("--company", required=True); ai.add_argument("--role")
+    ai.add_argument("--stage", default="to_ask", choices=INTRO_STAGES)
+    ai.add_argument("--status", help="the application's status, where it has one")
+    ai.add_argument("--jd-link", dest="jd_link")
+    ai.add_argument("--on", help="YYYY-MM-DD it was recorded; default today")
+    ai.add_argument("--no-render", action="store_true")
+    ai.set_defaults(func=add_introduction)
+
     def add_contact_args(sp):
         sp.add_argument("--name"); sp.add_argument("--aliases",
                         help="other names this person answers to, comma separated")
@@ -294,6 +399,14 @@ def build_parser() -> argparse.ArgumentParser:
                         help="how often to be in touch; leave unset for no cadence")
         sp.add_argument("--last-contact-on", dest="last_contact_on",
                         help="YYYY-MM-DD of the last exchange either way")
+        sp.add_argument("--email", help="optional")
+        sp.add_argument("--linkedin-url", dest="linkedin_url", help="optional")
+        fr = sp.add_mutually_exclusive_group()
+        fr.add_argument("--friend", dest="is_friend", action="store_const", const=1,
+                        help="a friend: a durable row on the dashboard")
+        fr.add_argument("--not-friend", dest="is_friend", action="store_const", const=0)
+        sp.add_argument("--reference-status", dest="reference_status",
+                        choices=REFERENCE_STATUSES)
         sp.add_argument("--notes")
         sp.add_argument("--no-render", action="store_true")
 

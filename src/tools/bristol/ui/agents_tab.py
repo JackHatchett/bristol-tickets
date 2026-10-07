@@ -73,6 +73,10 @@ IMPORT_CLI = Path("src") / "tools" / "agent_tools" / "import_agent.py"
 SKILLS_CLI = Path("src") / "tools" / "skill_tools" / "skills.py"
 PATHS_CLI = Path("src") / "tools" / "config_tools" / "data_paths.py"
 NOTEBOOK_CLI = Path("src") / "tools" / "config_tools" / "notebook.py"
+DASHBOARDS_CLI = Path("src") / "tools" / "config_tools" / "dashboards.py"
+# The one agent that writes to every dashboard whatever its toggle says —
+# src/tools/config_tools/dashboards.py.
+ALWAYS_ALL_DASHBOARDS = "chief_of_staff"
 
 # What an agent cannot be without. The form marks each one and refuses a save
 # while one is empty.
@@ -174,6 +178,81 @@ class NotebookAccess(QWidget):
         for folder, access in self.values()["folders"].items():
             if folder in self.choices:
                 out += ["--notebook-folder", f"{folder}={access}"]
+        return out
+
+
+class DashboardAccess(QWidget):
+    """Write to All Dashboards, on unless switched off, and under it one switch
+    per dashboard known in Settings, each off until switched on. There is no
+    read-only level: a dashboard is published, and anyone may read it.
+
+    Choices are kept while the toggle is on, so switching it off again brings
+    them back. chief_of_staff writes to every dashboard, so its toggle is shown
+    on and cannot be moved.
+    """
+
+    def __init__(self, entry: dict, dashboards: list[str], slug: str = "") -> None:
+        super().__init__()
+        entry = entry if isinstance(entry, dict) else {}
+        self._entry = entry
+        self._kept = [n for n in entry.get("dashboards") or [] if isinstance(n, str)]
+        locked = slug == ALWAYS_ALL_DASHBOARDS
+
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(space("sm"))
+
+        self.write_all = QCheckBox("Write to All Dashboards")
+        self.write_all.setChecked(locked or entry.get("write_all") is not False)
+        self.write_all.setEnabled(not locked)
+        if locked:
+            self.write_all.setToolTip(
+                "chief_of_staff keeps every dashboard, whatever this says.")
+        column.addWidget(self.write_all)
+
+        self.rows = QWidget()
+        rows = QVBoxLayout(self.rows)
+        rows.setContentsMargins(space("lg"), space("sm"), 0, 0)
+        rows.setSpacing(space("xs"))
+        self.choices: dict[str, QCheckBox] = {}
+        for name in dashboards:
+            box = QCheckBox(name)
+            box.setChecked(name in self._kept)
+            rows.addWidget(box)
+            self.choices[name] = box
+        if not dashboards:
+            none = QLabel("No dashboard is known yet. Add one in Settings.")
+            none.setObjectName("metaText")
+            rows.addWidget(none)
+        column.addWidget(self.rows)
+        self.write_all.toggled.connect(lambda *_: self._sync())
+        self._sync()
+
+    def _sync(self) -> None:
+        self.rows.setVisible(not self.write_all.isChecked())
+
+    def values(self) -> dict:
+        chosen = [n for n in self._kept if n not in self.choices]
+        chosen += [n for n, box in self.choices.items() if box.isChecked()]
+        return {"write_all": self.write_all.isChecked(), "dashboards": chosen}
+
+    def changed_from(self, entry: dict) -> bool:
+        """Whether saving would change what the entry says."""
+        entry = entry if isinstance(entry, dict) else {}
+        before = {"write_all": entry.get("write_all") is not False,
+                  "dashboards": [n for n in entry.get("dashboards") or []]}
+        now = self.values()
+        return (now["write_all"] != before["write_all"]
+                or sorted(now["dashboards"]) != sorted(before["dashboards"]))
+
+    def args(self) -> list[str]:
+        values = self.values()
+        out = ["--dashboards-all" if values["write_all"] else "--dashboards-chosen"]
+        known = [n for n in values["dashboards"] if n in self.choices]
+        for name in known:
+            out += ["--dashboard", name]
+        if not known:
+            out += ["--no-dashboards"]
         return out
 
 
@@ -523,6 +602,10 @@ class AgentDialog(QDialog):
         self.notebook = NotebookAccess(
             record["notebook_access"] if record else {}, self._attached(run))
 
+        self.dashboards = DashboardAccess(
+            record.get("dashboard_access", {}) if record else {},
+            self._known_dashboards(run), record["slug"] if record else "")
+
         self.env = EnvList(run)
         self.env.set_values(record["env"] if record else {})
 
@@ -550,6 +633,7 @@ class AgentDialog(QDialog):
         form.addRow("Folders", self.data_paths)
         form.addRow("Context Files", self.context_files)
         form.addRow("Notebook", self.notebook)
+        form.addRow("Dashboards", self.dashboards)
         form.addRow("Environment Variables", self.env)
         form.addRow("Skills", self.skills)
         if record and record["extra"]:
@@ -619,6 +703,15 @@ class AgentDialog(QDialog):
         except (json.JSONDecodeError, KeyError, TypeError):
             return []
 
+    @staticmethod
+    def _known_dashboards(run) -> list[str]:
+        """The dashboards known in Settings, read fresh."""
+        code, out, _ = run(DASHBOARDS_CLI, "show", "--json")
+        try:
+            return [d["name"] for d in json.loads(out)] if code == 0 else []
+        except (json.JSONDecodeError, KeyError, TypeError):
+            return []
+
     def _pick_charter(self) -> None:
         root = config_file.project_root()
         start = str(root / "src" / "agent_identities") if root else ""
@@ -680,6 +773,7 @@ class AgentDialog(QDialog):
             "key_data_paths": self.data_paths.values(),
             "key_context_files": self.context_files.values(),
             "notebook_access": self.notebook.values(),
+            "dashboard_access": self.dashboards.values(),
             "env": self.env.values(),
             "skills": checked,
         }
@@ -721,6 +815,10 @@ class AgentDialog(QDialog):
             if self.creating:
                 code, out, err = self._run(
                     CREATE_CLI, *self._create_args(values, charter_file))
+                if code == 0 and self.dashboards.changed_from({}):
+                    code, more, err = self._run(
+                        AGENTS_CLI, "edit", values["slug"], *self.dashboards.args())
+                    out += more
             else:
                 args = self._edit_args(values, extra, charter_file, extra_file)
                 code, out, err = ((0, "", "") if len(args) == 1
@@ -787,6 +885,8 @@ class AgentDialog(QDialog):
                 args += ["--no-context-files"]
         if self.notebook.changed_from(was["notebook_access"]):
             args += self.notebook.args()
+        if self.dashboards.changed_from(was.get("dashboard_access", {})):
+            args += self.dashboards.args()
         if values["env"] != was["env"]:
             for name, value in values["env"].items():
                 args += ["--env", f"{name}={value}"]

@@ -39,6 +39,48 @@ person is like, what they said, what they do — that is prose, and
   one makes a due list nobody believes.
 - **Move `last_contact_on` whenever an exchange happens**, in either direction,
   whether or not an ask moved with it.
+- **Mark a friend with `--friend`**, and record `--reference-status` once a
+  reference is in view. Email and LinkedIn are recorded when they turn up and
+  never asked for.
+
+## The introduction
+
+- **Record one with `add-introduction`** — one application row, the friend as
+  introducer and the person reached as target, the same contact for both when
+  the friend refers the user at their own company.
+- **Move its stage as it moves** — `update-application --intro-stage`. The
+  stage alone says whose move it is, so an introduction needs no ask to carry
+  the direction.
+
+## Pacing introduction asks
+
+A friend asked well and not too often stays a friend who helps. Every rule here
+is applied by the session drafting the ask, so the user never has to remember
+it.
+
+- **One open introduction ask per friend at a time.** A second waits until the
+  first resolves.
+- **Make every ask specific**: a named person, a named role, a blurb the friend
+  can forward as it stands, with the resume and the posting's link attached.
+  "Let me know if you hear of anything" is not an ask.
+- **Follow up once, after 7 to 10 days of silence.** Silence after that means
+  the ask is no longer wanted: drop it quietly (`--intro-stage dropped`) and
+  never repeat it.
+- **Let a friend rest 3 weeks after an ask resolves** before the next one,
+  unless the friend has offered more. `contacts_due.py` and the career
+  dashboard show the day the next ask is fine while the rest runs, and nothing
+  outside it.
+- **A referral at the friend's own company starts no rest**, because it costs
+  them little.
+- **Never put a reference request in the same message as an introduction
+  ask.**
+- **Reconnect first with a dormant friend** — no exchange in roughly a year.
+  The first touch carries no ask; the ask comes on the second.
+- **Ask for the network map once per friend per search**, once they agree to
+  help: which of these companies they know people at. Specific asks are then
+  drawn from it and paced one at a time.
+- **Close the loop on every resolved introduction.** The user tells the friend
+  how it went and thanks them, and that exchange moves `last_contact_on`.
 
 ## The ask
 
@@ -54,8 +96,15 @@ person is like, what they said, what they do — that is prose, and
 - **Close it when the thing it records has happened, or has stopped being
   wanted** — `close-ask --id N`, `--status dropped` for the second. Closing
   moves the contact's last contact to that day unless told otherwise.
-- **Never close an ask because time passed.** An ask nobody answered is still
-  open; what changes is whether it is still wanted.
+- **Close nothing by hand because time passed.** Silence is closed by the daily
+  run of `close_stale.py`, which the user chose to be automatic: an application
+  or introduction silent past its window becomes No response, and the open asks
+  about it close as dropped. An introduction ask whose one follow-up went
+  unanswered has stopped being wanted, under §Pacing introduction asks.
+- **Reopen anything the user says is still alive**, however he puts it —
+  "Optimum is still alive" is enough. `find-company` gives the row, and
+  `personal_write.py reopen --id N` brings it back with a fresh window from
+  today; pass `--status` where it stood further on than Applied.
 
 ## What a due item is
 

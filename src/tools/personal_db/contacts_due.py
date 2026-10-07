@@ -2,12 +2,14 @@
 """
 contacts_due.py — who is owed something today.
 
-Reads `v_contact_due` and nothing else. The view is where the question "is this
-due" is answered — a cadence that has come round, an open ask past the date it
-was given — so a second copy of that arithmetic here would be a second answer.
+Reads `v_contact_due`, and `v_friend_rest` for the friends resting after an
+introduction. The views are where "is this due" and "when is the next ask
+fine" are answered, so a second copy of that arithmetic here would be a second
+answer.
 
-Silent when nothing is due: a daily program that prints a heading over an empty
-list teaches the reader to skim it.
+Silent when nothing is due and nobody is resting: a daily program that prints a
+heading over an empty list teaches the reader to skim it. The capture carries
+what is due alone.
 
 Run: PERSONAL_DB_DIR=... python3 src/tools/personal_db/contacts_due.py
          [--json] [--capture]
@@ -43,6 +45,20 @@ def due_rows() -> list[dict]:
         row["overdue"] = bool(row["due_on"] and row["due_on"] < today)
     rows.sort(key=lambda r: (not r["overdue"], r["due_on"] or "", r["name"]))
     return rows
+
+
+def resting_rows() -> list[dict]:
+    """Friends inside the rest after an introduction, with the day the next
+    ask is fine. Read from v_friend_rest, which holds the arithmetic."""
+    conn = dbc.connect()
+    try:
+        has = conn.execute("SELECT 1 FROM sqlite_master WHERE type='view' "
+                           "AND name='v_friend_rest'").fetchone()
+        return ([dict(r) for r in conn.execute(
+            "SELECT name, next_ask_on FROM v_friend_rest ORDER BY next_ask_on, name")]
+            if has else [])
+    finally:
+        conn.close()
 
 
 def _line(row: dict) -> str:
@@ -117,6 +133,11 @@ def main(argv=None) -> int:
         if written is not None:
             print(f"wrote {written}")
         return 0
+    resting = resting_rows()
+    if resting:
+        print(f"Resting after an introduction ({len(resting)}):")
+        for row in resting:
+            print(f"  {row['name']} — next ask fine from {row['next_ask_on']}")
     if not rows:
         return 0
     overdue = [r for r in rows if r["overdue"]]

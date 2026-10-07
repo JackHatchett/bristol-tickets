@@ -1,6 +1,6 @@
 # Config Tools
 
-Five small programs that stand between the tracked, generic `/src` code and one
+Small programs that stand between the tracked, generic `/src` code and one
 installation's real paths. Everything user-specific is read from the git-ignored
 `config/config.local.json`; nothing here contains a username, a home directory,
 or a cloud-provider path.
@@ -46,6 +46,17 @@ an explicit env var, then the per-machine instance pointer, then a legacy
 `.local` file, then discovery by walking up to `src/app.md`. `--write` creates
 the pointer; bare invocation prints it. Running from the repo needs no pointer;
 a relocatable `.app` build does.
+
+### dashboards.py
+
+`python3 dashboards.py show` lists the dashboards Bristol knows about — the
+`dashboards` key, each a name, the address it is published at and the files
+that produce its data — and `access <agent>` says which of them an agent may
+write. An agent's `dashboard_access` is a Write to All toggle, on unless
+switched off, and the dashboards chosen while it is off; chief_of_staff writes
+to every one. `add`, `remove` and `set-access` write the key, and the program's
+docstring holds the rule. Settings lists the known dashboards and each agent's
+profile carries its toggle.
 
 ### data_paths.py
 

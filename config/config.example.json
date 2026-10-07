@@ -61,7 +61,7 @@
     "archive_dir": "/path/to/notebook/archive",
     "assistant_prompts_dir": "/path/to/notebook/ai_workspace/assistant-prompts",
     "recipes_dir": "/path/to/notebook/recipes",
-    "agent_output_dir": "/path/to/notebook/ai_workspace/agent_output",
+    "agent_output_dir": "/path/to/notebook/ai_workspace/ai_output",
     "reports_dir": "/path/to/notebook/ai_workspace/bristol_reports"
   },
   "important_paths": {

@@ -58,6 +58,9 @@ CREATE TABLE IF NOT EXISTS applications (
     date_evaluated TEXT,                        -- ISO date or as-logged
     cover_letter   TEXT,                        -- Yes/No/short note
     status         TEXT,                        -- Applied/Pending/Rejected/Interviewing/...
+    intro_stage    TEXT,                        -- set on an introduction row only; vocabulary below
+    intro_stage_on TEXT,                        -- ISO date intro_stage was last set
+    last_touch_on  TEXT,                        -- ISO date of the last exchange about it; a reopen sets it
     contact        TEXT,
     referral       TEXT,
     jd_link        TEXT,
@@ -104,6 +107,10 @@ CREATE TABLE IF NOT EXISTS contact (
     title           TEXT,                     -- what they do there now
     cadence_days    INTEGER,                  -- how often to be in touch; NULL means no cadence is owed
     last_contact_on TEXT,                     -- ISO date of the last exchange either way
+    email           TEXT,                     -- optional; nothing asks for it when absent
+    linkedin_url    TEXT,                     -- optional; nothing asks for it when absent
+    is_friend       INTEGER,                  -- 1 for a friend: a durable row on the dashboard, never removed by expiry
+    reference_status TEXT,                    -- none | to_ask | asked | yes | declined
     notes           TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
@@ -139,6 +146,57 @@ CREATE TABLE IF NOT EXISTS contact_link (
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_link_contact ON contact_link(contact_id);
+
+-- An introduction is one applications row whose intro_stage is set, joined to
+-- the people on it by contact_link rows labelled 'introducer' (or 'referrer',
+-- for a friend referring the user at the friend's own company) and
+-- 'intro target'. One friend may hold both labels on one row.
+--
+-- intro_stage: to_ask | asked | introduced | submitted | interviewing, while
+-- open; offer | rejected | no_response | dropped, once closed. `move` says
+-- whose move an open introduction waits on, and is NULL once it has closed.
+CREATE VIEW IF NOT EXISTS v_introduction AS
+SELECT a.id          AS app_id,
+       a.company     AS company,
+       a.role        AS role,
+       a.intro_stage AS stage,
+       CASE WHEN a.intro_stage IN ('to_ask', 'introduced')               THEN 'us'
+            WHEN a.intro_stage IN ('asked', 'submitted', 'interviewing') THEN 'them'
+       END           AS move,
+       (SELECT l.contact_id FROM contact_link l
+         WHERE l.target_kind = 'application' AND l.target_id = a.id
+           AND l.label IN ('introducer', 'referrer')
+         ORDER BY l.id LIMIT 1)                                AS introducer_id,
+       (SELECT l.contact_id FROM contact_link l
+         WHERE l.target_kind = 'application' AND l.target_id = a.id
+           AND l.label = 'intro target'
+         ORDER BY l.id LIMIT 1)                                AS target_id
+FROM applications a
+WHERE a.intro_stage IS NOT NULL;
+
+-- A friend rests after an introduction through them resolves: the next ask is
+-- fine REST_DAYS (21) after it closed. A referral at the friend's own company
+-- (introducer and target the same person, or no target linked) costs them little and starts no
+-- rest, and a friend with an introduction still open is not resting but busy.
+-- A row appears only while the rest runs; outside it there is nothing to show.
+CREATE VIEW IF NOT EXISTS v_friend_rest AS
+SELECT c.id                                        AS contact_id,
+       c.name                                      AS name,
+       MAX(i_closed.closed_on)                     AS last_resolved_on,
+       date(MAX(i_closed.closed_on), '+21 days')   AS next_ask_on
+FROM contact c
+JOIN (SELECT v.introducer_id, a.intro_stage_on AS closed_on
+        FROM v_introduction v JOIN applications a ON a.id = v.app_id
+       WHERE v.move IS NULL
+         AND v.target_id IS NOT NULL
+         AND v.target_id <> v.introducer_id
+         AND a.intro_stage_on IS NOT NULL) i_closed
+  ON i_closed.introducer_id = c.id
+WHERE c.is_friend = 1
+  AND NOT EXISTS (SELECT 1 FROM v_introduction o
+                   WHERE o.introducer_id = c.id AND o.move IS NOT NULL)
+GROUP BY c.id
+HAVING date(MAX(i_closed.closed_on), '+21 days') > date('now');
 
 -- What is due: a contact whose cadence has come round, and an ask past the date
 -- it was given. One view rather than two, because the question they answer is

@@ -48,13 +48,14 @@ sys.path.insert(0, str(HERE.parents[0] / "skill_tools"))
 import data_paths  # noqa: E402
 import notebook  # noqa: E402
 notebook_module = notebook
+import dashboards as dashboards_module  # noqa: E402
 import read_config  # noqa: E402
 import write_config  # noqa: E402
 
 # The keys this build gives a control of its own. Any other key an entry holds
 # is carried in `extra` and written back unchanged.
 KNOWN = ("identity", "description", "key_data_paths", "key_context_files",
-         "notebook_access", "skills", "env")
+         "notebook_access", "dashboard_access", "skills", "env")
 IDENTITY_DIR = "src/agent_identities"
 
 
@@ -91,6 +92,8 @@ def read_agent(slug: str) -> dict:
             entry.get("key_data_paths") or []),
         "key_context_files": list(entry.get("key_context_files") or []),
         "notebook_access": dict(notebook) if isinstance(notebook, dict) else {},
+        "dashboard_access": dict(entry["dashboard_access"])
+        if isinstance(entry.get("dashboard_access"), dict) else {},
         "skills": list(entry.get("skills") or []),
         "env": dict(entry.get("env") or {}),
         "extra": {k: v for k, v in entry.items() if k not in KNOWN},
@@ -175,7 +178,7 @@ def edit(slug: str, changes: dict) -> dict:
         changes["key_data_paths"] = data_paths.folder_grants(
             changes["key_data_paths"])
     for key in ("description", "key_data_paths", "key_context_files",
-                "notebook_access", "env"):
+                "notebook_access", "dashboard_access", "env"):
         if key in changes:
             entry[key] = changes[key]
     if "extra" in changes:
@@ -186,7 +189,8 @@ def edit(slug: str, changes: dict) -> dict:
 
     touches_config = moving or any(
         k in changes for k in ("description", "key_data_paths",
-                               "key_context_files", "notebook_access", "env",
+                               "key_context_files", "notebook_access",
+                               "dashboard_access", "env",
                                "extra"))
     if touches_config:
         write_config.set_key(f"agents.{slug}", entry)
@@ -209,6 +213,9 @@ def _render(agent: dict) -> str:
     access = notebook_module.normalised(notebook, notebook_module.attached())
     chosen = ",".join(f"{f}={a}" for f, a in access["folders"].items()) or "-"
     lines.append(f"  notebook   mode={access['mode']} folders={chosen}")
+    known = dashboards_module.names()
+    writes = dashboards_module.writable(agent["slug"], agent["dashboard_access"], known)
+    lines.append(f"  dashboards writes={','.join(writes) or '-'}")
     for name, value in agent["env"].items():
         lines.append(f"  env        {name}={value}")
     for name in agent["skills"]:
@@ -278,6 +285,17 @@ def main(argv: list[str]) -> int:
                          metavar="FOLDER=ACCESS",
                          help="read, write or hide for one attached folder; "
                               "repeatable, and folders not given keep theirs")
+    dash = editing.add_mutually_exclusive_group()
+    dash.add_argument("--dashboards-all", dest="dashboards_all",
+                      action="store_const", const=True,
+                      help="write to every dashboard")
+    dash.add_argument("--dashboards-chosen", dest="dashboards_all",
+                      action="store_const", const=False,
+                      help="write only to the dashboards given with --dashboard")
+    editing.add_argument("--dashboard", action="append", metavar="NAME",
+                         help="a dashboard this agent may write; repeatable")
+    editing.add_argument("--no-dashboards", action="store_true",
+                         help="choose no dashboard")
     editing.add_argument("--env", action="append", metavar="NAME=VALUE")
     editing.add_argument("--no-env", action="store_true")
     editing.add_argument("--extra-file",
@@ -352,6 +370,21 @@ def main(argv: list[str]) -> int:
                                           if isinstance(before, dict) else None) \
                 or notebook_module.DEFAULT_MODE
             changes["notebook_access"] = {"mode": mode, "folders": chosen}
+
+        if (args.dashboards_all is not None or args.dashboard
+                or args.no_dashboards):
+            before = agent["dashboard_access"]
+            known = dashboards_module.names()
+            chosen = list(before.get("dashboards") or [])
+            if args.dashboard or args.no_dashboards:
+                unknown = [n for n in args.dashboard or [] if n not in known]
+                if unknown:
+                    raise EditError(f"not a known dashboard: {', '.join(unknown)}")
+                chosen = list(dict.fromkeys(args.dashboard or []))
+            write_all = args.dashboards_all if args.dashboards_all is not None \
+                else before.get("write_all") is not False
+            changes["dashboard_access"] = {"write_all": write_all,
+                                           "dashboards": chosen}
 
         if not changes:
             print("nothing to change; name at least one field.", file=sys.stderr)

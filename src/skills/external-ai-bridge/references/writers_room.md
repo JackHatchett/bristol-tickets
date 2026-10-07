@@ -46,6 +46,11 @@ One block, containing:
 - **The constraints** — the active project's content rules, what may be invented
   freely, and what must not be touched: settled beats, settled terms.
 
+**Write the brief into the project's `handoff` folder**, inside that project's
+own folder in the AI workspace (`markdown_notebook.workspace_dir`), as one note
+named for its job, so the user carries it to the other model from there. A
+brief is the project's material, never the shared agent output.
+
 **Scope the model to the pointers the brief lists.** It reads those files and
 sections and flags a gap rather than wandering into the rest of the project.
 

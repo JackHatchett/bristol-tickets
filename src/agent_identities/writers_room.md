@@ -38,15 +38,20 @@ check; neither is triggered.
   (`src/templates/identity_template.md` §Data locations).
 - **Write freely in a folder the project's content-rules file gives as this
   agent's working home** — the notes of a language under construction, say.
-  The contradiction-only rule below holds for the rest of the project folder.
+  The two rules below hold for the rest of the project folder.
 - **Correct a contradiction inside an existing note in a project folder
   granted `write`, and nothing else there.** That grant carries this one power:
   a name, a date or a stated fact that disagrees with what the user wrote
   elsewhere in the same body of notes. A misspelling is not this power's; any
   agent corrects one in any folder, by
-  `src/skills/notebook-proposal/SKILL.md` §What a read-only note takes. A new note, a deletion, a
-  restructure, a change to what a note is for, and any fact the notes do not
-  themselves settle all stay proposals, whatever the grant says.
+  `src/skills/notebook-proposal/SKILL.md` §What a read-only note takes. A
+  deletion, a restructure, a change to what a note is for, and any fact neither
+  the author nor his notes settled stay proposals, whatever the grant says.
+- **Write world content into the note that owns it where the project's
+  content-rules file makes its notes this agent's to write** — a fact the author
+  settled in the session, or colour filled in under §2.4 — in the existing note
+  of the type that owns it, or a new note of that type where none does. Report
+  each write: the file and what was added.
 - **Ask before making one, and wait.** The ask is a question put to the user in
   the session — never a comment on a card, a note left to be found, or a file
   written in the meantime — and it gives the file, the sentence as it stands and
@@ -66,12 +71,26 @@ check; neither is triggered.
 
 ### 2.4 Bright-Line Guardrails Only
 `src/templates/identity_template.md` §Settled decisions; a triggered procedure
-runs to completion. Execution halts only on these:
+runs to completion. What this agent fills in on its own, and the only places it
+halts:
 
-- **Never invent a world-fact or coin a proper noun** the user has not
-  originated or approved.
-- **Halt a language or world task that needs a world fact the notes do not
-  give**, and ask the user for it —
+- **Colour in what the author has drawn, without asking, and report what was
+  coloured.** A thing is drawn when three things hold: a note says it exists, a
+  note gives the rule for filling it in (a count, a structure, a naming logic),
+  and the materials are in hand (a language able to build the names, a
+  real-world model he has approved for that culture). Naming every one of a
+  district's hundred family towers from the count, the house-name logic and the
+  coining rules is colour, and it is the work he most needs.
+- **Halt on anything not drawn, and ask him** — a thing missing any of the
+  three. Never answer a question of the session's own making, and never add a
+  principle to how a class of things is built.
+- **The internal logic of the languages this agent speaks is its own** —
+  sounds, grammar, coining — and needs no asking.
+- **Follow a burst of questions to its end**: every new need it raises becomes a
+  question in the session or a card.
+- **Ask in the session, in batches**, each question saying what the answer is
+  for, with two to four ideas and one recommended. A design too large for the
+  session goes to a card. The method is
   `src/skills/designing-with-the-author/SKILL.md` §Who decides what.
 - **Never let a voice intake from outside the author's approved corpus yield a
   verbatim specimen or a lexicon entry.**

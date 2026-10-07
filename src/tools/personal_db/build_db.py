@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import db_common as dbc  # noqa: E402
 
-SCHEMA_VERSION = "3"
+SCHEMA_VERSION = "4"
 
 # name, display_name, source, primary_table, snapshot_file, stats_view, sort_order, notes
 DOMAINS = [
@@ -39,7 +39,7 @@ def main() -> None:
     (root / "data").mkdir(parents=True, exist_ok=True)
 
     conn = dbc.connect()
-    dbc.apply_schema(conn)
+    added = dbc.apply_schema(conn)
 
     now = datetime.datetime.utcnow().isoformat(timespec="seconds")
     conn.execute(
@@ -69,6 +69,8 @@ def main() -> None:
 
     print(f"[build_db] DB ready at {dbc.db_path()}")
     print(f"  schema_version={SCHEMA_VERSION}")
+    if added:
+        print(f"  columns added: {', '.join(added)}")
     tabs = [r[0] for r in conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]
     print(f"  tables: {', '.join(tabs)}")

@@ -99,10 +99,45 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
     return conn
 
 
-def apply_schema(conn: sqlite3.Connection) -> None:
-    """Idempotently create/patch all tables + views from schema.sql."""
-    conn.executescript(SCHEMA_PATH.read_text())
+def _add_missing_columns(conn: sqlite3.Connection, sql: str) -> list[str]:
+    """Add to each existing table the columns schema.sql gives it and it lacks.
+
+    `CREATE TABLE IF NOT EXISTS` leaves an existing table as it is, so a column
+    added to schema.sql reaches an older database only through ALTER TABLE.
+    schema.sql is built in memory and compared table by table, so it stays the
+    one place a column is declared. A column added this way is nullable.
+    """
+    ref = sqlite3.connect(":memory:")
+    try:
+        ref.executescript(sql)
+        tables = [r[0] for r in ref.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")]
+        added = []
+        for t in tables:
+            have = {r[1] for r in conn.execute(f"PRAGMA table_info({t})")}
+            if not have:
+                continue  # absent here; the CREATE below makes it whole
+            for _, col, ctype, _, dflt, _ in ref.execute(f"PRAGMA table_info({t})"):
+                if col in have:
+                    continue
+                default = f" DEFAULT {dflt}" if dflt is not None else ""
+                conn.execute(f"ALTER TABLE {t} ADD COLUMN {col} {ctype}{default}")
+                added.append(f"{t}.{col}")
+        return added
+    finally:
+        ref.close()
+
+
+def apply_schema(conn: sqlite3.Connection) -> list[str]:
+    """Idempotently create/patch all tables + views from schema.sql.
+
+    Returns the columns it had to add to tables that already existed.
+    """
+    sql = SCHEMA_PATH.read_text()
+    added = _add_missing_columns(conn, sql)
+    conn.executescript(sql)
     conn.commit()
+    return added
 
 
 class with_writeback:

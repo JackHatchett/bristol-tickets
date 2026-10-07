@@ -50,7 +50,7 @@ except ImportError:  # pragma: no cover - only a stripped bundle reaches this
     default_window = standing_report = None
 
 from .dialogs import notify
-from .folders import LocationsDialog, NotebookDialog, any_missing
+from .folders import DashboardsDialog, LocationsDialog, NotebookDialog, any_missing
 from .settled_combo import SettledComboBox, fill_words
 from .theme import (
     LIGHT_MODE,
@@ -225,11 +225,18 @@ class SettingsTab(QWidget):
         self.notebook_btn = QPushButton("Notebook…")
         self.notebook_btn.clicked.connect(
             lambda: self._open_folders(NotebookDialog))
+        self.dashboards_btn = QPushButton("Dashboards…")
+        self.dashboards_btn.setToolTip(
+            "The dashboards agents keep up for you. Which ones each agent may "
+            "write is set in its profile on the Agents tab.")
+        self.dashboards_btn.clicked.connect(
+            lambda: self._open_folders(DashboardsDialog))
         self.locations_btn = QPushButton("Locations…")
         self.locations_btn.clicked.connect(
             lambda: self._open_folders(LocationsDialog))
         form.addRow(_heading("Folders"))
         form.addRow(_label("Notebook"), self.notebook_btn)
+        form.addRow(_label("Dashboards"), self.dashboards_btn)
         form.addRow(_label("Locations"), self.locations_btn)
 
         form.addRow(_heading("Agent Sessions"))
