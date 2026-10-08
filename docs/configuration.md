@@ -62,7 +62,7 @@ tab.
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `work_whole_queue` | `true` | `true` or `false`. When a session is told to continue, `true` works its queue top to bottom and halts on room; `false` works the next action and stops there. |
-| `suggested_commit` | `true` | `true` or `false`. When a session ends having written files inside a git working tree, whatever stopped it, it ends with a copy-paste commit block for them. |
+| `suggested_commit` | `"block"` | `"commit"`, `"block"` or `"off"`. When a session ends having written files inside a git working tree, whatever stopped it, `commit` commits them, `block` ends with a copy-paste commit block, and `off` leaves git alone. An older `true` is `block` and `false` is `off`. |
 
 Each value is read at the moment it bites — the scope when a session is told to
 continue, the commit offer as the session closes — so a change takes effect on

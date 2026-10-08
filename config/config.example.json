@@ -6,9 +6,9 @@
     "new_ticket_stage": "active"
   },
   "session": {
-    "_notes": "How an agent session runs and closes. Edited in Bristol Tickets' Settings tab. work_whole_queue: how far a session goes when told to continue — true works its queue top to bottom and halts on room, false works the next action and stops there. Read when the scope decision is made — src/app.md Phase 3.7. suggested_commit: when a session ends having written files inside a git working tree, whatever stopped it, it ends with a copy-paste commit block for them. Read as the session closes — src/skills/suggested-commit/SKILL.md.",
+    "_notes": "How an agent session runs and closes. Edited in Bristol Tickets' Settings tab. work_whole_queue: how far a session goes when told to continue — true works its queue top to bottom and halts on room, false works the next action and stops there. Read when the scope decision is made — src/app.md Phase 3.7. suggested_commit: what a session that wrote inside a git working tree does as it ends, whatever stopped it — commit commits the files, block ends with a copy-paste commit block, off leaves git alone. Read as the session closes — src/skills/suggested-commit/SKILL.md.",
     "work_whole_queue": true,
-    "suggested_commit": true
+    "suggested_commit": "block"
   },
   "appearance": {
     "_notes": "How Bristol Tickets looks. Edited in its Settings tab. scheme names either a family — 'warm' or 'cool', meaning follow the OS light/dark setting within it — or one scheme outright: 'warm_light', 'warm_dark', 'cool_light', 'cool_dark'. The Settings tab shows the families as Pumpkin and Frosty; the stored value is unchanged by that. The schemes and the design tokens they sit beside are src/tools/bristol/ui/theme.py; what each key means is src/tools/bristol/ui/README.md.",

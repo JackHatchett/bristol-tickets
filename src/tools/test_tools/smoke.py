@@ -1698,11 +1698,16 @@ def check_bristol() -> list[str]:
                 from ui.folders import LocationsDialog, NotebookDialog
                 NotebookDialog(tab).close()
                 LocationsDialog(tab).close()
-                tab.suggested_commit.setChecked(
-                    not config_file.get(config_file.SUGGESTED_COMMIT, True))
-                if config_file.get(config_file.SUGGESTED_COMMIT) is not \
-                        tab.suggested_commit.isChecked():
-                    raise SmokeFailure("toggling the commit box did not write it")
+                was_git = config_file.get(config_file.SUGGESTED_COMMIT)
+                for value in config_file.GIT_ON_CLOSE:
+                    tab.suggested_commit.setCurrentIndex(
+                        tab.suggested_commit.findData(value))
+                    if config_file.get(config_file.SUGGESTED_COMMIT) != value:
+                        raise SmokeFailure(f"choosing git '{value}' did not write it")
+                if [config_file.git_on_close(v) for v in (True, False, None)] \
+                        != ["block", "off", "block"]:
+                    raise SmokeFailure("an older true/false git setting reads wrong")
+                config_file.update({config_file.SUGGESTED_COMMIT: was_git})
                 # Seating a stored value is not a choice, so reload writes nothing.
                 marker = config_file.get(config_file.APPEARANCE_THEME)
                 config_file.update({config_file.APPEARANCE_THEME: "warm"})

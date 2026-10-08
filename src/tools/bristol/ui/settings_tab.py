@@ -82,6 +82,14 @@ WORK_SCOPE_CHOICES = [
     (True, "Whole Queue"),
 ]
 
+# What a session does with git as it closes, when it wrote inside a working
+# tree. The stored values are config_file.GIT_ON_CLOSE.
+GIT_CHOICES = [
+    ("commit", "Commit for Me"),
+    ("block", "Give Me a Commit Block"),
+    ("off", "Leave Git Alone"),
+]
+
 
 def _label(text: str) -> QLabel:
     """A row's label, as tall as the control beside it and centred in that
@@ -165,18 +173,15 @@ class SettingsTab(QWidget):
         self.work_scope.setToolTip(
             "How far a session goes when you say continue.")
 
-        # No text of its own: the row label carries the words, so the box sits
-        # in the control column with every picker.
-        self.suggested_commit = QCheckBox()
-        # As tall as every other control in the form, so the box is centred on
-        # its label rather than sitting at the top of the row.
-        self.suggested_commit.setMinimumHeight(control_height())
-        self.suggested_commit.toggled.connect(
-            lambda on: self._write(config_file.SUGGESTED_COMMIT, on,
-                                   "Git Commit on Session Close"))
+        self.suggested_commit = fill_words(QComboBox(), GIT_CHOICES)
+        self.suggested_commit.currentIndexChanged.connect(
+            lambda _i: self._write(config_file.SUGGESTED_COMMIT,
+                                   self.suggested_commit.currentData(),
+                                   "Git on Session Close"))
         self.suggested_commit.setToolTip(
-            "When a session ends having written files inside a git working "
-            "tree, it offers a commit block to paste. It never runs it.")
+            "What a session that changed files in a git repository does as it "
+            "ends: commits them, gives you a commit block to paste, or leaves "
+            "git alone.")
 
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
@@ -242,7 +247,7 @@ class SettingsTab(QWidget):
         form.addRow(_heading("Agent Sessions"))
         form.addRow(_label("Agent"), self.next_agent)
         form.addRow(_label("Work Scope"), self.work_scope)
-        form.addRow(_label("Git Commit on Session Close"), self.suggested_commit)
+        form.addRow(_label("Git on Session Close"), self.suggested_commit)
         form.addRow(_heading("Reports"))
         form.addRow(_label("Standing Work"), report_row)
 
@@ -469,9 +474,8 @@ class SettingsTab(QWidget):
             config_file.WORK_WHOLE_QUEUE, config_file.WORK_WHOLE_QUEUE_DEFAULT
         )))
         self.work_scope.setCurrentIndex(scope if scope >= 0 else 0)
-        self.suggested_commit.setChecked(bool(config_file.get(
-            config_file.SUGGESTED_COMMIT, config_file.SUGGESTED_COMMIT_DEFAULT
-        )))
+        self._seat(self.suggested_commit, config_file.git_on_close(config_file.get(
+            config_file.SUGGESTED_COMMIT, config_file.SUGGESTED_COMMIT_DEFAULT)))
         theme, mode = self._stored_appearance()
         self._seat(self.theme, theme)
         self._seat(self.mode, mode)

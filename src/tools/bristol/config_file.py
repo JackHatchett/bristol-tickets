@@ -24,10 +24,22 @@ import instance
 NEW_TICKET_STAGE = "board.new_ticket_stage"
 NEW_TICKET_STAGE_DEFAULT = "active"
 
-# Whether a session that halts for room ends with a commit block for what it
-# wrote. Read by the agent at the moment the offer would fire, never by the app.
+# What a session that wrote inside a git working tree does with git as it
+# closes: commits it, gives the user a commit block, or leaves git alone. Read
+# by the agent as the session closes, never by the app. A configuration written
+# when this was a box holds true for a block and false for nothing.
 SUGGESTED_COMMIT = "session.suggested_commit"
-SUGGESTED_COMMIT_DEFAULT = True
+SUGGESTED_COMMIT_DEFAULT = "block"
+GIT_ON_CLOSE = ("commit", "block", "off")
+
+
+def git_on_close(value) -> str:
+    """The stored value as one of GIT_ON_CLOSE."""
+    if value is True:
+        return "block"
+    if value is False:
+        return "off"
+    return value if value in GIT_ON_CLOSE else SUGGESTED_COMMIT_DEFAULT
 
 # How far a session runs when it is told to continue. On, it works its queue
 # down and halts on room; off, it works the next card and stops there. Read by

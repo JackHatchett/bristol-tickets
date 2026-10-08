@@ -167,8 +167,10 @@ keys, and this app only writes them.
 - **Work Scope** — `session.work_whole_queue`, how far a session runs when told
   to continue: *Whole Queue* or *One Ticket*. Read by the agent when the scope
   decision is made.
-- **Git Commit on Session Close** — `session.suggested_commit`, read by the
-  agent as the session closes.
+- **Git on Session Close** — `session.suggested_commit`, read by the agent as
+  the session closes: *Commit for Me* (`commit`), *Give Me a Commit Block*
+  (`block`) or *Leave Git Alone* (`off`). An older `true` is a block and
+  `false` is off.
 
 ## Filtering the board
 

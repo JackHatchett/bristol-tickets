@@ -102,8 +102,8 @@ the snapshot above.
 
 Before wrapping up a session that changed state, leave the board true.
 
-- **A session that wrote inside a git working tree ends with a commit block for
-  it**, whatever stopped it — on by default.
+- **A session that wrote inside a git working tree ends with its commit, or a
+  commit block**, per `session.suggested_commit`, whatever stopped it.
 
 ## The board is the only channel
 
