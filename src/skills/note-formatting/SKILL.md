@@ -137,10 +137,9 @@ source_url: https://example.org/the-account-this-note-rests-on
 
 - **Write in American English** — center, color, armor, gray, defense, catalog,
   toward, and -ize.
-- **Give a human action to a living subject.** A word means; a thermostat keeps
-  a temperature; the people in a culture count. A thing takes the verbs
-  English already gives it — a river runs, wind carries smoke, a verb takes an
-  object.
+- **Give a human action to a living subject**, by
+  `src/templates/identity_template.md` §Words: a word means, a thermostat keeps
+  a temperature, the people in a culture count.
 - **State the fact in the fewest words that carry it, and stop** — "~384,000
   km away, about 30 Earths across".
 

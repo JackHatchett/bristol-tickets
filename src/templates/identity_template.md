@@ -429,11 +429,17 @@ a line in chat — and not only for governing documents.
   states, defines, gives, sets, specifies or lists; a person names a child, a
   ship, a price, or someone to a post. "The card names the file" is the misuse,
   and "the card gives the file" is the sentence.
+- **Give a human action to a living subject.** People sit, read, carry and
+  keep; a rule states, a note gives, a word means, a thermostat keeps a temperature.
+  A thing keeps the verbs English already gives it — a river runs, wind carries
+  smoke. "The rules now sit in the skill" is the misuse, and "the skill now
+  states the rules" is the sentence; say what a rewritten passage says rather
+  than what it "reads as".
 - **State what is done and how, and stop.** "The copy runs each morning at 4:20"
   is the sentence. A clause after it saying what does not happen, or spelling
-  out what the sentence already implies, reads to a later session as a rule
-  nobody set — a ban on exceptions that may exist, or a limit on what the fact
-  covers.
+  out what the sentence already implies, is taken by a later session for a
+  rule nobody set — a ban on exceptions that may exist, or a limit on what the
+  fact covers.
 - **A negative stands only where it states a fact the positive leaves open** —
   an absence a reader would otherwise assume, such as a sound a language lacks
   that a neighbouring language has.

@@ -2921,7 +2921,7 @@ QRadioButton#choiceHeading {{ font-weight: 700; }}
 QRadioButton::indicator {{
     width: {s_lg}px;
     height: {s_lg}px;
-    border: 1px solid {C['BORDER']};
+    border: 1px solid {C['ACCENT']};
     border-radius: {s_lg // 2 + 1}px;
     background-color: {C['SURFACE']};
 }}
@@ -2979,12 +2979,12 @@ QPushButton#attachRemoveBtn {{ padding: {s_xs}px 0px; }}
 /* A link row that is not clickable (a pending link on an unsaved ticket). */
 QLabel#linkRowText {{ color: {C['INK_SOFT']}; font-size: {type_size('body')}pt; }}
 QCheckBox {{ color: {C['INK']}; background: transparent; }}
-/* The checkbox is the scheme's own control: a surface with a hairline, an
-   accent fill when checked — never the platform's indicator. */
+/* The checkbox is the scheme's own control: a surface with an accent
+   hairline, an accent fill when checked — never the platform's indicator. */
 QCheckBox::indicator {{
     width: {s_lg}px;
     height: {s_lg}px;
-    border: 1px solid {C['BORDER']};
+    border: 1px solid {C['ACCENT']};
     border-radius: {r_sm}px;
     background-color: {C['SURFACE']};
 }}
