@@ -39,9 +39,16 @@ Two things, and a step stating only one is not a verification.
 - **What result would fail it** — the output that means the card is not done.
   A check nothing could fail is a sentence, not a check.
 
-**A verification that a person performs is still a verification**, and it states
-the person's part the same way: what they open, and what they would be looking
-at that means it failed.
+**Who performs it follows from what changed:**
+
+- **A change to an application is checked by the user's look.** Assign the card
+  to him with a comment that is a brief, clear instruction: what to open, what
+  to do there, and what he would see if it failed —
+  `src/skills/checking-a-bristol-change/SKILL.md` §What a visible change
+  additionally needs.
+- **Every other change is checked by the session that made it**: a command it
+  runs, a value it reads back from config, a changed passage it reads against
+  each criterion in turn. The user reviews one when he asks to.
 
 ## When a card has none
 

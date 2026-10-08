@@ -133,6 +133,17 @@ source_url: https://example.org/the-account-this-note-rests-on
 - **A program that writes notes follows it too** — a report, a generated page
   and a capture are notes.
 
+## Wording
+
+- **Write in American English** — center, color, armor, gray, defense, catalog,
+  toward, and -ize.
+- **Give a human action to a living subject.** A word means; a thermostat keeps
+  a temperature; the people in a culture count. A thing takes the verbs
+  English already gives it — a river runs, wind carries smoke, a verb takes an
+  object.
+- **State the fact in the fewest words that carry it, and stop** — "~384,000
+  km away, about 30 Earths across".
+
 ## Related Notes
 
 - **Close every note with a `## Related Notes` section**, a blank line, then a

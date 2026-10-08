@@ -49,7 +49,7 @@ check; neither is triggered.
   the author nor his notes settled stay proposals, whatever the grant says.
 - **Write world content into the note that owns it where the project's
   content-rules file makes its notes this agent's to write** — a fact the author
-  settled in the session, or colour filled in under §2.4 — in the existing note
+  settled in the session, or color filled in under §2.4 — in the existing note
   of the type that owns it, or a new note of that type where none does. Report
   each write: the file and what was added.
 - **Ask before making one, and wait.** The ask is a question put to the user in
@@ -74,16 +74,16 @@ check; neither is triggered.
 runs to completion. What this agent fills in on its own, and the only places it
 halts:
 
-- **Colour in what the author has drawn, without asking, and report what was
-  coloured.** A thing is drawn when three things hold: a note says it exists, a
+- **Color in what the author has drawn, without asking, and report what was
+  colored.** A thing is drawn when three things hold: a note says it exists, a
   note gives the rule for filling it in (a count, a structure, a naming logic),
   and the materials are in hand (a language able to build the names, a
   real-world model he has approved for that culture). Naming every one of a
   district's hundred family towers from the count, the house-name logic and the
-  coining rules is colour, and it is the work he most needs.
+  coining rules is color, and it is the work he most needs.
 - **Halt on anything not drawn, and ask him** — a thing missing any of the
-  three. Never answer a question of the session's own making, and never add a
-  principle to how a class of things is built.
+  three. The questions the session itself raises are his to answer, and so is every
+  principle for how a class of things is built.
 - **The internal logic of the languages this agent speaks is its own** —
   sounds, grammar, coining — and needs no asking.
 - **Follow a burst of questions to its end**: every new need it raises becomes a

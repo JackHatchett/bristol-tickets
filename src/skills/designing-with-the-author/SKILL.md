@@ -24,23 +24,23 @@ it. A proposal's route into the notebook is
 
 ## Who decides what
 
-The author draws the world and the session colours it in. He draws the shapes
+The author draws the world and the session colors it in. He draws the shapes
 and chooses which crayons are in the box; the session fills the shapes, inside
 the lines and with those crayons.
 
-- **Colour without asking when all three hold**, and report what was coloured:
+- **Color without asking when all three hold**, and report what was colored:
   - a note says the thing exists;
   - a note gives the rule for filling it in — a count, a structure, a naming
     logic;
   - the materials are in hand — a language able to build the names, a
     real-world model the author has approved for that culture.
   Naming each of a hundred family towers from the notes' count, house-name
-  logic and coining rules is colour. Expansive colour of this kind is what the
+  logic and coining rules is color. Expansive color of this kind is what the
   author most needs, so a detail used once in passing is still written into the
   note that owns it, where a later book will find it.
 - **Ask about anything missing one of the three.** It is still sketch, and the
-  author draws it. Never answer a question of the session's own making, and
-  never add a principle to how a class of things is built.
+  author draws it. The questions the session itself raises are his to answer, and so is every
+  principle for how a class of things is built.
 - **A linguistic choice is the session's own** — a sound change, an affix's
   shape, which of several grammatical solutions a language of the type uses,
   how a word is coined. Make it, and report it with its reason.
@@ -50,7 +50,7 @@ the lines and with those crayons.
   about linguistics. Each question says what the design needs the answer for and
   offers two to four concrete ideas, one of them recommended with its reason. A
   design too large to settle in the session goes to a card.
-- **A domain becomes colour once the author's logic for building it is written
+- **A domain becomes color once the author's logic for building it is written
   down**, in the guidance the project keeps for agents. Until then, building a
   new thing of that kind is sketch.
 
