@@ -46,13 +46,13 @@ on disk, and nothing left where they were.
 
 ## Running git in a connected folder
 
-- **Clear the locks before each git command, never after.**
+- **Clear the locks before each git command, without asking the user** — rename
+  each onto one file inside `.git`, which git ignores and the next rename
+  replaces:
 
   ```
-  for f in $(find .git -name '*.lock'); do mv "$f" <sink>; done
+  for f in $(find .git -name '*.lock'); do mv -f "$f" .git/cowork_lock_sink; done
   ```
-
-  `<sink>` is the path §Removing a file places.
 - **End a session in a repository with a clearing pass, and run no git command
   after it.** A command run to check the work leaves the lock that stops the
   user's own next one, and a read leaves one as surely as a write.

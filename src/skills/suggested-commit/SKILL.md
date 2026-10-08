@@ -36,6 +36,7 @@ by the user — as `session.suggested_commit` says.
 
 Run in the shell that holds the repository — on the user's computer in Cowork,
 by `src/skills/working-in-cowork/SKILL.md` §Running git in a connected folder.
+The user chose this by the setting, so every step runs without asking him.
 
 1. **Clear git's lock files**, by that section's route.
 2. **Stage the paths this session wrote, by name** — `git add -- <path> …`. The
