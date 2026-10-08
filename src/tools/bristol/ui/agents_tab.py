@@ -182,59 +182,78 @@ class NotebookAccess(QWidget):
 
 
 class DashboardAccess(QWidget):
-    """Write to All Dashboards, on unless switched off, and under it one switch
-    per dashboard known in Settings, each off until switched on. There is no
-    read-only level: a dashboard is published, and anyone may read it.
+    """All Dashboards or Chosen Dashboards, as the Notebook row offers its modes,
+    and under Chosen a checkable list of the dashboards known in Settings, as
+    the Skills list is, each off until ticked. There is no read-only level: a
+    dashboard is published, and anyone may read it.
 
-    Choices are kept while the toggle is on, so switching it off again brings
-    them back. chief_of_staff writes to every dashboard, so its toggle is shown
-    on and cannot be moved.
+    Choices are kept while All is chosen, so going back to Chosen brings them
+    back. chief_of_staff writes to every dashboard, so its All is shown chosen
+    and cannot be moved.
     """
 
     def __init__(self, entry: dict, dashboards: list[str], slug: str = "") -> None:
         super().__init__()
         entry = entry if isinstance(entry, dict) else {}
-        self._entry = entry
         self._kept = [n for n in entry.get("dashboards") or [] if isinstance(n, str)]
         locked = slug == ALWAYS_ALL_DASHBOARDS
+        write_all = locked or entry.get("write_all") is not False
 
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(space("sm"))
 
-        self.write_all = QCheckBox("Write to All Dashboards")
-        self.write_all.setChecked(locked or entry.get("write_all") is not False)
-        self.write_all.setEnabled(not locked)
+        modes = QHBoxLayout()
+        modes.setSpacing(space("lg"))
+        self.mode_group = QButtonGroup(self)
+        self.all_button = QRadioButton("All Dashboards")
+        self.chosen_button = QRadioButton("Chosen Dashboards")
+        self.all_button.setChecked(write_all)
+        self.chosen_button.setChecked(not write_all)
+        for button in (self.all_button, self.chosen_button):
+            button.setEnabled(not locked)
+            self.mode_group.addButton(button)
+            modes.addWidget(button)
         if locked:
-            self.write_all.setToolTip(
+            self.all_button.setToolTip(
                 "chief_of_staff keeps every dashboard, whatever this says.")
-        column.addWidget(self.write_all)
+        modes.addStretch(1)
+        column.addLayout(modes)
 
-        self.rows = QWidget()
-        rows = QVBoxLayout(self.rows)
-        rows.setContentsMargins(space("lg"), space("sm"), 0, 0)
-        rows.setSpacing(space("xs"))
-        self.choices: dict[str, QCheckBox] = {}
+        self.list = QListWidget()
+        self.list.setObjectName("searchResults")
         for name in dashboards:
-            box = QCheckBox(name)
-            box.setChecked(name in self._kept)
-            rows.addWidget(box)
-            self.choices[name] = box
+            item = QListWidgetItem(name)
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(Qt.Checked if name in self._kept else Qt.Unchecked)
+            self.list.addItem(item)
         if not dashboards:
-            none = QLabel("No dashboard is known yet. Add one in Settings.")
-            none.setObjectName("metaText")
-            rows.addWidget(none)
-        column.addWidget(self.rows)
-        self.write_all.toggled.connect(lambda *_: self._sync())
+            item = QListWidgetItem("No dashboard is known yet. Add one in Settings.")
+            item.setFlags(Qt.NoItemFlags)
+            self.list.addItem(item)
+        rows = max(1, self.list.count())
+        self.list.setFixedHeight(min(rows, 6) * self.list.sizeHintForRow(0)
+                                 + 2 * self.list.frameWidth() + space("sm"))
+        self._names = list(dashboards)
+        column.addWidget(self.list)
+        self.mode_group.buttonToggled.connect(lambda *_: self._sync())
         self._sync()
 
     def _sync(self) -> None:
-        self.rows.setVisible(not self.write_all.isChecked())
+        self.list.setVisible(self.chosen_button.isChecked())
+
+    @property
+    def write_all(self) -> QRadioButton:
+        return self.all_button
+
+    def _ticked(self) -> list[str]:
+        return [self.list.item(i).text() for i in range(self.list.count())
+                if self.list.item(i).text() in self._names
+                and self.list.item(i).checkState() == Qt.Checked]
 
     def values(self) -> dict:
-        chosen = [n for n in self._kept if n not in self.choices]
-        chosen += [n for n, box in self.choices.items() if box.isChecked()]
-        return {"write_all": self.write_all.isChecked(), "dashboards": chosen}
+        chosen = [n for n in self._kept if n not in self._names] + self._ticked()
+        return {"write_all": self.all_button.isChecked(), "dashboards": chosen}
 
     def changed_from(self, entry: dict) -> bool:
         """Whether saving would change what the entry says."""
@@ -248,7 +267,7 @@ class DashboardAccess(QWidget):
     def args(self) -> list[str]:
         values = self.values()
         out = ["--dashboards-all" if values["write_all"] else "--dashboards-chosen"]
-        known = [n for n in values["dashboards"] if n in self.choices]
+        known = [n for n in values["dashboards"] if n in self._names]
         for name in known:
             out += ["--dashboard", name]
         if not known:
