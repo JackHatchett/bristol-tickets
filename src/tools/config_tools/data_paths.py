@@ -21,22 +21,29 @@ explaining the folder. `ensure_db` applies a schema and stops: no seed rows.
 
 Path resolution
 ---------------
-A declared path is one of three things:
+A declared path is one of four things:
 
+    starting with @                a reference: `@<dotted.key>[/sub/path]`
+                                   resolves as the value that key holds, with
+                                   the sub-path appended
     absolute, or starting with ~   used as written, with ~ expanded
     starting with the notebook's   resolved inside the Markdown notebook's
       own folder name              container (`markdown_notebook.notes_dir`)
     anything else                  relative to the project root
 
-The third case is why `data/<instance>/career` in config resolves correctly
+A reference is how one folder is written once: an environment value that
+repeats another key's folder points at that key, so repointing the key moves
+every value that refers to it.
+
+The fourth case is why `data/<instance>/career` in config resolves correctly
 whatever the user named the folder they cloned into: the root is found by
 walking up to the `src/app.md` marker, never by folder name.
 
-The notebook's own container is relocated the same way as the first case, so a
+The notebook's own container is relocated the same way as an absolute path, so a
 path declared from the notebook's folder name down and the absolute path config
 stores for that same folder resolve to one place on every host.
 
-The first case has a second step, for the same reason. A host may reach the
+The absolute case has a second step, for the same reason. A host may reach the
 user's folders somewhere other than where config names them — a sandbox with the
 chosen folders mounted into it reaches every one of them under a mount root, and
 `~` there is the sandbox's own home rather than the user's. So an absolute
@@ -53,6 +60,7 @@ CLI
     python3 data_paths.py --key important_paths.personal_db
     python3 data_paths.py --path data/<instance>/system/logs --ensure
     python3 data_paths.py --declare /an/absolute/path/just/picked
+    python3 data_paths.py --env career_coach
     python3 data_paths.py --data-root
     python3 data_paths.py --instance
 
@@ -167,6 +175,39 @@ def beside_the_project(expanded: Path) -> Path | None:
     return None
 
 
+REFERENCE = "@"
+_MAX_REFERENCE_DEPTH = 8
+
+
+def is_reference(value) -> bool:
+    """Whether a config value points at another key rather than at a place."""
+    return isinstance(value, str) and value.strip().startswith(REFERENCE)
+
+
+def dereference(value: str, _depth: int = 0) -> str:
+    """The declared path a reference stands for, followed to its owning key.
+
+    `@bristol_data.folders.logs/applications_snapshots` is the value
+    `bristol_data.folders.logs` holds with `/applications_snapshots` after it.
+    A value that is not a reference comes back unchanged.
+    """
+    text = str(value).strip()
+    if not text.startswith(REFERENCE):
+        return text
+    if _depth >= _MAX_REFERENCE_DEPTH:
+        raise ValueError(f"data_paths: reference loop at {text}")
+    key, _, rest = text[len(REFERENCE):].partition("/")
+    try:
+        target = read_config.get(key)
+    except KeyError:
+        raise ValueError(f"data_paths: {text} refers to {key}, which config "
+                         f"does not hold") from None
+    if not isinstance(target, str) or not target.strip():
+        raise ValueError(f"data_paths: {text} refers to {key}, which holds no path")
+    base = dereference(target, _depth + 1).rstrip("/")
+    return f"{base}/{rest}" if rest else base
+
+
 def resolve(declared: str | Path) -> Path:
     """The absolute path a declaration refers to.
 
@@ -174,7 +215,7 @@ def resolve(declared: str | Path) -> Path:
     not there, which is the one case a host can have relocated — see the module
     docstring's Path resolution.
     """
-    text = str(declared).strip()
+    text = dereference(str(declared))
     if not text:
         raise ValueError("data_paths.resolve: empty path")
     expanded = Path(os.path.expanduser(text))
@@ -297,6 +338,33 @@ def ensure_agent_data_paths(slug: str, access: str | None = None) -> list[Path]:
             if access is None or grant["access"] == access]
 
 
+def env_value(value) -> str:
+    """An environment value as a process is given it.
+
+    A reference resolves to the absolute folder it stands for. Anything else —
+    a filename, a flag, a path written out — is passed as written.
+    """
+    if is_reference(value):
+        return str(resolve(value))
+    return str(value)
+
+
+def agent_env(slug: str) -> dict[str, str]:
+    """The environment an agent's tools expect, every reference resolved.
+
+    A reference whose key config no longer holds is left out, so the tool that
+    reads the variable falls back to its own default.
+    """
+    env = read_config.get(f"agents.{slug}.env", {}) or {}
+    out = {}
+    for name, value in env.items():
+        try:
+            out[name] = env_value(value)
+        except ValueError:
+            continue
+    return out
+
+
 def ensure_db(path: str | Path, schema: str | Path) -> Path:
     """A database at `path` with `schema` applied, created if either is absent.
 
@@ -372,6 +440,12 @@ def _main(argv: list[str]) -> int:
     declared = flag("--path")
     if declared:
         print(ensure_dir(declared) if ensure else resolve(declared))
+        return 0
+
+    env_slug = flag("--env")
+    if env_slug:
+        for name, value in agent_env(env_slug).items():
+            print(f"{name}={value}")
         return 0
 
     picked = flag("--declare")

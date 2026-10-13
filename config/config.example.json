@@ -129,7 +129,7 @@
         }
       ],
       "env": {
-        "ZOTERO_DATA_DIR": "/path/to/Zotero"
+        "ZOTERO_DATA_DIR": "@zotero.env.ZOTERO_DATA_DIR"
       },
       "notebook_access": {
         "mode": "per_folder",

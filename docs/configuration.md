@@ -161,7 +161,7 @@ Point both at whatever vendor's models you run; nothing in the code gives one.
 | `description` | The one line the setup wizard's agent list and `docs/agents.md` show. |
 | `key_context_files` | Files this agent reads on sight. Declarative. |
 | `key_data_paths` | The folders this agent reaches, one **folder grant** each: `{ "path": "…", "access": "read" | "write" }`. The setup wizard creates them. Add and remove one in Bristol Tickets' Agents tab rather than by hand. |
-| `env` | Environment variables this agent's tools expect. |
+| `env` | Environment variables this agent's tools expect. A value naming a folder another key already holds is written `@<that.key>`, with a sub-path after it where needed — `@bristol_data.folders.logs/applications_snapshots` — so the folder is written once. `python3 src/tools/config_tools/data_paths.py --env <slug>` prints the values a tool is given. |
 | `notebook_access` | `{ "mode": "per_folder" \| "read_all" \| "write_all", "folders": { "<attached folder>": "read" \| "write" \| "hide" } }` — what this agent may do in your notebook. Read All and Write All reach the whole notebook; Per Folder reaches each attached folder as `folders` says, and a folder with no entry is hidden. Set it in the agent's window in Bristol Tickets. |
 | `skills` | The skills attached to this agent, by name, in the order a session matches them. A skill named by no agent is available to every agent. Set it with `skills.py attach` and `detach` rather than by hand. |
 | `active_project` | Optional. Which of the agent's projects a session opens on, where it has more than one. An agent's projects are the `projects` entries under its folder grants; without this key a session opens on the first one listed. A session writes it when you say you are working the other one — `src/tools/config_tools/active_project.py`. |
@@ -207,6 +207,7 @@ on disk.
 | `reports_dir` | Where a closing epic writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
 | `plans_dir` | Where a planning document goes. |
 | `explainers_dir` | Where `teaching_assistant` writes explainers, one folder per topic. |
+| `beat_sheets_dir` | The library of archetype beat sheets `writers_room` builds, with its hub. |
 
 ### `zotero`
 
@@ -220,7 +221,8 @@ tools fall back to `~/Zotero`.
 ### `personal_db`
 
 **Optional.** A single SQLite database of personal tracking, one table per
-domain. Absent, the tools discover `data/*/personal/`.
+domain. The tools read each value from the environment, then from this
+block; absent from both, they discover `data/*/personal/`.
 
 | Key | Meaning |
 | --- | --- |

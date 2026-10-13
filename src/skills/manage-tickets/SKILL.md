@@ -27,6 +27,24 @@ for all three: `src/templates/identity_template.md`.
   every epic and the backlog for a reader carrying none of it, ending on the
   user's pick. What is read here is the session's own queue.
 
+## A closed card is history
+
+A card in `done` or the Archive is finished. It records what was decided when
+it closed, and the notes and the open cards hold what is decided now.
+
+- **Read a closed card only where the user or an open card points to it** — his
+  message, a link or a blocker on an open card, or a status script's last
+  finished lines.
+- **Read it as what was decided then.** Where it disagrees with a note or an
+  open card, the note or the open card holds.
+- **Edit nothing on a closed card** — not its text, its fields or its status.
+  Work it calls for is a new card, linked to it from the new card. A comment is
+  always allowed.
+- **Close a card only when its process is done** — every comment and check it
+  includes, by whoever performs them. Until then it stays in `doing`, assigned
+  to whoever acts next; `src/skills/verifying-a-card/SKILL.md` §Closing on it
+  owns the check.
+
 ## When to update the board
 
 Update it whenever the user expresses any of these, without waiting to be asked:

@@ -214,7 +214,9 @@ and a **status** (which board column):
     what makes `doing` outrank every `todo` in the queue. How far along it is,
     and whether anything is half-written on disk, is the card's own handoff
     comment.
-  - `done` — finished; `closed_at` is set.
+  - `done` — finished; `closed_at` is set. A finished card is a record of what
+    was decided then — `src/skills/manage-tickets/SKILL.md` §A closed card is
+    history.
 
 `backlog` is not a *status* value; it lives on the stage axis, and the CLI
 redirects `--status backlog` to a stage move.

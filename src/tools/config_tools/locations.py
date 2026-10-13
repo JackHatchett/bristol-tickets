@@ -5,7 +5,9 @@ can be checked and repointed without opening the file.
 A location is any value in config.local.json that names a place on disk: a key
 ending in _dir, _db, _path, _file or _folder, a `root`, a `path`, an
 environment variable whose value is a path, an agent's folder grants and
-context files, and its charter. The Markdown notebook folder and its attached
+context files, and its charter. A value written as a reference to another key
+(`@<dotted.key>`, `data_paths.dereference`) is not a location of its own: the
+key it refers to is listed, once. The Markdown notebook folder and its attached
 folders are not listed here; `notebook.py` owns them, because repointing the
 notebook detaches its folders.
 
@@ -94,6 +96,8 @@ def _walk(node, pointer: list, out: list) -> None:
             if tuple(here[-2:]) in SKIPPED:
                 continue
             if isinstance(value, str):
+                if data_paths.is_reference(value):
+                    continue
                 named = key in PATH_KEYS or key.endswith(PATH_SUFFIXES) \
                     or "env" in pointer and _looks_like_path(value) \
                     or pointer and pointer[-1] == "folders" and isinstance(value, str)
@@ -105,6 +109,8 @@ def _walk(node, pointer: list, out: list) -> None:
         for i, value in enumerate(node):
             here = pointer + [i]
             if isinstance(value, str):
+                if data_paths.is_reference(value):
+                    continue
                 if pointer and pointer[-1] in ("key_context_files", "key_data_paths",
                                                "notebook_projects", "local_projects") \
                         and _looks_like_path(value):

@@ -62,7 +62,10 @@ profile carries its toggle.
 
 Resolves declared locations and creates them at the moment of a write.
 
-- `resolve(declared)` — the absolute path a declaration refers to. Reads
+- `resolve(declared)` — the absolute path a declaration refers to. A value
+  written `@<dotted.key>`, optionally followed by `/sub/path`, is a reference:
+  it resolves as the value that key holds, so a folder is written once and
+  every value that repeats it refers to the key that owns it. Reads
   config, and touches the disk only for an absolute declared path that is not
   there: a host may reach the user's folders somewhere other than where config
   gives them, so such a path is looked for once more beside the project, which
@@ -88,6 +91,9 @@ Resolves declared locations and creates them at the moment of a write.
   access this build does not know, so a value from a later build never silently
   revokes a grant. What an agent may then do with a grant is
   `src/templates/identity_template.md` §Data locations.
+- `agent_env(slug)` — an agent's `env` block with every reference resolved to
+  an absolute path, and a reference to a key config no longer holds left out.
+  `python3 data_paths.py --env <slug>` prints it as `NAME=value` lines.
 - `agent_data_paths(slug[, access])` / `ensure_agent_data_paths(slug[, access])`
   — those grants resolved, or only the ones carrying one access.
 

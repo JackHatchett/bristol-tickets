@@ -3733,6 +3733,48 @@ def check_config_resolution() -> list[str]:
     ok.append("a session opens on its only project, on the chosen one of two, "
               "and on none where it holds none")
 
+    # An environment value written as a reference resolves through the key
+    # that owns its folder, and Locations lists that folder once.
+    import json as _json
+    import os as _os
+    import data_paths
+    import locations
+    with tempfile.TemporaryDirectory() as tmp:
+        logs = Path(tmp) / "logs"
+        logs.mkdir()
+        cfg_path = Path(tmp) / "config.local.json"
+        cfg_path.write_text(_json.dumps({
+            "bristol_data": {"folders": {"logs": str(logs)}},
+            "personal_db": {"env": {
+                "PERSONAL_SNAPSHOT_BASE": "@bristol_data.folders.logs"}},
+            "agents": {"a": {"env": {
+                "SNAP": "@personal_db.env.PERSONAL_SNAPSHOT_BASE/applications_snapshots",
+                "NAME": "personal.db",
+                "LOOP": "@agents.a.env.LOOP",
+                "GONE": "@nowhere.at_all"}}}}))
+        saved = _os.environ.get("CONFIG_LOCAL_JSON")
+        _os.environ["CONFIG_LOCAL_JSON"] = str(cfg_path)
+        try:
+            if data_paths.resolve("@personal_db.env.PERSONAL_SNAPSHOT_BASE") != logs:
+                raise SmokeFailure("a reference to a reference did not reach the owning folder")
+            env = data_paths.agent_env("a")
+            if env.get("SNAP") != str(logs / "applications_snapshots"):
+                raise SmokeFailure(f"a reference with a sub-path resolved to {env.get('SNAP')}")
+            if env.get("NAME") != "personal.db":
+                raise SmokeFailure("a value that is not a reference was changed")
+            if "LOOP" in env or "GONE" in env:
+                raise SmokeFailure("a looping or dangling reference was handed to a tool")
+            at_logs = [r["label"] for r in locations.locations()
+                       if r["resolved"] == str(logs)]
+            if len(at_logs) != 1:
+                raise SmokeFailure(f"Locations lists the logs folder as {at_logs}")
+        finally:
+            if saved is None:
+                _os.environ.pop("CONFIG_LOCAL_JSON", None)
+            else:
+                _os.environ["CONFIG_LOCAL_JSON"] = saved
+    ok.append("a reference resolves through the key that owns the folder, "
+              "and Locations lists that folder once")
     return ok
 
 
@@ -3789,7 +3831,8 @@ def check_agent_tools() -> list[str]:
         read = agent_reader.read_agent(slug)
         for key in entry:
             named = {"identity", "description", "key_data_paths",
-                     "key_context_files", "notebook_access", "skills", "env"}
+                     "key_context_files", "notebook_access",
+                     "dashboard_access", "skills", "env"}
             if key not in named and key not in read["extra"]:
                 raise SmokeFailure(
                     f"{slug}'s '{key}' reaches neither a field nor extra")

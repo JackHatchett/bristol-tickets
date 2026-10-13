@@ -50,6 +50,13 @@ the lines and with those crayons.
   about linguistics. Each question says what the design needs the answer for and
   offers two to four concrete ideas, one of them recommended with its reason. A
   design too large to settle in the session goes to a card.
+- **Two of the author's notes that cannot both be true are his to resolve.**
+  The session brings him what replaces them, and the replacement is usually
+  neither note as written.
+- **Offer the replacement in the shape the ideas take.** Where one idea fits,
+  recommend it alone for his approval; where several fit, offer two to four,
+  one recommended with its reason. The correction he chooses is made under
+  `src/agent_identities/writers_room.md` §2.3.
 - **A domain becomes color once the author's logic for building it is written
   down**, in the guidance the project keeps for agents. Until then, building a
   new thing of that kind is sketch.

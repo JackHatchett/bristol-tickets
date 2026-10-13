@@ -1,6 +1,6 @@
 ---
 name: testing-what-was-built
-description: Runs a skill, a Bristol feature or a finished card against what it claims, on test copies in a sandbox, records what appeared at every step, and files each defect as a card. Use when something built should be tried before it touches real data, or when a finished card's claims should be tested by someone who did not build it.
+description: Runs a skill, a Bristol feature or a card waiting on its test against what it claims, on test copies in a sandbox, records what appeared at every step, and files each defect as a card. Use when something built should be tried before it touches real data, or when a card's claims should be tested by someone who did not build it.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3, and a folder granted to the testing agent for its sandbox.
 metadata:
@@ -12,11 +12,11 @@ metadata:
 # testing-what-was-built
 
 Input: the thing under test — an installed skill, a Bristol feature, or a card
-someone closed — and what it claims. Operation: the pass below, in a sandbox.
+waiting on its test — and what it claims. Operation: the pass below, in a sandbox.
 Output: one comment giving each claim as met or not met with what appeared, and
 a card for each defect.
 
-Reading a finished card against its criteria without running anything is
+Reading a card against its criteria without running anything is
 `src/skills/reviewing-finished-work/SKILL.md`; this runs the thing.
 
 ## The sandbox
@@ -69,8 +69,10 @@ Reading a finished card against its criteria without running anything is
 ## Where findings go
 
 - **One comment on the card the test answers**, giving each claim as met or not
-  met, the step that showed it and what appeared. A test with no card behind it
-  gets a card of its own first, assigned to the testing agent.
+  met, the step that showed it and what appeared. A card waiting on a test is in
+  `doing`, assigned to the testing agent, and the tester closes it when every
+  claim is met. A test with no card behind it gets a card of its own first,
+  assigned to the testing agent.
 - **Each defect is a Fix card** — Expected, Observed — assigned to the agent
   that built the thing, with the testing agent as reporter and a link to the
   card tested. A defect in an installed third-party skill goes to

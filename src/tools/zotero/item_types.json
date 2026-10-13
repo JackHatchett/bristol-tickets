@@ -86,6 +86,38 @@
     ]
   },
 
+  "tv_series": {
+    "zotero_type": "tvBroadcast",
+    "required": ["title", "creator", "date", "url", "catalog"],
+    "text_fields": {
+      "title": "title",
+      "short_title": "shortTitle",
+      "abstract": "abstractNote",
+      "network": "network",
+      "place": "place",
+      "format": "videoRecordingFormat",
+      "running_time": "runningTime",
+      "language": "language",
+      "url": "url",
+      "catalog": "libraryCatalog",
+      "archive": "archive",
+      "archive_location": "archiveLocation",
+      "call_number": "callNumber",
+      "rights": "rights"
+    },
+    "date_field": "date",
+    "accessed_field": "accessDate",
+    "creators": [
+      {"key": "creator", "type": "seriesCreator"},
+      {"key": "directors", "type": "director"},
+      {"key": "scriptwriters", "type": "scriptwriter"},
+      {"key": "producers", "type": "producer"},
+      {"key": "executive_producers", "type": "executiveProducer"},
+      {"key": "cast", "type": "castMember"},
+      {"key": "contributors", "type": "contributor"}
+    ]
+  },
+
   "album": {
     "zotero_type": "audioRecording",
     "required": ["title", "performer", "date", "url", "catalog"],

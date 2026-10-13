@@ -99,7 +99,8 @@ the payload keys that become fields, the keys that become creators and with
 which creator type, and which of them are required. Adding a kind is an edit to
 that file and none to the script, and `--types` prints what it currently holds.
 It ships with `video_game` and `software` (both `computerProgram`), `film`,
-`album` (`audioRecording`) and `article` (`journalArticle`).
+`tv_series` (`tvBroadcast`, its `creator` stored as `seriesCreator`), `album`
+(`audioRecording`) and `article` (`journalArticle`).
 
 Payloads live in `data/*/personal/library_records/`, one file per batch:
 
@@ -137,8 +138,9 @@ Behaviour worth knowing:
 - **Four keys are the same on every type and are not in the map** — `date` and
   `accessed`, which carry Zotero's own date formats; `extra`, one `Key: value`
   line each; and `tags`.
-- **A title already in the library as an item of the same type is reused**, and
-  only its collection membership is added. Nothing is overwritten, so a payload
+- **An entry whose title and year both match an item of the same type is
+  reused**, and only its collection membership is added. Two works sharing a
+  title and differing in year are two items. Nothing is overwritten, so a payload
   can be corrected and replayed.
 - **A creator slot takes one name or a list of them.** `Last, First` is a
   person; a name with no comma is stored single-field, which is how Zotero holds
@@ -147,8 +149,8 @@ Behaviour worth knowing:
   publisher.
 - **`programmingLanguage` is never written.** On a Software item that field
   means the language the program was written in; the language it is played in is
-  `Language: en` in `extra`. A film, an album and an article have a real
-  `language` field, and the map sends `language` there.
+  `Language: en` in `extra`. A film, a TV series, an album and an article have
+  a real `language` field, and the map sends `language` there.
 - `--dry-run` opens the database read-only and reports what it would create and
   what it would reuse, so a payload can be reviewed with Zotero still open.
 

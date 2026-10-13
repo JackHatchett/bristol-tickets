@@ -1,6 +1,6 @@
 ---
 name: reviewing-finished-work
-description: Reads a finished card against its own acceptance criteria, one at a time, and files what it finds. Use when work another agent finished should be checked by someone who did not do it.
+description: Reads a card whose author has finished the work against its own acceptance criteria, one at a time, and closes it or sends it back. Use when work another agent finished should be checked by someone who did not do it.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3 to read and write the board.
 metadata:
@@ -11,9 +11,10 @@ metadata:
 ---
 # reviewing-finished-work
 
-Input: a card someone else closed. Operation: its own acceptance criteria, one
-at a time, against what is actually on disk. Output: one comment on that card,
-and a card for each defect.
+Input: a card in `doing`, assigned to the reviewer, whose author has finished
+the work. Operation: its own acceptance criteria, one at a time, against what is
+actually on disk. Output: one comment on that card, and the card closed or
+returned to its author.
 
 **The reviewer is not the author.** An agent holding both the authorship and the
 judgement of one output is the case
@@ -48,14 +49,17 @@ author with a second opinion.
 
 ## Where findings go
 
-- **One comment on the card reviewed**, listing each criterion and whether it is
-  met, and nothing else. That comment is the review; there is no report file and
-  no second place to look — `src/app.md` §The board is the only channel.
-- **Each defect is a card of its own**, `add-task --assignee <the author's
-  agent> --reporter <you>`, linked to the reviewed card. A defect listed in a
-  comment and nowhere else is a defect nobody will work.
-- **The reviewed card is not reopened.** It closed on the work its author did;
-  the correction is the new card. Reopening loses which pass found what.
+- **One comment on the card reviewed**, listing each criterion and whether it
+  is met, and nothing else. That comment is the review; there is no report file
+  and no second place to look — `src/app.md` §The board is the only channel.
+- **Every criterion met: close the card.** The review was the last reason to
+  come back to it.
+- **A criterion unmet: return the card to its author** — `update-task-status
+  --id N --status doing --assignee <the author's agent>` — with the comment
+  stating each unmet criterion. The card stays one card until it passes.
+- **A defect outside the card's criteria is a card of its own**,
+  `add-task --assignee <the author's agent> --reporter <you>`, linked to the
+  card reviewed.
 - **Nothing to find is a real outcome**, and it is still a comment: a review that
   ran and found nothing is evidence, and its absence is indistinguishable from a
   review that never ran.

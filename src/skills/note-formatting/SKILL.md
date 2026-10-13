@@ -1,6 +1,6 @@
 ---
 name: note-formatting
-description: The shape every note an agent writes in the Markdown notebook takes - filename, frontmatter, Title Case, headings, spacing, no bold, wikilinks, and the Related Notes section that closes it. Use before writing or editing any note in the notebook, whatever produced it.
+description: The shape every note an agent writes in the Markdown notebook takes - filename, frontmatter, Title Case, headings, spacing, no bold, inline links and sources, and the Links and Related Notes sections that close it. Use before writing or editing any note in the notebook, whatever produced it.
 license: MIT
 compatibility: Runs where the Markdown notebook is reachable; needs python3 to resolve its location.
 metadata:
@@ -81,8 +81,8 @@ Applies to the H1, to every heading under it, and to every alias.
   going, so it is not the status label `src/app.md` §What a file may say bars:
   that rule bars a label an agent puts on content of its own accord.
 - **Give `source_url` the one source the note chiefly rests on**, as a bare URL,
-  and omit the key where the note cites none. Every other source is cited in the
-  body per §Links.
+  and omit the key where the note cites none. Every other source is cited by
+  §Links.
 
 ```
 ---
@@ -119,8 +119,25 @@ source_url: https://example.org/the-account-this-note-rests-on
 - **Write a link to another note as `[[filename|Alias]]`** — the target by its
   filename, which resolves across folders, and the text by the alias that
   reproduces that note's title.
-- **Cite a source as an ordinary Markdown link carrying its title**, in the
-  sentence making the claim, never as a bare address parked at the bottom.
+- **Link a thing where the note mentions it** when it is itself the subject of
+  established facts — an inventor in a history of electricity, a film named in
+  a sentence. The link goes on that mention: a note by `[[filename|Alias]]`,
+  anything else by a Markdown link carrying its title.
+- **Cite a source the text names in the sentence that names it**, as a Markdown
+  link carrying its title.
+- **List the sources a note rests on without naming them in a `## Links`
+  section**, placed directly above `## Related Notes` — the films behind a beat
+  sheet whose beats mention Alderaan rather than Star Wars, the overview
+  article and papers behind a history. Each bullet is a Markdown link carrying
+  its title, with its author before it or a short description after it where
+  one helps.
+- **Give a part of a source no link of its own.** Alderaan is reached through
+  Star Wars.
+- **Cite no informal source** — Reddit, a forum, a comment thread. A fact found
+  in one is used once it is verified elsewhere, and the other source is the one
+  cited. In creative work an informal source may serve as uncited inspiration.
+- **Write `## Links` only where a note has such sources.** Few notes do; most
+  cite every source inline.
 
 ## Emphasis
 
@@ -145,14 +162,17 @@ source_url: https://example.org/the-account-this-note-rests-on
 
 ## Related Notes
 
-- **Close every note with a `## Related Notes` section**, a blank line, then a
-  bulleted list.
+- **Close a note with a `## Related Notes` section wherever it has
+  neighbours**, which is nearly every note: a blank line, then a bulleted list.
 - **Make each bullet the link and nothing else** — `- [[filename|Title]]`, the
   Title being that note's H1. The reason beside a link is the user's to write.
-- **Include the hub in an ordinary note's list**, and every note of the set in a
-  hub's.
+- **List only notes the body does not already link, plus the key hubs for the
+  topic**, which may repeat a link above. A hub whose sections already link its
+  set lists none of them again.
+- **Include the hub in an ordinary note's list.** A note may sit as a
+  sub-bullet under the hub it belongs to.
 - **Add the section to a note you meet without one**, as the last thing in it:
-  the notes it already links to or mentions, plus the hub for an ordinary note.
+  the notes it mentions without linking, plus the hub for an ordinary note.
   Say in the session or on the card which notes you changed. Which folders take
   this edit is `src/skills/notebook-proposal/SKILL.md` §What a read-only note
   takes.
@@ -169,7 +189,11 @@ source_url: https://example.org/the-account-this-note-rests-on
 - **An alias no longer matches the H1 after a retitle** → both move together.
 - **A hub section holds a paragraph** → it belongs in the note that section
   links to.
-- **Every source parked under a Sources heading** → §Links.
+- **A source the text names, cited only at the bottom** → §Links; it takes
+  its link where it is named, and `## Links` holds the sources the text never
+  names.
+- **A Related Notes list repeating the body's links** → §Related Notes; only
+  the hubs may repeat.
 - **Something in a note is bold** → §Emphasis; the user bolds his own notes.
 - **A Related Notes bullet carries a clause after its link** → §Related Notes;
   the space after the link is where the user writes his own.

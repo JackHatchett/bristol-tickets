@@ -8,14 +8,16 @@ and the Mac-mount read/write-back workaround live in exactly one place.
 Path resolution (no hardcoded user paths in /src — invariant shared with
 tools/zotero and tools/ticket_tools):
   - PERSONAL_DB_DIR       : absolute path to the personal-db data root
-                            (contains db/ and data/). Resolved from
-                            config/config.local.json's `personal_db` block.
+                            (contains db/ and data/).
   - PERSONAL_DB_FILENAME  : db filename (default 'personal.db')
   - PERSONAL_SNAPSHOT_BASE: base dir for the per-domain snapshot folders
                             (default: <root>/../system/logs; each domain writes
                             to <base>/<subdir>/, e.g. library_snapshots/)
 
-If PERSONAL_DB_DIR is unset, falls back to canonical discovery: the first
+Each is read from the environment, then from config's `personal_db.env`
+block, through data_paths.resolve, so a value there may refer to the key that
+owns the folder. If PERSONAL_DB_DIR is set in neither, it falls back to
+canonical discovery: the first
 match of data/*/personal/ walking up from this file's location — mirroring the
 tickets/library "first glob match, one instance" convention. When nothing
 matches — a fresh clone, whose data tree does not exist yet — the root resolves
@@ -49,6 +51,15 @@ DEFAULT_DB_FILENAME = "personal.db"
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
 
 
+def _configured(name: str) -> str | None:
+    """`personal_db.env.<name>` from config, or None where it is not set."""
+    try:
+        value = data_paths.read_config.get(f"personal_db.env.{name}")
+    except (KeyError, SystemExit):
+        return None
+    return value if isinstance(value, str) and value.strip() else None
+
+
 def resolve_root() -> Path:
     """The personal-db data root (folder containing db/ and data/).
 
@@ -56,9 +67,9 @@ def resolve_root() -> Path:
     fresh install would use. Resolving never creates anything; the writers
     below do that at the moment they write.
     """
-    env = os.environ.get("PERSONAL_DB_DIR")
+    env = os.environ.get("PERSONAL_DB_DIR") or _configured("PERSONAL_DB_DIR")
     if env:
-        return Path(os.path.expanduser(env))
+        return data_paths.resolve(env)
     root = data_paths.data_root()
     matches = sorted(root.glob("*/personal"))
     if matches:
@@ -76,9 +87,10 @@ def snapshot_base() -> Path:
     Default: data/<instance>/system/logs (a sibling tree of the personal root),
     so snapshots sit with the rest of the system's generated logs rather than
     inside the DB's own folder. Each domain writes to <base>/<its subdir>/."""
-    env = os.environ.get("PERSONAL_SNAPSHOT_BASE")
+    env = (os.environ.get("PERSONAL_SNAPSHOT_BASE")
+           or _configured("PERSONAL_SNAPSHOT_BASE"))
     if env:
-        return Path(env)
+        return data_paths.resolve(env)
     return resolve_root().parent / "system" / "logs"
 
 

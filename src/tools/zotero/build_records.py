@@ -12,8 +12,8 @@ Which types exist, and which payload key becomes which Zotero field, is
 `item_types.json` beside this file. Adding a type is an edit to that file and
 none to this one.
 
-Re-running is safe. An entry whose title already exists as an item of the same
-type is reused and only added to the collection; nothing is overwritten, so a
+Re-running is safe. An entry whose title and year both match an item of the
+same type is reused and only added to the collection; nothing is overwritten, so a
 payload can be corrected and replayed.
 
 A payload:
@@ -171,23 +171,41 @@ def names(value):
 # ------------------------------------------------------------------- indexing
 
 
-def load_title_index(conn, zotero_type):
-    """Normalised title -> itemID, over items of one type that are not deleted."""
+def year_of(value) -> str:
+    """The four-digit year a date starts with, or '' where it has none."""
+    m = re.match(r"\s*(\d{4})", str(value or ""))
+    return m.group(1) if m else ""
+
+
+def match_key(title, date) -> tuple:
+    """What identifies one work: its normalised title and its year.
+
+    Two films sharing a title are two works when their years differ — The
+    Mummy of 1932 and of 1999.
+    """
+    return norm_title(title), year_of(date)
+
+
+def load_title_index(conn, zotero_type, date_field="date"):
+    """(Normalised title, year) -> itemID, over items of one type not deleted."""
     title_fid = zc.field_id(conn, "title")
+    date_fid = zc.field_id(conn, date_field)
     type_id = zc.item_type_id(conn, zotero_type)
     index = {}
     for r in conn.execute(
         """
-        SELECT i.itemID, dv.value AS title
+        SELECT i.itemID, dv.value AS title, ddv.value AS date
         FROM items i
         JOIN itemData d        ON d.itemID = i.itemID AND d.fieldID = ?
         JOIN itemDataValues dv ON dv.valueID = d.valueID
+        LEFT JOIN itemData dd        ON dd.itemID = i.itemID AND dd.fieldID = ?
+        LEFT JOIN itemDataValues ddv ON ddv.valueID = dd.valueID
         LEFT JOIN deletedItems del ON del.itemID = i.itemID
         WHERE i.itemTypeID = ? AND del.itemID IS NULL
         """,
-        (title_fid, type_id),
+        (title_fid, date_fid, type_id),
     ):
-        index.setdefault(norm_title(r["title"]), r["itemID"])
+        index.setdefault(match_key(r["title"], r["date"]), r["itemID"])
     return index
 
 
@@ -383,15 +401,17 @@ def build_one(conn, payload, spec, entries, keys, index, dry_run):
 
     reused = made = 0
     for offset, entry in enumerate(entries):
-        item_id = index.get(norm_title(entry["title"]))
+        key = match_key(entry["title"], entry.get("date"))
+        item_id = index.get(key)
         if item_id is not None:
             reused += 1
         else:
             made += 1
             if dry_run:
+                index[key] = -1  # stands for the item a real run would create
                 continue
             item_id = create_item(conn, entry, spec, keys)
-            index.setdefault(norm_title(entry["title"]), item_id)
+            index[key] = item_id
         if not dry_run:
             add_to_collection(conn, collection_id, item_id, start + offset)
 
@@ -464,7 +484,9 @@ def main():
         for path, payload, spec, entries in loaded:
             zt = spec["zotero_type"]
             if zt not in indexes:
-                indexes[zt] = load_title_index(conn, zt)
+                indexes[zt] = load_title_index(
+                    conn, zt, spec.get("date_field") or "date"
+                )
             result = build_one(
                 conn, payload, spec, entries, keys, indexes[zt], args.dry_run
             )
