@@ -1,6 +1,6 @@
 ---
 name: building-a-beat-sheet
-description: Breaks the published stories an author names into beats and merges them into one cited archetype beat sheet, filed in the notebook's beat-sheet library and linked from its hub. Use when a story archetype or plot type is to be broken into beats, or a sheet in that library extended; a scene's beats are prose-drafting's.
+description: Breaks the published stories an author names into beats and merges them into one cited archetype beat sheet, filed in the notebook's beat-sheet library for its kind and linked from that library's hub. Use when a story, character or historical archetype is to be broken into beats, or a sheet in one of those libraries extended; a scene's beats are prose-drafting's.
 license: MIT
 compatibility: Runs where the Markdown notebook is reachable; needs python3 to read config.
 metadata:
@@ -13,8 +13,8 @@ metadata:
 
 Input: a story archetype to break into beats — the kind of plot Sanderson
 teaches plotting by, such as the heist or the assault on an invulnerable
-fortress. Operation: the steps below. Output: one beat sheet in the library and
-its line in the library's hub.
+fortress. Operation: the steps below. Output: one beat sheet in the library
+for its kind and its line in that library's hub.
 
 Every rule of `src/skills/note-formatting/SKILL.md` holds for the sheet. The
 sections below are the sheet's own, and win for those sections by that skill's
@@ -22,12 +22,21 @@ first boundary.
 
 ## 1. Find the library
 
-- **Read the library's folder from config** — `python3
-  src/tools/config_tools/read_config.py markdown_notebook.beat_sheets_dir`.
-- **The hub is the note in that folder whose filename starts with `_`.**
+- **Choose the library by the kind of archetype**, and read its folder from
+  config — `python3 src/tools/config_tools/read_config.py
+  markdown_notebook.beat_sheets.<kind>_dir`:
+  - `story` — the shape of a plot;
+  - `character` — the arc a character travels;
+  - `historical_story` — the shape of a conflict drawn from history;
+  - `historical_character` — the arc a historical figure travels.
+- **The hub sits beside the library's folder**, named for it with a leading
+  underscore: `story_plot_archetypes/` has `_story_plot_archetypes.md`.
 - **Read the hub and two sheets already there before writing**, one merged
-  from several sources and one from a single source. The library's own sheets
-  are the model the new one matches.
+  from several sources and one from a single source; an empty library takes
+  the story library's sheets as its model.
+- **A beat list assembled from several sheets for one work lives with that
+  work**, in its project folder, linking the sheets it draws on. The libraries
+  hold archetypes only.
 
 ## 2. Ask the author
 
@@ -45,14 +54,25 @@ One batch, in the session, before anything is written:
 
 ## 3. Break each source into beats
 
+- **A source is what the library's kind takes:**
+  - a story, for a story archetype;
+  - a character's arc through a story, for a character archetype — the bad spy
+    redeemed by love takes the spies, not the films;
+  - a historical conflict or a historical figure's life, for the two historical
+    kinds, from published histories.
 - **Write each source's beats in story order**, from the story itself or a
-  published synopsis, critique or interview.
+  published synopsis, critique, history or interview.
 - **Cite no informal source** — `src/skills/note-formatting/SKILL.md` §Links.
 
 ## 4. Merge the beats
 
-- **A beat is core when most sources hit it in the same relative order.** The
-  sheet has as many core beats as the sources share, and no target count.
+- **A beat is core when most sources hit it in the same relative order.**
+- **Where the sources share a theme unevenly, a beat is core when it belongs to
+  that theme**, though no source carries every core beat and some core beats
+  come from fewer than half of them.
+- **Each beat gives the sources that carry it.**
+- **The beat count is what the sources carry.** There is no target count, and a
+  five-beat sheet is whole.
 - **A beat fewer sources hit goes under Optional Beats**, giving the source that
   carries it.
 - **A run of several beats one source lays over the core is an Optional Path**
@@ -62,6 +82,9 @@ One batch, in the session, before anything is written:
 - **Two archetypes that share early beats and then diverge are two sheets**,
   each listing the other in its Related Notes. Read the library for a sheet the
   new archetype diverges from before deciding which case it is.
+- **A source that turns out to tell a different story is a Variation or a sheet
+  of its own.** Decide which — an Alternate Ending, Optional Beats, an Optional
+  Path, or its own sheet — and say which, with the reason, in the report.
 
 ## 5. Write the sheet
 
@@ -73,7 +96,9 @@ One batch, in the session, before anything is written:
   no closing period.
 - **`## Details`** holds exactly three bullets, each with nested bullets:
   - Promise to the Reader — what the archetype promises a reader who picks it
-    up;
+    up; on a historical sheet, what a reader recognizes when the trigger
+    appears, such as labelled factions brawling in the street or one side
+    hiring mercenaries;
   - Differentiators — what sets it apart from its nearest neighbours, each
     named;
   - Variations — only those of Alternate Endings, Optional Beats and Optional
@@ -81,10 +106,16 @@ One batch, in the session, before anything is written:
 - **`## Beats`** is an ordered list. Each item is the beat's name in Title Case,
   with nested bullets giving what happens in general and then what happens in
   each source.
+- **A historical beat's name is generic**: the beat, a dash, and what happens
+  with the actors written as Faction A and Faction B — "Reversal - Exiled
+  Faction B Almost Destroys Faction A's Base". The historical events are its
+  nested bullets, each with its date.
 - **`## Sources Mapped`** is a table with one row per beat and one column per
   source, each cell the source's moment for that beat or "None" with a reason.
-  A sheet resting on a single source has no table.
-- **`## Links`** holds the source stories. A story with a literature note in the
+  Every sheet merged from two or more sources has one, historical sheets
+  included; a sheet resting on a single source has none.
+- **`## Links`** holds the source stories, and the histories a historical
+  sheet rests on. A story with a literature note in the
   notebook — a note tagged `media/` whose alias is its title — is linked to that
   note as `[[filename|Title]]`; any other story by a Markdown link to its outside
   source.
@@ -93,7 +124,7 @@ One batch, in the session, before anything is written:
 
 ## 6. Link it from the hub
 
-- **Add the sheet's link under the hub's section for its family of
+- **Add the sheet's link under its library hub's section for its family of
   archetypes** — Heist, Romance, Odyssey.
 - **Open a new `##` section where no family fits**, named for the family in
   Title Case.
@@ -113,3 +144,7 @@ session or in the comment of the card that asked for it.
 - **A sheet written before the author named his stories** → §2 comes first; the
   sources are his.
 - **Two endings written as two sheets** → §4; they are Alternate Endings.
+- **A historical beat named for its people or places** → §5; the name is
+  generic and the history sits beneath it.
+- **A beat dropped because fewer than half the sources carry it, when it
+  belongs to the theme they share** → §4.

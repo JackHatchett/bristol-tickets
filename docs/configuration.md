@@ -207,7 +207,7 @@ on disk.
 | `reports_dir` | Where a closing epic writes its report. Falls back to the `BRISTOL_REPORTS_DIR` environment variable, then a local pointer file, then skips the report. |
 | `plans_dir` | Where a planning document goes. |
 | `explainers_dir` | Where `teaching_assistant` writes explainers, one folder per topic. |
-| `beat_sheets_dir` | The library of archetype beat sheets `writers_room` builds, with its hub. |
+| `beat_sheets.story_dir`, `.character_dir`, `.historical_story_dir`, `.historical_character_dir` | The four libraries of archetype beat sheets `writers_room` builds. Each library's hub sits beside its folder, named for it with a leading underscore. |
 
 ### `zotero`
 
