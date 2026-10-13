@@ -293,9 +293,7 @@ Phase 3.3 states the rule). Their storage:
   display with no field to reset. The prose goes in an `add-issue-log` comment,
   which is where the ungranted tool or the failed call is stated. `decision` and
   `capability` are the two the status scripts list under NEEDS YOU, because no
-  agent can clear either by working. NEEDS YOU also lists every open
-  active-board card assigned to `user`, whatever its reason, with the days
-  since it was handed to him. The vocabulary is
+  agent can clear either by working. The vocabulary is
   `create_tickets.BLOCK_REASONS`, mirrored in `bristol/ui/theme.py`. A card
   reaching `done` has its reason cleared by every writer.
 - **Tier** is `task.tier`: `max`, `standard`, or NULL for a card nobody has

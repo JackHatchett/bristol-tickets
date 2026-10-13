@@ -63,11 +63,10 @@ same paths, so the user still has the commit in hand.
 
 ## Output
 
-- **The board writes land first, then the commit report or the block, then
-  what waits on the user, then the To Continue block where there is one** —
-  `src/skills/manage-tickets/SKILL.md` §Session closure, steps 9 and 10. The
-  block is the last thing in the message because it is what the user acts on
-  next.
+- **The board writes land first, then the commit report or the block, then the
+  To Continue block where there is one** —
+  `src/skills/manage-tickets/SKILL.md` §Session closure, step 9, which is the
+  last thing in the message because it is what the user acts on next.
 - **One commit, or one block, per working tree**, each complete on its own.
 
 ## Boundary

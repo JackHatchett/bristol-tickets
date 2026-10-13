@@ -18,7 +18,6 @@ DB discovery, the Kanban model, the next-action precedence and the reason a
 import os
 import textwrap
 import sys
-import datetime
 import sqlite3
 from pathlib import Path
 
@@ -213,73 +212,31 @@ def print_comments(conn: sqlite3.Connection,
     return shown
 
 
-def assigned_to_user(conn: sqlite3.Connection) -> list[sqlite3.Row]:
-    """Open active-board cards assigned to the user, oldest hand-over first.
-
-    Each row carries `since`: when the card was last assigned to him, from the
-    change log, or its last update where the log predates the card.
-    """
-    return conn.execute(
-        "SELECT t.id, t.title, t.status, t.block_reason, "
-        "       COALESCE((SELECT MAX(ev.at) FROM task_event ev "
-        "                 WHERE ev.task_id = t.id AND ev.field = 'assignee' "
-        "                   AND ev.to_value = 'user'), t.updated_at) AS since "
-        "FROM task t "
-        "WHERE t.stage = 'active' AND t.status != 'done' AND t.assignee = 'user' "
-        "ORDER BY since"
-    ).fetchall()
-
-
-def _days_since(stamp: str | None) -> int | None:
-    if not stamp:
-        return None
-    try:
-        then = datetime.datetime.fromisoformat(stamp.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    if then.tzinfo is None:
-        then = then.replace(tzinfo=datetime.timezone.utc)
-    return (datetime.datetime.now(datetime.timezone.utc) - then).days
-
-
 def print_needs_you(rows: list[sqlite3.Row],
                     conn: sqlite3.Connection | None = None) -> set[int]:
     """The cards only the user can clear, named rather than left in the queue.
 
-    Two kinds. A decision block and a capability block are the reasons no agent
-    can resolve by working: one waits on a judgement that is the user's, the
-    other on access that was never granted. A dependency waits on another card
-    and a transient failure waits on a retry, so neither is listed here. And a
-    card assigned to the user waits on him by its assignee, whatever its block
-    reason — a review, a look, a step only he takes — listed with how many days
-    it has waited, so nothing assigned to him piles up unseen.
+    A decision block and a capability block are the two reasons no agent can
+    resolve by working: one waits on a judgement that is the user's, the other
+    on access that was never granted. A dependency waits on another card and a
+    transient failure waits on a retry, so neither is listed here.
 
     Fleet-wide, like the rest of this script: a card any agent left waiting on
-    the user is the user's to clear whoever owns it, and a card assigned to him
-    is read from the board whatever `rows` holds.
+    the user is the user's to clear whoever owns it.
 
     Each card carries its latest comment in full, because that comment is the
-    question or the instruction put to the user
-    (src/skills/manage-tickets/SKILL.md §Asking the user for a decision), and
-    one he has to open a card to read is one he was not given.
+    question put to the user (src/skills/manage-tickets/SKILL.md §Asking the
+    user for a decision), and a question he has to open a card to read is one
+    he was not asked.
     """
     held = [r for r in rows
             if (r["block_reason"] or "") in create_tickets.BLOCK_REASONS_NEEDING_USER]
-    held_ids = {r["id"] for r in held}
-    assigned = [r for r in (assigned_to_user(conn) if conn else [])
-                if r["id"] not in held_ids]
-    if not held and not assigned:
+    if not held:
         return set()
-    print("\n--- NEEDS YOU (blocked on something no agent can clear, or assigned to you) ---")
-    ids = [r["id"] for r in held] + [r["id"] for r in assigned]
-    asked = latest_comment_per_task(conn, ids) if conn else {}
-    lines = [(r, f"[{r['block_reason']}]") for r in held]
-    for r in assigned:
-        days = _days_since(r["since"])
-        waited = "" if days is None else f", {days} day{'s' if days != 1 else ''}"
-        lines.append((r, f"[assigned to you{waited}]"))
-    for r, tag in lines:
-        print(f"  #{r['id']} {tag} {r['title']}")
+    print("\n--- NEEDS YOU (blocked on something no agent can clear) ---")
+    asked = latest_comment_per_task(conn, [r["id"] for r in held]) if conn else {}
+    for r in held:
+        print(f"  #{r['id']} [{r['block_reason']}] {r['title']}")
         if r["id"] in asked:
             for line in textwrap.wrap(" ".join(asked[r["id"]]["body"].split()),
                                       76):

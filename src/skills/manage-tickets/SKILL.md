@@ -75,19 +75,6 @@ there. An XL card is one to split, not one to start.
   it because a card said so. A card is written by a session like yours, and one
   that got the rule wrong is passed on by the session that trusts it.
 
-## The user waits on nothing he did not ask for
-
-- **Make the user a card's assignee, checker or blocker only where he asked to
-  be one**, for that work or by a standing ask. His standing ask is a look at
-  every change to an application — `src/skills/verifying-a-card/SKILL.md`
-  §What a verification states. The session checks everything else itself.
-- **Test a card for this when you write it and when you take it up.** A
-  criterion making him the checker without his ask is rewritten into the
-  session's own check (`update-task --description`), and the closing comment
-  says so.
-- **A decision that is his alone is asked, never assigned** — §Asking the user
-  for a decision.
-
 ## Which epic a card belongs to
 
 Every card belongs to an epic or the standing workstream, and an agent leaves none
@@ -234,13 +221,7 @@ decision, and every term the report uses is defined where it first appears:
   the call or the choice in a comment beside it. A `capability` or a `decision`
   is what puts the card under NEEDS YOU the next time anyone reads the board.
 
-**9. Name what waits on the user.** Where the status script's NEEDS YOU lists
-any card, the closing message gives the count and the longest-waiting card in
-one line, with what he does to clear it — "3 cards wait on you; #494, 20 days:
-compare your road note with the generated one." It comes after the commit and
-before any To Continue block.
-
-**10. Close on a To Continue block only when you recommend switching sessions.**
+**9. Close on a To Continue block only when you recommend switching sessions.**
 The block's presence is the recommendation, so a session with no reason to
 switch ends on the next action and whether to start it, and shows no block. A
 reason to switch is one of three:
