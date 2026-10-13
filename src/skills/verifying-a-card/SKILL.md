@@ -39,16 +39,23 @@ Two things, and a step stating only one is not a verification.
 - **What result would fail it** — the output that means the card is not done.
   A check nothing could fail is a sentence, not a check.
 
-**Who performs it follows from what changed:**
+**Who performs it:**
 
-- **A change to an application is checked by the user's look.** Assign the card
-  to him with a comment that is a brief, clear instruction: what to open, what
-  to do there, and what he would see if it failed —
-  `src/skills/checking-a-bristol-change/SKILL.md` §What a visible change
-  additionally needs.
-- **Every other change is checked by the session that made it**: a command it
-  runs, a value it reads back from config, a changed passage it reads against
-  each criterion in turn. The user reviews one when he asks to.
+- **The session that made the change runs the check**: a command it runs, a
+  value it reads back from config, a changed passage it reads against each
+  criterion in turn.
+- **The user reviews only where he asked for it, or a special circumstance
+  calls for it** — a change to how an application looks, which no session can
+  see (`src/skills/checking-a-bristol-change/SKILL.md` §What a visible change
+  additionally needs), or anything sent or published in his name.
+- **A card awaiting his review stays assigned to its agent, in `doing`.** Its
+  comment gives what to open, what to do there and what would fail it, and
+  says the next session asks him whether he has reviewed it before
+  continuing.
+- **The next session asks him in the session, before any other card** —
+  `src/skills/manage-tickets/SKILL.md` §Asking the user for a decision. His
+  verdict closes the card or reopens the work; not yet, and the session carries
+  on with its queue.
 
 ## When a card has none
 

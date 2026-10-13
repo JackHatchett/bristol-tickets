@@ -42,8 +42,8 @@ it closed, and the notes and the open cards hold what is decided now.
   always allowed.
 - **Close a card only when its process is done** — every comment and check it
   includes, by whoever performs them. Until then it stays in `doing`, assigned
-  to whoever acts next; `src/skills/verifying-a-card/SKILL.md` §Closing on it
-  owns the check.
+  to whoever acts next, except that a card awaiting the user's review stays
+  with its agent; `src/skills/verifying-a-card/SKILL.md` owns the check.
 
 ## When to update the board
 

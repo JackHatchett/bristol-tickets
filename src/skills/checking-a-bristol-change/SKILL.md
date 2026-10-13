@@ -91,9 +91,8 @@ output, from a shell that has Qt.
 ## What a visible change additionally needs
 
 - **Hand a visible change to the user to look at.** Run every check above, put
-  what each run produced on the card, then `update-task-status --id N
-  --assignee user --actor <you>`, with a comment saying what to open, what to
-  do in it, and what would fail the card.
+  what each run produced on the card, and leave it in `doing` with its agent,
+  by `src/skills/verifying-a-card/SKILL.md` §What a verification states.
 - **Never open Bristol Tickets to look at it yourself.** The look is the user's,
   and a session that reaches for the application spends his attention on
   answering for it instead of on the change.
