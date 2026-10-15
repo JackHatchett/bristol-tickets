@@ -4383,7 +4383,13 @@ def main() -> None:
     args = ap.parse_args()
 
     if args.target:
-        sys.exit(_run_one_inprocess(args.target))
+        # A target runs in a child process of its own and has printed its
+        # results, so the child leaves without interpreter teardown and the Qt
+        # objects it built are freed with the process.
+        rc = _run_one_inprocess(args.target)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(rc)
 
     names = args.targets or list(TARGETS)
     unknown = [n for n in names if n not in TARGETS]
