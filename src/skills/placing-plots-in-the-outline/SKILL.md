@@ -78,9 +78,9 @@ skill places the novel's own plots.
 - **Keep an unnamed arc's beats on the outline, under its slot**, grouped as
   `Character - unnamed` and `Story - unnamed`, until the arc is named and they
   move to a sheet of their own.
-- **Keep only how the tier is divided under `Structure`** in `## Plot` — the
-  series into cycles and books, a cycle into books, a book into its parts and
-  sequences. Point-of-view rules go at the top of `## Characters`.
+- **Keep the tier's structure, and nothing else, under `Structure`** in
+  `## Plot` — how the tier is divided, its point-of-view rules, how it opens
+  and ends. Plots and their beats go under their own links.
 
 ## 4. Write the sheet
 
