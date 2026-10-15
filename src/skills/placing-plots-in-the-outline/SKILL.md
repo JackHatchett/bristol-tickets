@@ -1,6 +1,6 @@
 ---
 name: placing-plots-in-the-outline
-description: Decides which outline a novel's plot, arc or beat belongs on - series, cycle or book - and which of a plot's tiered beat sheets takes it, then writes it there in the outline's and the sheet's shape. Use when a plot, a character arc, a romance, a mystery or a single beat is added, moved or split, or when an outline note is restructured.
+description: Decides which outline a novel's plot, arc or beat belongs on - series, cycle or book - and which of a plot's tiered beat sheets takes it, then writes it there in the outline's and the sheet's shape, with its seven points worked in Dan Wells' order. Use when a plot, a character arc, a romance, a mystery or a single beat is added, moved or split, when a plot's seven points are worked, or when an outline note is restructured.
 license: MIT
 compatibility: Runs where the Markdown notebook is reachable.
 metadata:
@@ -11,15 +11,17 @@ metadata:
 # placing-plots-in-the-outline
 
 Input: a plot, a character arc, a romance, a mystery or a single beat of a
-novel planned on Sanderson's method, as tiered outline notes. Operation: the
-steps below. Output: the item in the custom beat sheet that owns it, and that
-sheet linked from the outline of its tier.
+novel planned on Sanderson's method and Dan Wells' seven-point structure, as
+tiered outline notes. Operation: the steps below. Output: the item in the
+custom beat sheet that owns it, and that sheet linked from the outline of its
+tier.
 
 Every rule of `src/skills/note-formatting/SKILL.md` holds for the outline
 notes and the custom beat sheets; the sections below are their own, and win
 for those sections by that skill's first boundary. Building an archetype sheet
 from published stories is `src/skills/building-a-beat-sheet/SKILL.md`; this
-skill places the novel's own plots.
+skill places the novel's own plots. The seven-point method is the notebook's
+note on Dan Wells' lectures, `seven_point_story.md`.
 
 ## 1. Find the tier
 
@@ -27,11 +29,16 @@ skill places the novel's own plots.
   beat to last** — a book, a cycle of books, the series.
 - **Keep a beat in the sheet of the plot it moves, tagged with its book**, so a
   cycle plot's book 1 beats stay in the cycle sheet as "(book 1)".
-- **Give a plot that recurs at several tiers on one theme one sheet per tier**
-  — a series romance, its cycle romance, each book's romance.
-- **Treat the sheets of one theme as overlays, never as containers.** No sheet
-  holds another or sits within one: a sheet carries no Within or Holds, and
-  each links its parallel plots in `## Related Notes`.
+- **Treat the tiers as parallels.** A plot that recurs at series, cycle and
+  book scale is one plot repeating with real differences, one sheet per tier,
+  and never a subplot of the tier above; nesting that appears is an effect of
+  dependencies. No sheet holds another or sits within one: a sheet carries no
+  Within or Holds, and each links its parallels in `## Related Notes`.
+- **Give a plot an arc at each tier it acts in.** A plot acting in two or more
+  books of a cycle has a cycle arc and an arc in each of those books; one
+  acting in a single book has only that book's arc.
+- **A gap cascades down**: an arc missing at one tier is missing at every tier
+  below it until it is built.
 - **Place a beat of such a chain by the question it moves.** "Will they get
   together this book?" is the book sheet; "Whom will she choose?" the cycle's;
   "Will their love last?" the series'. A beat moving two questions goes in
@@ -45,11 +52,51 @@ skill places the novel's own plots.
 - **A character plot is an inner change** — a need overcome, a will won back.
 - **A story plot is an action or a mystery**, the latter titled as its
   question: Who Is the Warlock?
+- **A reader's mystery is a story plot apparent to no character** — a question
+  only the reader holds. It has no carrier, and the outline lists it apart
+  (§4).
 - **A villain's scheme is a story plot scoped to that villain**, even where the
   villain carries every beat, when the villain has no emotional arc.
 - **A romance is a romance plot**, carried by every lover in it.
 
-## 3. Write the outline note
+## 3. Keep each plot to itself until the matrix
+
+The matrix is the plot alignment spreadsheet: one tab per outline, one column
+per plot, a row per chapter. It is where plots meet.
+
+- **Describe every plot before any plot is joined to another.** Each is a
+  complete abstraction scoped to its own characters, with placeholder roles
+  where it needs others.
+- **A beat gives roles, not existing characters, unless the plot is scoped to
+  them.** What follows from a plot's own scope stays: in a romance of two named
+  lovers, each lover's part is theirs.
+- **Write and ask no dependency, concurrency or cross-plot tie before the
+  matrix** — in a sheet, an outline, a question to the author or a card's
+  criteria.
+- **Every fact and connection already written is a placeholder, and none
+  constrains a new beat.** "It has to be this character because another choice
+  implies it" is never a reason.
+- **Weigh a fact by its load** — how many other facts and beats stand on it
+  and would change with it — measured afresh from the notes whenever a change
+  is weighed. An earlier statement of a dependency, a session's own included,
+  is a hint to check.
+- **Generalize a choice nothing stands on to its role** — "a secondary
+  character deals the blow". A choice many facts stand on stays, and at the
+  matrix the session asks what if someone else did it.
+- **Ask the author before proposing to remove a heavily loaded fact.** Some
+  carry reasons of his own; some plots are his to keep whatever their beats,
+  and others are optional however baked in.
+- **Presume reuse an accident unless a note documents it as a deliberate
+  parallel**, and put it to the author as a proposal; he may keep it as one.
+- **Keep thematic juxtaposition out of plot logic.** A note setting one
+  character against another is justification, the last step of planning —
+  after beats, the matrix, chapters and scenes — worked back from the end.
+- **Keep a candidate connection or choice in the sheet's `## Options`** (§5),
+  where it bears no load.
+- **At the matrix, set one plot's Resolution on another plot's Pinch** where
+  the chapters allow it.
+
+## 4. Write the outline note
 
 - **Sort the outline's characters under four headings in `## Characters`**,
   each character once, at the heading for this tier:
@@ -64,6 +111,8 @@ skill places the novel's own plots.
 - **Write a slot no plot fills yet as "unnamed".**
 - **Link a plot carried by two or more characters, or by the world, under
   `## Plot`**, with one line saying what it is.
+- **List the reader's mysteries together under `## Plot`**, below the other
+  plots, under a `Reader's mysteries` bullet.
 - **Link each sheet once in its outline.** A slot filled by a shared plot gives
   that plot's name in plain text.
 - **On the series and cycle outlines, give under each plot link one line per
@@ -82,7 +131,7 @@ skill places the novel's own plots.
   `## Plot` — how the tier is divided, its point-of-view rules, how it opens
   and ends. Plots and their beats go under their own links.
 
-## 4. Write the sheet
+## 5. Write the sheet
 
 - **Folders**: the project's content-rules file gives them — the outline notes
   alone at the top of the plot folder, each sheet in its `<tier>/<kind>`
@@ -101,37 +150,46 @@ skill places the novel's own plots.
   - Promise to the Reader — what the plot promises a reader;
   - Differentiators — what sets it apart, its contrasts with other plots and
     its standing facts.
-- **`## Seven-Point Highlights`** lists Hook, Plot Turn 1, Pinch 1, Midpoint,
-  Pinch 2, Plot Turn 2 and Resolution in that order, each as `Label - event
-  (book N)`, and a label stays bare until it is filled:
-  - Resolution — the plot's last beat;
-  - Hook — the opposite of the Resolution;
-  - Midpoint — the beat where the character who resolves the plot turns from
-    passive to active;
-  - the other four — filled by the author, or when a placed beat is
-    recognizably one of them.
+- **`## Seven-Point Highlights`** lists the seven points in story order, each
+  as `Label - event (book N)`, defined as the method defines them:
+  - Hook — where the plot starts, the opposite of its Resolution;
+  - Plot Turn 1 — what introduces the conflict and sets the plot in motion;
+  - Pinch 1 — pressure that forces the characters to act;
+  - Midpoint — the turn from reaction to action;
+  - Pinch 2 — more pressure, the jaws of defeat;
+  - Plot Turn 2 — the last piece that lets them win;
+  - Resolution — how the plot ends.
+- **Invent the points in the method's order** — Resolution, Hook, Midpoint,
+  Plot Turn 1, Plot Turn 2, Pinch 1, Pinch 2 — and propose each to the author
+  in that order, by `src/skills/designing-with-the-author/SKILL.md` §Who
+  decides what. A label stays bare only while he has not settled it.
 - **`## Beats`** is an ordered list in story order, each beat ending with its
   book in parentheses where the book is known:
   - **State each beat as an abstract event**, preferably as "yes, but" or "no,
     and" — the attempt succeeds at a cost, or fails and worsens;
   - **State a resolution as "yes, and" or "no, but"**, and the series' last
     beats as a conclusive yes or no;
-  - **Give how the beat happens in the draft as it stands as sub-bullets**
-    under it;
-  - **Give a dependency or a concurrency as a sub-bullet under the beat it
-    concerns, and only where it is known**: `Blocked by beat N of [[x]]`, or
-    `Blocked by [[x]]` where the whole plot must resolve first, and
-    `Concurrent with beat N of [[x]]`.
+  - **Put at least two failed attempts before a success** — the try/fail
+    cycle, each failure a beat of its own;
+  - **Give how the beat happens as the draft stands as sub-bullets** under it,
+    an option kept rather than a commitment.
+- **`## Options`** follows Beats: one bullet per candidate connection or
+  choice for the matrix. Nothing in Details or Beats cites it, and the matrix
+  is where an option is taken or dropped.
 - **Link every character, place, object and scene with a note where a beat or
   detail mentions it.**
 - **`## Related Notes`** gives the outline of the sheet's tier, the sheet's
-  parallel plots, the plots its beats depend on or run with, for a scheme the
-  villain's plans note, and the notebook's seven-point structure note.
+  parallels, for a scheme the villain's plans note, and the notebook's
+  seven-point note.
 - **Leave `## Beats` out of a sheet with none yet.** A named plot with only its
   details is a whole sheet.
 
-## 5. Move what is already written
+## 6. Move what is already written
 
+- **Leave a written sheet as it stands until a session next works that
+  plot.** That session brings it to this skill: its points worked by §5, a
+  named character the plot is not scoped to generalized by §3, and any
+  dependency, concurrency or cross-plot tie in its Beats moved to Options.
 - **Move a beat with its wording**, and its facts with it; a fact the move
   would lose goes into the sheet's Differentiators or under the beat.
 - **Keep a villain's plans note as the nested order of the villain's schemes**,
@@ -148,19 +206,28 @@ skill places the novel's own plots.
   in the cycle sheet, tagged "(book 1)".
 - **One sheet holding a series romance and its book romance** → §1; one sheet
   per tier.
-- **A Within or Holds bullet on a sheet** → §1; parallel plots are overlays,
-  linked in Related Notes.
+- **A Within or Holds bullet on a sheet** → §1; tiers are parallels, linked in
+  Related Notes.
 - **A villain's scheme filed as a character arc** → §2.
-- **A foil carrying a character plot** → §3; foils carry story plots only.
-- **An outline linking every character it mentions** → §3; those links belong
+- **A question to the author about how two plots touch, or which existing
+  character takes a beat, before the matrix** → §3.
+- **A beat given to an existing character the plot is not scoped to** → §3;
+  the beat gives the role.
+- **A new beat bent to fit an earlier connection** → §3; the connection is a
+  placeholder.
+- **A foil carrying a character plot** → §4; foils carry story plots only.
+- **An outline linking every character it mentions** → §4; those links belong
   in the sheets.
-- **A point-of-view character with no slot for a character plot** → §3; write
+- **A point-of-view character with no slot for a character plot** → §4; write
   the slot as "unnamed".
-- **A beat stating only what happens in the draft** → §4; the event goes
+- **Seven-point labels filled out of the method's order, or left bare without
+  a proposal** → §5.
+- **A success on the first try** → §5; two failures come first.
+- **A beat stating only what happens in the draft** → §5; the event goes
   abstract, the draft's version beneath it.
-- **A Seven-Point label filled by guesswork** → §4; it stays bare.
 
 ## Audit
 
 **Whether a new beat about any plot has exactly one sheet it plainly belongs
-in, and that sheet is one link away from the outline of its tier.**
+in, that sheet is one link away from the outline of its tier, and nothing in
+it ties the plot to another before the matrix.**
