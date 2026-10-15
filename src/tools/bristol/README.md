@@ -223,8 +223,9 @@ the Archive in one act and writes an analytic report covering exactly those
 cards to the user's Markdown notebook, plus a Dataview index that trends every
 report against the ones before it. `epic_closure.py` is the one act both front
 ends call. The standing workstream never closes and is refused; it is measured
-over a date range instead. Clearing the Done column writes a report too, over
-whatever it swept.
+over a date range instead. Settings' Clear Done archives the whole Done column
+and writes one report over it, from the earliest of its cards' creations to
+now — `clear_done.py`.
 
 The report is strictly advisory: the board write commits first, and a missing or
 unreachable notebook folder skips the report rather than failing the action.

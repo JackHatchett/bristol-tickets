@@ -2626,6 +2626,65 @@ def check_bristol() -> list[str]:
         ok.append("the epic dialog closes an epic through the same act as the "
                   "command line")
 
+        # ---- Clear Done is the second period boundary -----------------------
+        # Every card in Done leaves whatever its epic's state, each keeps its
+        # own closed_at, one report covers them from the earliest creation to
+        # now, and an epic closed afterwards still reports what it finished.
+        import clear_done
+
+        cconn = sqlite3.connect(":memory:")
+        cconn.executescript(schema.read_text())
+        cconn.execute("INSERT INTO epic (name, type, status) "
+                      "VALUES ('A long effort', NULL, 'in progress')")
+        long_effort = cconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        def _long_card(title, status, created):
+            cconn.execute(
+                "INSERT INTO task (epic_id, title, status, stage, record_type, "
+                "created_at, updated_at, closed_at) VALUES "
+                "(?,?,?,'active','build',?,?,?)",
+                (long_effort, title, status, created, created,
+                 "2026-03-01T00:00:00+00:00" if status == "done" else None))
+            return cconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        swept_a = _long_card("Swept early", "done", "2026-01-05T00:00:00+00:00")
+        swept_b = _long_card("Swept late", "done", "2026-02-05T00:00:00+00:00")
+        still_open = _long_card("Still open", "todo", "2026-01-01T00:00:00+00:00")
+        cconn.commit()
+        sweep_now = "2026-04-01T00:00:00+00:00"
+        cleared = clear_done.clear_done(cconn, now=sweep_now,
+                                        out_dir=reports_home)
+        stages = dict(cconn.execute("SELECT id, stage FROM task"))
+        if sorted(cleared.archived) != [swept_a, swept_b]:
+            raise SmokeFailure(
+                f"Clear Done archived {cleared.archived}, not the Done column")
+        if stages[still_open] != "active":
+            raise SmokeFailure("Clear Done moved a card that is not done")
+        if {r[0] for r in cconn.execute(
+                "SELECT closed_at FROM task WHERE id IN (?,?)",
+                (swept_a, swept_b))} != {"2026-03-01T00:00:00+00:00"}:
+            raise SmokeFailure("Clear Done rewrote a card's closed_at")
+        if cleared.report is None or not cleared.report.ok:
+            raise SmokeFailure(f"no report on Clear Done: {cleared.report}")
+        facts = cleared.report.facts
+        if (facts["period_start"] != "2026-01-05T00:00:00+00:00"
+                or facts["period_end"] != sweep_now):
+            raise SmokeFailure(
+                "the Clear Done report should run from the earliest swept "
+                f"card's creation to now, not {facts['period_start']} to "
+                f"{facts['period_end']}")
+        if clear_done.clear_done(cconn, out_dir=reports_home).archived:
+            raise SmokeFailure("a second Clear Done found cards to move")
+        closed_later = epic_closure.close_epic(cconn, long_effort,
+                                               out_dir=reports_home)
+        if sorted(closed_later.reported) != [swept_a, swept_b]:
+            raise SmokeFailure(
+                "an epic closed after Clear Done should still report the cards "
+                f"Clear Done archived, not {closed_later.reported}")
+        ok.append("Clear Done archives the Done column alone, keeps each "
+                  "closed_at, reports from the first creation to now, and an "
+                  "epic closed later still reports what it finished")
+
         # ---- what the projects cost, and upkeep beside them -----------------
         # The window is asked for rather than generated, so what is guarded is
         # the split, the sizing arithmetic and the two answers a window can

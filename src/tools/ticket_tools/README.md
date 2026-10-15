@@ -261,11 +261,15 @@ every other value, including none, means project.
   period's project cost and upkeep cost comparable.
 
 **The Done column holds work waiting for something.** A project card waits for
-its epic to close, which archives it and writes that epic's report; that
-closure is the only period boundary the board has, and the user declaring an
-effort over is what sets it. A standing card waits for nothing, so it is never
-in Done: marking it done archives it. The board therefore has no sweep button,
-because the two kinds of card each leave on their own event.
+its epic to close, which archives it and writes that epic's report, and the
+user declaring an effort over is what sets it. A standing card waits for
+nothing, so it is never in Done: marking it done archives it.
+
+**Clear Done, in Bristol Tickets' Settings, is the second period boundary** —
+every card in Done moves to the Archive and one report covers them, from the
+earliest of their creations to now (`src/tools/bristol/clear_done.py`). Each
+card keeps its own `closed_at`. An epic closed afterwards still reports every
+done card it holds, archived by Clear Done or not.
 
 **An epic's status has one vocabulary** — `not started`, `in progress`,
 `completed`, `on hold` — the set Bristol Tickets' epic dialog writes, held as

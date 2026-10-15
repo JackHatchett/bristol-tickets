@@ -203,8 +203,12 @@ waits for nothing, so marking it done archives it there and then, from the
 board, the pane, the dialog or an agent's command alike. A card in a project
 epic waits for that epic. Closing the epic, by giving it a finished status,
 moves every card it finished into the Archive in one act and writes the report
-for that effort. So there is no sweep button: each kind of card leaves on its
-own event.
+for that effort.
+
+**Clear Done**, in Settings beside **Write Report**, empties the column whatever
+the epics' state: every card in Done moves to the Archive, and one report covers
+them, from the first of them opened to now. An epic you close afterwards still
+reports every card it finished, including the ones Clear Done archived.
 
 The report is one Markdown note per period, written into your notebook, plus an
 index that trends each report against the ones before it — cycle time, flow

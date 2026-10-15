@@ -134,10 +134,12 @@ OPTIONS = {
     # Bundle the ui/ and reports/ packages, named explicitly: reports/ is
     # reached only through a guarded import inside the epic closure.
     "packages": ["ui", "reports", *STDLIB_PACKAGES],
-    # epic_closure is reached the same guarded way, from the epic dialog, so
-    # nothing in the import graph would carry it in on its own. finishing is
+    # epic_closure is reached the same guarded way, from the epic dialog, and
+    # clear_done from Settings, so nothing in the import graph would carry
+    # either in on its own. finishing is
     # imported outright by three ui modules and named here beside it.
-    "includes": ["sqlite3", "epic_closure", "finishing", *STDLIB_MODULES],
+    "includes": ["sqlite3", "epic_closure", "clear_done", "finishing",
+                 *STDLIB_MODULES],
     # A board draws no Tk windows and installs no packages at runtime.
     "excludes": EXCLUDES,
     "plist": {

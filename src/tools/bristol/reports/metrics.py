@@ -461,12 +461,14 @@ def _signals(facts):
 # entry point
 # ---------------------------------------------------------------------------
 
-def collect(conn, task_ids, now=None, period_start=None, prior=None):
+def collect(conn, task_ids, now=None, period_start=None, period_end=None,
+            prior=None):
     """Compute every fact the report needs.
 
     `task_ids`      the cards this period closed (what its epic closed with).
     `period_start`  ISO timestamp; defaults to the earliest creation in the
                     batch, so a first-ever report still has a sane window.
+    `period_end`    ISO timestamp; defaults to the latest close in the batch.
     `prior`         the previous report's frontmatter dict, or None.
     """
     now = now or datetime.now(timezone.utc).isoformat()
@@ -477,7 +479,8 @@ def collect(conn, task_ids, now=None, period_start=None, prior=None):
     closed = [c["closed_effective"] for c in batch if c["closed_effective"]]
     if period_start is None:
         period_start = min(created) if created else now
-    period_end = max(closed) if closed else now
+    if period_end is None:
+        period_end = max(closed) if closed else now
     period_days = _days_between(period_start, period_end) or 0.0
 
     lead = [c["lead_days"] for c in batch]

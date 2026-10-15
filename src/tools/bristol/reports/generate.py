@@ -129,7 +129,8 @@ def _period_start(prior_frontmatter, batch_facts_fallback=None):
 # entry point
 # ---------------------------------------------------------------------------
 
-def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True):
+def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True,
+                    period_start=None, period_end=None):
     """Write one report for `task_ids` and return a ReportResult.
 
     `conn`      an open sqlite3 connection to tickets.db.
@@ -137,6 +138,9 @@ def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True):
                 what it closed with; the CLI can pass a preview of the Done
                 column.
     `out_dir`   overrides path resolution; normally left to the config.
+    `period_start`, `period_end`
+                a window given by the caller, which wins over the one read
+                from the previous report and the batch.
     """
     try:
         task_ids = [int(t) for t in task_ids]
@@ -159,7 +163,8 @@ def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True):
     try:
         facts = metrics.collect(
             conn, task_ids, now=now,
-            period_start=_period_start(prior), prior=prior or None,
+            period_start=period_start or _period_start(prior),
+            period_end=period_end, prior=prior or None,
         )
     except sqlite3.Error as exc:
         return ReportResult(error=f"could not read the board: {exc}")

@@ -10,7 +10,9 @@ is written — `src/tools/bristol/epic_closure.py`, called by the viewer's epic
 dialog and by `ticket_write.py update-epic` alike. A card in the standing
 workstream leaves on its own event instead — finishing it archives it — and what
 standing work costs is measured over a date range rather than reported on a
-closure.
+closure. Settings' Clear Done is the other boundary: every card in the Done
+column goes to the Archive and one report covers them, from the earliest of
+their creations to now — `src/tools/bristol/clear_done.py`.
 
 ## What it produces
 

@@ -49,7 +49,12 @@ try:  # a stripped bundle may carry no reports package at all
 except ImportError:  # pragma: no cover - only a stripped bundle reaches this
     default_window = standing_report = None
 
-from .dialogs import notify
+try:  # the sweep writes its report through the same package
+    import clear_done
+except ImportError:  # pragma: no cover - only a stripped bundle reaches this
+    clear_done = None
+
+from .dialogs import confirm, notify
 from .folders import DashboardsDialog, LocationsDialog, NotebookDialog, any_missing
 from .settled_combo import SettledComboBox, fill_words
 from .theme import (
@@ -109,7 +114,8 @@ def _heading(text: str) -> QLabel:
 
 
 class SettingsTab(QWidget):
-    def __init__(self, parent=None, on_appearance_changed=None, conn=None) -> None:
+    def __init__(self, parent=None, on_appearance_changed=None, conn=None,
+                 on_board_changed=None) -> None:
         super().__init__(parent)
 
         # The board this page reports on. Absent in a bare construction (the
@@ -121,6 +127,10 @@ class SettingsTab(QWidget):
         # re-theme itself. Absent in a bare construction (the smoke check), where
         # there is no window to re-theme.
         self._on_appearance_changed = on_appearance_changed
+
+        # Called after Clear Done moves cards, so the board redraws without
+        # them. Absent in a bare construction, where there is no board.
+        self._on_board_changed = on_board_changed
 
         self.new_ticket = fill_words(QComboBox(), NEW_TICKET_CHOICES)
         self.new_ticket.currentIndexChanged.connect(
@@ -225,6 +235,19 @@ class SettingsTab(QWidget):
         report_row.addWidget(self.report_btn)
         report_row.addStretch(1)
 
+        # A project card leaves Done when its epic closes; this is the period
+        # boundary for the cards whose epic is still open.
+        self.clear_done_btn = QPushButton("Clear Done")
+        self.clear_done_btn.setToolTip(
+            "Move every card in the Done column to the Archive, and write one "
+            "report covering them, from the first of them opened to now.")
+        self.clear_done_btn.setEnabled(clear_done is not None)
+        self.clear_done_btn.clicked.connect(self._clear_done)
+        clear_row = QHBoxLayout()
+        clear_row.setSpacing(space("md"))
+        clear_row.addWidget(self.clear_done_btn)
+        clear_row.addStretch(1)
+
         # Where things are. Each button opens the window that repoints them,
         # and carries the missing mark while anything it holds is not on disk.
         self.notebook_btn = QPushButton("Notebook…")
@@ -250,6 +273,7 @@ class SettingsTab(QWidget):
         form.addRow(_label("Git on Session Close"), self.suggested_commit)
         form.addRow(_heading("Reports"))
         form.addRow(_label("Standing Work"), report_row)
+        form.addRow(_label("Done Column"), clear_row)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -300,6 +324,43 @@ class SettingsTab(QWidget):
             notify(self, "Nothing to report", result.skipped)
         else:
             notify(self, "Report not written", result.error)
+
+    def _clear_done(self) -> None:
+        """Archive the Done column after a confirmation giving the count, and
+        say where its report went."""
+        if self.conn is None or clear_done is None:
+            notify(self, "No board open",
+                   "This page was opened without a board, so there is nothing "
+                   "to clear.")
+            return
+        count = len(clear_done.done_cards(self.conn))
+        if not count:
+            notify(self, "Nothing to clear", "The Done column is empty.")
+            return
+        if not confirm(self, "Clear Done",
+                       f"Move {count} done card(s) to the Archive and write a "
+                       "report covering them?", "Move to Archive"):
+            return
+        result = clear_done.clear_done(self.conn)
+        if self._on_board_changed is not None:
+            self._on_board_changed()
+        report = result.report
+        if report is None:
+            notify(self, "Cards archived",
+                   f"{len(result.archived)} card(s) moved to the Archive. This "
+                   "build carries no reports package, so no report was written.")
+        elif report.ok:
+            notify(self, "Cards archived",
+                   f"{len(result.archived)} card(s) moved to the Archive.\n\n"
+                   f"Report written: {report.written}")
+        elif report.skipped:
+            notify(self, "Cards archived",
+                   f"{len(result.archived)} card(s) moved to the Archive. No "
+                   f"report: {report.skipped}")
+        else:
+            notify(self, "Report not written",
+                   f"{len(result.archived)} card(s) moved to the Archive, but "
+                   f"the report could not be written.\n\n{report.error}")
 
     def _theme_chosen(self) -> None:
         """Offer the modes the new theme can draw, re-theme, and keep the

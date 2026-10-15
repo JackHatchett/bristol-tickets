@@ -298,9 +298,8 @@ class MainWindow(QMainWindow):
         # board and nothing beyond it. A single card in any column is created
         # from the master Create button, not from a per-column control. What
         # narrows the board reads left to right — the button, then what it is
-        # narrowed to. Nothing sweeps the Done column: a standing card archives
-        # itself when it is finished and a project card leaves when its epic
-        # closes, so there is no bulk action left for a control to offer.
+        # narrowed to. Sweeping the Done column is Settings' Clear Done, beside
+        # the reports it belongs with.
         # Refresh is not here either: it reloads every view, so it lives in the
         # header that spans every tab.
         board_controls = QHBoxLayout()
@@ -346,7 +345,8 @@ class MainWindow(QMainWindow):
 
 
         self.settings_tab = SettingsTab(
-            on_appearance_changed=self._preview_appearance, conn=self.conn)
+            on_appearance_changed=self._preview_appearance, conn=self.conn,
+            on_board_changed=self._refresh_board)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
 
 
