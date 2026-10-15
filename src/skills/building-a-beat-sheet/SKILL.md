@@ -46,6 +46,9 @@ One batch, in the session, before anything is written:
   stories are the sheet's core sources.
 - **Offer four to eight candidate sources to jog his memory** — well-known
   stories of the type, each with its year and one clause on why it fits.
+- **Ask which candidates he has seen, and whether he disliked any.** One he
+  has not seen still serves as a source and goes on the watchlist (§7); one he
+  saw and disliked is dropped, from the sources and from the watchlist.
 - **Ask the clarifying questions the archetype raises**, in the same batch:
   where its boundary lies, whether it has more than one ending, and which
   neighbouring archetype it must be told apart from. Each question offers two to
@@ -85,6 +88,15 @@ One batch, in the session, before anything is written:
 - **A source that turns out to tell a different story is a Variation or a sheet
   of its own.** Decide which — an Alternate Ending, Optional Beats, an Optional
   Path, or its own sheet — and say which, with the reason, in the report.
+- **Merge before multiplying.** A story whose beats the sheet's core holds,
+  with an Alternate Ending, Optional Beats or an Optional Path, is a Variation
+  rather than a new sheet.
+- **A classic met in research that is a different archetype gets a sheet or a
+  card.** A well-known story met while researching this sheet, judged a
+  different archetype from it, is built as its own sheet in the same session or
+  filed as a backlog card for writers_room to build; the report says which.
+  What is judged is the stories this sheet's research meets, and no search
+  goes out looking for new archetypes.
 
 ## 5. Write the sheet
 
@@ -120,7 +132,10 @@ One batch, in the session, before anything is written:
   note as `[[filename|Title]]`; any other story by a Markdown link to its outside
   source.
 - **`## Related Notes`** closes the sheet: the hub, the sheets it shares beats
-  with, and the notes on the method it was built by.
+  with, the sheets of the other library on the same kind of conflict, and the
+  notes on the method it was built by.
+- **Link a historical sheet and a fiction sheet on the same kind of conflict
+  both ways** — writing either adds it to the other's Related Notes.
 
 ## 6. Link it from the hub
 
@@ -131,10 +146,20 @@ One batch, in the session, before anything is written:
 - **A sub-bullet under the link may give the one fact a reader choosing among
   sheets needs**, such as an Optional Path drawn from another story.
 
-## 7. Report
+## 7. Keep the watchlist
 
-Give the author the sheet's file and the hub section it went under, in the
-session or in the comment of the card that asked for it.
+- **The watchlist is `archetype_watchlist.md`, beside the hubs** in the folder
+  holding the four library folders; a missing one is created by
+  `src/skills/note-formatting/SKILL.md`.
+- **Add each source the author has not seen as it becomes a source** — one
+  bullet: the story linked as `## Links` links it, its year and medium, then the
+  sheets it sources as wikilinks.
+
+## 8. Report
+
+Give the author the sheet's file and the hub section it went under, any sheet
+built or card filed for a classic met on the way, and any watchlist entry
+added, in the session or in the comment of the card that asked for it.
 
 ## Failure modes
 
@@ -148,3 +173,9 @@ session or in the comment of the card that asked for it.
   generic and the history sits beneath it.
 - **A beat dropped because fewer than half the sources carry it, when it
   belongs to the theme they share** → §4.
+- **A new sheet for a story the core already holds** → §4; it is a Variation.
+- **A distinct classic met in research and left unrecorded** → §4; a sheet or
+  a card.
+- **A story the author disliked used as a source** → §2; it is dropped.
+- **A historical sheet and a fiction sheet on one conflict, linked one way** →
+  §5.
