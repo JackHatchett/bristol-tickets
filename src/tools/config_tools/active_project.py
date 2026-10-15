@@ -3,8 +3,11 @@
 
 An agent's projects are the entries of `projects.notebook_projects` and
 `projects.local_projects` that sit at or under one of the folders the agent is
-granted in `agents.<slug>.key_data_paths`. A session opens on one of them by
-this rule, and names it before reading any of its content:
+granted in `agents.<slug>.key_data_paths`, and the notebook projects whose own
+folder the agent's `agents.<slug>.notebook_access` sets to write (`notebook.py`).
+Read access to a notebook folder leaves it a reference, and a whole-notebook
+mode (read_all or write_all) is upkeep reach rather than a project. A session opens
+on one of them by this rule, and gives it before reading any of its content:
 
 1. `agents.<slug>.active_project`, where it names one of the agent's projects;
 2. otherwise the agent's first project, in the order config lists them.
@@ -34,6 +37,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import data_paths  # noqa: E402
+import notebook  # noqa: E402
 import read_config  # noqa: E402
 import write_config  # noqa: E402
 
@@ -43,14 +47,41 @@ def _under(path: str, folder: str) -> bool:
     return path == folder or path.startswith(folder + "/")
 
 
+def _in_notebook(project: str) -> str | None:
+    """The project written from the notebook down, or None outside it."""
+    base = data_paths.notebook_root()
+    if base is None:
+        return None
+    try:
+        rel = data_paths.resolve(project).resolve().relative_to(base.resolve())
+    except (ValueError, OSError):
+        return None
+    return rel.as_posix()
+
+
 def projects(slug: str, *, data: dict | None = None) -> list[str]:
     """The agent's projects, in the order config lists them."""
-    listed = [*read_config.get("projects.notebook_projects", [], data=data),
+    in_notebook = read_config.get("projects.notebook_projects", [], data=data)
+    listed = [*in_notebook,
               *read_config.get("projects.local_projects", [], data=data)]
     grants = data_paths.folder_grants(
         read_config.get(f"agents.{slug}.key_data_paths", [], data=data))
+    access = read_config.get(f"agents.{slug}.notebook_access", None, data=data)
+    folders = notebook.attached(data)
+
+    def writable(project: str) -> bool:
+        if project not in in_notebook:
+            return False
+        rel = _in_notebook(project)
+        if rel is None:
+            return False
+        if notebook.normalised(access, folders)["mode"] != "per_folder":
+            return False
+        return notebook.may(access, folders, rel) == "write"
+
     return [p for p in listed
-            if any(_under(p, grant["path"]) for grant in grants)]
+            if any(_under(p, grant["path"]) for grant in grants)
+            or writable(p)]
 
 
 def active(slug: str, *, data: dict | None = None) -> tuple[str | None, str]:
