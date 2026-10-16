@@ -127,6 +127,18 @@ per plot, a row per chapter. It is where plots meet.
 - **Keep an unnamed arc's beats on the outline, under its slot**, grouped as
   `Character - unnamed` and `Story - unnamed`, until the arc is named and they
   move to a sheet of their own.
+- **List the outline's key worldbuilding in `## Setting`** under a `Key
+  Worldbuilding, each a setting promise` bullet: an uncapped but minimal set of
+  the worldbuilding notes that make promises at this tier, each a setting
+  promise (§5), one line per sense as `Sight - [[sheet]]`.
+- **Fill every sense with a major entry unique to this outline**, in this
+  order:
+  - Sight - a location;
+  - Touch - an object;
+  - Taste - a food;
+  - Hearing - music;
+  - Smell - a spice with a distinct smell, on every outline of every tier.
+- **Religion has no slot of its own.**
 - **Keep the tier's structure, and nothing else, under `Structure`** in
   `## Plot` — how the tier is divided, its point-of-view rules, how it opens
   and ends. Plots and their beats go under their own links.
@@ -184,6 +196,25 @@ per plot, a row per chapter. It is where plots meet.
 - **Leave `## Beats` out of a sheet with none yet.** A named plot with only its
   details is a whole sheet.
 
+### A setting promise
+
+A setting promise is the sheet for one Key Worldbuilding entry (§4): the
+promise a piece of the world makes to the reader, set up, optionally kept alive,
+and resolved. Every rule above holds for it except where this says otherwise.
+
+- **File it as a story plot** in its tier's `story` folder, named
+  `promise_of_<item>`.
+- **Build it on the story archetype Promise Made, Kept, Fulfilled**, the
+  `promise_made_kept_fulfilled` sheet in the story library —
+  `python3 src/tools/config_tools/read_config.py
+  markdown_notebook.beat_sheets.story_dir`.
+- **Give in Differentiators the sense it fills and the archetype**, with the
+  ending it takes, Met in Full or Transformed.
+- **Hold the archetype's six beats in `## Beats`**, each under the archetype's
+  own label and made specific to the item.
+- **Leave out `## Seven-Point Highlights`.**
+- **Give in `## Related Notes` the outline of its tier and the archetype.**
+
 ## 6. Move what is already written
 
 - **Leave a written sheet as it stands until a session next works that
@@ -222,6 +253,9 @@ per plot, a row per chapter. It is where plots meet.
   the slot as "unnamed".
 - **Seven-point labels filled out of the method's order, or left bare without
   a proposal** → §5.
+- **A setting promise with Seven-Point Highlights** → §5; it holds the
+  archetype's six beats alone.
+- **An outline's Setting with a sense left empty, or no spice** → §4.
 - **A success on the first try** → §5; two failures come first.
 - **A beat stating only what happens in the draft** → §5; the event goes
   abstract, the draft's version beneath it.

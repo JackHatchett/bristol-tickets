@@ -78,6 +78,12 @@ the lines and with those crayons.
 - **Skew a real-world model rather than copying it.** Change its variables — a
   term of two years where history had one, a wider remit — so no framework
   arrives whole from Earth.
+- **Coin every root and grammatical word of a constructed language in its own
+  sounds and forms.** A core Earth language the design draws on lends it
+  features — a case system, an aspect split, a word order — and none of its
+  words.
+- **Reshape a coined word that lands near an Earth word of the same meaning**
+  until it is no longer recognisable as that word.
 
 ## Measuring completeness
 

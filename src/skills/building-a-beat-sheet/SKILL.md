@@ -47,8 +47,8 @@ One batch, in the session, before anything is written:
 - **Offer four to eight candidate sources to jog his memory** — well-known
   stories of the type, each with its year and one clause on why it fits.
 - **Ask which candidates he has seen, and whether he disliked any.** One he
-  has not seen still serves as a source and goes on the watchlist (§7); one he
-  saw and disliked is dropped, from the sources and from the watchlist.
+  has not seen still serves as a source and goes on his lists (§7); one he
+  saw and disliked is dropped, from the sources and from the lists.
 - **Ask the clarifying questions the archetype raises**, in the same batch:
   where its boundary lies, whether it has more than one ending, and which
   neighbouring archetype it must be told apart from. Each question offers two to
@@ -146,14 +146,12 @@ One batch, in the session, before anything is written:
 - **A sub-bullet under the link may give the one fact a reader choosing among
   sheets needs**, such as an Optional Path drawn from another story.
 
-## 7. Keep the watchlist
+## 7. Keep the watchlist and the reading list
 
-- **The watchlist is `archetype_watchlist.md`, beside the hubs** in the folder
-  holding the four library folders; a missing one is created by
-  `src/skills/note-formatting/SKILL.md`.
-- **Add each source the author has not seen as it becomes a source** — one
-  bullet: the story linked as `## Links` links it, its year and medium, then the
-  sheets it sources as wikilinks.
+- **Add each source the author has not seen or read as it becomes a source**,
+  to the Plot Archetypes section of the watchlist for a film, show or stage
+  work and of the reading list for a book. The notes, their locations and the
+  bullet are `src/skills/keeping-the-media-lists/SKILL.md`.
 
 ## 8. Report
 

@@ -62,7 +62,9 @@
     "assistant_prompts_dir": "/path/to/notebook/ai_workspace/assistant-prompts",
     "recipes_dir": "/path/to/notebook/recipes",
     "agent_output_dir": "/path/to/notebook/ai_workspace/ai_output",
-    "reports_dir": "/path/to/notebook/ai_workspace/bristol_reports"
+    "reports_dir": "/path/to/notebook/ai_workspace/bristol_reports",
+    "watchlist_path": "/path/to/notebook/watchlist.md",
+    "reading_list_path": "/path/to/notebook/reading_list.md"
   },
   "important_paths": {
     "_notes": "Repo-relative paths to the databases. tickets_db is required — every agent session reads it. Create it with src/tools/ticket_tools/create_tickets.py --instance <your-instance>.",

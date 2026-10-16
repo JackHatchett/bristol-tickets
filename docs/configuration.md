@@ -208,6 +208,7 @@ on disk.
 | `plans_dir` | Where a planning document goes. |
 | `explainers_dir` | Where `teaching_assistant` writes explainers, one folder per topic. |
 | `beat_sheets.story_dir`, `.character_dir`, `.historical_story_dir`, `.historical_character_dir` | The four libraries of archetype beat sheets `writers_room` builds. Each library's hub sits beside its folder, named for it with a leading underscore. |
+| `watchlist_path`, `reading_list_path` | The user's watchlist and reading list: a general list kept by `librarian`, then a section for each project that sends media to watch or read, Plot Archetypes kept by `writers_room`. |
 
 ### `zotero`
 
