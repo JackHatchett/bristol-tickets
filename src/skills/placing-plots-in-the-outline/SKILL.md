@@ -220,7 +220,25 @@ and resolved. Every rule above holds for it except where this says otherwise.
 - **Leave out `## Seven-Point Highlights`.**
 - **Give in `## Related Notes` the outline of its tier and the archetype.**
 
-## 6. Move what is already written
+## 6. Check the leads' sliders
+
+The project's content-rules file
+(`src/skills/writers-room-project-context/SKILL.md` step 3) gives the slider
+rule where the project keeps one — Sanderson's likability, proactivity and
+competence — with its scale, where a lead's sliders are recorded, how much
+each beat must move and which characters are exempt.
+
+- **Read the rule there, and run its check after inventing a plot's beats and
+  when reviewing a run of plotting**, against the sliders each lead's
+  character note records.
+- **Report the check with the beats**: which slider each beat moves, and every
+  stretch where the rule's movement is missing, flagged to the author.
+- **Flag rather than fix.** The sliders say what to avoid, and a beat changes
+  only on the author's word.
+- **Record no slider value the author has not set**; a lead with none recorded
+  is reported as unchecked.
+
+## 7. Move what is already written
 
 - **Leave a written sheet as it stands until a session next works that
   plot.** That session brings it to this skill: its points worked by §5, a
@@ -263,6 +281,8 @@ and resolved. Every rule above holds for it except where this says otherwise.
 - **A setting promise with Seven-Point Highlights** → §5; it holds the
   archetype's six beats alone.
 - **An outline's Setting with a sense left empty, or no spice** → §4.
+- **A run of beats reported without the slider check, where the project
+  keeps a slider rule** → §6.
 - **A success on the first try** → §5; two failures come first.
 - **A beat stating only what happens in the draft** → §5; the event goes
   abstract, the draft's version beneath it.
