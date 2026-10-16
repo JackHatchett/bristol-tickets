@@ -1,10 +1,11 @@
 ---
 name: designing-with-the-author
-description: Designs a piece of a constructed language or of a fictional world with the author — which questions go to him, which choices the session makes itself, what it recommends, and what completeness is measured against. Use when a language, a creature, a culture, an institution or any other piece of the world is being designed or extended.
+description: Designs a piece of a constructed language or of a fictional world with the author — which questions go to him, which choices the session makes itself, what it recommends, how a coined name or a language's sound is checked against those already given, and what completeness is measured against. Use when a language, a creature, a culture, an institution or any other piece of the world is being designed or extended, or a name coined.
 license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: writers_room
+  bristol.scripts: src/tools/wiki_tools/sound_check.py
   bristol.subtitle: Design a language or world with the author
 ---
 # designing-with-the-author
@@ -84,6 +85,27 @@ the lines and with those crayons.
   words.
 - **Reshape a coined word that lands near an Earth word of the same meaning**
   until it is no longer recognisable as that word.
+
+## Checking a name's sound
+
+Input: a coined proper name, or a sample of words in a language's proposed
+sound. Operation: `src/tools/wiki_tools/sound_check.py`, which reads every
+language and every main character's name from the notes the config entry
+`agents.writers_room.sound_check` lists. Output: the name or the sound, apart
+from every other language and every main character's name.
+
+- **Run `sound_check.py name <name> --language <its language>` on every coined
+  proper name before it is offered or written**, adding `--character` for a
+  main character's name.
+- **Run `sound_check.py words <sample> --language <its language>` on a sample
+  of ten or more words for each proposed sound of a language**, and the name
+  check on each name the sample coins.
+- **Replace whatever the check reports too near before it reaches the author**,
+  and run the check again on the replacement.
+- **Give each offered name or sound its nearest language and score** beside
+  the option, so the author sees how far apart it stands.
+- **Add a new language's notes to `agents.writers_room.sound_check.languages`
+  in the session that writes its first words.**
 
 ## Measuring completeness
 

@@ -231,7 +231,15 @@
       },
       "skills": [
         "notebook-proposal"
-      ]
+      ],
+      "sound_check": {
+        "languages": {
+          "<language>": [
+            "/path/to/notebook/<project>/language/<language>_language.md"
+          ]
+        },
+        "outlines_dir": "/path/to/notebook/<project>/plot"
+      }
     }
   },
   "tools": {

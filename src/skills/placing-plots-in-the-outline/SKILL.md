@@ -34,6 +34,11 @@ note on Dan Wells' lectures, `seven_point_story.md`.
   and never a subplot of the tier above; nesting that appears is an effect of
   dependencies. No sheet holds another or sits within one: a sheet carries no
   Within or Holds, and each links its parallels in `## Related Notes`.
+- **Give each tier's parallel a smaller question than the tier above, never
+  the same one.** The parallel scales its parent's question down to what its
+  own tier can answer. A series plot about a dynasty's fall asks why such a
+  house could fall at all; its book parallel asks only who betrays it
+  first, and the book's journey answers it.
 - **Give a plot an arc at each tier it acts in.** A plot acting in two or more
   books of a cycle has a cycle arc and an arc in each of those books; one
   acting in a single book has only that book's arc.
@@ -237,6 +242,8 @@ and resolved. Every rule above holds for it except where this says otherwise.
   in the cycle sheet, tagged "(book 1)".
 - **One sheet holding a series romance and its book romance** → §1; one sheet
   per tier.
+- **A book parallel asking the series' question** → §1; it asks a smaller
+  one.
 - **A Within or Holds bullet on a sheet** → §1; tiers are parallels, linked in
   Related Notes.
 - **A villain's scheme filed as a character arc** → §2.

@@ -14,6 +14,11 @@ worldbuilding, a game's bible, a documentation set.
   Run it when a body of notes has grown past what one session holds; the
   procedure around it, including what a finding is and where it goes, is
   `src/skills/checking-a-wiki-for-disagreements/SKILL.md`.
+- **`sound_check.py`** — how near a coined name, or a sample of a language's
+  words, sounds to every constructed language and every main character's name
+  in the notes. Run it on any name or language sound before it is offered; the
+  procedure around it is `src/skills/designing-with-the-author/SKILL.md`
+  §Checking a name's sound.
 
 ## Using these
 
