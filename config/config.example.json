@@ -239,6 +239,29 @@
           ]
         },
         "outlines_dir": "/path/to/notebook/<project>/plot"
+      },
+      "plot_alignment": {
+        "sheet_url": "https://docs.google.com/spreadsheets/d/<id>",
+        "plot_dir": "/path/to/notebook/<project>/plot",
+        "tabs": [
+          {
+            "title": "Cycle 1",
+            "outline": "cycle_1_outline.md",
+            "bands": [
+              {
+                "label": "Book 1",
+                "tags": [
+                  "book 1"
+                ]
+              }
+            ]
+          },
+          {
+            "title": "Book 1",
+            "outline": "book_1_outline.md",
+            "bands": []
+          }
+        ]
       }
     }
   },

@@ -7,6 +7,10 @@ Machinery for capturing how a person writes and scaffolding a draft.
 - **`voice_capture.md`** — the sample-first method: mine or elicit specimens,
   distil each into a technique card. Load it when a deliverable must sound like
   a specific person.
+- **`plot_alignment.py`** — the plot alignment sheet generated from a novel's
+  tiered plot notes, and the writes that carry a change in the notes into the
+  sheet without moving a placed beat. The procedure around it is
+  `src/skills/syncing-the-plot-alignment-sheet/SKILL.md`.
 - **`templates/`** — `beat-sheet-chapter.md`, `draft-chapter.md`,
   `draft-scene.md`. Fill-in structure, no content.
 
