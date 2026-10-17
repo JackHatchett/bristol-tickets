@@ -17,7 +17,8 @@ sheet. Output: notes and sheet saying the same words, with every beat the
 author has placed still on its row.
 
 The sheet's location, the plot folder and each tab's outline and dividers are
-config, `agents.writers_room.plot_alignment`; `plot_alignment.py` reads them.
+config, the `plot_alignment` key of the config entry of the agent that keeps
+the sheet; `plot_alignment.py` reads them.
 The shape of the notes themselves is
 `src/skills/placing-plots-in-the-outline/SKILL.md`.
 

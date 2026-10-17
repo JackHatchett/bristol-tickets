@@ -55,6 +55,6 @@ first boundary.
 
 - **`librarian` keeps the general list**, from recommendations unrelated to
   writing.
-- **`writers_room` keeps the Plot Archetypes section**, from
-  `src/skills/building-a-beat-sheet/SKILL.md` §7.
+- **The agent that builds archetype beat sheets keeps the Plot Archetypes
+  section**, from `src/skills/building-a-beat-sheet/SKILL.md` §7.
 - **A project section is kept by the agent whose project sends it the media.**

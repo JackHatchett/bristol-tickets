@@ -57,7 +57,7 @@ the lines and with those crayons.
 - **Offer the replacement in the shape the ideas take.** Where one idea fits,
   recommend it alone for his approval; where several fit, offer two to four,
   one recommended with its reason. The correction he chooses is made under
-  `src/agent_identities/writers_room.md` §2.3.
+  the Write Authority clauses the agent's charter gives.
 - **A domain becomes color once the author's logic for building it is written
   down**, in the guidance the project keeps for agents. Until then, building a
   new thing of that kind is sketch.
@@ -90,9 +90,10 @@ the lines and with those crayons.
 
 Input: a coined proper name, or a sample of words in a language's proposed
 sound. Operation: `src/tools/wiki_tools/sound_check.py`, which reads every
-language and every main character's name from the notes the config entry
-`agents.writers_room.sound_check` lists. Output: the name or the sound, apart
-from every other language and every main character's name.
+language and every main character's name from the notes listed under the
+`sound_check` key of the config entry of the agent holding the languages.
+Output: the name or the sound, apart from every other language and every main
+character's name.
 
 - **Run `sound_check.py name <name> --language <its language>` on every coined
   proper name before it is offered or written**, adding `--character` for a
@@ -104,8 +105,8 @@ from every other language and every main character's name.
   and run the check again on the replacement.
 - **Give each offered name or sound its nearest language and score** beside
   the option, so the author sees how far apart it stands.
-- **Add a new language's notes to `agents.writers_room.sound_check.languages`
-  in the session that writes its first words.**
+- **Add a new language's notes to that key's `languages` in the session that
+  writes its first words.**
 
 ## Measuring completeness
 

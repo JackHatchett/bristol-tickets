@@ -8,7 +8,8 @@ which row a beat sits on — is the author's. `build` gives the sheet as the
 notes would generate it; `sync` reads the sheet as it stands and gives the
 writes that carry the notes' changes into it.
 
-Where everything is, is config, `agents.writers_room.plot_alignment`:
+Where everything is, is config, `agents.<agent>.plot_alignment`, the
+key of whichever agent holds it:
 
     {"sheet_url": "<the Google Sheet>",
      "plot_dir": "<folder holding the outline notes>",
@@ -78,8 +79,12 @@ def tag_of(text: str) -> str | None:
 # --- reading the notes -------------------------------------------------------
 
 def _settings() -> dict:
+    """The `plot_alignment` key of whichever agent's config entry holds one."""
     import read_config
-    return read_config.get("agents.writers_room.plot_alignment", None) or {}
+    for entry in (read_config.get("agents", None) or {}).values():
+        if isinstance(entry, dict) and entry.get("plot_alignment"):
+            return entry["plot_alignment"]
+    return {}
 
 
 def _resolve(path: str) -> Path:

@@ -13,7 +13,8 @@ the names a sample coins are each checked as names.
 Two main characters' names are too near when they share both their first
 letter and their last; `--character` makes that part of a name's verdict.
 
-Where the notes are is config, `agents.writers_room.sound_check`:
+Where the notes are is config, `agents.<agent>.sound_check`, the
+key of whichever agent holds it:
 
     {"languages": {"<language>": ["<note>", ...], ...},
      "outlines_dir": "<folder of *_outline.md notes>"}
@@ -217,8 +218,12 @@ def words_in_note(text: str, language: str) -> list[str]:
 
 
 def _settings() -> dict:
+    """The `sound_check` key of whichever agent's config entry holds one."""
     import read_config
-    return read_config.get("agents.writers_room.sound_check", None) or {}
+    for entry in (read_config.get("agents", None) or {}).values():
+        if isinstance(entry, dict) and entry.get("sound_check"):
+            return entry["sound_check"]
+    return {}
 
 
 def _resolve(path: str) -> Path:

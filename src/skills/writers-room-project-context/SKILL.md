@@ -16,7 +16,7 @@ snapshot, which happens first.
 ## Session start
 
 1. **Identify the active project** after the board snapshot, with `python3
-   src/tools/config_tools/active_project.py writers_room`, and **say which one
+   src/tools/config_tools/active_project.py <your slug>`, and **say which one
    it is before reading any of its content.** Where the user says he is working
    the other, move with `--set <project>`; the choice holds for later sessions.
 2. **Take where the project stands from the board and nothing else** — the
@@ -33,8 +33,8 @@ snapshot, which happens first.
    (`src/skills/external-ai-bridge/references/writers_room.md`).
 4. **Never bulk-read wiki files at session start.** On-demand lookup only. The
    wiki is user-authored and takes a proposal rather than a write
-   (`writers_room.md` §Write Authority); there is no canon concept and nothing
-   to re-vet.
+   (the Write Authority clauses the agent's charter gives); there is no
+   canon concept and nothing to re-vet.
 5. **Never read a `private/`-equivalent personal-notes folder unless the user
    names a specific file in it.** Never list, scan or summarize that folder
    unprompted.
