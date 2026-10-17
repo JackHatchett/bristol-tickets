@@ -96,7 +96,7 @@ per plot, a row per chapter. It is where plots meet.
 - **Keep thematic juxtaposition out of plot logic.** A note setting one
   character against another is justification, the last step of planning —
   after beats, the matrix, chapters and scenes — worked back from the end.
-- **Keep a candidate connection or choice in the sheet's `## Options`** (§5),
+- **Keep a candidate connection or choice as a developmental idea** (§8),
   where it bears no load.
 - **At the matrix, set one plot's Resolution on another plot's Pinch** where
   the chapters allow it.
@@ -190,9 +190,8 @@ per plot, a row per chapter. It is where plots meet.
     cycle, each failure a beat of its own;
   - **Give how the beat happens as the draft stands as sub-bullets** under it,
     an option kept rather than a commitment.
-- **`## Options`** follows Beats: one bullet per candidate connection or
-  choice for the matrix. Nothing in Details or Beats cites it, and the matrix
-  is where an option is taken or dropped.
+- **A sheet holds no `## Options`.** A candidate connection or choice is a
+  developmental idea (§8), and the matrix is where one is taken or dropped.
 - **Link every character, place, object and scene with a note where a beat or
   detail mentions it.**
 - **`## Related Notes`** gives the outline of the sheet's tier, the sheet's
@@ -243,7 +242,8 @@ each beat must move and which characters are exempt.
 - **Leave a written sheet as it stands until a session next works that
   plot.** That session brings it to this skill: its points worked by §5, a
   named character the plot is not scoped to generalized by §3, and any
-  dependency, concurrency or cross-plot tie in its Beats moved to Options.
+  dependency, concurrency or cross-plot tie in its Beats moved to the
+  developmental ideas (§8).
 - **Move a beat with its wording**, and its facts with it; a fact the move
   would lose goes into the sheet's Differentiators or under the beat.
 - **Keep a villain's plans note as the nested order of the villain's schemes**,
@@ -253,6 +253,27 @@ each beat must move and which characters are exempt.
 - **Name a new plot with the author.** Where he gave no name, offer two to four
   with one recommended, by `src/skills/designing-with-the-author/SKILL.md`
   §Who decides what, and write the recommended one meanwhile.
+
+## 8. Record the ideas not pencilled in
+
+To pencil something in is to settle it in a session; nothing is settled for
+good, and a later session may weigh changing it. A plotting idea the session
+raises and does not pencil in is kept where it survives the session without
+being taken for a decision.
+
+- **A plotting idea is an element of plotting**: a beat idea, a plot concept,
+  several ordered beats, or a character given another plot of a kind in a
+  given tier. It need not be fully specified. A bare event is not one — "they
+  kiss" is an event; "they kiss in one of their parallel romance plots, the
+  beat tied to beats in those parallels" is an idea.
+- **Write it into the Developmental Ideas subsection of the ideas note for its
+  kind** — plot, character or setting — read from `python3
+  src/tools/config_tools/read_config.py agents.<your slug>.ideas_notes`. The
+  subsection sits under the project's own ideas section in each note.
+- **One bullet per idea, opening with its tier**, then the idea, then the
+  problem it solves: `Book 1 - <the idea> - <the problem it solves>`.
+- **An idea pencilled in leaves the subsection** for the outline or the sheet
+  that owns it, in the same session.
 
 ## Failure modes
 
@@ -283,6 +304,8 @@ each beat must move and which characters are exempt.
 - **An outline's Setting with a sense left empty, or no spice** → §4.
 - **A run of beats reported without the slider check, where the project
   keeps a slider rule** → §6.
+- **A candidate tie written into a sheet, or an idea dropped at the session's
+  end** → §8; it is a developmental idea.
 - **A success on the first try** → §5; two failures come first.
 - **A beat stating only what happens in the draft** → §5; the event goes
   abstract, the draft's version beneath it.
