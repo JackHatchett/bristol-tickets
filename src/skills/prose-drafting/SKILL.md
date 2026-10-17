@@ -54,8 +54,8 @@ anything here.**
 ## Failure modes
 
 - **A passage needs a world-fact the project has not established** → raise it as
-  an open question. Never invent the fact or coin the proper noun
-  (`writers_room.md` §Bright-Line Guardrails Only).
+  an open question. Never invent the fact or coin the proper noun, by the
+  guardrails the agent's charter gives.
 - **The work would touch something the project has settled** — a settled beat, a
   settled name → state the conflict and route it through `src/skills/story-proposals/SKILL.md`.
   Never revise a settled thing in passing.
@@ -66,4 +66,4 @@ anything here.**
 
 Prose, notes and beat sheets go to `markdown_notebook.agent_output_dir` for the
 user to fold in. **A directory the user authors in takes a proposal rather
-than a write** (`writers_room.md` §Write Authority).
+than a write**, by the Write Authority clauses the agent's charter gives.
