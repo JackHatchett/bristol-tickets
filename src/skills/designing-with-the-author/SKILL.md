@@ -1,19 +1,21 @@
 ---
 name: designing-with-the-author
-description: Designs a piece of a constructed language or of a fictional world with the author — which questions go to him, which choices the session makes itself, what it recommends, how a coined name or a language's sound is checked against those already given, and what completeness is measured against. Use when a language, a creature, a culture, an institution or any other piece of the world is being designed or extended, or a name coined.
+description: Designs a piece of a fictional world with the author — which questions go to him, which choices the session makes itself, what it recommends, how a coined name is checked against those already given, and what completeness is measured against. Use when a creature, a culture, an institution, a language or any other piece of the world is being designed or extended, or a name coined.
 license: MIT
 metadata:
   bristol.kind: playbook
   bristol.maintainer: writers_room
   bristol.scripts: src/tools/wiki_tools/sound_check.py
-  bristol.subtitle: Design a language or world with the author
+  bristol.subtitle: Design a piece of the world with the author
 ---
 # designing-with-the-author
 
-Input: a piece of a language or of the world to design. Operation: the rules
-below. Output: a design the author has decided, written into the note that holds
-it. A proposal's route into the notebook is
-`src/skills/story-proposals/SKILL.md`.
+Input: a piece of the world to design. Operation: the rules below. Output: a
+design the author has decided, written into the note that holds it. A
+proposal's route into the notebook is `src/skills/story-proposals/SKILL.md`. A
+constructed language's own rules are
+`src/skills/building-a-constructed-language/SKILL.md`, which these rules hold
+for too.
 
 ## Before proposing
 
@@ -42,9 +44,6 @@ the lines and with those crayons.
 - **Ask about anything missing one of the three.** It is still sketch, and the
   author draws it. The questions the session itself raises are his to answer, and so is every
   principle for how a class of things is built.
-- **A linguistic choice is the session's own** — a sound change, an affix's
-  shape, which of several grammatical solutions a language of the type uses,
-  how a word is coined. Make it, and report it with its reason.
 - **Follow a burst of questions to its end.** One question begets more, and the
   burst is finite: every new need becomes a question in the session or a card.
 - **Ask in the session, in batches, in plain words about the world**, never
@@ -79,40 +78,28 @@ the lines and with those crayons.
 - **Skew a real-world model rather than copying it.** Change its variables — a
   term of two years where history had one, a wider remit — so no framework
   arrives whole from Earth.
-- **Coin every root and grammatical word of a constructed language in its own
-  sounds and forms.** A core Earth language the design draws on lends it
-  features — a case system, an aspect split, a word order — and none of its
-  words.
-- **Reshape a coined word that lands near an Earth word of the same meaning**
-  until it is no longer recognisable as that word.
 
 ## Checking a name's sound
 
-Input: a coined proper name, or a sample of words in a language's proposed
-sound. Operation: `src/tools/wiki_tools/sound_check.py`, which reads every
-language and every main character's name from the notes listed under the
-`sound_check` key of the config entry of the agent holding the languages.
-Output: the name or the sound, apart from every other language and every main
-character's name.
+Input: a coined proper name. Operation: `src/tools/wiki_tools/sound_check.py`,
+which reads every language and every main character's name from the notes
+listed under the `sound_check` key of the config entry of the agent holding
+the languages. Output: the name, apart from every other language and every
+main character's name.
 
 - **Run `sound_check.py name <name> --language <its language>` on every coined
   proper name before it is offered or written**, adding `--character` for a
   main character's name.
-- **Run `sound_check.py words <sample> --language <its language>` on a sample
-  of ten or more words for each proposed sound of a language**, and the name
-  check on each name the sample coins.
 - **Replace whatever the check reports too near before it reaches the author**,
   and run the check again on the replacement.
-- **Give each offered name or sound its nearest language and score** beside
-  the option, so the author sees how far apart it stands.
-- **Add a new language's notes to that key's `languages` in the session that
-  writes its first words.**
+- **Give each offered name its nearest language and score** beside the
+  option, so the author sees how far apart it stands.
 
 ## Measuring completeness
 
-- **Measure against a published checklist** — a meaning list such as the World
-  Loanword Database's for vocabulary, a grammar questionnaire such as Comrie and
-  Smith's for grammar. Test sentences prove a design and set none of its scope.
+- **Measure against a published checklist for the kind of thing designed** —
+  a language's are `src/skills/building-a-constructed-language/SKILL.md`
+  §Measure completeness. Test cases prove a design and set none of its scope.
 
 ## Writing it down
 
