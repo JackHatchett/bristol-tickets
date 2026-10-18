@@ -18,7 +18,9 @@ worldbuilding, a game's bible, a documentation set.
   words, sounds to every constructed language and every main character's name
   in the notes. Run it on any name or language sound before it is offered; the
   procedure around it is `src/skills/designing-with-the-author/SKILL.md`
-  §Checking a name's sound.
+  §Checking a name's sound, and for a language's own sound
+  `src/skills/building-a-constructed-language/SKILL.md` §Check the sound. Its
+  docstring gives the measures and the thresholds.
 
 ## Using these
 

@@ -53,6 +53,10 @@ are the language's own.
 - **Borrow most where contact is closest**, and in the fields that contact
   touches: a port's trade words, a conqueror's law words, a missionary's
   religious words.
+- **Keep the borrower's loans when the lender's sound is rebuilt** by giving
+  them a conservative source — a dialect or an older stage of the lender that
+  keeps the old sounds — rather than rewriting the borrower. one language's
+  Port loans come from the speech of the trade ports.
 
 ## Coin in the language's own forms
 
@@ -73,11 +77,28 @@ language coins. A language's sound is checked the same way, as a sample.
 - **Run `python3 src/tools/wiki_tools/sound_check.py words <sample> --language
   <the language>` on ten or more words for each proposed sound**, and the name
   check on each name the sample coins.
+- **Check a name in a language whose sound is being rebuilt against its new
+  forms**: `sound_check.py name <name> --language <the language> --home-words
+  <the new forms>`. Read from its notes, the language is its old sound.
+- **Read the profiles beside the score** — the consonants that close a word,
+  the signature letters, the commonest syllables, the word lengths and the
+  sample — and set ten names of the language beside ten of its nearest. The
+  score is a mean of six parts and can call apart two languages the ear hears
+  as near.
 - **Replace a sound the check reports too near before it reaches the author**,
   and give each sound offered its nearest language and score.
 - **Add a new language's notes to the `languages` of the `sound_check` key** of
   the config entry of the agent holding the languages, in the session that
   writes its first words.
+
+## Write it down
+
+- **State a language's sound targets technically in a card that directs work
+  on it** — the inventory, the consonants that may close a word, the
+  vowel-final and closed shares, the stress.
+- **State in a note the rule a choice produced, never the world reason behind
+  it.** A seafaring language's sound heard across a deck is written as its sounds, never as
+  the sailors' "aye".
 
 ## Measure completeness
 

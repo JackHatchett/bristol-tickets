@@ -22,6 +22,17 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import status_common as sc  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "config_tools"))
+import read_config  # noqa: E402
+
+
+def known_agents() -> set[str]:
+    """Every slug config registers under `agents`."""
+    agents = read_config.get("agents", {})
+    if not isinstance(agents, dict):
+        return set()
+    return {k for k in agents if not k.startswith("_")}
+
 
 def main() -> None:
     if len(sys.argv) < 2 or not sys.argv[1]:
@@ -31,6 +42,12 @@ def main() -> None:
             "(chief_of_staff should use cos_status.py instead)"
         )
     me = sys.argv[1]
+    known = known_agents()
+    if me not in known:
+        sys.exit(
+            f"agent_status: ERROR — '{me}' is not an agent in config "
+            f"(agents.*). Known: {', '.join(sorted(known))}"
+        )
 
     db_path, conn, cur = sc.open_board()
 

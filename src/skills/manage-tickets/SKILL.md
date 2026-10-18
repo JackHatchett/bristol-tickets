@@ -198,7 +198,17 @@ what makes `assignee` the routing key rather than a label.
 lost the moment anyone reorders the column, so the two do different jobs and you
 do both.
 
-**7. Leave the queue in the order you would work it, and rate what you touched.**
+**7. Hand a cleared card to the agent that waits on it.** The snapshot's YOUR
+CARDS OTHER AGENTS WAIT ON section lists your cards that hold another agent's.
+
+- **Say which agent to launch when you close one.** The closing message gives
+  the card now clear, its agent, and that the agent can run it.
+- **Move another agent's blockers up when every card of yours waits on them.**
+  Put each blocking card at the top of its agent's `todo` column (`set-order
+  --id M --position 1`), comment on it with the cards of yours it clears, and
+  stop.
+
+**8. Leave the queue in the order you would work it, and rate what you touched.**
 Three separate acts, all cheap:
 
 - **Order.** `set-order --id N --position K`, position 1 = next. Order by what
@@ -207,7 +217,7 @@ Three separate acts, all cheap:
 - **Size.** `update-task --id N --estimate S|M|L|XL`, per §Sizing.
 - **Tier.** `update-task --id N --tier max|standard`, per §Processing tier.
 
-**8. Make an early stop easy to say yes to.** A session that halts for one of
+**9. Make an early stop easy to say yes to.** A session that halts for one of
 the reasons in `src/app.md` Phase 3.6 ends on an ask, and the ask is the first
 thing in the message. A decision in it takes the form in §Asking the user for a
 decision, and every term the report uses is defined where it first appears:
@@ -221,7 +231,7 @@ decision, and every term the report uses is defined where it first appears:
   the call or the choice in a comment beside it. A `capability` or a `decision`
   is what puts the card under NEEDS YOU the next time anyone reads the board.
 
-**9. Close on a To Continue block only when you recommend switching sessions.**
+**10. Close on a To Continue block only when you recommend switching sessions.**
 The block's presence is the recommendation, so a session with no reason to
 switch ends on the next action and whether to start it, and shows no block. A
 reason to switch is one of three:

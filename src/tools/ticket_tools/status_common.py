@@ -590,10 +590,64 @@ def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
         print("   Your backlog is also empty — await direction.")
 
 
+def blocking_others(conn: sqlite3.Connection, me: str) -> list[tuple]:
+    """(my open card, the other agent's open card it holds, that agent).
+
+    Read from every open card, backlog included, so a blocker sitting at the
+    bottom of this agent's queue, or off the board, still shows. A card owned by
+    this agent holding another card of its own is the queue's business and is
+    left out.
+    """
+    out = []
+    for r in conn.execute(
+        "SELECT b.id AS bid, b.title AS btitle, b.status AS bstatus, "
+        "       b.stage AS bstage, b.assignee AS bassignee, be.owner AS bowner, "
+        "       w.id AS wid, w.title AS wtitle, w.assignee AS wassignee, "
+        "       we.owner AS wowner "
+        "FROM task_link l "
+        "JOIN task b ON b.id = l.task_id LEFT JOIN epic be ON be.id = b.epic_id "
+        "JOIN task w ON w.id = l.other_id LEFT JOIN epic we ON we.id = w.epic_id "
+        "WHERE l.kind='issue' AND l.dep_type='blocks' "
+        "  AND b.status != 'done' AND b.stage != 'archive' "
+        "  AND w.status != 'done' AND w.stage != 'archive' "
+        "ORDER BY b.id, w.id"
+    ):
+        b_assignee = (r["bassignee"] or "").strip()
+        mine = b_assignee == me if b_assignee else me in (r["bowner"] or "")
+        if not mine:
+            continue
+        other = (r["wassignee"] or "").strip() or (r["wowner"] or "").strip()
+        if not other or other == me:
+            continue
+        out.append((r, other))
+    return out
+
+
+def print_blocking_others(conn: sqlite3.Connection, me: str,
+                          mine_q: list) -> None:
+    """The cards of this agent's that another agent's cards wait on.
+
+    Context rather than order: the queue above stays the order these are
+    worked in. A session that closes one tells the user which agent now has a
+    card to run — src/skills/manage-tickets/SKILL.md §Session closure.
+    """
+    rows = blocking_others(conn, me)
+    if not rows:
+        return
+    pos = {r["id"]: n for n, r in enumerate(mine_q, start=1)}
+    print("\n--- YOUR CARDS OTHER AGENTS WAIT ON (context, NOT a priority signal) ---")
+    for r, other in rows:
+        where = (f"queue #{pos[r['bid']]}" if r["bid"] in pos
+                 else r["bstage"])
+        print(f"  #{r['bid']} ({where}, {r['bstatus']}) {r['btitle']}")
+        print(f"      holds #{r['wid']} <{other}> {r['wtitle']}")
+
+
 def print_body(conn: sqlite3.Connection, db_path, me: str,
                mine_all: list, mine_q: list,
                asked: set[int] | None = None) -> None:
     """Everything under the queue, in the one order both front ends print it."""
+    print_blocking_others(conn, me, mine_q)
     shown = print_comments(conn, mine_all, asked)
     print_links(conn, mine_all)
     # Scoped to the queue rather than to every card on the board: a

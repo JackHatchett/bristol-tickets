@@ -65,6 +65,14 @@ it; where a script and that rule disagree, the script is the bug. **Read the
 database directly only where one of them errors, the database was just created,
 or the user asks for history the snapshot omits.**
 
+Both print **YOUR CARDS OTHER AGENTS WAIT ON** under the queue: each open card
+of the agent's, backlog included, that a `blocks` link sets ahead of another
+agent's open card, with that card and its owner. It orders nothing; what a
+session does with it is `src/skills/manage-tickets/SKILL.md` §Session closure.
+
+`agent_status.py` refuses a slug that is not a key of config's `agents` block,
+and prints the slugs it knows.
+
 Both close on **LAST FINISHED**, the agent's three most recently closed cards
 and how each one closed, read across every epic and both the active board and
 the archive.
