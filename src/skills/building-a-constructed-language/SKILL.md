@@ -53,10 +53,9 @@ are the language's own.
 - **Borrow most where contact is closest**, and in the fields that contact
   touches: a port's trade words, a conqueror's law words, a missionary's
   religious words.
-- **Keep the borrower's loans when the lender's sound is rebuilt** by giving
-  them a conservative source — a dialect or an older stage of the lender that
-  keeps the old sounds — rather than rewriting the borrower. one language's
-  Port loans come from the speech of the trade ports.
+- **Rebuild a borrower's loans when the lender's sound is rebuilt**, as the
+  borrower's speakers would have taken them from the lender's new forms —
+  §When a rule changes.
 
 ## Coin in the language's own forms
 
@@ -68,6 +67,20 @@ are the language's own.
 - **Make each language sound unlike every other in the project** — its own
   syllable shape, its own consonants that close a syllable or cluster, its own
   signature sounds, vowels and rhythm, its own look on the page.
+
+## When a rule changes
+
+- **Regenerate every word the new rule would have built differently**, as if
+  the rule had held from the start — roots, grammar words, names, the loans
+  other languages took, and every name built from any of them.
+- **Carry a word over unchanged only where the rule leaves how it was built
+  untouched.** A rule adding a vowel mark adds the mark to a name and keeps the
+  name.
+- **Never keep a word because the new rules allow it.** A word survives a
+  rebuild only where the new rules would have produced it, and no reason found
+  afterwards for its old form — an older dialect, a frozen name, a loan
+  borrowed early — keeps it.
+- **Report each word carried over with what makes the new rules produce it.**
 
 ## Check the sound
 
@@ -114,6 +127,8 @@ language coins. A language's sound is checked the same way, as a sample.
   forms.
 - **Two languages whose speakers trade for centuries with no word between
   them** → §Borrow where speakers meet.
+- **The same words standing through a rebuild of the sound** → §When a rule
+  changes.
 
 ## Audit
 

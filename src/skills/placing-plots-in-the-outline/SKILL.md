@@ -153,7 +153,8 @@ per plot, a row per chapter. It is where plots meet.
 - **Folders**: the project's content-rules file gives them — the outline notes
   alone at the top of the plot folder, each sheet in its `<tier>/<kind>`
   subfolder, the tier `series`, `cycle_N` or `book_N` and the kind
-  `character`, `story` or `romance`.
+  `character`, `story`, `romance` or `setting`, which holds the setting
+  promises.
 - **Filename**: the plot's name in snake case.
 - **Frontmatter**: the notebook's plot-note keys — `aliases` with the H1,
   `tags` with the project's plot tag, `created`, `status`, `source_url`.
