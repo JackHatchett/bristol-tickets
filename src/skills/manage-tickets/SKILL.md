@@ -248,7 +248,10 @@ Session Closed: <the reason, in a few words>
 Run Next Session As: <agent slug>
 Next Tasks:
 - #<id> <title> (<agent slug>)
-- #<id> <title> (<agent slug>)
+- #<id> <title> (<your slug>), blocked
+  - #<id> <title> (<agent slug>)
+    - #<id> <title> (<agent slug>)
+  - <the user's decision or grant>
 LLM Model Strength and Effort: <Max|Standard>
 ```
 
@@ -257,19 +260,21 @@ LLM Model Strength and Effort: <Max|Standard>
   the whole of itself where a fresh session reads only what it pays to start),
   "priority blocking ticket", "lighter model fits", "decision needed", "board
   is clear".
-- **List your own next card and the cards that must close before it, nothing
-  else.** The blocking cards come first, in the order they run, each with its
-  agent; your own next card comes last, and only that one of yours. The block
-  is titled Next Task where it holds one card. The rest of every queue is the
-  board's.
-- **Run Next Session As gives the agent of the first card listed.**
+- **List one card of yours to run next, and every `doing` card of yours that
+  is blocked, nothing else.** Under each blocked card, indented, goes what
+  holds it — another agent's card, the user's decision or grant — and under
+  each of those, indented again, what holds that, back to a card that can run
+  now. The block is titled Next Task where it holds one line. The rest of
+  every queue is the board's.
+- **Run Next Session As gives the agent of the first card that can run now**,
+  which is first in the list.
 - **A session with nothing of its own left gives the reason and stops**:
   "Session Closed: board is clear" and no other line, whatever other agents
   hold.
 - **Name the decision instead of a card where one is owed.** A session that
   stopped on a grant, a credential or a choice of the user's lists that as its
   next task: what he has to decide or grant, and what runs the moment he has.
-- **Take LLM Model Strength and Effort from the first card listed** — its
+- **Take LLM Model Strength and Effort from that same card** — its
   `task.tier`, by §Processing tier, rated and written to the card first where
   it has none. The block gives the level and never a model; config's `tiers`
   key maps each level to a model and an effort, and the user resolves it.
