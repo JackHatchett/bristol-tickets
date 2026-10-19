@@ -74,8 +74,11 @@ are the language's own.
   the rule had held from the start — roots, grammar words, names, the loans
   other languages took, and every name built from any of them.
 - **Carry a word over unchanged only where the rule leaves how it was built
-  untouched.** A rule adding a vowel mark adds the mark to a name and keeps the
-  name.
+  untouched.** A rule adding a vowel mark adds the mark to an existing name and
+  keeps the name.
+- **Rebuild a word wherever it is in doubt**, and never ask the author which
+  old forms to keep. The regenerated proper names go to him for approval by
+  `designing-with-the-author` §Who decides what.
 - **Never keep a word because the new rules allow it.** A word survives a
   rebuild only where the new rules would have produced it, and no reason found
   afterwards for its old form — an older dialect, a frozen name, a loan
@@ -110,8 +113,9 @@ language coins. A language's sound is checked the same way, as a sample.
   on it** — the inventory, the consonants that may close a word, the
   vowel-final and closed shares, the stress.
 - **State in a note the rule a choice produced, never the world reason behind
-  it.** A seafaring language's sound heard across a deck is written as its sounds, never as
-  the sailors' "aye".
+  it.** A seafaring language shaped to carry across a deck is written as its
+  sounds — the consonants, the shares, the stress — never as the sailors'
+  calls it echoes.
 
 ## Measure completeness
 

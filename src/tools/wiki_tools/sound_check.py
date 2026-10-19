@@ -14,7 +14,14 @@ would claim it against its own language's alone; a sample
 of words is scored against each language by how alike the two profiles are,
 the mean of six parts — vowel-final share, closed share, endings, consonants,
 word lengths and syllable stock;
-the names a sample coins are each checked as names.
+the names a sample coins are each checked as names. A batch of new names is
+read against the language's own names of one kind — the rows of its tables
+headed `Form` whose `Kind` the command gives, or every capitalised form — for
+the openings, endings and syllables that kind already over-uses, the rarer
+syllables a new name shares with one or two names (a shared element), the
+class prefixes and suffixes a name opens or ends as, and the comic forms
+listed under the key's `comic`; each sharing name is ranked by how many notes
+of `notes_dir` (else the folder above `outlines_dir`) mention it.
 Two main characters' names are too near when they share both their first
 letter and their last; `--character` makes that part of a name's verdict.
 
@@ -34,6 +41,7 @@ CLI
 ---
     python3 sound_check.py name <name> [--language <its language>] [--home-words <word> ...] [--character] [--json]
     python3 sound_check.py words <word> [<word> ...] [--language <its language>] [--json]
+    python3 sound_check.py batch <name> [<name> ...] --language <their language> [--kind <kind> ...] [--json]
     python3 sound_check.py languages [--json]
 
 Each command exits 1 when anything is too near, and 0 otherwise.
@@ -54,7 +62,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
 
 VOWELS = set("aeiouɛɔəæøɪʊ")
 # A glide after a vowel and before no vowel closes a diphthong rather than a
-# syllable: a language's -ay and -aw end in a vowel sound.
+# syllable: a word in -ay or -aw ends in a vowel sound.
 GLIDES = set("yw")
 # Two letters spelling one consonant in the languages this reads, so that a
 # digraph is never counted as a cluster.
@@ -76,6 +84,14 @@ LANGUAGE_TOO_NEAR = 0.65
 MIN_WORDS = 10
 # Words of this many syllables or more are counted together.
 LONGEST = 4
+# In a batch check, a form is over-used by a language's names of one kind when
+# at least this many of them, and this share, carry it.
+OVERUSE_MIN = 3
+OVERUSE_SHARE = 0.05
+# A run of at least ELEMENT_LETTERS letters shared with this few names of the
+# kind is read as a shared element, such as one root in two founders' names.
+ELEMENT_MAX = 2
+ELEMENT_LETTERS = 4
 SMOOTHING = 0.5
 
 
@@ -302,6 +318,29 @@ def words_in_note(text: str, language: str) -> list[str]:
     return words
 
 
+def rows_in_note(text: str) -> list[tuple[str, str, str]]:
+    """(form, kind, the row's text) for each row of the note's tables headed `Form` with a
+    `Kind` column; affixes keep their hyphens."""
+    out, cols = [], None
+    for line in text.splitlines():
+        if not line.startswith("|"):
+            cols = None
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if cols is None:
+            heads = [c.lower() for c in cells]
+            cols = (heads.index("kind")
+                    if heads and heads[0] == "form" and "kind" in heads else -1)
+            continue
+        if cols < 0 or re.match(r"^-+$", cells[0] or "-") or len(cells) <= cols:
+            continue
+        m = ITALIC.search(cells[0])
+        form = (m.group(1) if m else cells[0]).split(",")[0].strip()
+        if form:
+            out.append((form, cells[cols].lower(), line))
+    return out
+
+
 def _settings() -> dict:
     """The `sound_check` key of whichever agent's config entry holds one."""
     import read_config
@@ -326,6 +365,164 @@ def load_languages() -> dict[str, list[str]]:
                 words += words_in_note(p.read_text(encoding="utf-8"), name)
         langs[name] = words
     return langs
+
+
+def language_notes(language: str) -> list[str]:
+    out = []
+    for note in (_settings().get("languages") or {}).get(language, []):
+        p = _resolve(note)
+        if p.exists():
+            out.append(p.read_text(encoding="utf-8"))
+    return out
+
+
+def language_rows(language: str) -> list[tuple[str, str, str]]:
+    return [r for text in language_notes(language) for r in rows_in_note(text)]
+
+
+def plain(text: str) -> str:
+    """Lowercase with accents dropped, spacing kept."""
+    decomposed = unicodedata.normalize("NFD", text.lower())
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
+
+
+def opening(word: str) -> str:
+    """The sounds up to and including the first vowel."""
+    out = ""
+    for seg, v in units(segments(fold(word))):
+        out += seg
+        if v:
+            break
+    return out
+
+
+def notes_dir() -> Path | None:
+    """The novel's notes: `notes_dir`, else the folder above `outlines_dir`."""
+    st = _settings()
+    if st.get("notes_dir"):
+        return _resolve(st["notes_dir"])
+    if st.get("outlines_dir"):
+        return _resolve(st["outlines_dir"]).parent
+    return None
+
+
+def degrees(names: list[str]) -> dict[str, int]:
+    """How many notes mention each name: its links in the body of notes."""
+    root = notes_dir()
+    out = {n: 0 for n in names}
+    if not root or not root.exists():
+        return out
+    pats = {n: re.compile(r"(?<![a-z])" + re.escape(fold(n)) + r"(?![a-z])")
+            for n in names}
+    for note in root.rglob("*.md"):
+        text = plain(note.read_text(encoding="utf-8", errors="ignore"))
+        for n, pat in pats.items():
+            if pat.search(text):
+                out[n] += 1
+    return out
+
+
+def check_batch(new: list[str], language: str, kinds: list[str] | None) -> dict:
+    """New names against the language's own names of the same kind: the
+    openings, endings and syllables the kind already over-uses, the names each
+    new one shares a form with, ranked by how linked they are, the affixes a
+    name opens or ends as, and the comic forms config lists."""
+    rows = language_rows(language)
+    kinds = [k.lower() for k in kinds] if kinds else None
+    picked = [(f, line) for f, k, line in rows
+              if (k in kinds if kinds else f[:1].isupper())
+              and not f.startswith("-") and not f.endswith("-")]
+    pool = sorted({f for f, _ in picked}, key=fold)
+    # A name is also known by the longer or shorter forms its row gives that
+    # open as it does: a founder's full name beside a familiar one.
+    known = {f: {fold(f)} for f in pool}
+    for f, line in picked:
+        for w in re.findall(r"[A-ZÀ-ÖØ-Þ][^\s|,.;:()*'’]+", line):
+            if fold(w)[:2] == fold(f)[:2] and fold(w) != fold(f):
+                known[f].add(fold(w))
+    italics = [m.group(1).strip() for text in language_notes(language)
+               for m in ITALIC.finditer(text)]
+    prefixes = {fold(x.rstrip("-")) for x in italics
+                if x.endswith("-") and not x.startswith("-")}
+    suffixes = {fold(x.lstrip("-")) for x in italics
+                if x.startswith("-") and not x.endswith("-")}
+    comic = [fold(c) for c in _settings().get("comic") or []]
+
+    def forms(name):
+        sy = syllables(name)
+        return {"opening": opening(name),
+                "ending": sy[-1] if len(sy) > 1 else "",
+                "syllables": set(sy)}
+
+    def shared_run(a: str, bs: set[str]) -> str:
+        """The longest run of ELEMENT_LETTERS or more letters a shares with
+        any of bs."""
+        best = ""
+        for b in bs:
+            for i in range(len(a)):
+                for j in range(i + ELEMENT_LETTERS, len(a) + 1):
+                    if a[i:j] in b and j - i > len(best):
+                        best = a[i:j]
+        return best
+
+    pf = {n: forms(n) for n in pool}
+    n = len(pool) or 1
+    use = {"opening": Counter(f["opening"] for f in pf.values()),
+           "ending": Counter(f["ending"] for f in pf.values() if f["ending"]),
+           "syllables": Counter(x for f in pf.values() for x in f["syllables"])}
+    over = {k: {x: c for x, c in cnt.items()
+                if c >= OVERUSE_MIN and c / n >= OVERUSE_SHARE}
+            for k, cnt in use.items()}
+    report, sharers_all = [], set()
+    for name in new:
+        f = forms(name)
+        shared = []
+        others = {p: g for p, g in pf.items() if fold(p) != fold(name)}
+        for kind in ("opening", "ending"):
+            x = f[kind]
+            hits = [p for p, g in others.items() if x and g[kind] == x]
+            if hits:
+                shared.append({"form": x, "as": kind, "uses": len(hits),
+                               "over_used": x in over[kind], "names": hits})
+        for x in sorted(f["syllables"] - {f["opening"], f["ending"]}):
+            hits = [p for p, g in others.items() if x in g["syllables"]]
+            if hits and x in over["syllables"]:
+                shared.append({"form": x, "as": "syllable", "uses": len(hits),
+                               "over_used": True, "names": hits})
+        runs = {}
+        for p in others:
+            run = shared_run(fold(name), known[p])
+            if run:
+                runs.setdefault(run, []).append(p)
+        for run, hits in sorted(runs.items(), key=lambda kv: -len(kv[0])):
+            if len(hits) <= ELEMENT_MAX:
+                shared.append({"form": run, "as": "element", "uses": len(hits),
+                               "over_used": False, "names": hits})
+        for d in shared:
+            sharers_all.update(d["names"])
+        report.append({"name": name, "shared": shared,
+                       "opens_as_prefix": max((p for p in prefixes
+                                               if fold(name).startswith(p)
+                                               and len(p) >= 3),
+                                              key=len, default=None),
+                       "ends_as_suffix": max((x for x in suffixes
+                                              if fold(name).endswith(x)
+                                              and len(x) >= 3),
+                                             key=len, default=None),
+                       "comic": [c for c in comic if c in fold(name)]})
+    deg = degrees(sorted(sharers_all | set(new)))
+    for r in report:
+        r["degree"] = deg.get(r["name"], 0)
+        for d in r["shared"]:
+            d["names"] = sorted(d["names"], key=lambda x: -deg.get(x, 0))
+            d["degrees"] = {x: deg.get(x, 0) for x in d["names"]}
+        r["flag"] = bool(r["comic"] or r["opens_as_prefix"]
+                         or any(d["over_used"] for d in r["shared"])
+                         or any(d["as"] == "element" for d in r["shared"]))
+    return {"language": language, "kinds": kinds, "pool": len(pool),
+            "over_used": {k: sorted(v, key=lambda x: -v[x])
+                          for k, v in over.items()},
+            "names": report, "too_near": any(r["flag"] for r in report)}
 
 
 WIKILINK = re.compile(r"\[\[[^|\]]*\|([^\]]+)\]\]|\[\[([^\]]+)\]\]")
@@ -423,7 +620,33 @@ def check_languages() -> dict:
             "too_near": any(p["too_near"] for p in pairs)}
 
 
+def _print_batch(result: dict) -> None:
+    print(f"{result['language']}, against its {result['pool']} names"
+          f"{' of kind ' + ', '.join(result['kinds']) if result['kinds'] else ''}")
+    for k, v in result["over_used"].items():
+        print(f"  over-used {k}: {', '.join(v[:12]) or '-'}")
+    for r in result["names"]:
+        mark = "FLAG    " if r["flag"] else "clear   "
+        print(f"{mark}{r['name']} (in {r['degree']} notes)")
+        if r["comic"]:
+            print(f"    comic: {', '.join(r['comic'])}")
+        if r["opens_as_prefix"]:
+            print(f"    opens as the prefix {r['opens_as_prefix']}-")
+        if r["ends_as_suffix"]:
+            print(f"    ends as the suffix -{r['ends_as_suffix']}")
+        for d in r["shared"]:
+            if not (d["over_used"] or d["as"] == "element"):
+                continue
+            tag = "over-used" if d["over_used"] else "shared"
+            names = ", ".join(f"{x} ({d['degrees'][x]})" for x in d["names"][:8])
+            print(f"    {tag} {d['as']} {d['form']} ({d['uses']}): {names}")
+    print(f"batch: {'flagged' if result['too_near'] else 'clear'}")
+
+
 def _print(result: dict) -> None:
+    if "pool" in result:
+        _print_batch(result)
+        return
     if "pairs" in result:
         for k, d in result["profiles"].items():
             print(f"{k}: {d}")
@@ -464,12 +687,20 @@ def main(argv=None) -> int:
     w.add_argument("words", nargs="+")
     w.add_argument("--language")
     w.add_argument("--json", action="store_true")
+    b = sub.add_parser("batch")
+    b.add_argument("names", nargs="+")
+    b.add_argument("--language", required=True)
+    b.add_argument("--kind", nargs="+",
+                   help="the Kind column values that make the names' category")
+    b.add_argument("--json", action="store_true")
     lg = sub.add_parser("languages")
     lg.add_argument("--json", action="store_true")
     args = p.parse_args(argv)
     if args.cmd == "name":
         result = check_name(args.name, args.language, args.character,
                             args.home_words)
+    elif args.cmd == "batch":
+        result = check_batch(args.names, args.language, args.kind)
     elif args.cmd == "words":
         result = check_words(args.words, args.language)
     else:

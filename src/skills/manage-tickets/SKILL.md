@@ -198,11 +198,15 @@ what makes `assignee` the routing key rather than a label.
 lost the moment anyone reorders the column, so the two do different jobs and you
 do both.
 
-**7. Hand a cleared card to the agent that waits on it.** The snapshot's YOUR
+**7. Name another agent's card the moment it matters.** The snapshot's YOUR
 CARDS OTHER AGENTS WAIT ON section lists your cards that hold another agent's.
 
-- **Say which agent to launch when you close one.** The closing message gives
-  the card now clear, its agent, and that the agent can run it.
+- **Say so in the session when another agent's card blocks the work you would
+  take next**, whenever you find it rather than at the close: the card, its
+  agent, and what of yours it clears. Pausing until it is done, and asking the
+  user to have it worked in a parallel session first, are both open.
+- **Say which agent to launch when you close a card that held another
+  agent's**: the card now clear, its agent, and that the agent can run it.
 - **Move another agent's blockers up when every card of yours waits on them.**
   Put each blocking card at the top of its agent's `todo` column (`set-order
   --id M --position 1`), comment on it with the cards of yours it clears, and
@@ -231,43 +235,52 @@ decision, and every term the report uses is defined where it first appears:
   the call or the choice in a comment beside it. A `capability` or a `decision`
   is what puts the card under NEEDS YOU the next time anyone reads the board.
 
-**10. Close on a To Continue block only when you recommend switching sessions.**
-The block's presence is the recommendation, so a session with no reason to
-switch ends on the next action and whether to start it, and shows no block. A
-reason to switch is one of three:
+**10. Close every stopping point on the next-session recommendation** — the
+end of the queue, an early stop, the user asking to wrap up, or the
+conversation's load. It is a recommendation set down at the close, and the
+session that reads it may change it.
 
-- **The conversation is running out of room.**
-- **The next card needs a different agent** — its `assignee`, or its epic's
-  `owner`, is not the slug this session runs as.
-- **The next card's tier maps to a cheaper model or a lower reasoning level
-  than this session is running**, read from `tiers.max` / `tiers.standard` in
-  config, and the saving outweighs what a new session pays to start: the
-  charter, `src/app.md`, the skill index and the snapshot. A Standard card on a
-  session already running the Standard mapping is no reason.
+- **Recommend the agent the next session runs as, and the sequence of cards**:
+  another agent's cards that clear your next work first, then the agent that
+  comes back and its cards. Order them by what clears your next work, whatever
+  the other agent's own queue says.
+- **Recommend continuing as the same agent where nothing else holds**, and say
+  why.
+- **Recommend a fresh session where one holds**, and give the one reason:
+  - the conversation is running out of room;
+  - the next card needs a different agent — its `assignee`, or its epic's
+    `owner`, is not the slug this session runs as;
+  - the next card's tier maps to a cheaper model or a lower reasoning level than
+    this session is running, read from `tiers.max` / `tiers.standard` in
+    config, and the saving outweighs what a new session pays to start — the
+    charter, `src/app.md`, the skill index and the snapshot;
+  - the user will come back after hours away to a long conversation, which
+    rereads the whole of itself on its next turn where a fresh session reads
+    only what it pays to start.
 
-Where one holds, the block is the message's last paragraph and states the
-launch and nothing else:
+The block is the message's last paragraph and states the launch and nothing
+else:
 
 ```
 To Continue
 Why: <the one reason, in one line>
-Run as: <agent slug>
-Work: #<id> <title>
+Run as: <agent slug> (<this session | a new session>)
+Work: #<id> <title>[, then #<id> <title>]
+Then: <agent slug> for #<id> <title>[, #<id> <title>]
 Tier: <Max|Standard>
 ```
 
-- **Name one card, never the queue.** The board holds the order and the session
-  that reads it will see it; a block that recites the queue makes the user read
-  it twice and goes stale the moment anyone drags a card. Where other cards
-  could run beside that one, say so in one clause — "#571 and #572 can run
-  in the same session" — and name no more.
+- **List the cards on the way and stop**: those that clear the path and the
+  ones they lead to. The rest of the queue is the board's, and a block that
+  recites it goes stale the moment anyone drags a card. `Then` appears only
+  where the sequence passes to another agent.
 - **Name the decision instead of a card where one is owed.** A session that
   stopped on a grant, a credential or a choice of the user's puts that in the
   Work line: what he has to decide or grant, and what runs the moment he has.
 - **Say which agent to run as, always**, even where it is the agent that just
   ran. The line the user copies is the whole launch, and an agent he has to
   remember is a launch he has to reconstruct.
-- **Take the tier from the card in the Work line** — `task.tier` — so it
+- **Take the tier from the first card in the Work line** — `task.tier` — so it
   is the card's own rather than a judgement about the session that just ran. A
   card with none is rated by §Processing tier and the tier written to it before
   the block is. The block gives the tier and never a model; the user resolves
