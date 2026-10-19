@@ -64,7 +64,7 @@ same paths, so the user still has the commit in hand.
 ## Output
 
 - **The board writes land first, then the commit report or the block, then the
-  To Continue block** —
+  Session Closed block** —
   `src/skills/manage-tickets/SKILL.md` §Session closure, step 10, which is the
   last thing in the message because it is what the user acts on next.
 - **One commit, or one block, per working tree**, each complete on its own.

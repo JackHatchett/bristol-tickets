@@ -54,7 +54,7 @@ session. Where the project stands goes on the board —
 `src/skills/manage-tickets/SKILL.md` §Session closure, which every agent
 follows: the cards you came back to in the column that reflects reality, what
 remains in a comment on the card it belongs to, and the next-session
-recommendation in the To Continue block, its step 10.
+recommendation in the Session Closed block, its step 10.
 
 - **Never write a state file, a session log or a decision log**, in the
   notebook or anywhere else. A settled decision is a comment on the card that

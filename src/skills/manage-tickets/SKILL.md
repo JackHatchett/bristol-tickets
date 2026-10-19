@@ -240,51 +240,39 @@ end of the queue, an early stop, the user asking to wrap up, or the
 conversation's load. It is a recommendation set down at the close, and the
 session that reads it may change it.
 
-- **Recommend the agent the next session runs as, and the sequence of cards**:
-  another agent's cards that clear your next work first, then the agent that
-  comes back and its cards. Order them by what clears your next work, whatever
-  the other agent's own queue says.
-- **Recommend continuing as the same agent where nothing else holds**, and say
-  why.
-- **Recommend a fresh session where one holds**, and give the one reason:
-  - the conversation is running out of room;
-  - the next card needs a different agent — its `assignee`, or its epic's
-    `owner`, is not the slug this session runs as;
-  - the next card's tier maps to a cheaper model or a lower reasoning level than
-    this session is running, read from `tiers.max` / `tiers.standard` in
-    config, and the saving outweighs what a new session pays to start — the
-    charter, `src/app.md`, the skill index and the snapshot;
-  - the user will come back after hours away to a long conversation, which
-    rereads the whole of itself on its next turn where a fresh session reads
-    only what it pays to start.
-
 The block is the message's last paragraph and states the launch and nothing
 else:
 
 ```
-To Continue
-Why: <the one reason, in one line>
-Run as: <agent slug> (<this session | a new session>)
-Work: #<id> <title>[, then #<id> <title>]
-Then: <agent slug> for #<id> <title>[, #<id> <title>]
-Tier: <Max|Standard>
+Session Closed: <the reason, in a few words>
+Run Next Session As: <agent slug>
+Next Tasks:
+- #<id> <title> (<agent slug>)
+- #<id> <title> (<agent slug>)
+LLM Model Strength and Effort: <Max|Standard>
 ```
 
-- **List the cards on the way and stop**: those that clear the path and the
-  ones they lead to. The rest of the queue is the board's, and a block that
-  recites it goes stale the moment anyone drags a card. `Then` appears only
-  where the sequence passes to another agent.
+- **Give the reason in a few plain words** — "token load", "unhelpful context
+  load" (the user returning after hours to a long conversation, which rereads
+  the whole of itself where a fresh session reads only what it pays to start),
+  "priority blocking ticket", "lighter model fits", "decision needed", "board
+  is clear".
+- **List your own next card and the cards that must close before it, nothing
+  else.** The blocking cards come first, in the order they run, each with its
+  agent; your own next card comes last, and only that one of yours. The block
+  is titled Next Task where it holds one card. The rest of every queue is the
+  board's.
+- **Run Next Session As gives the agent of the first card listed.**
+- **A session with nothing of its own left gives the reason and stops**:
+  "Session Closed: board is clear" and no other line, whatever other agents
+  hold.
 - **Name the decision instead of a card where one is owed.** A session that
-  stopped on a grant, a credential or a choice of the user's puts that in the
-  Work line: what he has to decide or grant, and what runs the moment he has.
-- **Say which agent to run as, always**, even where it is the agent that just
-  ran. The line the user copies is the whole launch, and an agent he has to
-  remember is a launch he has to reconstruct.
-- **Take the tier from the first card in the Work line** — `task.tier` — so it
-  is the card's own rather than a judgement about the session that just ran. A
-  card with none is rated by §Processing tier and the tier written to it before
-  the block is. The block gives the tier and never a model; the user resolves
-  it.
+  stopped on a grant, a credential or a choice of the user's lists that as its
+  next task: what he has to decide or grant, and what runs the moment he has.
+- **Take LLM Model Strength and Effort from the first card listed** — its
+  `task.tier`, by §Processing tier, rated and written to the card first where
+  it has none. The block gives the level and never a model; config's `tiers`
+  key maps each level to a model and an effort, and the user resolves it.
 - **Write no state into any file to support it.** The block lives in the
   conversation; what it lists lives on the board, and `src/app.md` §The board is
   the only channel is unchanged by it.
