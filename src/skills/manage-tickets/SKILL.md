@@ -247,11 +247,11 @@ else:
 Session Closed: <the reason, in a few words>
 Run Next Session As: <agent slug>
 Next Tasks:
-- #<id> <title> (<agent slug>)
-- #<id> <title> (<your slug>), blocked
-  - #<id> <title> (<agent slug>)
-    - #<id> <title> (<agent slug>)
-  - <the user's decision or grant>
+- <agent slug>: #<id> <title>
+- <your slug>: #<id> <title>, blocked
+  - <agent slug>: #<id> <title>
+    - <agent slug>: #<id> <title>
+  - user: <his decision or grant>
 LLM Model Strength and Effort: <Max|Standard>
 ```
 
@@ -263,18 +263,22 @@ LLM Model Strength and Effort: <Max|Standard>
 - **List one card of yours to run next, and every `doing` card of yours that
   is blocked, nothing else.** Under each blocked card, indented, goes what
   holds it — another agent's card, the user's decision or grant — and under
-  each of those, indented again, what holds that, back to a card that can run
-  now. The block is titled Next Task where it holds one line. The rest of
-  every queue is the board's.
-- **Run Next Session As gives the agent of the first card that can run now**,
-  which is first in the list.
+  each of those, indented again, what holds that, back to work that can run
+  now. Each line opens with whose it is, the agent slug or `user`. The block
+  is titled Next Task where it holds one line. The rest of every queue is the
+  board's.
+- **Run Next Session As gives the agent whose work can run first** — your own
+  next card where nothing of yours is blocked, else the agent at the bottom of
+  the first chain, whose card clears the way back to you. It points the user
+  returning days later to where he goes next, and appears whenever Next Tasks
+  holds anything.
 - **A session with nothing of its own left gives the reason and stops**:
   "Session Closed: board is clear" and no other line, whatever other agents
   hold.
 - **Name the decision instead of a card where one is owed.** A session that
   stopped on a grant, a credential or a choice of the user's lists that as its
   next task: what he has to decide or grant, and what runs the moment he has.
-- **Take LLM Model Strength and Effort from that same card** — its
+- **Take LLM Model Strength and Effort from that agent's card** — its
   `task.tier`, by §Processing tier, rated and written to the card first where
   it has none. The block gives the level and never a model; config's `tiers`
   key maps each level to a model and an effort, and the user resolves it.
