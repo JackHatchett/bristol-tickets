@@ -240,10 +240,15 @@ end of the queue, an early stop, the user asking to wrap up, or the
 conversation's load. It is a recommendation set down at the close, and the
 session that reads it may change it.
 
-The block is the message's last paragraph and states the launch and nothing
-else:
+The recap is the whole message, in plain bulleted text, never a code block:
 
 ```
+Closed This Session
+- #<id> <title>
+
+Opened This Session
+- #<id> <title>
+
 Session Closed: <the reason, in a few words>
 Next Tasks:
 - <agent slug>: #<id> <title>
@@ -253,6 +258,9 @@ Next Tasks:
 LLM Model Strength and Effort: <Max|Standard>
 ```
 
+- **List under Closed This Session every card this session took to done, and
+  under Opened This Session every card it wrote**, number and title only. A
+  heading with nothing under it is left out.
 - **Give the reason in a few plain words** — "token load", "unhelpful context
   load" (the user returning after hours to a long conversation, which rereads
   the whole of itself where a fresh session reads only what it pays to start),
@@ -279,6 +287,8 @@ LLM Model Strength and Effort: <Max|Standard>
   `task.tier`, by §Processing tier, rated and written to the card first where
   it has none. The block gives the level and never a model; config's `tiers`
   key maps each level to a model and an effort, and the user resolves it.
+- **Write nothing around it** — no account of the session's work, no partial
+  work, no restated rule. The cards hold all of it.
 - **Write no state into any file to support it.** The block lives in the
   conversation; what it lists lives on the board, and `src/app.md` §The board is
   the only channel is unchanged by it.

@@ -47,7 +47,7 @@ not re-derive one. Precedence, identical for every agent:
 - **You own a card when its `assignee` is your slug, or, unassigned, its epic
   `owner` is your slug.**
 - **Treat a card left for you as an ordinary card in your queue** — the
-  `assignee` makes it yours to decide on, not an order. There is no inbox.
+  `assignee` makes it yours to decide on, not an order.
 - **`doing` outranks every `todo`, including a blocked one.**
 - **Pass over a card with an unmet blocker, take the next in order, and return
   to it in place once every blocker is done.** Never work its unblocked part in
@@ -79,8 +79,8 @@ permission between tickets. The complete list of reasons to stop early:
 - **You have hit inefficient grinding** — the same call failing repeatedly, a
   fix that keeps not fixing it, variations yielding nothing new. Stop the moment
   a competent human would be getting frustrated.
-- **This conversation is running out of room** — only you can feel it. Halt, say
-  where you got to, and never start a card you cannot finish.
+- **This conversation is running out of room** — halt with the recap, and
+  never start a card you cannot finish.
 
 "This one looks big," "I have done a lot already" and "this feels like a good
 stopping point" are not reasons.
@@ -91,12 +91,9 @@ later is disposed of by filing the card now. What waits is working a card, never
 the snapshot above.
 
 - **An ask for a briefing** — brief, and stop on the user's pick.
-- **Anything else actionable** — do that, then state the next action and ask
-  whether to start it.
-- **Neither, including an explicit "continue"** — start at the next action and
-  work down as far as `session.work_whole_queue` allows — on, the whole queue;
-  off, that one card. Read it when the scope decision is made, never at session
-  start.
+- **Anything else** — do it, then work down from the next action as far as
+  `session.work_whole_queue` allows: on, the whole queue; off, one card. Read
+  it at the scope decision.
 
 ## Phase 4 — Closure
 
@@ -157,8 +154,11 @@ In chat, and in a comment the user acts on:
 
 - **Gloss every term you took from the board or a file** at first use — what it
   is and where it lives, never the name alone.
-- **Report a change against the board goal it serves**, never as a list of
-  edits.
+- **Speak only to ask what blocks the work, answer what the user raised, or
+  close the session** with the recap alone, in plain bullets —
+  `src/skills/manage-tickets/SKILL.md` §Session closure step 10. Never a
+  summary of your work, a remark on the user, an account of a mistake, a
+  restated rule, or "shall I continue?".
 - **Before drafting anything in the user's name for anyone outside this
   system, say in a line what it will say, to whom and why, and wait for his
   yes.** The draft lands where he can rewrite it, and he sends it himself.
