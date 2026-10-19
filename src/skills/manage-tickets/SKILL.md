@@ -245,13 +245,11 @@ else:
 
 ```
 Session Closed: <the reason, in a few words>
-Run Next Session As: <agent slug>
 Next Tasks:
 - <agent slug>: #<id> <title>
-- <your slug>: #<id> <title>, blocked
-  - <agent slug>: #<id> <title>
-    - <agent slug>: #<id> <title>
   - user: <his decision or grant>
+    - <your slug>: #<id> <title>
+- <agent slug>: #<id> <title>
 LLM Model Strength and Effort: <Max|Standard>
 ```
 
@@ -260,25 +258,24 @@ LLM Model Strength and Effort: <Max|Standard>
   the whole of itself where a fresh session reads only what it pays to start),
   "priority blocking ticket", "lighter model fits", "decision needed", "board
   is clear".
+- **Write each chain in the order it is done.** Its top-level line is work that
+  can run now, opening with whose it is, the agent slug or `user`, so the user
+  returning days later reads it as where to go first. Each step that follows
+  sits indented beneath the one before, and the last is your own card.
 - **List one card of yours to run next, and every `doing` card of yours that
-  is blocked, nothing else.** Under each blocked card, indented, goes what
-  holds it — another agent's card, the user's decision or grant — and under
-  each of those, indented again, what holds that, back to work that can run
-  now. Each line opens with whose it is, the agent slug or `user`. The block
-  is titled Next Task where it holds one line. The rest of every queue is the
-  board's.
-- **Run Next Session As gives the agent whose work can run first** — your own
-  next card where nothing of yours is blocked, else the agent at the bottom of
-  the first chain, whose card clears the way back to you. It points the user
-  returning days later to where he goes next, and appears whenever Next Tasks
-  holds anything.
+  is blocked**, each as the last step of its chain. Your next card, where
+  nothing holds it, is a top-level line of its own under your slug. Where a
+  step waits on two agents' work, each is its own top-level line, the one to
+  do first above, and the step beneath the first.
+- **Put the chains in the order the user should take them.** The block advises
+  him and orders nothing on the board; the rest of every queue is the board's.
+- **Write the user's own step as what he decides or grants**, on a `user:`
+  line.
+- **Title the block Next Task where it holds one line.**
 - **A session with nothing of its own left gives the reason and stops**:
   "Session Closed: board is clear" and no other line, whatever other agents
   hold.
-- **Name the decision instead of a card where one is owed.** A session that
-  stopped on a grant, a credential or a choice of the user's lists that as its
-  next task: what he has to decide or grant, and what runs the moment he has.
-- **Take LLM Model Strength and Effort from that agent's card** — its
+- **Take LLM Model Strength and Effort from the first top-level card** — its
   `task.tier`, by §Processing tier, rated and written to the card first where
   it has none. The block gives the level and never a model; config's `tiers`
   key maps each level to a model and an effort, and the user resolves it.
