@@ -278,7 +278,10 @@ LLM Model Strength and Effort: <Max|Standard>
 - **Put the chains in the order the user should take them.** The block advises
   him and orders nothing on the board; the rest of every queue is the board's.
 - **Write the user's own step as what he decides or grants**, on a `user:`
-  line.
+  line, in plain directive English he can act on without opening the card:
+  what to do, where, and what to tell the agent. "Read the last message of
+  today's story_architect session and say whether its close is right" is the
+  line; "your decision on #1119" is the misuse.
 - **Title the block Next Task where it holds one line.**
 - **A session with nothing of its own left gives the reason and stops**:
   "Session Closed: board is clear" and no other line, whatever other agents
