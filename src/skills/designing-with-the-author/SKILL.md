@@ -1,6 +1,6 @@
 ---
 name: designing-with-the-author
-description: Designs a piece of a fictional world with the author — which questions go to him, which choices the session makes itself, what it recommends, how a coined name is checked against those already given, and what completeness is measured against. Use when a creature, a culture, an institution, a language or any other piece of the world is being designed or extended, or a name coined.
+description: Designs a piece of a fictional world with the author — which questions go to him, which choices the session makes itself, what it recommends, how a coined name is checked against those already given, how a few names the author picks are regenerated with more care, and what completeness is measured against. Use when a creature, a culture, an institution, a language or any other piece of the world is being designed or extended, a name coined, or a few names regenerated.
 license: MIT
 metadata:
   bristol.kind: playbook
@@ -106,15 +106,63 @@ main character's name.
   endings and syllables the category already over-uses, the elements a new
   name shares with one or two names, a class prefix or suffix a name opens or
   ends as, and the comic forms the `comic` list of the `sound_check` key gives.
+- **Give each personal name with its familiar form, as `Formal/Familiar`**, so
+  the batch reads each familiar against the familiar forms the kind already has
+  and the batch's other familiars, and flags one of the same shape: syllable
+  count, a cluster, last vowel and closing consonant.
+- **Pass the shares the language's rules give each syllable count** with
+  `--formal-shares` and `--familiar-shares`, as `3=2/5`; the batch flags a
+  count holding more of its names than its share allows.
 - **Settle each flag by how linked the names are**, the count of notes each
   appears in beside it. Regenerate the less-linked name of a sharing pair, so
   a new name gives way to an established one; put a pair to the author only
   where both are established.
 - **Read each name aloud against the project's comic test** before it is
   offered, and add each form the author rejects as comic to the `comic` list.
+- **Weigh every echo by the project's rules on what a name may echo**, in its
+  content-rules file: which echoes count against a name, and which stand.
 - **Regenerate and rerun until the batch reports clear**, then offer it.
 - **Run the batch check over every name of each kind once the language is
   complete**, each name against the rest of its kind.
+
+## Regenerating a few names
+
+Input: a short list of names the author asks to have regenerated, most often
+names the story uses heavily. Operation: the rules below, on top of §Checking a
+name's sound. Output: options for each name, put to him by §Who decides what.
+
+- **Build every candidate by the language's rules as they stand.** The
+  regeneration picks other forms those rules produce; a rule changes only by
+  `src/skills/building-a-constructed-language/SKILL.md` §When a rule changes.
+- **Build wide before judging**: every form the rules reach for the name's kind
+  and a meaning that fits, from each element and root, whole, short and worn,
+  with a script listing the builds where they run past what can be listed by
+  hand.
+- **Clear each candidate through §Checking a name's sound**, name and batch,
+  with `--character` for a main character's name, before judging it further.
+- **Judge each survivor on four things beyond the check**, by the project's own
+  rules for names in its content-rules file:
+  - **its page** — how an English reader takes it in at a glance: letters that
+    blur together, a rare letter pattern beside a near one, and its length;
+  - **its use** — how often the narrative will use it, from the count of notes
+    that mention the name it replaces and the tier of what it names, the
+    most-used names leaning toward the shapes a reader takes in at a glance;
+  - **its echoes** — each real word, fictional name and in-world name it calls
+    to mind, each counted against it or kept;
+  - **its titles** — the name set in two or three stock genre titles, as The
+    Song of X and The Ice Queen of X, and heard for what it evokes; a name that
+    calls up a known work is out.
+- **Offer three or four options for each name, one recommended with its
+  reason**, each from a different idea where the meaning allows.
+- **Give each option its build and its readings**: the form with its familiar
+  form, its meaning and what it is built from, the sound check's nearest
+  language and score and the batch result, its first and last letters against
+  the main characters', its page, its expected use, the echoes it keeps and why
+  each stands, and its titles.
+- **List each form turned down in a line**, with the mark that put it out.
+- **Carry the author's answer into the next round.** An opening, an ending, a
+  meaning or a concept he rules out holds for every later candidate, and a
+  concept he spends goes on the project's list of concepts already spent.
 
 ## Measuring completeness
 

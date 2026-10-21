@@ -21,7 +21,14 @@ the openings, endings and syllables that kind already over-uses, the rarer
 syllables a new name shares with one or two names (a shared element), the
 class prefixes and suffixes a name opens or ends as, and the comic forms
 listed under the key's `comic`; each sharing name is ranked by how many notes
-of `notes_dir` (else the folder above `outlines_dir`) mention it.
+of `notes_dir` (else the folder above `outlines_dir`) mention it. A name given
+as `Formal/Familiar` has its familiar form read against the familiar forms the
+kind already has — the shorter forms a row gives beside its name — and the
+batch's other familiars, for the same shape: syllable count, a cluster of
+consonant letters, last vowel and closing consonant. The batch's spread of
+syllable counts, formal and familiar, is printed, and read against the shares
+`--formal-shares` and `--familiar-shares` give, such as `2=1/6 3=2/5`: a
+count holding more names than its share of the batch rounds up to is flagged.
 Two main characters' names are too near when they share both their first
 letter and their last; `--character` makes that part of a name's verdict.
 
@@ -41,7 +48,8 @@ CLI
 ---
     python3 sound_check.py name <name> [--language <its language>] [--home-words <word> ...] [--character] [--json]
     python3 sound_check.py words <word> [<word> ...] [--language <its language>] [--json]
-    python3 sound_check.py batch <name> [<name> ...] --language <their language> [--kind <kind> ...] [--json]
+    python3 sound_check.py batch <name>[/<familiar>] ... --language <their language> [--kind <kind> ...]
+        [--formal-shares <syllables>=<share> ...] [--familiar-shares <syllables>=<share> ...] [--json]
     python3 sound_check.py languages [--json]
 
 Each command exits 1 when anything is too near, and 0 otherwise.
@@ -50,6 +58,7 @@ Each command exits 1 when anything is too near, and 0 otherwise.
 from __future__ import annotations
 
 import argparse
+from fractions import Fraction
 import json
 import math
 import re
@@ -422,7 +431,54 @@ def degrees(names: list[str]) -> dict[str, int]:
     return out
 
 
-def check_batch(new: list[str], language: str, kinds: list[str] | None) -> dict:
+def familiar_shape(word: str) -> tuple:
+    """What a familiar form's shape is on the page: its syllable count,
+    whether two consonant letters stand together, its last vowel and the
+    consonant that closes it."""
+    w = fold(word)
+    u = units(segments(w))
+    cluster = any(a not in VOWELS and b not in VOWELS and a != "'" and b != "'"
+                  for a, b in zip(w, w[1:]))
+    last_vowel = next((seg for seg, v in reversed(u) if v), "")
+    final = "" if not u or u[-1][1] else u[-1][0]
+    return (len(syllables(word)), cluster, last_vowel, final)
+
+
+def describe_shape(shape: tuple) -> str:
+    n, cluster, vowel, final = shape
+    return (f"{n} syllable{'s' if n != 1 else ''}, "
+            f"{'a cluster' if cluster else 'no cluster'}, last vowel {vowel}"
+            f"{', closed by ' + final if final else ''}")
+
+
+def parse_shares(items: list[str] | None) -> dict[int, Fraction]:
+    out = {}
+    for item in items or []:
+        k, _, v = item.partition("=")
+        out[int(k)] = Fraction(v)
+    return out
+
+
+def spread(names: list[str], shares: dict[int, Fraction]) -> dict:
+    """How many of the names run to each syllable count, and the counts
+    holding more than their share of the batch rounds up to."""
+    counts = Counter(len(syllables(n)) for n in names)
+    n = len(names)
+    crowded = {}
+    if shares:
+        for k, c in counts.items():
+            allowed = math.ceil(shares.get(k, 0) * n)
+            if c > allowed:
+                crowded[k] = {"names": c, "allowed": allowed}
+    return {"counts": dict(sorted(counts.items())),
+            "shares": {k: str(v) for k, v in sorted(shares.items())},
+            "crowded": crowded}
+
+
+def check_batch(new: list[str], language: str, kinds: list[str] | None,
+                familiars: dict[str, str] | None = None,
+                formal_shares: dict[int, Fraction] | None = None,
+                familiar_shares: dict[int, Fraction] | None = None) -> dict:
     """New names against the language's own names of the same kind: the
     openings, endings and syllables the kind already over-uses, the names each
     new one shares a form with, ranked by how linked they are, the affixes a
@@ -436,10 +492,14 @@ def check_batch(new: list[str], language: str, kinds: list[str] | None) -> dict:
     # A name is also known by the longer or shorter forms its row gives that
     # open as it does: a founder's full name beside a familiar one.
     known = {f: {fold(f)} for f in pool}
+    # The shorter of those forms are the kind's familiar forms.
+    familiar_pool: dict[str, str] = {}
     for f, line in picked:
         for w in re.findall(r"[A-ZÀ-ÖØ-Þ][^\s|,.;:()*'’]+", line):
             if fold(w)[:2] == fold(f)[:2] and fold(w) != fold(f):
                 known[f].add(fold(w))
+                if len(fold(w)) < len(fold(f)):
+                    familiar_pool.setdefault(w, f)
     italics = [m.group(1).strip() for text in language_notes(language)
                for m in ITALIC.finditer(text)]
     prefixes = {fold(x.rstrip("-")) for x in italics
@@ -510,6 +570,21 @@ def check_batch(new: list[str], language: str, kinds: list[str] | None) -> dict:
                                               and len(x) >= 3),
                                              key=len, default=None),
                        "comic": [c for c in comic if c in fold(name)]})
+    familiars = familiars or {}
+    new_folded = {fold(x) for x in new}
+    existing = {w: f for w, f in familiar_pool.items()
+                if fold(f) not in new_folded}
+    for r in report:
+        fam = familiars.get(r["name"])
+        if not fam:
+            continue
+        shape = familiar_shape(fam)
+        echoes = [w for w in existing if fold(w) != fold(fam)
+                  and familiar_shape(w) == shape]
+        echoes += [familiars[o] for o in new if o != r["name"]
+                   and familiars.get(o) and familiar_shape(familiars[o]) == shape]
+        r["familiar"] = {"form": fam, "shape": describe_shape(shape),
+                         "echoes": echoes}
     deg = degrees(sorted(sharers_all | set(new)))
     for r in report:
         r["degree"] = deg.get(r["name"], 0)
@@ -518,11 +593,19 @@ def check_batch(new: list[str], language: str, kinds: list[str] | None) -> dict:
             d["degrees"] = {x: deg.get(x, 0) for x in d["names"]}
         r["flag"] = bool(r["comic"] or r["opens_as_prefix"]
                          or any(d["over_used"] for d in r["shared"])
-                         or any(d["as"] == "element" for d in r["shared"]))
+                         or any(d["as"] == "element" for d in r["shared"])
+                         or r.get("familiar", {}).get("echoes"))
+    shape_spread = {"formal": spread(new, formal_shares or {})}
+    fams = [familiars[x] for x in new if familiars.get(x)]
+    if fams:
+        shape_spread["familiar"] = spread(fams, familiar_shares or {})
+    crowded = any(v["crowded"] for v in shape_spread.values())
     return {"language": language, "kinds": kinds, "pool": len(pool),
+            "familiar_pool": len(existing),
             "over_used": {k: sorted(v, key=lambda x: -v[x])
                           for k, v in over.items()},
-            "names": report, "too_near": any(r["flag"] for r in report)}
+            "names": report, "spread": shape_spread,
+            "too_near": any(r["flag"] for r in report) or crowded}
 
 
 WIKILINK = re.compile(r"\[\[[^|\]]*\|([^\]]+)\]\]|\[\[([^\]]+)\]\]")
@@ -640,6 +723,22 @@ def _print_batch(result: dict) -> None:
             tag = "over-used" if d["over_used"] else "shared"
             names = ", ".join(f"{x} ({d['degrees'][x]})" for x in d["names"][:8])
             print(f"    {tag} {d['as']} {d['form']} ({d['uses']}): {names}")
+        fam = r.get("familiar")
+        if fam:
+            echo = (f"echoes {', '.join(fam['echoes'])}" if fam["echoes"]
+                    else "apart")
+            print(f"    familiar {fam['form']} ({fam['shape']}): {echo}")
+    if result.get("familiar_pool"):
+        print(f"  familiar forms read against: {result['familiar_pool']}")
+    for which, sp in result.get("spread", {}).items():
+        counts = ", ".join(f"{k} syllables {c}" for k, c in sp["counts"].items())
+        line = f"  {which} spread: {counts}"
+        if sp["shares"]:
+            line += "  (shares " + ", ".join(f"{k}={v}" for k, v in sp["shares"].items()) + ")"
+        print(line)
+        for k, c in sp["crowded"].items():
+            print(f"    CROWDED {k} syllables: {c['names']} names, "
+                  f"{c['allowed']} by the shares")
     print(f"batch: {'flagged' if result['too_near'] else 'clear'}")
 
 
@@ -688,8 +787,13 @@ def main(argv=None) -> int:
     w.add_argument("--language")
     w.add_argument("--json", action="store_true")
     b = sub.add_parser("batch")
-    b.add_argument("names", nargs="+")
+    b.add_argument("names", nargs="+",
+                   help="each name, or Formal/Familiar")
     b.add_argument("--language", required=True)
+    b.add_argument("--formal-shares", nargs="+", metavar="N=SHARE",
+                   help="the share of formal names of N syllables, as 3=2/5")
+    b.add_argument("--familiar-shares", nargs="+", metavar="N=SHARE",
+                   help="the share of familiar forms of N syllables")
     b.add_argument("--kind", nargs="+",
                    help="the Kind column values that make the names' category")
     b.add_argument("--json", action="store_true")
@@ -700,7 +804,12 @@ def main(argv=None) -> int:
         result = check_name(args.name, args.language, args.character,
                             args.home_words)
     elif args.cmd == "batch":
-        result = check_batch(args.names, args.language, args.kind)
+        pairs = [a.partition("/") for a in args.names]
+        new = [f.strip() for f, _, _ in pairs]
+        fams = {f.strip(): fam.strip() for f, _, fam in pairs if fam.strip()}
+        result = check_batch(new, args.language, args.kind, fams,
+                             parse_shares(args.formal_shares),
+                             parse_shares(args.familiar_shares))
     elif args.cmd == "words":
         result = check_words(args.words, args.language)
     else:
