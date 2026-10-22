@@ -105,13 +105,20 @@ language coins. A language's sound is checked the same way, as a sample.
   and give each sound offered its nearest language and score.
 - **Add a new language's notes to the `languages` of the `sound_check` key** of
   the config entry of the agent holding the languages, in the session that
-  writes its first words.
+  writes its first words, and each chunk of a split dictionary in the session
+  that makes the chunk.
 
 ## Write it down
 
 - **State a language's sound targets technically in a card that directs work
   on it** — the inventory, the consonants that may close a word, the
   vowel-final and closed shares, the stress.
+- **Keep a language's dictionary as a list by
+  `src/skills/note-formatting/SKILL.md` §A list that outgrows one note**, its
+  rows sorted by form in the language's own alphabet, which the language's
+  rules note gives in order, digraphs and marked letters placed.
+- **Write a new word's row into its letter's note at its place in order**, and
+  make that the last step of the language's coining note.
 - **State in a note the rule a choice produced, never the world reason behind
   it.** A seafaring language shaped to carry across a deck is written as its
   sounds — the consonants, the shares, the stress — never as the sailors'

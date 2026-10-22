@@ -1,6 +1,6 @@
 ---
 name: designing-with-the-author
-description: Designs a piece of a fictional world with the author — which questions go to him, which choices the session makes itself, what it recommends, how a coined name is checked against those already given, how a few names the author picks are regenerated with more care, and what completeness is measured against. Use when a creature, a culture, an institution, a language or any other piece of the world is being designed or extended, a name coined, or a few names regenerated.
+description: Designs a piece of a fictional world with the author — which questions go to him, which choices the session makes itself, what it recommends, how a concept is built and weighed against those already spent, how a coined name is checked against those already given, how a few names the author picks are regenerated with more care, and what completeness is measured against. Use when a creature, a culture, an institution, a language or any other piece of the world is being designed or extended, a concept or a name coined, or a few names regenerated.
 license: MIT
 metadata:
   bristol.kind: playbook
@@ -84,6 +84,49 @@ the lines and with those crayons.
   term of two years where history had one, a wider remit — so no framework
   arrives whole from Earth.
 
+## Choosing a concept
+
+Input: a thing about to take a concept — a name's meaning, a culture's music or
+smell, a creature's body plan, an institution's image. Operation: the rules
+below. Output: a concept spent no further than the project's weights allow,
+entered on the project's list of spent concepts.
+
+- **Treat a concept as a whole way of seeing a thing, wider than any word.** An
+  opening to an underworld is one concept, and a gate as a dwelling's doorway
+  or a portal is another. A meaningful prefix or element is a concept as well
+  as a sound.
+- **Read the project's list of spent concepts before generating**, from the
+  note its content-rules file gives, and take no concept past the weight its
+  groups give it.
+- **Weigh a concept by group, nested as the project's name de-duplication
+  nests.** How often a concept may recur scales with how often the narrative
+  uses that kind of thing: several of a city's hundred lesser families may
+  share one, and one first-rank house alone carries it. A use counts in its own
+  group and in every group holding that group.
+- **Let a clear narrative connection carry a concept past its weight** — a
+  sect's name echoing the faith it split from — and give the connection beside
+  it.
+- **Build the concept from a question made of the notes, never from the bare
+  thing.** The question gathers what every note touching the thing gives,
+  language or not: not "a good cave concept" but "a concept for sea caves a
+  fishing town shelters its boats in through the winter storms, kept by two rival
+  guilds under a truce".
+- **Chain associations out from the question** — cave, cave painting,
+  painting — and start each chain from the whole of what the notes now hold,
+  never only from the setting first described.
+- **Keep the thing itself in reach.** A literal cave's name may still start
+  from caves. A concept with nothing to do with the thing that does not also
+  fit it pulls a reader out, waiting on a twist nothing set up, and is out.
+- **Rank highest a concept that has nothing to do with the thing and fits it
+  all the same**, picturable and unexpected, as gates on a cave.
+- **Regenerate from the newer notes where a recent change leaves an older idea
+  in conflict with them**, then judge the old idea beside the new ones on equal
+  terms. It stands only where it is as good or better and spends nothing
+  already spent.
+- **Enter each concept on the list in the session that writes it into the
+  notes** — the concept, the thing that spent it, and its group — keeping the
+  list by `src/skills/note-formatting/SKILL.md` §A list that outgrows one note.
+
 ## Checking a name's sound
 
 Input: a coined proper name. Operation: `src/tools/wiki_tools/sound_check.py`,
@@ -162,7 +205,7 @@ name's sound. Output: options for each name, put to him by §Who decides what.
 - **List each form turned down in a line**, with the mark that put it out.
 - **Carry the author's answer into the next round.** An opening, an ending, a
   meaning or a concept he rules out holds for every later candidate, and a
-  concept he spends goes on the project's list of concepts already spent.
+  concept he spends is entered by §Choosing a concept.
 
 ## Measuring completeness
 

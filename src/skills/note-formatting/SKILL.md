@@ -180,6 +180,31 @@ source_url: https://example.org/the-account-this-note-rests-on
 - **Strip the clauses from a section an agent wrote earlier** when you next open
   that note in a folder the agent may write in, and leave its links.
 
+## A list that outgrows one note
+
+Applies to a note whose body is one table or list looked up by its first
+column — a dictionary, a register of names, a list of spent concepts.
+
+- **Keep such a list sorted by its first column**, in the alphabet its entries
+  are written in: a language's own order where that language's notes give one,
+  and otherwise Latin order, a marked letter straight after its plain one.
+- **Split it into a hub and chunks once it passes 50 KB.** The hub keeps the
+  list's filename, so every link to the list lands on the hub.
+- **Make one initial letter the finest chunk.** Adjacent letters share a chunk
+  while it stays under 50 KB; a chunk that passes 50 KB splits at a letter
+  boundary, and a single letter past it stays one chunk. A letter the alphabet
+  counts as one, such as a digraph, is a letter here.
+- **Name a chunk for its letters** — `<list>_d.md`, or `<list>_d_f.md` for a
+  run — and title it with the list's title and its letters, as Example
+  Dictionary, D–F.
+- **Give the hub the list's overview, its column key, any search block, and a
+  link to each chunk in letter order.** A search block reads the rows of every
+  chunk, and sits in the hub as the one exception to §Headings and spacing's
+  bullet-only hub sections.
+- **Give each chunk the table's header row, its rows in order, and a Related
+  Notes section listing the hub.**
+- **Write a row added later into its letter's chunk at its place in order.**
+
 ## Failure modes
 
 - **A heading sits directly above its text** → §Headings and spacing, and it is
@@ -194,6 +219,8 @@ source_url: https://example.org/the-account-this-note-rests-on
   names.
 - **A Related Notes list repeating the body's links** → §Related Notes; only
   the hubs may repeat.
+- **A list note too slow to open, or a row out of order** → §A list that
+  outgrows one note.
 - **Something in a note is bold** → §Emphasis; the user bolds his own notes.
 - **A Related Notes bullet carries a clause after its link** → §Related Notes;
   the space after the link is where the user writes his own.
