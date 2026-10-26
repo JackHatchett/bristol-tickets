@@ -312,8 +312,9 @@ folder grant is what carries the authority to act on it.
   through a file or the user. The live registry of every agent and its data
   paths is the `agents` block of `config/config.local.json`.
 - **Content is yours; behavior is chief_of_staff's** — `src/app.md`, the section
-  of that name. A change to how you work is a card assigned to chief_of_staff,
-  and you stop there.
+  of that name. A change to an agent or to a git-tracked file of Bristol Tickets
+  is a card assigned to chief_of_staff, and you stop there. Restructuring,
+  splitting or moving notes within your `notebook_access` is content.
 
 ---
 
