@@ -58,15 +58,6 @@ to every one. `add`, `remove` and `set-access` write the key, and the program's
 docstring holds the rule. Settings lists the known dashboards and each agent's
 profile carries its toggle.
 
-### notebook.py
-
-`python3 notebook.py show` lists the Markdown notebook and the folders attached
-in it, and `access <agent>` says what an agent may do in each. An agent's
-`notebook_access` is Per Folder, Read All or Write All, with a choice per
-attached folder kept under every mode; chief_of_staff writes to the whole
-notebook whatever its entry says. `attach`, `detach`, `repoint` and
-`set-access` write the keys, and the program's docstring holds the rule.
-
 ### data_paths.py
 
 Resolves declared locations and creates them at the moment of a write.
