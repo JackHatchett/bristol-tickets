@@ -77,6 +77,9 @@ DASHBOARDS_CLI = Path("src") / "tools" / "config_tools" / "dashboards.py"
 # The one agent that writes to every dashboard whatever its toggle says —
 # src/tools/config_tools/dashboards.py.
 ALWAYS_ALL_DASHBOARDS = "chief_of_staff"
+# The one agent that writes to the whole notebook whatever its mode says —
+# src/tools/config_tools/notebook.py.
+ALWAYS_WRITE_NOTEBOOK = "chief_of_staff"
 
 # What an agent cannot be without. The form marks each one and refuses a save
 # while one is empty.
@@ -97,13 +100,18 @@ class NotebookAccess(QWidget):
     The rows are read from Settings each time the window opens, so a folder
     attached or detached there is here or gone. Choices are kept while Read All
     or Write All is chosen, so going back to Per Folder brings them back.
+    chief_of_staff writes to the whole notebook, so its Write All is shown
+    chosen and cannot be moved.
     """
 
-    def __init__(self, entry: dict, folders: list[str]) -> None:
+    def __init__(self, entry: dict, folders: list[str], slug: str = "") -> None:
         super().__init__()
         entry = entry if isinstance(entry, dict) else {}
         mode = entry.get("mode") if entry.get("mode") in dict(NOTEBOOK_MODES) \
             else "per_folder"
+        locked = slug == ALWAYS_WRITE_NOTEBOOK
+        if locked:
+            mode = "write_all"
         self._kept = dict(entry.get("folders") or {}) if "mode" in entry else {}
         self._legacy = "mode" not in entry and bool(entry)
 
@@ -118,9 +126,13 @@ class NotebookAccess(QWidget):
         for value, label in NOTEBOOK_MODES:
             button = QRadioButton(label)
             button.setChecked(value == mode)
+            button.setEnabled(not locked)
             self.mode_group.addButton(button)
             self.mode_buttons[value] = button
             modes.addWidget(button)
+        if locked:
+            self.mode_buttons["write_all"].setToolTip(
+                "chief_of_staff writes to the whole notebook, whatever this says.")
         modes.addStretch(1)
         column.addLayout(modes)
 
@@ -619,7 +631,8 @@ class AgentDialog(QDialog):
             record["key_context_files"] if record else [])
 
         self.notebook = NotebookAccess(
-            record["notebook_access"] if record else {}, self._attached(run))
+            record["notebook_access"] if record else {}, self._attached(run),
+            record["slug"] if record else "")
 
         self.dashboards = DashboardAccess(
             record.get("dashboard_access", {}) if record else {},

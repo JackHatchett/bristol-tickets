@@ -30,11 +30,11 @@ they are not recipes and must never be renamed or given recipe frontmatter.
 Run from terminal:
     python3 src/tools/document_tools/normalize_recipes.py
 
-Dry-run by default. --write repairs files in place and --rename rewrites
-wikilinks across the notebook; both are the user's own commands, because the
-recipe folder and the notebook around it sit outside the notebook's writable
-zones. An agent runs the dry run, reports what it would change, and hands over
-the command.
+Dry-run by default. --write repairs files in place, and an agent whose
+notebook_access gives the recipe folder write runs it after the dry run.
+--rename rewrites wikilinks across the notebook, and runs only where the
+agent's access gives the whole notebook write. An agent without the grant
+reports what the dry run would change.
 """
 
 import re

@@ -52,9 +52,18 @@ the lines and with those crayons.
 - **Follow a burst of questions to its end.** One question begets more, and the
   burst is finite: every new need becomes a question in the session or a card.
 - **Ask in the session, in batches, in plain words about the world**, never
-  about linguistics. Each question says what the design needs the answer for and
-  offers two to four concrete ideas, one of them recommended with its reason. A
-  design too large to settle in the session goes to a card.
+  about linguistics. A design too large to settle in the session goes to a card.
+- **Make each question answerable without opening a note:**
+  - open on what is being solved and why it matters to the story;
+  - gloss every plot, note or character it mentions, at first mention, by what
+    that thing is for and what depends on it — "the regent's plot, which
+    carries the heir from exile to the throne and whose last two beats wait on
+    this answer";
+  - where two things conflict, say what each one is for;
+  - offer two to four concrete ideas, each a short paragraph on what it is and
+    what choosing it would change, one recommended with its reason.
+- **Keep a question to a tight paragraph of context and a short paragraph per
+  idea.** Pages of analysis go to a note or a card, never into the question.
 - **Two of the author's notes that cannot both be true are his to resolve.**
   The session brings him what replaces them, and the replacement is usually
   neither note as written.

@@ -75,9 +75,9 @@ def projects(slug: str, *, data: dict | None = None) -> list[str]:
         rel = _in_notebook(project)
         if rel is None:
             return False
-        if notebook.normalised(access, folders)["mode"] != "per_folder":
+        if notebook.normalised(access, folders, slug)["mode"] != "per_folder":
             return False
-        return notebook.may(access, folders, rel) == "write"
+        return notebook.may(access, folders, rel, slug) == "write"
 
     return [p for p in listed
             if any(_under(p, grant["path"]) for grant in grants)

@@ -4290,6 +4290,13 @@ def check_notebook_access() -> list[str]:
         raise SmokeFailure("a per-folder choice was lost going through Read All")
     ok.append("Read All reaches everything, and Per Folder comes back with its choices")
 
+    for mode in notebook.MODES:
+        held = {"mode": mode, "folders": {"inbox": "hide", "journal": "read"}}
+        if set(notebook.effective(held, folders, notebook.ALWAYS_WRITE).values()) != {"write"} \
+                or notebook.may(held, folders, "elsewhere/x.md", notebook.ALWAYS_WRITE) != "write":
+            raise SmokeFailure(f"{notebook.ALWAYS_WRITE} does not write everywhere under {mode}")
+    ok.append(f"{notebook.ALWAYS_WRITE} writes to the whole notebook under every mode")
+
     notebook.detach("journal", data)
     if "journal" in data["agents"]["a"]["notebook_access"]["folders"] \
             or "journal" in notebook.attached(data):

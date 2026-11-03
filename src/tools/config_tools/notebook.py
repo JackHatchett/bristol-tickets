@@ -21,6 +21,8 @@ What an agent may do there is its `notebook_access`:
   decides it.
 - **`folders` is kept while the mode is read_all or write_all**, so returning to
   per_folder brings every choice back.
+- **chief_of_staff writes to the whole notebook whatever its entry says**, as
+  it writes to every dashboard (`dashboards.py`); its `folders` are kept.
 - **Detaching a folder drops it from every agent**, and a choice naming a folder
   that is not attached is ignored wherever it is read.
 
@@ -54,6 +56,8 @@ import read_config  # noqa: E402
 MODES = ("per_folder", "read_all", "write_all")
 ACCESS = ("read", "write", "hide")
 DEFAULT_MODE = "per_folder"
+# The one agent that writes to the whole notebook whatever its entry says.
+ALWAYS_WRITE = "chief_of_staff"
 # A fresh installation's notebook: inside Bristol's own data, with these three.
 DEFAULT_FOLDERS = ["inbox", "ai_workspace", "archive"]
 
@@ -86,20 +90,23 @@ def root() -> Path | None:
     return data_paths.notebook_root()
 
 
-def normalised(entry, folders: list[str]) -> dict:
+def normalised(entry, folders: list[str], slug: str = "") -> dict:
     """An agent's access in the current shape, ignoring choices for folders
     that are not attached. A legacy entry reads as per_folder with nothing
-    chosen; `migrate` is what carries its zones across."""
+    chosen; `migrate` is what carries its zones across. ALWAYS_WRITE reads as
+    write_all."""
     entry = entry if isinstance(entry, dict) else {}
     mode = entry.get("mode") if entry.get("mode") in MODES else DEFAULT_MODE
+    if slug == ALWAYS_WRITE:
+        mode = "write_all"
     chosen = entry.get("folders") if isinstance(entry.get("folders"), dict) else {}
     kept = {f: chosen[f] for f in folders if chosen.get(f) in ACCESS}
     return {"mode": mode, "folders": kept}
 
 
-def effective(entry, folders: list[str]) -> dict[str, str]:
+def effective(entry, folders: list[str], slug: str = "") -> dict[str, str]:
     """What the agent may do in each attached folder."""
-    access = normalised(entry, folders)
+    access = normalised(entry, folders, slug)
     if access["mode"] == "read_all":
         return {f: "read" for f in folders}
     if access["mode"] == "write_all":
@@ -107,10 +114,10 @@ def effective(entry, folders: list[str]) -> dict[str, str]:
     return {f: access["folders"].get(f, "hide") for f in folders}
 
 
-def may(entry, folders: list[str], relative: str) -> str:
+def may(entry, folders: list[str], relative: str, slug: str = "") -> str:
     """read, write or hide for one path inside the notebook, written from the
     notebook down: the deepest attached folder holding it decides."""
-    access = normalised(entry, folders)
+    access = normalised(entry, folders, slug)
     if access["mode"] == "read_all":
         return "read"
     if access["mode"] == "write_all":
@@ -319,7 +326,9 @@ def main(argv: list[str]) -> int:
             return 1
         folders = attached(data)
         entry = agent.get("notebook_access")
-        out = {**normalised(entry, folders), "effective": effective(entry, folders)}
+        out = {**normalised(entry, folders, args.agent),
+               "effective": effective(entry, folders, args.agent),
+               "always_write": args.agent == ALWAYS_WRITE}
         if args.json:
             print(json.dumps(out))
         else:
