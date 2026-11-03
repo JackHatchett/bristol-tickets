@@ -7,7 +7,10 @@ words ending in a vowel (a vowel and a closing y or w is a vowel ending), the
 share holding a consonant cluster or closing on a consonant, its commonest
 endings, its initials and its consonants, how many syllables its words run to,
 its stock of syllables, and its letter patterns — how often each letter follows
-each pair. A profile also prints the consonants that close a word, the letters
+each pair. Letter patterns are read as a reader sees the page: a letter carrying
+an accent or a tone mark is a letter of its own, and each word of a name is read
+between its own edges, so a name of short words reads unlike one long word. A
+profile also prints the consonants that close a word, the letters
 frequent in it and rare in the others, and a sample of its words. A name is scored
 against each other language by how often that language's letter patterns
 would claim it against its own language's alone; a sample
@@ -46,7 +49,7 @@ outline's Characters section.
 
 CLI
 ---
-    python3 sound_check.py name <name> [--language <its language>] [--home-words <word> ...] [--character] [--json]
+    python3 sound_check.py name <name> [--language <its language, accents optional>] [--home-words <word> ...] [--character] [--json]
     python3 sound_check.py words <word> [<word> ...] [--language <its language>] [--json]
     python3 sound_check.py batch <name>[/<familiar>] ... --language <their language> [--kind <kind> ...]
         [--formal-shares <syllables>=<share> ...] [--familiar-shares <syllables>=<share> ...] [--json]
@@ -109,6 +112,15 @@ def fold(word: str) -> str:
     decomposed = unicodedata.normalize("NFD", word.lower())
     return "".join(c for c in decomposed
                    if c.isalpha() and not unicodedata.combining(c) or c == "'")
+
+
+def spelled(name: str) -> list[str]:
+    """The words of a name as a reader sees them: lowercase, each accented
+    letter its own letter, cut at every space or hyphen."""
+    composed = unicodedata.normalize("NFC", name.lower())
+    kept = "".join(c if c.isalpha() or unicodedata.combining(c) or c == "'"
+                   else " " for c in composed)
+    return kept.split()
 
 
 def segments(word: str) -> list[str]:
@@ -204,13 +216,18 @@ def profile(words: list[str]) -> dict:
 
 
 def _trigrams(word: str) -> list[str]:
-    w = "^^" + fold(word) + "$"
-    return [w[i:i + 3] for i in range(len(w) - 2)]
+    out = []
+    for part in spelled(word):
+        w = "^^" + part + "$"
+        out += [w[i:i + 3] for i in range(len(w) - 2)]
+    return out
 
 
 class Patterns:
     """Each language's letter patterns: how often each letter follows each
-    pair of letters, the word's edges included."""
+    pair of letters, each word's edges included, accented letters as their own
+    letters. Smoothing counts the letters with their accents dropped, the
+    alphabet NAME_TOO_NEAR was calibrated on."""
 
     def __init__(self, langs: dict[str, list[str]]):
         self.models = {}
@@ -659,7 +676,9 @@ def check_name(name: str, home: str | None, character: bool = False,
         home = home or "sample"
         langs[home] = list(home_words)
     patterns = Patterns(langs)
-    home = home if home in patterns.models else patterns.likeliest(name)
+    home = next((lang for lang in patterns.models
+                 if home and fold(lang) == fold(home)), None) \
+        or patterns.likeliest(name)
     scores = {lang: patterns.contest(name, home, lang)
               for lang in patterns.models if lang != home}
     near = [lang for lang, sc in scores.items() if sc >= NAME_TOO_NEAR]

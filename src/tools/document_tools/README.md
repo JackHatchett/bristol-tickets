@@ -48,3 +48,11 @@ formatting standard, repairs what does not conform, and writes
   notebook in the same run.
 - **A file whose name starts with `_` is a hub or index and is skipped.** It is
   never renamed and never given recipe frontmatter.
+- **The first alias is the H1 exactly**, so a wiki-link by title resolves from
+  the hub and from any page; further aliases are kept after it.
+- **One blank line separates every heading from its block** and every block
+  from the next heading.
+- **`rating` sits directly after `source_url`, and holds the user's own
+  score**, a decimal from 1 to 5 that he writes. An existing value is kept
+  unchanged and a missing key is added blank; no tool or agent fills it from a
+  source's stars or reviews.

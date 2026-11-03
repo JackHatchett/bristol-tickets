@@ -135,7 +135,16 @@ per plot, a row per chapter. It is where plots meet.
 - **List the outline's key worldbuilding in `## Setting`** under a `Key
   Worldbuilding, each a setting promise` bullet: an uncapped but minimal set of
   the worldbuilding notes that make promises at this tier, each a setting
-  promise (§5), one line per sense as `Sight - [[sheet]]`.
+  promise (§5), one line per entry as `<label> - [[sheet]]`.
+- **Read every Key Worldbuilding line as a series-level setting plot cascading
+  down the tiers**, each line co-equal with every other, and a line on a cycle
+  or book outline that plot's entry at its tier.
+- **Label a sense's line with the sense word** — Sight, Touch, Taste, Hearing,
+  Smell. The word is a placeholder for the series-level setting plot the line
+  cascades from, which the author names.
+- **Carry on every outline each further series-level setting plot the
+  project's content-rules file gives**, such as one for gender, under the label
+  that file gives, beside the senses.
 - **Fill every sense with a major entry unique to this outline**, in this
   order:
   - Sight - a location;
@@ -207,8 +216,9 @@ A setting promise is the sheet for one Key Worldbuilding entry (§4): the
 promise a piece of the world makes to the reader, set up, optionally kept alive,
 and resolved. Every rule above holds for it except where this says otherwise.
 
-- **File it as a story plot** in its tier's `story` folder, named
-  `promise_of_<item>`.
+- **File it in its tier's `setting` folder, its Kind `story plot`**, named
+  `promise_of_<item>`; a series-level setting plot the author names takes
+  that name, and its entry at a lower tier adds `_<tier>`.
 - **Build it on the story archetype Promise Made, Kept, Fulfilled**, the
   `promise_made_kept_fulfilled` sheet in the story library —
   `python3 src/tools/config_tools/read_config.py
@@ -230,7 +240,9 @@ each beat must move and which characters are exempt.
 
 - **Read the rule there, and run its check after inventing a plot's beats and
   when reviewing a run of plotting**, against the sliders each lead's
-  character note records.
+  character note records. A whole outline lined up on the plot alignment sheet
+  is reviewed by `src/skills/syncing-the-plot-alignment-sheet/SKILL.md` §The
+  movement review.
 - **Report the check with the beats**: which slider each beat moves, and every
   stretch where the rule's movement is missing, flagged to the author.
 - **Flag rather than fix.** The sliders say what to avoid, and a beat changes

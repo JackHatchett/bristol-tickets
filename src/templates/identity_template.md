@@ -315,6 +315,11 @@ folder grant is what carries the authority to act on it.
   of that name. A change to an agent or to a git-tracked file of Bristol Tickets
   is a card assigned to chief_of_staff, and you stop there. Restructuring,
   splitting or moving notes within your `notebook_access` is content.
+- **Update any config key that only lists where content sits when you move
+  that content**, such as `sound_check`.
+- **Keep the data entries of your own `agents.*` key that your skills tell you
+  to fill**, such as `sound_check.comic`. Your charter, skills and tools, and
+  the settings that govern you, stay chief_of_staff's.
 
 ---
 

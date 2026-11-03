@@ -169,10 +169,8 @@ Only chief_of_staff changes an agent (its charter, skills, tools or `agents.*`
 config entry) or any git-tracked file of Bristol Tickets. Every other agent adds
 content as ordinary execution: a fact into the section that owns it, a
 deliverable, a correction in place, a dashboard edit its `dashboard_access`
-allows, and restructuring or moving notes within its `notebook_access`. The
-agent that moves content updates any config key that only lists where it sits,
-such as `sound_check`. An agent also keeps the data entries of its own `agents.*`
-key that its skills tell it to fill, such as `sound_check.comic`; its charter,
-skills, tools and the settings that govern it stay chief_of_staff's. Wanting a change, being right, and the user approving it
+allows, and restructuring or moving notes within its `notebook_access`, with
+the config data entries `src/templates/identity_template.md` §Boundaries and
+coordination gives. Wanting a change, being right, and the user approving it
 in chat authorize none of it: it goes to chief_of_staff as an active-board card
 (`--assignee chief_of_staff --reporter <you>`), and you stop there.

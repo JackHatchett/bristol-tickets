@@ -8,6 +8,16 @@ Markdown notebook — resolved from config markdown_notebook.recipes_dir),
 validates them against the Recipe Formatting Standard,
 repairs non-conforming files in-place, and writes recipe_audit_log.md.
 
+Three rules every recipe meets after --write:
+- The first alias is the H1 exactly, so a [[wikilink]] by title resolves;
+  further aliases are kept after it.
+- One blank line separates every heading from its block and every block from
+  the next heading.
+- The frontmatter carries rating directly after source_url. Rating is the
+  user's own score, a decimal from 1 to 5 that he writes; an existing value is
+  kept unchanged, a missing key is added blank, and no tool fills it from a
+  source's stars or reviews.
+
 The library's filename convention is recipe_<snake_case>.md. A file whose name
 does not match its H1 title is FLAGGED, not renamed: every recipe is reached by
 [[wikilink]] from the Recipe Box hub, so a rename breaks links unless they are
@@ -99,7 +109,7 @@ STRIP_FIELDS = {"reorg_category", "notebook", "section", "title"}
 FRONTMATTER_ORDER = [
     "aliases", "tags", "created", "status",
     "servings", "prep_time", "cook_time", "total_time",
-    "source", "source_url",
+    "source", "source_url", "rating",
 ]
 
 # Keywords that suggest a file in the Recipes folder is NOT a recipe
@@ -163,7 +173,12 @@ def parse_frontmatter(text: str):
     for line in yaml_block.splitlines():
         # List item continuation
         if line.startswith("  - ") and current_list is not None:
-            current_list.append(line[4:].strip())
+            item = line[4:].strip()
+            if len(item) > 1 and item[0] == item[-1] == '"':
+                item = item[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+            elif len(item) > 1 and item[0] == item[-1] == "'":
+                item = item[1:-1].replace("''", "'")
+            current_list.append(item)
             continue
 
         # New key
@@ -225,11 +240,49 @@ def _write_meta_field(lines, key, val):
         else:
             lines.append(f"{key}:")
             for item in val:
-                lines.append(f"  - {item}")
+                lines.append(f"  - {_yaml_item(str(item))}")
     elif val is None or str(val).strip() == "":
         lines.append(f"{key}:")
     else:
         lines.append(f"{key}: {val}")
+
+
+def _yaml_item(item: str) -> str:
+    """A list item as YAML reads it back unchanged: quoted where a colon, a
+    hash or a leading indicator character would otherwise change its meaning."""
+    if (": " in item or " #" in item or item.endswith(":")
+            or (item[:1] and item[:1] in "!&*?|>'\"%@`[]{},#-")):
+        return '"' + item.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    return item
+
+
+def title_aliases(aliases, title: str) -> list:
+    """The aliases with the title first, exactly, and every other alias kept
+    after it in its order."""
+    if aliases is None:
+        aliases = []
+    elif isinstance(aliases, str):
+        aliases = [aliases]
+    return [title] + [a for a in aliases if a and a != title]
+
+
+def space_headings(body: str) -> str:
+    """One blank line above and below every heading, none doubled."""
+    lines = body.splitlines()
+    out = []
+    for i, line in enumerate(lines):
+        if re.match(r"^#{1,6}\s", line):
+            while out and out[-1].strip() == "":
+                out.pop()
+            if out:
+                out.append("")
+            out.append(line)
+            out.append("")
+            continue
+        if line.strip() == "" and out and out[-1] == "":
+            continue
+        out.append(line)
+    return "\n".join(out).strip()
 
 
 def normalize_units(text: str) -> str:
@@ -540,6 +593,12 @@ def normalize_file(path: Path, dry_run: bool = True, allow_rename: bool = False)
     # The H1 IS the title. 'title' is in STRIP_FIELDS and is never written back
     # to frontmatter — template_recipe.md has no such field.
 
+    # ── Step 2a: The title is the first alias ─────────────────────────────
+    aliases = title_aliases(meta.get("aliases"), recipe_title)
+    if aliases != meta.get("aliases"):
+        report["changes"].append(f"set first alias to the title: {recipe_title}")
+    meta["aliases"] = aliases
+
     # ── Step 2b: Extract servings from the title, then the body ───────────
     # Half the library states its yield in the H1 — "(Serves 4 to 6)",
     # "(Makes 12 large pieces)" — so read that before falling back to the body.
@@ -630,6 +689,12 @@ def normalize_file(path: Path, dry_run: bool = True, allow_rename: bool = False)
         report["changes"].append(f"normalized source: '{meta.get('source')}' → '{normalized_source}'")
     meta["source"] = normalized_source
 
+    # rating — the user's own score. Kept as it stands; added blank where
+    # missing.
+    if "rating" not in meta:
+        meta["rating"] = None
+        report["changes"].append("added blank rating key")
+
     # ── Step 4: Normalize units in body ───────────────────────────────────
     normalized_body = normalize_units(body)
     if normalized_body != body:
@@ -643,6 +708,12 @@ def normalize_file(path: Path, dry_run: bool = True, allow_rename: bool = False)
     # ── Step 4c: Bulletize ingredients ────────────────────────────────────
     body, ing_changes = normalize_ingredients_section(body)
     report["changes"].extend(ing_changes)
+
+    # ── Step 4d: One blank line around every heading ──────────────────────
+    spaced = space_headings(body)
+    if spaced != body.strip():
+        report["changes"].append("spaced headings: one blank line above and below each")
+    body = spaced
 
     # ── Step 5: Validate required sections ────────────────────────────────
     # A note carrying neither heading but organised under its own ## sections
