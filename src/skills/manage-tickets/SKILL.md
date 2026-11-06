@@ -249,7 +249,7 @@ Closed This Session
 Opened This Session
 - #<id> <title>
 
-Session Closed: <the reason, in a few words>
+<Agent Name> Session Closed: <the reason, in a few words>
 Next Tasks:
 - <agent slug>: #<id> <title>
   - user: <his decision or grant>
@@ -261,6 +261,10 @@ LLM Model Strength and Effort: <Max|Standard>
 - **List under Closed This Session every card this session took to done, and
   under Opened This Session every card it wrote**, number and title only. A
   heading with nothing under it is left out.
+- **Open the closing line with your agent's name** — your slug with each
+  underscore a space and each word capitalized: "Story Architect Session
+  Closed: decision needed". A user running parallel sessions tells from it
+  whose close he is reading.
 - **Give the reason in a few plain words** — "token load", "unhelpful context
   load" (the user returning after hours to a long conversation, which rereads
   the whole of itself where a fresh session reads only what it pays to start),
@@ -284,7 +288,7 @@ LLM Model Strength and Effort: <Max|Standard>
   line; "your decision on #1119" is the misuse.
 - **Title the block Next Task where it holds one line.**
 - **A session with nothing of its own left gives the reason and stops**:
-  "Session Closed: board is clear" and no other line, whatever other agents
+  "Chief Of Staff Session Closed: board is clear" and no other line, whatever other agents
   hold.
 - **Take LLM Model Strength and Effort from the first top-level card** — its
   `task.tier`, by §Processing tier, rated and written to the card first where
