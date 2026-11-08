@@ -2,11 +2,11 @@
 name: assessing-a-care-recipient
 description: Writes the profile a care plan is built on for one family member - what she needs help with, what she lives on and from which program, where she lives and what holds her there, who may decide for her, and what she wants - each fact with where it came from. Use when a family member's care is first taken up, and again when her health, income, housing or wishes change.
 license: MIT
-compatibility: Needs python3 to resolve the declared data folder and to write the board.
+compatibility: Needs python3 to resolve the notebook folder and to write the board.
 metadata:
   bristol.kind: playbook
   bristol.maintainer: care_manager
-  bristol.scripts: src/tools/config_tools/data_paths.py src/tools/ticket_tools/ticket_write.py
+  bristol.scripts: src/tools/config_tools/notebook.py src/tools/ticket_tools/ticket_write.py
   bristol.subtitle: Assess a family member's care
 ---
 # assessing-a-care-recipient
@@ -53,9 +53,6 @@ Seven sections, in this order.
 - **Every figure carries its source** - the award letter, the lease, the
   statement, or the person who said it and when. A figure from memory is
   marked as one.
-- **Record that a document exists and who holds it; never its numbers.** A
-  Social Security number, a Medicare or Medicaid ID and an account number stay
-  on the paper.
 - **Write an unknown as a question**, with the person who could answer it.
   Each becomes a card for the user, worded as what to ask whom.
 - **Take the level of care from the person and her doctors.** The profile
@@ -64,12 +61,16 @@ Seven sections, in this order.
 
 ## Where it goes
 
-- **One document per person**, named for her, in the folder
-  `agents.care_manager.key_data_paths` declares, resolved with
-  `data_paths.ensure_dir()` at the moment of the write.
-- **A short note about her in the notebook folder its notebook access grants**
-  where the user wants one, shaped by `src/skills/note-formatting/SKILL.md`,
-  holding who she is and linking nothing private.
+- **One profile per person**, named for her, in her own folder under the
+  notebook folder `family`, shaped by
+  `src/skills/note-formatting/SKILL.md`. `python3
+  src/tools/config_tools/notebook.py access care_manager` gives the notebook's
+  root; create her folder at the moment of the write.
+- **Her health, income and benefits notes and the scans of her documents sit in
+  the same folder**, each scan named for the document it shows and linked from
+  the note that names it.
+- **The folder `agents.care_manager.key_data_paths` declares takes only data a
+  desk query reads**, if any.
 - **The profile states the person as she is.** What has been done for her lives
   on the board.
 
@@ -89,8 +90,6 @@ Seven sections, in this order.
   it may be wrong, because a voucher can move and a building's subsidy cannot.
 - **The family's wishes written as hers** -> §What the profile records, second
   section.
-- **An ID number in the profile** -> remove it and record only who holds the
-  document.
 
 ## Audit
 
