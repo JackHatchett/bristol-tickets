@@ -51,6 +51,11 @@ the lines and with those crayons.
   principle for how a class of things is built.
 - **Follow a burst of questions to its end.** One question begets more, and the
   burst is finite: every new need becomes a question in the session or a card.
+- **Open each new card, and each new topic within one, with where the work
+  stands, before the first question**: what the notes already hold, which gaps
+  are open, and the goal each gap serves — a book's points of view, which plots
+  have beats in it and which are empty, and where an idea the author raised
+  could fit. A few lines, never pages.
 - **Ask in the session, in batches, in plain words about the world**, never
   about linguistics. A design too large to settle in the session goes to a card.
 - **Make each question answerable without opening a note:**
