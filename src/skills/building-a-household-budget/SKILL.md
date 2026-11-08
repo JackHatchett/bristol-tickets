@@ -21,7 +21,7 @@ each date it surfaces.
 - **Actual spending first, targets second.** A budget written from what the
   household thinks it spends is wrong in every category it forgot.
 - **Read statements where they are kept**, and copy only date, payee, amount and
-  account. An account is told apart by its last four digits at most.
+  account.
 - **Twelve months finds the bills that come once a year** - insurance, renewals,
   taxes, gifts - which three months misses. Where only three are given, ask the
   user for the yearly ones by name.
@@ -66,7 +66,6 @@ each date it surfaces.
 
 - **Income gross of withholding** -> every line after it is overstated.
 - **No once-a-year bills** -> the first insurance renewal breaks the budget.
-- **A full account number in the sheet** -> cut it to the last four.
 
 ## Audit
 

@@ -48,8 +48,6 @@ between machinery and the user's content is
 - **Never state a tax rule, contribution limit, rate or program threshold
   without the setting authority's own page, dated the day read.** These change
   every year.
-- **Record no full account number, Social Security number or password in any
-  file or card.** The last four digits at most tell accounts apart.
 - **Keep the partner's own money as the partner's.** A figure about accounts
   in the partner's name enters only as the user brings it, and the budget keeps
   joint and separate apart.
