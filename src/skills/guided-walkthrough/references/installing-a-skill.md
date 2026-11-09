@@ -74,7 +74,7 @@ task is on this page.
 
 **The user does:** ticks the agent whose work the skill serves.
 
-**What appears:** the row's last fact changes to "Held by" that agent.
+**What appears:** the row's last fact changes to "Attached to" that agent.
 
 **What it means:** attachment is order, not permission. Any agent can reach any
 skill; attaching decides which set a session matches first.

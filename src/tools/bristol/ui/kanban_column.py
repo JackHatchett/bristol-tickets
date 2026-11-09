@@ -2,7 +2,7 @@
 
 ``KanbanColumn`` is a region of the canvas: a header carrying the column's name
 and its card count, over a stack of ``CardDelegate``-painted cards with no fill
-or border of its own. A header holds no controls, so every column's name and
+or border of its own. A header contains no controls, so every column's name and
 count sit on one line across the board. In the Kanban model it populates itself
 two ways:
 
@@ -17,7 +17,7 @@ two ways:
   checkbox drives the bulk Activate / Delete bar beneath it.
 
 Both loaders take the board's ``FilterState`` and append its fragment to their
-own query, so what a column holds and what the Backlog holds are narrowed by
+own query, so what a column contains and what the Backlog contains are narrowed by
 the one control (``filter_menu.py``).
 
 Sprints are gone, so there is no active-sprint filtering and no archive column

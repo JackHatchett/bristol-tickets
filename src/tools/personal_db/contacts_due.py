@@ -49,7 +49,7 @@ def due_rows() -> list[dict]:
 
 def resting_rows() -> list[dict]:
     """Friends inside the rest after an introduction, with the day the next
-    ask is fine. Read from v_friend_rest, which holds the arithmetic."""
+    ask is fine. Read from v_friend_rest, which contains the arithmetic."""
     conn = dbc.connect()
     try:
         has = conn.execute("SELECT 1 FROM sqlite_master WHERE type='view' "

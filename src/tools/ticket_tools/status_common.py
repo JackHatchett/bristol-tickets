@@ -4,7 +4,7 @@ status_common.py — the board read that both status front ends share.
 Every rule about how a queue is read lives here and nowhere else: what a task's
 owner is, the precedence that orders a queue, which comments, links, carried
 summaries and attachments a snapshot surfaces, and how a card is formatted. The
-two front ends — `cos_status.py` and `agent_status.py` — hold their own slug,
+two front ends — `cos_status.py` and `agent_status.py` — keep their own slug,
 their own headings, and, for chief_of_staff, the fleet section. Nothing else.
 
 Which script an agent runs stays two commands rather than a flag, because that
@@ -540,8 +540,8 @@ def next_action(conn: sqlite3.Connection, board: list,
                 mine_q: list) -> tuple:
     """The card at the top of a queue, as `src/app.md` Phase 3.2 selects it.
 
-    Returns (row or None, {blocked id -> blocker ids}, [ids holding the whole
-    queue up]). The row is the first card in queue order carrying no unmet
+    Returns (row or None, {blocked id -> blocker ids}, [ids blocking the whole
+    queue]). The row is the first card in queue order carrying no unmet
     blocker; a queue whose every card is blocked has none, and the third member
     is what would clear the way. Every reader of a next action calls this, so
     the precedence is computed once.
@@ -591,11 +591,11 @@ def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
 
 
 def blocking_others(conn: sqlite3.Connection, me: str) -> list[tuple]:
-    """(my open card, the other agent's open card it holds, that agent).
+    """(my open card, the other agent's open card it blocks, that agent).
 
     Read from every open card, backlog included, so a blocker sitting at the
     bottom of this agent's queue, or off the board, still shows. A card owned by
-    this agent holding another card of its own is the queue's business and is
+    this agent blocking another card of its own is the queue's business and is
     left out.
     """
     out = []
@@ -640,7 +640,7 @@ def print_blocking_others(conn: sqlite3.Connection, me: str,
         where = (f"queue #{pos[r['bid']]}" if r["bid"] in pos
                  else r["bstage"])
         print(f"  #{r['bid']} ({where}, {r['bstatus']}) {r['btitle']}")
-        print(f"      holds #{r['wid']} <{other}> {r['wtitle']}")
+        print(f"      blocks #{r['wid']} <{other}> {r['wtitle']}")
 
 
 def print_body(conn: sqlite3.Connection, db_path, me: str,

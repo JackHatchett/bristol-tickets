@@ -4,8 +4,8 @@ board: skills and agents.
 ``RowCardDelegate`` is the board's ``CardDelegate`` with a different footer.
 The card itself — its surface, shadow, corner, hover and selection fills, the
 title and the one muted line under it — is the board card's, so a skill and a
-ticket read as the same kind of object. The footer holds one line of meta text
-on the left and neutral pills on the right, where a ticket's holds its id,
+ticket read as the same kind of object. The footer contains one line of meta text
+on the left and neutral pills on the right, where a ticket's shows its id,
 owner and kind.
 
 Payload, under ``CARD_ROLE``:

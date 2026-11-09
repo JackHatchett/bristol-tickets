@@ -32,7 +32,7 @@ import instance  # noqa: E402  (bristol-local; see module docstring)
 
 
 def _project_root() -> Path:
-    """The project root: the nearest ancestor holding src/app.md.
+    """The project root: the nearest ancestor containing src/app.md.
 
     Located by marker rather than by folder name, so the install works whatever
     the user named the folder they cloned into.
@@ -41,7 +41,7 @@ def _project_root() -> Path:
         if (parent / "src" / "app.md").is_file():
             return parent
     raise SystemExit(
-        "no project root above this file (no ancestor holds src/app.md)"
+        "no project root above this file (no ancestor contains src/app.md)"
     )
 
 
@@ -56,7 +56,7 @@ def _from_env() -> Path | None:
 
 
 def _from_local_pointer() -> Path | None:
-    """A git-ignored one-line file next to app.py holding an absolute path.
+    """A git-ignored one-line file next to app.py containing an absolute path.
     This is what makes report writing work from a built .app, which has no view
     of the repo's config/ directory."""
     pointer = Path(__file__).resolve().parents[1] / _LOCAL_POINTER

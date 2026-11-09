@@ -1,6 +1,6 @@
 """finishing.py — what a card reaching done, or leaving it, means for the board.
 
-The Done column holds work waiting for something. A project card waits for its
+The Done column contains work waiting for something. A project card waits for its
 epic to close, which archives it and writes that epic's report — `epic_closure`.
 A standing card waits for nothing, so it is never in Done: finishing it is what
 archives it, and the board has no sweep button because the two kinds of card

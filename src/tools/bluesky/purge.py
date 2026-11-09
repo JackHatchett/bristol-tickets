@@ -6,9 +6,9 @@
 
 A follow is a record in the follower's own repository pointing at this account,
 so nothing here can reach one: the handle, the profile and the followers are
-the same afterwards as before. What goes is what the account itself holds.
+the same afterwards as before. What goes is what the account itself has.
 
-Nothing leaves the account that the store does not already hold. The pass reads
+Nothing leaves the account that the store does not already contain. The pass reads
 the account, keeps what it read, writes down the moment each delete is sent,
 and only then sends it, so a pass cut off partway says what is already gone and
 starts again from there.
@@ -48,7 +48,7 @@ class WriteBudget:
     """The account's write allowance, spent a point at a time.
 
     A delete costs one point, and an account may spend 5,000 points in an hour
-    and 35,000 in a day. Holding to the hourly figure holds to both, because an
+    and 35,000 in a day. Keeping to the hourly figure keeps to both, because an
     hour's spending repeated all day comes to less than the day's.
     """
 
@@ -115,7 +115,7 @@ def send_deletes(pds, token, did, collection, uris):
 
 
 def gather(conn, did, pds):
-    """What the account still holds, kept, and all of it still to remove.
+    """What the account still has, kept, and all of it still to remove.
 
     What the account returns is what is left, so a record read here is a record
     to remove whatever an earlier pass wrote down about it. A delete written
@@ -146,7 +146,7 @@ def run(delete=False, budget=None):
     before = client.profile(did)
     print(f"{handle}: {before.get('followersCount')} followers, "
           f"{before.get('postsCount')} posts on the profile")
-    print(f"the store holds {store.post_count(conn)} posts and "
+    print(f"the store contains {store.post_count(conn)} posts and "
           f"{store.thread_count(conn)} conversations")
 
     plan = gather(conn, did, pds)
@@ -193,7 +193,7 @@ def run(delete=False, budget=None):
 
 
 def verify(did, pds, before):
-    """What the account holds, what anyone else can still read, and who follows.
+    """What the account has, what anyone else can still read, and who follows.
 
     A data server that has accepted a delete and an app view that has not yet
     seen it disagree, and the reader believes the app view, so what is still
@@ -202,7 +202,7 @@ def verify(did, pds, before):
     for attempt in range(ROUNDS):
         held = {c: len(client.read_records(did, pds, c)) for c in PURGED}
         feed = client.author_feed(did, limit=25)
-        print(f"the account holds {held}; the public view serves {len(feed)}")
+        print(f"the account has {held}; the public view serves {len(feed)}")
         if not any(held.values()) and not feed:
             break
         if attempt < ROUNDS - 1:
@@ -212,7 +212,7 @@ def verify(did, pds, before):
           f"{after.get('followersCount')} after")
     if feed:
         print("the public view is still serving posts the account no longer "
-              "holds; it catches up on its own, and a later run says whether "
+              "contains; it catches up on its own, and a later run says whether "
               "it has.")
     return 0
 

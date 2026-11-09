@@ -9,10 +9,10 @@ notes would generate it; `sync` reads the sheet as it stands and gives the
 writes that carry the notes' changes into it.
 
 Where everything is, is config, `agents.<agent>.plot_alignment`, the
-key of whichever agent holds it:
+key of whichever agent has it:
 
     {"sheet_url": "<the Google Sheet>",
-     "plot_dir": "<folder holding the outline notes>",
+     "plot_dir": "<folder containing the outline notes>",
      "tabs": [{"title": "<tab>", "outline": "<outline note's filename>",
                "bands": [{"label": "<divider text>", "tags": ["book 1", ...]}]}]}
 
@@ -79,7 +79,7 @@ def tag_of(text: str) -> str | None:
 # --- reading the notes -------------------------------------------------------
 
 def _settings() -> dict:
-    """The `plot_alignment` key of whichever agent's config entry holds one."""
+    """The `plot_alignment` key of whichever agent's config entry has one."""
     import read_config
     for entry in (read_config.get("agents", None) or {}).values():
         if isinstance(entry, dict) and entry.get("plot_alignment"):
@@ -203,7 +203,7 @@ def _band_of(tag: str | None, bands: list[dict]) -> str | None:
 
 def column_beats(sheet: Sheet, sheets: dict[str, Sheet], tab: dict,
                  tier: str) -> list[tuple[str, str | None]]:
-    """(text, band) for each beat the column holds, in order."""
+    """(text, band) for each beat the column contains, in order."""
     bands = tab.get("bands") or []
     beats = [(sheet.labelled(b), b) for b in sheet.beats]
     if not beats and tier.startswith("book_"):

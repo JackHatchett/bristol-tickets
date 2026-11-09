@@ -7,7 +7,7 @@ Two xlsx snapshots, from two different sources of truth:
   applications -> personal.db     -> <snapshot_base>/applications_snapshots/applications.xlsx
   contacts     -> personal.db     -> <snapshot_base>/contacts_snapshots/contacts.xlsx
 
-Books live in Zotero: personal.db holds no books domain, so the
+Books live in Zotero: personal.db contains no books domain, so the
 library snapshot is read through tools/zotero/zotero_export.py, which copies
 zotero.sqlite and reads the copy — safe with Zotero running. The `domains`
 registry still names the output file; `source` in SPECS says where the rows
@@ -169,7 +169,7 @@ SPECS = {
 
 def _num(value):
     """'$5.00' -> 5.0, '1963' -> 1963, anything else unchanged. The snapshot's
-    numeric columns hold numbers, which is what the Stats formulas sum."""
+    numeric columns contain numbers, which is what the Stats formulas sum."""
     if not isinstance(value, str):
         return value
     text = value.strip().lstrip("$").replace(",", "")

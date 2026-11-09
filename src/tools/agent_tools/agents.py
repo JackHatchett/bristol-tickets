@@ -14,7 +14,7 @@ parses it into fields: a charter is prose a person wrote, and a tool that
 recognized only the shapes it produces itself would refuse to edit the ones that
 matter most.
 
-Every key an entry holds travels through an edit, including one this build knows
+Every key an entry contains travels through an edit, including one this build knows
 nothing about, so an agent edited here keeps everything it had.
 
 GitHub-safe: contains no personal data or absolute user paths.
@@ -52,7 +52,7 @@ import dashboards as dashboards_module  # noqa: E402
 import read_config  # noqa: E402
 import write_config  # noqa: E402
 
-# The keys this build gives a control of its own. Any other key an entry holds
+# The keys this build gives a control of its own. Any other key an entry contains
 # is carried in `extra` and written back unchanged.
 KNOWN = ("identity", "description", "key_data_paths", "key_context_files",
          "notebook_access", "dashboard_access", "skills", "env")
@@ -271,7 +271,7 @@ def main(argv: list[str]) -> int:
     editing.add_argument("--identity", help="where the charter file lives")
     editing.add_argument("--description")
     editing.add_argument("--charter-file",
-                         help="a file holding the whole charter document")
+                         help="a file containing the whole charter document")
     editing.add_argument("--data-path", action=_Grant, metavar="PATH",
                          help="a folder this agent may write in")
     editing.add_argument("--read-path", action=_Grant, metavar="PATH",
@@ -353,7 +353,7 @@ def main(argv: list[str]) -> int:
         if args.extra_file is not None:
             loaded = json.loads(Path(args.extra_file).read_text(encoding="utf-8"))
             if not isinstance(loaded, dict):
-                raise EditError("--extra-file holds a JSON object or nothing")
+                raise EditError("--extra-file contains a JSON object or nothing")
             changes["extra"] = loaded
 
         if args.notebook_mode is not None or args.notebook_folder:

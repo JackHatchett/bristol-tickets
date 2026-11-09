@@ -37,12 +37,12 @@ STANDARD = """\
 One verdict per post, for the notebook alone. Nothing here is about what the
 account shows the world: the account is empty, and no post is being judged for
 whether it should have been public. The only question is whether a private
-record of this author's thinking is better for holding it.
+record of this author's thinking is better for keeping it.
 
 keep    The post made something - an argument, a parody, a joke with a shape, a
         recommendation, an observation worth meeting again. A subject the
         author would not defend in public is not a reason to lose it; that
-        class is what this archive exists to hold. Most posts are keeps.
+        class is what this archive exists to keep. Most posts are keeps.
 prune   The post made nothing. Anger with no idea in it. A take whose content
         is an insult rather than a thought. A reply that adds nothing of its
         own even with the post it answers in view - a bare agreement, a
@@ -377,7 +377,7 @@ def cmd_index(args):
     """The one note listing the posts left undecided, or no note at all.
 
     A list of what is unresolved is the one thing of its kind the notebook
-    holds, and it holds it only while something is unresolved: deciding the
+    contains, and it contains it only while something is unresolved: deciding the
     last post and running this again takes the note away rather than leaving a
     record that it once existed.
     """
@@ -423,7 +423,7 @@ def cmd_index(args):
         page = pages / f"{day:%Y}" / f"{day:%m}" / f"{name}.md"
         alias = f"Bluesky, {day:%A}, {day:%B} {day.day}, {day:%Y}"
         lines.append(f"- [[{name}|{alias}]]" if page.exists()
-                     else f"- {alias} — no page holds it")
+                     else f"- {alias} — no page contains it")
         for text, reason in undecided[day]:
             lines.append(f"\t- {_quote(text)} — {reason}")
 
@@ -455,7 +455,7 @@ def cmd_index(args):
         "conversation it came from. Decide a post by deciding whether you want "
         "it in the notebook; this note goes when the list is empty.",
         "",
-        "## Days Holding One",
+        "## Days With One",
         "",
         "\n".join(lines),
         "",

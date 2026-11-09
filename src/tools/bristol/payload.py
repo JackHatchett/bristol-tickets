@@ -5,7 +5,7 @@ A downloaded ``BristolTickets.app`` is the whole system, not just the viewer:
 and this module is what puts them on disk in the folder the user chooses and
 brings them up to date when a newer app opens an older installation.
 
-Bristol Tickets imports nothing from the rest of ``src/tools/``, and this holds
+Bristol Tickets imports nothing from the rest of ``src/tools/``, and this keeps
 to that: the standard library only.
 
 **Configuration and data are never written by an update.** ``PUBLISHED_DIRS``
@@ -87,7 +87,7 @@ def stage(source: Path, target: Path) -> Path:
     """Copy a project tree's published files into ``target``, replacing what is
     already there. Used to build a payload and to install one.
 
-    Only the published names are touched, so a target already holding an
+    Only the published names are touched, so a target already containing an
     installation keeps its ``config/config.local.json`` and its ``data/``.
     """
     target.mkdir(parents=True, exist_ok=True)
@@ -114,7 +114,7 @@ def unstage(target: Path) -> None:
 
     Removes the published names and then the folder itself if that emptied it,
     so a setup run abandoned after the tree was placed leaves nothing behind. A
-    folder holding anything unpublished — a board, a configuration, a file the
+    folder containing anything unpublished — a board, a configuration, a file the
     user put there — survives as it stands.
     """
     for name in PUBLISHED_DIRS:
@@ -155,7 +155,7 @@ def make_dirs(paths: list[Path], created: list[Path]) -> None:
 
 def unmake(created: list[Path], placed: list[Path]) -> None:
     """Take back what an abandoned run placed: its files, then its folders
-    deepest first. A folder holding anything else survives as it stands."""
+    deepest first. A folder containing anything else survives as it stands."""
     for path in placed:
         try:
             path.unlink()
@@ -169,7 +169,7 @@ def unmake(created: list[Path], placed: list[Path]) -> None:
 
 
 def installed_at(target: Path) -> bool:
-    """True when ``target`` already holds a Bristol project tree."""
+    """True when ``target`` already contains a Bristol project tree."""
     return (target / ENTRY_DOC).is_file()
 
 

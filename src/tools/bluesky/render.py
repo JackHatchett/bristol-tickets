@@ -60,7 +60,7 @@ KEPT_IMAGES: dict = {}
 
 
 def use_kept_images(mapping):
-    """Point the renderer at the pictures the store holds."""
+    """Point the renderer at the pictures the store contains."""
     KEPT_IMAGES.clear()
     KEPT_IMAGES.update(mapping or {})
 
@@ -97,7 +97,7 @@ def describe_embed(post):
         alt = _one_line(image.get("alt")) or "image"
         address = image.get("fullsize") or image.get("thumb") or ""
         # A rendered view names the picture by address; the record the store
-        # holds names it by the blob itself, which is the same picture.
+        # contains names it by the blob itself, which is the same picture.
         blob = ((image.get("image") or {}).get("ref") or {}).get("$link")
         kept = KEPT_IMAGES.get(blob or _blob_of(address))
         if kept is not None:
@@ -126,7 +126,7 @@ def describe_embed(post):
 def block_id(node):
     """The block identifier an owner's post carries: its record key, which is
     the last segment of its address and never changes, in the letters, digits
-    and dashes a block identifier may hold."""
+    and dashes a block identifier may contain."""
     key = (node.uri or "").rstrip("/").rsplit("/", 1)[-1]
     key = re.sub(r"[^A-Za-z0-9-]", "-", key).strip("-")
     return f"bsky-{key}" if key else None

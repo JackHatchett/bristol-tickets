@@ -58,7 +58,7 @@ def del_key(dotted: str) -> bool:
     """Remove one dotted key, leaving every other key as it was.
 
     True where a key was there to remove. A key a build has retired is taken
-    out rather than left holding a value nothing reads, and a secret that
+    out rather than left containing a value nothing reads, and a secret that
     should never have been in a file is taken out the same way.
     """
     path = read_config.config_path()

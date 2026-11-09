@@ -1,6 +1,6 @@
 """ui/theme.py — the appearance manager: schemes, design tokens, stylesheet.
 
-This module holds every visual constant the rest of the UI draws with: the
+This module contains every visual constant the rest of the UI draws with: the
 column definitions, the custom item-data role, the named colour schemes, the
 spacing / radius / type token scales, the global Qt stylesheet builder, and a
 few small stateless helper functions. It imports nothing from the rest of the
@@ -43,7 +43,7 @@ Every consumer reads the current palette out of the single mutable dict ``C``
 rather than binding colour names at import time, which could not be re-pointed
 live. ``set_scheme()`` swaps ``C``'s contents in place, and
 ``build_style_sheet()`` renders the global Qt stylesheet from whatever ``C``
-currently holds. Because ``C`` is mutated in place, a module that did
+currently contains. Because ``C`` is mutated in place, a module that did
 ``from .theme import C`` keeps seeing live values — so a repaint after a scheme
 change is all it takes for QPainter-drawn widgets (the cards) to re-theme, and a
 single ``app.setStyleSheet(build_style_sheet())`` re-themes everything
@@ -2005,7 +2005,7 @@ THEME_CHOICES: list[tuple[str, str]] = [
     ("wikipedia", "Wikipedia"),
 ]
 
-# What this build ships, held apart from the live SCHEMES and THEMES, which the
+# What this build ships, kept apart from the live SCHEMES and THEMES, which the
 # collection rewrites. Restore Shipped Themes reads these, so an edit the user
 # makes can always be undone against what the build actually defines.
 _SHIPPED_SCHEMES: dict[str, dict[str, str]] = {
@@ -2127,7 +2127,7 @@ def theme_has_dark(theme: str | None) -> bool:
 def default_theme() -> str:
     """The theme a choice falls back to.
 
-    This build's default where the collection still holds it, and the first
+    This build's default where the collection still contains it, and the first
     theme in the collection where it does not: a user who deletes Pumpkin is
     left with a fallback rather than with none.
     """
@@ -2152,7 +2152,7 @@ def resolve_scheme(theme: str | None, mode: str | None, dark: bool) -> str:
 
 
 def appearance_choice(theme, mode, legacy) -> tuple[str, str]:
-    """The theme and mode in force, from the three values config can hold.
+    """The theme and mode in force, from the three values config can contain.
 
     The two current keys win where they name a theme the collection holds.
     Where they do not, the one key an older build wrote is read for the theme
@@ -2322,7 +2322,7 @@ def resolve_collection(stored: dict | None = None,
 
 
 def order_collection(collection: dict[str, dict]) -> dict[str, dict]:
-    """The collection by name, which is the order a picker holding two dozen of
+    """The collection by name, which is the order a picker containing two dozen of
     them is read in: scan to the letter."""
     return {theme_id: collection[theme_id] for theme_id in sorted(
         collection, key=lambda key: (collection[key]["name"].casefold(), key))}
@@ -2505,7 +2505,7 @@ def contrast_complaints(palette: dict) -> list[str]:
 
 
 def current_scheme() -> str:
-    """The scheme name ``C`` currently holds."""
+    """The scheme name ``C`` currently contains."""
     return _current_scheme
 
 
@@ -2752,7 +2752,7 @@ QLabel#pathRow {{
     font-size: {type_size('body')}pt;
 }}
 QLabel#formCaption {{ color: {C['INK_SOFT']}; }}
-/* The filter panel: one raised surface under the Filter button, holding a
+/* The filter panel: one raised surface under the Filter button, containing a
    section per facet and one row per option. A row is a whole click target, so
    it takes the pointer fill a card does. */
 QFrame#filterMenu {{
@@ -2794,7 +2794,7 @@ QPushButton#filterClear:disabled {{
     color: {C['DISABLED_TX']};
     text-decoration: none;
 }}
-/* The Filter button takes the accent while it is holding something back, so a
+/* The Filter button takes the accent while it is leaving something out, so a
    narrowed board never reads as an empty one. */
 QPushButton#filterBtn[active="true"] {{
     background-color: {C['SEL_BG']};
@@ -3014,7 +3014,7 @@ QPushButton {{
 }}
 QPushButton:hover {{ background-color: {C['BTN_HOVER']}; }}
 QPushButton:pressed {{ background-color: {C['BTN_PRESSED']}; }}
-/* A button held unclickable until its form is valid must LOOK unclickable —
+/* A button kept unclickable until its form is valid must LOOK unclickable —
    Qt's default disabled rendering is barely distinguishable under this
    stylesheet, which would read as "the button is broken". */
 QPushButton:disabled {{
@@ -3039,7 +3039,7 @@ QPushButton#globalCreateBtn:disabled {{
     border: 1px solid {C['BORDER']};
     color: {C['DISABLED_TX']};
 }}
-/* A button whose window holds something that is not on disk. */
+/* A button whose window contains something that is not on disk. */
 QPushButton[missing="true"] {{
     border: 1px solid {C['MISSING']};
     color: {C['MISSING']};
@@ -3246,7 +3246,7 @@ def _get_epic_badge(epic_name: str, epic_id: int | None) -> str:
 
 def size_label(code: str | None) -> str:
     """A size code as a word. An unrecognised or absent code returns the code
-    itself, so a board carrying something else still says what it holds."""
+    itself, so a board carrying something else still says what it contains."""
     key = (code or "").strip().upper()
     if not key:
         return ""

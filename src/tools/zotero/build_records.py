@@ -61,7 +61,7 @@ def type_map() -> dict:
 
 
 def payload_dir() -> Path:
-    """The git-ignored directory holding payloads, beside the book ones."""
+    """The git-ignored directory containing payloads, beside the book ones."""
     root = zc._project_root()
     matches = sorted(root.glob("data/*/personal/library_records"))
     if matches:
@@ -118,7 +118,7 @@ def split_creator(name: str):
     """('First', 'Last', fieldMode) from 'Last, First' or a single-field name.
 
     A studio has no surname, so "Legend Entertainment" is stored whole in
-    lastName with fieldMode 1 — how Zotero itself holds an institution.
+    lastName with fieldMode 1 — how Zotero itself stores an institution.
     """
     name = (name or "").strip()
     if not name:

@@ -11,7 +11,7 @@ The generated script resolves the repo at *launch* time from the per-machine
 instance pointer (``~/Library/Application Support/BristolTickets/instance.json``,
 see ``instance.py``), falling back to the path baked in when it was generated.
 
-The bundle it writes is a per-machine artifact holding absolute paths, so it is
+The bundle it writes is a per-machine artifact containing absolute paths, so it is
 never committed; it lives in ``~/Applications``, outside the repo.
 
 Usage:

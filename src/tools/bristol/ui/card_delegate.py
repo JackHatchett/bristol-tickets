@@ -8,7 +8,7 @@ reserved height always matches what is drawn.
 
 A card is the only raised surface on the board: a soft shadow, a full corner
 radius, and a fill that carries hover and selection on its own. It reads top to
-bottom as the title, one muted line of the description, and a footer holding
+bottom as the title, one muted line of the description, and a footer containing
 who owns it, how much thinking it needs, how big it is, what kind of record it
 is and which epic it belongs to. A card with no epic carries one accent dot in its
 top corner instead, and its tooltip names the choice that clears it. A card with
@@ -328,7 +328,7 @@ class CardDelegate(QStyledItemDelegate):
 
         # The epic gives up width first: it shrinks to what is left, and is
         # dropped once it is too narrow to say anything. Only then does the
-        # left-hand text elide, and the id and the owner are what it holds —
+        # left-hand text elide, and the id and the owner are what it contains —
         # each of them appearing exactly once.
         if spare() < 0 and epic_name:
             shrunk = widths[-1] + spare()

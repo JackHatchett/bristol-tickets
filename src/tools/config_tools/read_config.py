@@ -46,7 +46,7 @@ import instance_pointer  # noqa: E402  (runs as a script as well as a module)
 
 
 def _project_root() -> Path:
-    """The project root: the nearest ancestor holding src/app.md.
+    """The project root: the nearest ancestor containing src/app.md.
 
     Located by marker rather than by folder name, so the install works whatever
     the user named the folder they cloned into.
@@ -55,7 +55,7 @@ def _project_root() -> Path:
         if (parent / "src" / "app.md").is_file():
             return parent
     raise SystemExit(
-        "no project root above this file (no ancestor holds src/app.md)"
+        "no project root above this file (no ancestor contains src/app.md)"
     )
 
 

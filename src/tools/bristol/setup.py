@@ -34,7 +34,7 @@ APP = ["app.py"]
 
 
 def project_root() -> Path:
-    """The folder being packaged: the nearest ancestor holding src/app.md."""
+    """The folder being packaged: the nearest ancestor containing src/app.md."""
     for parent in HERE.parents:
         if (parent / "src" / "app.md").is_file():
             return parent
@@ -143,7 +143,7 @@ OPTIONS = {
     # A board draws no Tk windows and installs no packages at runtime.
     "excludes": EXCLUDES,
     "plist": {
-        # CFBundleName holds no space; CFBundleDisplayName carries the name
+        # CFBundleName contains no space; CFBundleDisplayName carries the name
         # with one.
         "CFBundleName": "BristolTickets",
         "CFBundleDisplayName": "Bristol Tickets",

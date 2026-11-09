@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """name_variants.py — one coined name spelled two ways, across a body of notes.
 
-A wiki grows past what one session can hold, and the disagreements that follow
+A wiki grows past what one session can read, and the disagreements that follow
 are rarely arguments: they are the same name written differently in two notes
 written months apart. That kind a machine can find, and finding it does not
 depend on being allowed to fix it.
@@ -25,7 +25,7 @@ from pathlib import Path
 # A coined name carries a capital that ordinary prose would not: inside the
 # word, or after a hyphen. An all-capital token is an abbreviation rather than
 # a name — CV, CVC and their kin are a phonology note's own shorthand — so a
-# name is required to hold a lowercase letter as well.
+# name is required to contain a lowercase letter as well.
 COINED = re.compile(
     r"\b(?:[a-z]{1,5}-[A-Z][A-Za-z]+(?:-[A-Za-z]+)*"     # so-Varuni
     r"|[A-Z][a-z]+-[A-Z][A-Za-z]+"                        # Tel-Varuni

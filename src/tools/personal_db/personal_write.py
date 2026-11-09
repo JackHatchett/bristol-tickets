@@ -188,7 +188,7 @@ DIRECTIONS = ("us", "them")
 
 
 def _contact_matches(conn, needle: str):
-    """Every contact whose name or aliases hold this text.
+    """Every contact whose name or aliases contain this text.
 
     Aliases are matched as well as the name because the same person arrives
     spelled differently — a nickname, a maiden name, a middle initial — and a

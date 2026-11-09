@@ -136,7 +136,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--guardrail", action="append", default=[],
                         help="one rule that halts execution; repeatable")
     parser.add_argument("--charter-file",
-                        help="a file holding the whole charter document, "
+                        help="a file containing the whole charter document, "
                              "instead of --role and --guardrail")
     parser.add_argument("--env", action="append", default=[],
                         metavar="NAME=VALUE",

@@ -102,11 +102,11 @@ def write(repo_root, data_root, instance_slug: str, config_path) -> Path:
 
 
 def _default_repo_root() -> Path:
-    """The nearest ancestor of this file holding src/app.md."""
+    """The nearest ancestor of this file containing src/app.md."""
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit("no project root above this file (no ancestor holds src/app.md)")
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 def _default_data_root(root: Path) -> Path:

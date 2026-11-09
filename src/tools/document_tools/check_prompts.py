@@ -153,7 +153,7 @@ def check_note(path: Path, targets: set[str],
         block_text = "\n".join(block)
         for expr in TEMPLATER.findall(block_text):
             findings.append(
-                f"{path.name}: emitted frontmatter holds the Templater "
+                f"{path.name}: emitted frontmatter contains the Templater "
                 f"expression {expr.strip()}, which the assistant cannot execute"
             )
         emitted = set(top_level_keys(block))

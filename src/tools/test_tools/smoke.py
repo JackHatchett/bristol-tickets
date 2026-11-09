@@ -233,7 +233,7 @@ def check_bristol() -> list[str]:
     if manager.selected() != added or added not in manager.themes():
         raise SmokeFailure("a rename moved the theme it renamed")
     # A theme added takes its id from the name it is saved under, so the
-    # configuration reads as the list it holds.
+    # configuration reads as the list it contains.
     named = ThemeManagerDialog(collection, theme.DEFAULT_THEME)
     fresh = named.add()
     named.rename("Sea Glass")
@@ -464,7 +464,7 @@ def check_bristol() -> list[str]:
         theme.THEMES.pop(light_only, None)
     ok.append("a theme with no dark half refuses Dark and Follow System")
 
-    # Every value the one older key could hold comes up as the appearance it
+    # Every value the one older key could contain comes up as the appearance it
     # named, and the two current keys win wherever they say anything.
     theme.install_collection(theme.resolve_collection(None, {"INK": "#101010"}))
     for legacy, expected in theme.LEGACY_APPEARANCE.items():
@@ -491,7 +491,7 @@ def check_bristol() -> list[str]:
 
     for scale in (theme.SPACE, theme.RADIUS, theme.TYPE):
         if not all(isinstance(step, int) and step > 0 for step in scale.values()):
-            raise SmokeFailure("a token scale holds something that is not a size")
+            raise SmokeFailure("a token scale contains something that is not a size")
     ok.append("the spacing, radius and type scales are whole sizes")
 
     # Every question and every notice comes from ui/dialogs.py, so no module
@@ -512,7 +512,7 @@ def check_bristol() -> list[str]:
         raise SmokeFailure("a closed confirmation does not land on the way out")
     ok.append("every confirmation and notice comes from ui/dialogs.py")
 
-    # The card painter reads tokens rather than holding literals, so a change to
+    # The card painter reads tokens rather than containing literals, so a change to
     # a scale must reach it with no edit there.
     from ui.card_delegate import CardDelegate
 
@@ -666,12 +666,12 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("Refresh did not reload the board from another tab")
         win._show_page(win._board_tab_index)
         ok.append("Refresh and Create are the header's on the ticket pages only; the board's row "
-                  "narrows the board and nothing more; a column header holds "
+                  "narrows the board and nothing more; a column header contains "
                   "no control")
 
         # ---- What the board is showing ------------------------------------
         # One filter state narrows the board, the Backlog and the Archive and
-        # leaves Search alone; the control row says what it holds.
+        # leaves Search alone; the control row says what it contains.
         import ui.filter_menu as fm
 
         mconn.execute(
@@ -685,7 +685,7 @@ def check_bristol() -> list[str]:
         mconn.commit()
         win._refresh_board()
         if win.columns["todo"].list_widget.count() != 2:
-            raise SmokeFailure("an unfiltered board should hold every active card")
+            raise SmokeFailure("an unfiltered board should contain every active card")
 
         owners = [value for value, _caption in fm.assignee_options(mconn, win.filters)]
         if owners[0] != "user" or "librarian" not in owners:
@@ -714,7 +714,7 @@ def check_bristol() -> list[str]:
         if win.chip_row.count() != 1:
             raise SmokeFailure("a set filter is not on the control row as a chip")
         if win.backlog_filter_note.isHidden() or win.archive_filter_note.isHidden():
-            raise SmokeFailure("a view holding cards back does not say so")
+            raise SmokeFailure("a view leaving cards out does not say so")
 
         win.filters.toggle(fm.ASSIGNEE, "user")
         win._on_filters_changed()
@@ -748,7 +748,7 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("the Filter button still reads as set")
         if not win.backlog_filter_note.isHidden() \
                 or not win.archive_filter_note.isHidden():
-            raise SmokeFailure("a view still says it is holding cards back")
+            raise SmokeFailure("a view still says it is leaving cards out")
 
         # The panel builds a row per option, and a click anywhere on a row is a
         # click on its box.
@@ -1339,7 +1339,7 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("the detail pane did not render both carried summaries")
         if "five is still open" in shown:
             raise SmokeFailure("the detail pane carried an unfinished blocker's comment")
-        # Sized to what it holds, like the description above it: a section left
+        # Sized to what it contains, like the description above it: a section left
         # at a widget's default height shows a heading and clips the handoff.
         one = _seed_link_task("Blocked two")
         add_issue_link(lc, hp2, one, relation="blocks")
@@ -1534,7 +1534,7 @@ def check_bristol() -> list[str]:
                 second.instance_page.slug_edit.setText("tester")
                 second.instance_page.folder.set_value(str(scratch_root / "data" / "tester"))
                 if not second.instance_page.adopting():
-                    raise SmokeFailure("a folder holding a board was not seen as an installation")
+                    raise SmokeFailure("a folder containing a board was not seen as an installation")
                 if second.instance_page.nextId() != wiz.PAGE_SUMMARY:
                     raise SmokeFailure("adoption still asks the pages only creation needs")
                 second.summary_page.initializePage()
@@ -1731,7 +1731,7 @@ def check_bristol() -> list[str]:
                 if picker.count() != len(config_file.agent_slugs()):
                     raise SmokeFailure("the agent picker lists agents this installation does not configure")
 
-                # A wheel gesture and an arrow key while it holds focus leave
+                # A wheel gesture and an arrow key while it has focus leave
                 # the value and write nothing.
                 from PySide6.QtCore import QEvent, QPoint, QPointF
                 from PySide6.QtGui import QKeyEvent, QWheelEvent
@@ -1817,7 +1817,7 @@ def check_bristol() -> list[str]:
                 ],
                 "agents": {"chief_of_staff": ["with-code"], "librarian": []},
             }
-            # What an import adds: a skill the listing did not hold before.
+            # What an import adds: a skill the listing did not contain before.
             fresh = dict(listing["skills"][2], name="fresh", directory="fresh",
                          path="/nowhere/fresh")
 
@@ -1880,7 +1880,7 @@ def check_bristol() -> list[str]:
                 if cards["Scanned"]["meta"].find("Scanned, nothing found") < 0:
                     raise SmokeFailure("a scanned skill's card does not say what the scan found")
                 if cards["With Code"]["pills"] != ["Chief of Staff"]:
-                    raise SmokeFailure("a card does not carry the agents holding it")
+                    raise SmokeFailure("a card does not carry the agents attached to it")
                 if "Downloaded from someone/repo@abc1234" not in cards["With Code"]["meta"]:
                     raise SmokeFailure("a card does not say where a skill was downloaded from")
                 if "Came with Bristol" not in cards["Native One"]["meta"]:
@@ -1928,7 +1928,7 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure(f"the agent filter does not narrow: {_named()}")
                 stab.holder.setCurrentText(NO_AGENT)
                 if "With Code" in _named():
-                    raise SmokeFailure("the no-agent filter keeps a held skill")
+                    raise SmokeFailure("the no-agent filter keeps an attached skill")
                 stab.holder.setCurrentText(ANY_AGENT)
                 if len(_named()) != 3:
                     raise SmokeFailure("clearing the filters does not restore the list")
@@ -1954,7 +1954,7 @@ def check_bristol() -> list[str]:
                 if dlg.source_btn is None or coded_record["source_url"] not in dlg.source_btn.toolTip():
                     raise SmokeFailure("a downloaded skill's view has no link to its source")
                 if not dlg.boxes["chief_of_staff"].isChecked() or dlg.boxes["librarian"].isChecked():
-                    raise SmokeFailure("the tick boxes do not carry who holds the skill")
+                    raise SmokeFailure("the tick boxes do not carry who has the skill")
                 dlg.boxes["librarian"].setChecked(True)
                 dlg.boxes["chief_of_staff"].setChecked(False)
                 if ("attach", "with-code", "--agent", "librarian") not in writes:
@@ -2071,7 +2071,7 @@ def check_bristol() -> list[str]:
             ok.append("the Skills tab stands in the header")
 
             # The Agents tab: where it sits, what it lists, and that its form
-            # holds every property an agent has. The writes are the agent_tools
+            # contains every property an agent has. The writes are the agent_tools
             # target's; what is checked here is that nothing an agent is goes
             # missing between the reader and the form.
             from PySide6.QtCore import Qt as _Qt
@@ -2117,7 +2117,7 @@ def check_bristol() -> list[str]:
 
             if not agents_page._agents:
                 raise SmokeFailure(
-                    "the Agents tab lists no agent, so the form holds nothing "
+                    "the Agents tab lists no agent, so the form contains nothing "
                     "to check: the configuration this ran against declares none")
             record = agents_page._agents[0]
             filled = AgentDialog(None, record, agents_page._run, set(listed),
@@ -2126,19 +2126,19 @@ def check_bristol() -> list[str]:
             if filled.slug.text() != record["slug"] or filled.slug.isEnabled():
                 raise SmokeFailure("an existing agent's name is wrong or retypable")
             if values["charter"] != record["charter"]:
-                raise SmokeFailure("the form does not hold the charter verbatim")
+                raise SmokeFailure("the form does not contain the charter verbatim")
             for key in ("description", "identity", "key_data_paths",
                         "key_context_files", "notebook_access", "env"):
                 if values[key] != record[key]:
                     raise SmokeFailure(
-                        f"the form does not hold {key}: "
+                        f"the form does not contain {key}: "
                         f"{values[key]!r} against {record[key]!r}")
             if filled.dashboards.changed_from(record["dashboard_access"]):
                 raise SmokeFailure(
                     "an untouched form would rewrite the agent's dashboard access")
             if sorted(values["skills"]) != sorted(record["skills"]):
                 raise SmokeFailure(
-                    f"the form does not hold the attached skills: "
+                    f"the form does not contain the attached skills: "
                     f"{values['skills']} against {record['skills']}")
             for field in (filled.charter, filled.description, filled.identity):
                 if field.isReadOnly():
@@ -2184,7 +2184,7 @@ def check_bristol() -> list[str]:
                 raise SmokeFailure(
                     "the form does not hand each access to the option that "
                     "grants it")
-            ok.append("opening an agent holds its charter, every key of its "
+            ok.append("opening an agent shows its charter, every key of its "
                       "entry and its skills, all of them editable")
 
             blank = AgentDialog(None, None, agents_page._run, set(listed),
@@ -2233,7 +2233,7 @@ def check_bristol() -> list[str]:
 
             # Cramping is a geometry fault, which is the one thing an offscreen
             # render settles honestly: every field tall enough for what it
-            # holds, both columns wide enough to read, and the fields column
+            # contains, both columns wide enough to read, and the fields column
             # scrolling rather than squeezing.
             for agent in agents_page._agents:
                 sized = AgentDialog(None, agent, agents_page._run, set(listed),
@@ -2287,7 +2287,7 @@ def check_bristol() -> list[str]:
                             f"{width}x{height}")
                 # A path row is a widget inside a list item, and an item takes
                 # the height its hint asks for rather than growing to what it
-                # holds, so a row whose hint was read before the stylesheet
+                # contains, so a row whose hint was read before the stylesheet
                 # reached it clips the path, the access and the remove button.
                 sized.resize(1280, 980)
                 app.processEvents()
@@ -2315,7 +2315,7 @@ def check_bristol() -> list[str]:
                                     f"{child.height()}px for {short}px")
                 sized.hide()
             ok.append("every field on the agent form is tall enough for what it "
-                      "holds, a path row for the path and the access it holds, "
+                      "contains, a path row for the path and the access it has, "
                       "and the form scrolls rather than squeezing")
 
             # Every ✕ on the form asks before it drops a row, and the question
@@ -2328,7 +2328,7 @@ def check_bristol() -> list[str]:
                             if a.get("key_data_paths") and a.get("env")), None)
             if stocked is None:
                 raise SmokeFailure(
-                    "no configured agent holds both a folder and a variable")
+                    "no configured agent has both a folder and a variable")
             guarded = AgentDialog(None, stocked, agents_page._run, set(listed),
                                   agents_page._skills)
             asked: list[str] = []
@@ -2474,7 +2474,7 @@ def check_bristol() -> list[str]:
             "SELECT closed_at FROM task WHERE id=?", (unrecorded,)).fetchone()[0]
         if left != sweep_stamp:
             raise SmokeFailure(
-                "a card the log holds no finish for was given one anyway: "
+                "a card the log contains no finish for was given one anyway: "
                 f"{left!r}")
         settled = dict(rconn.execute("SELECT id, closed_at FROM task"))
         _recover_closed_at_from_the_log(rconn)
@@ -2851,7 +2851,7 @@ def check_bristol() -> list[str]:
         if kconn.execute(
                 "SELECT COUNT(*) FROM epic WHERE LOWER(COALESCE(type,''))='standing'"
         ).fetchone()[0] != 1:
-            raise SmokeFailure("the board holds more than one standing epic")
+            raise SmokeFailure("the board contains more than one standing epic")
         if finishing.standing_epic(kconn) != the_standing:
             raise SmokeFailure("the board's standing workstream moved")
         ok.append("a second standing workstream is refused with the reason, "
@@ -3136,7 +3136,7 @@ def check_bluesky_pruning() -> list[str]:
 
     failures: list[str] = []
 
-    # A branch with none of my posts goes; the one holding them stays, with
+    # A branch with none of my posts goes; the one containing them stays, with
     # every post above it.
     mine_leaf = node("me", "my reply", mine=True)
     tree = node("op", "the original", children=[
@@ -3186,7 +3186,7 @@ def check_bluesky_pruning() -> list[str]:
     # A thread I am not in produces nothing at all.
     tree = node("op", "the original", children=[node("stranger", "a reply")])
     if bt.prune(bt.build_tree(tree, set())) is not None:
-        failures.append("a thread holding none of my posts was not dropped")
+        failures.append("a thread containing none of my posts was not dropped")
 
     # A deleted root falls back to my own post and still returns the thread.
     asked: list[str] = []
@@ -3270,7 +3270,7 @@ def check_bluesky_archive() -> list[str]:
         if date(2026, 3, 1) in by_day:
             failures.append("a day before the window came back")
 
-        # A conversation is kept, and is not replaced by one holding less of
+        # A conversation is kept, and is not replaced by one containing less of
         # what the account said in it.
         root = "at://them/app.bsky.feed.post/root"
         whole = node(root, "op", children=[node("at://me/1", "me", mine=True),
@@ -3473,12 +3473,12 @@ def check_bluesky_purge() -> list[str]:
         if sent != {posts[0]["uri"], reposts[0]["uri"]}:
             failures.append(f"what a cut-off pass had sent read back as {sorted(sent)}")
         if bs.post_count(conn) != 2:
-            failures.append("a post the account no longer holds left the store")
+            failures.append("a post the account no longer has left the store")
         conn.close()
 
     if failures:
         raise SmokeFailure("; ".join(failures))
-    return ["emptying the account holds to the hour's write budget and says "
+    return ["emptying the account keeps to the hour's write budget and says "
             "what it had already sent"]
 
 
@@ -3766,7 +3766,7 @@ def check_config_resolution() -> list[str]:
         instance.get_path = orig_get_path
         config_file.project_root = orig_project_root
 
-    # Which project a session opens on, when an agent holds one, two or none.
+    # Which project a session opens on, when an agent has one, two or none.
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
     import active_project
     grant = lambda p: {"path": p, "access": "write"}
@@ -3783,14 +3783,14 @@ def check_config_resolution() -> list[str]:
         raise SmokeFailure("two projects and no choice did not open on the first")
     cfg["agents"]["writer"]["active_project"] = "notes/novel_b"
     if active_project.active("writer", data=cfg)[0] != "notes/novel_b":
-        raise SmokeFailure("a chosen project did not hold")
+        raise SmokeFailure("a chosen project did not stay")
     cfg["agents"]["writer"]["active_project"] = "notes/course"
     if active_project.active("writer", data=cfg)[0] != "notes/novel_a":
         raise SmokeFailure("a choice outside the agent's projects was honoured")
     if active_project.active("nobody", data=cfg)[0] is not None:
         raise SmokeFailure("an agent with no project was given one")
     ok.append("a session opens on its only project, on the chosen one of two, "
-              "and on none where it holds none")
+              "and on none where it has none")
 
     # An environment value written as a reference resolves through the key
     # that owns its folder, and Locations lists that folder once.
@@ -3842,7 +3842,7 @@ def check_agent_tools() -> list[str]:
 
     An agent is a charter document and a config entry, and the property worth
     guarding is that they cannot drift apart: one call writes both, a refused
-    call writes neither, and every key an entry holds survives an edit — the one
+    call writes neither, and every key an entry contains survives an edit — the one
     this build knows nothing about included, because a form that silently drops
     what it does not recognize is worse than one that refuses.
     """
@@ -3880,7 +3880,7 @@ def check_agent_tools() -> list[str]:
                 f"{agent['slug']}'s charter is unreadable: {agent['charter_error']}")
     ok.append(f"all {len(configured)} charters read back as the files they are")
 
-    # Every key an entry holds reaches the reader, under a name of its own or
+    # Every key an entry contains reaches the reader, under a name of its own or
     # in `extra`. A key that reached neither would be one an edit could drop.
     import read_config as config_reader
 
@@ -3897,7 +3897,7 @@ def check_agent_tools() -> list[str]:
                     f"{slug}'s '{key}' reaches neither a field nor extra")
         if read["notebook_access"] != (entry.get("notebook_access") or {}):
             raise SmokeFailure(f"{slug}'s notebook access was not read verbatim")
-    ok.append("every key every entry holds reaches a field of its own or extra")
+    ok.append("every key every entry contains reaches a field of its own or extra")
 
     with tempfile.TemporaryDirectory() as tmp:
         scratch = Path(tmp) / "clone"
@@ -4220,7 +4220,7 @@ def check_ticket_tier() -> list[str]:
 
 def check_dashboard_access() -> list[str]:
     """Which dashboards an agent may write. Pure functions over a configuration
-    held in memory, so nothing on disk is read or written."""
+    kept in memory, so nothing on disk is read or written."""
     sys.path.insert(0, str(TOOLS / "config_tools"))
     import dashboards
 
@@ -4257,9 +4257,9 @@ def check_dashboard_access() -> list[str]:
 
 
 def check_notebook_access() -> list[str]:
-    """What an agent may do in the notebook, and every location config holds.
+    """What an agent may do in the notebook, and every location config contains.
 
-    Pure functions over a configuration held in memory, so nothing on disk is
+    Pure functions over a configuration kept in memory, so nothing on disk is
     read or written.
     """
     sys.path.insert(0, str(TOOLS / "config_tools"))
@@ -4315,7 +4315,7 @@ def check_notebook_access() -> list[str]:
               ("agents", "a", "key_data_paths", 0, "path")}
     if got != wanted:
         raise SmokeFailure(f"Locations lists the wrong keys: {sorted(got ^ wanted)}")
-    ok.append("Locations lists every path config holds and nothing else, "
+    ok.append("Locations lists every path config contains and nothing else, "
               "leaving the notebook folder to the Notebook window")
     return ok
 

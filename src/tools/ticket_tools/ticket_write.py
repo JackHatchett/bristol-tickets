@@ -50,7 +50,7 @@ Usage:
         --assignee <that agent/user> and --reporter <you>. The --assignee is
         what makes it a proposal rather than a command: it is that agent's card
         to accept, reorder, or drop. Where any new card lands is the user's
-        choice, held in config as `board.new_ticket_stage` and edited in the
+        choice, kept in config as `board.new_ticket_stage` and edited in the
         Bristol Tickets Settings tab: 'active' (the default — the `todo` column
         on the board the user watches) or 'backlog'. An explicit --stage always
         wins.
@@ -612,7 +612,7 @@ def update_task_status(args: argparse.Namespace) -> None:
         if sets:
             vals.append(args.id)
             conn.execute(f"UPDATE task SET {', '.join(sets)} WHERE id = ?", vals)
-        # What done means for the board is one rule, held in one module: a
+        # What done means for the board is one rule, kept in one module: a
         # standing card archives itself on finishing, a project card waits in
         # Done for its epic to close, and a card taken back out of done returns
         # to the board. Only a real transition triggers it.

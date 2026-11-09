@@ -42,7 +42,7 @@ DEFAULT_WINDOW_DAYS = 30
 
 def default_window(today=None) -> tuple[str, str]:
     """The window offered when none was chosen: the last thirty days, ending
-    today. A month is long enough to hold upkeep that happens weekly and short
+    today. A month is long enough to contain upkeep that happens weekly and short
     enough to still describe the board as it stands."""
     end = today or datetime.now(timezone.utc).date()
     return (end - timedelta(days=DEFAULT_WINDOW_DAYS)).isoformat(), end.isoformat()

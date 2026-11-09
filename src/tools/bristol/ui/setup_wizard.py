@@ -17,7 +17,7 @@ The first page opens on the installation this machine already has — the one
 pointer names. Only a machine with neither opens on the operating system's user
 name.
 
-A data folder that already holds ``tickets/tickets.db`` is adopted instead:
+A data folder that already contains ``tickets/tickets.db`` is adopted instead:
 no schema runs against that board, its configuration is left as it stands, and
 the only file written is the instance pointer.
 
@@ -105,7 +105,7 @@ def board_path(instance_dir: Path) -> Path:
 
 
 def needs_setup(discovered_db: Path | None) -> bool:
-    """True when this machine holds no installation to open.
+    """True when this machine contains no installation to open.
 
     A discoverable database or a written ``config.local.json`` each mean setup
     has already happened, whatever else is missing.
@@ -232,7 +232,7 @@ class InstancePage(QWizardPage):
         self.root = root
         self.setTitle(page_title("Name this installation"))
         self.setSubTitle(
-            "This name labels the folder holding your board and everything you "
+            "This name labels the folder containing your board and everything you "
             "save. Lower case, no spaces."
         )
 
@@ -303,7 +303,7 @@ class InstancePage(QWizardPage):
         return bool(self.slug_edit.text().strip()) and bool(self.folder.value())
 
     def instance_dir(self) -> Path:
-        """The folder holding this installation's data.
+        """The folder containing this installation's data.
 
         A folder already named for the installation is taken as it stands; any
         other choice is read as the place to put that folder in.
@@ -313,7 +313,7 @@ class InstancePage(QWizardPage):
         return chosen if chosen.name == slug else chosen / slug
 
     def adopting(self) -> bool:
-        """True when the chosen folder already holds a board."""
+        """True when the chosen folder already contains a board."""
         return board_path(self.instance_dir()).exists()
 
     def nextId(self) -> int:
@@ -321,12 +321,12 @@ class InstancePage(QWizardPage):
         return PAGE_SUMMARY if self.adopting() else PAGE_AGENTS
 
     def validatePage(self) -> bool:
-        """Say the folder holds an installation, and offer to adopt it."""
+        """Say the folder contains an installation, and offer to adopt it."""
         if not self.adopting():
             return True
         return bool(choose(
-            self, "This folder already holds an installation",
-            f"{self.instance_dir()} already holds a board:\n\n"
+            self, "This folder already contains an installation",
+            f"{self.instance_dir()} already contains a board:\n\n"
             f"{board_path(self.instance_dir())}\n\n"
             "Setup can adopt it. Nothing inside it is read or changed, no "
             "schema runs against that board, and its configuration is left as "
@@ -680,7 +680,7 @@ def build_config(root: Path, instance_dir: Path, slug: str, agents: list[str],
         (HOME_TOKEN, str(Path.home())),
     ]
     # With no notebook chosen, Bristol keeps one of its own inside the
-    # installation's data, holding an inbox, a workspace and an archive. A
+    # installation's data, containing an inbox, a workspace and an archive. A
     # notebook the user chose already has folders of its own, and they are
     # attached in Settings rather than guessed at.
     own_notebook = not notebook
@@ -802,7 +802,7 @@ def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
 
         with _step("provision the board",
                    "A file at that path may already be open or may not be a "
-                   "database. Close the app holding it, or choose another data "
+                   "database. Close the app using it, or choose another data "
                    "folder."):
             schema_file = payload.schema_path(Path(__file__))
             if schema_file is None:
@@ -848,7 +848,7 @@ class PlacementDialog(QDialog):
     """Where the project tree goes, for an app that carries one.
 
     Asked once, before the wizard, because every page after it reads the folder
-    this writes. A folder that already holds a Bristol tree is taken as it
+    this writes. A folder that already contains a Bristol tree is taken as it
     stands rather than overwritten.
     """
 
@@ -859,7 +859,7 @@ class PlacementDialog(QDialog):
         self.setMinimumWidth(LAYOUT["wizard_min_w"])
         self.chosen: Path | None = None
         # Whether this run put the tree there, so an abandoned setup can take
-        # it back off a folder that held nothing before.
+        # it back off a folder that contained nothing before.
         self.placed = False
 
         heading = QLabel("Where should Bristol live?")
@@ -867,7 +867,7 @@ class PlacementDialog(QDialog):
         heading.setWordWrap(True)
 
         body = QLabel(
-            "This folder holds the agents, the board and everything you save. "
+            "This folder contains the agents, the board and everything you save. "
             "You will point your AI app at it, so somewhere you can find again "
             "is the right answer — your home folder is fine."
         )

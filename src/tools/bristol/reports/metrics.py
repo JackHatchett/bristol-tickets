@@ -63,7 +63,7 @@ SECONDS_PER_DAY = 86400.0
 # ---------------------------------------------------------------------------
 
 def _parse_ts(value):
-    """Parse a stored timestamp, tolerating every shape this DB has held.
+    """Parse a stored timestamp, tolerating every shape this DB has contained.
 
     Rows written at different times carry full ISO-8601 with an offset, naive
     ISO, or a bare date (older epics). Anything unparseable returns None and is

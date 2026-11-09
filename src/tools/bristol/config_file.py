@@ -27,7 +27,7 @@ NEW_TICKET_STAGE_DEFAULT = "active"
 # What a session that wrote inside a git working tree does with git as it
 # closes: commits it, gives the user a commit block, or leaves git alone. Read
 # by the agent as the session closes, never by the app. A configuration written
-# when this was a box holds true for a block and false for nothing.
+# when this was a box stores true for a block and false for nothing.
 SUGGESTED_COMMIT = "session.suggested_commit"
 SUGGESTED_COMMIT_DEFAULT = "block"
 GIT_ON_CLOSE = ("commit", "block", "off")
@@ -53,7 +53,7 @@ WORK_WHOLE_QUEUE_DEFAULT = True
 APPEARANCE_THEME = "appearance.theme"
 APPEARANCE_MODE = "appearance.mode"
 
-# The one key a build before those two wrote, holding a theme and a mode
+# The one key a build before those two wrote, containing a theme and a mode
 # collapsed into a single value. Nothing writes it now; ``theme`` reads it back
 # as the appearance it named, through ``ui.theme.appearance_choice``.
 APPEARANCE_SCHEME = "appearance.scheme"
@@ -78,7 +78,7 @@ DETAIL_COLLAPSED = "appearance.detail_collapsed"
 
 
 def project_root() -> Path | None:
-    """The cloned folder: the nearest ancestor holding ``src/app.md``.
+    """The cloned folder: the nearest ancestor containing ``src/app.md``.
 
     Falls back to the instance pointer's ``repo_root``, which is what a
     relocated ``.app`` bundle has instead of an ancestor.

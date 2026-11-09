@@ -4,7 +4,7 @@ build_reading_lists.py — turn reading-list payloads into Zotero collections.
 
 Each payload is one JSON file describing one published list. The script creates
 a Zotero collection of that name and fills it, reusing an item the library
-already holds whenever the entry matches one, and creating a book item only when
+already contains whenever the entry matches one, and creating a book item only when
 it does not. Nothing is ever added to "Books I've Read": an aspirational list is
 its own collection, and membership of the read collection is a fact about the
 user, not about the list.
@@ -13,7 +13,7 @@ Payload shape:
     {
       "collection": "Modern Library 100 Best Novels",
       "source": "https://...",              # authoritative source, recorded
-      "stated_count": 100,                  # what the source says it holds
+      "stated_count": 100,                  # what the source says it contains
       "entries": [
         {"title": "Ulysses", "author": "Joyce, James"},
         {"title": "The Arabian Nights", "author": "", "note": "..."}
@@ -97,7 +97,7 @@ def split_author(author: str):
         last, first = author.split(",", 1)
         return first.strip(), last.strip(), 0
     # No comma: a mononym or an institution — "Anonymous", "Ovid". fieldMode 1
-    # is the single-field form, and it holds the whole name in lastName.
+    # is the single-field form, and it stores the whole name in lastName.
     return "", author, 1
 
 

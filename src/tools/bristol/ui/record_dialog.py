@@ -124,7 +124,7 @@ def section_widget(name: str) -> QWidget:
 
 
 # The one value that means standing; every other value, including the prose an
-# older board holds, means project. finishing.STANDING_KIND is the same word,
+# older board contains, means project. finishing.STANDING_KIND is the same word,
 # named there because that is where the rules resting on it live.
 STANDING_KIND = finishing.STANDING_KIND
 PROJECT_KIND = "project"
@@ -137,7 +137,7 @@ def _epic_kind(stored: str | None) -> str:
 
 
 # The date a due-date field sits on when the card has none. A date field has to
-# hold some date, so the earliest one it offers is the word "no date" instead.
+# contain some date, so the earliest one it offers is the word "no date" instead.
 NO_DUE_DATE = QDate(1970, 1, 1)
 
 
@@ -183,7 +183,7 @@ class UnifiedRecordDialog(QDialog):
         # whether to re-seat the task in its destination list.
         self._loaded_stage = None
         self._loaded_status = None
-        # The raw text this epic's kind arrived as. An older board holds prose
+        # The raw text this epic's kind arrived as. An older board contains prose
         # there, which reads as project and is kept until the user chooses
         # something else.
         self._loaded_epic_type = None
@@ -467,7 +467,7 @@ class UnifiedRecordDialog(QDialog):
         standard_buttons.accepted.connect(self.accept)
         standard_buttons.rejected.connect(self.reject)
         self.button_box.addWidget(standard_buttons)
-        # Held disabled while a required field is empty. Save silently dropped
+        # Kept disabled while a required field is empty. Save silently dropped
         # such a record — including a long Description the user had just typed —
         # so the button must not be pressable in the state that would lose it.
         self.ok_button = standard_buttons.button(QDialogButtonBox.Ok)
@@ -644,7 +644,7 @@ class UnifiedRecordDialog(QDialog):
         widget.style().polish(widget)
 
     def _refresh_required_state(self, *args) -> None:
-        """Mark every empty required field red and hold OK unclickable until none
+        """Mark every empty required field red and keep OK unclickable until none
         are left. Called on construction and on every keystroke in a required
         field, so the button and the borders can never disagree with the form."""
         missing = self._missing_required()
@@ -909,7 +909,7 @@ class UnifiedRecordDialog(QDialog):
 
         elif chosen_type == "Epic":
             # A kind the user did not touch is written back exactly as it
-            # arrived, so the prose an older board holds survives until someone
+            # arrived, so the prose an older board contains survives until someone
             # chooses one of the two kinds over it.
             chosen_kind = self.epic_type_combo.currentData()
             etype = (self._loaded_epic_type

@@ -170,7 +170,7 @@ def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1,
     else:
         fetched = [one(item) for item in work]
     kept_trees = [keep(root, tree) for root, tree in fetched]
-    # The store holds every post; the page shows the ones the notebook keeps.
+    # The store contains every post; the page shows the ones the notebook keeps.
     shown = [threads.without(tree, dropped) for tree in kept_trees
              if tree is not None]
     shown = [tree for tree in shown if tree is not None]
@@ -252,14 +252,14 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
         print(f"{len(posts)} post records read")
     if not dry_run:
         added = store.keep_posts(conn, posts)
-        print(f"{added} of them the store had not seen; it holds "
+        print(f"{added} of them the store had not seen; it contains "
               f"{store.post_count(conn)} posts and "
               f"{store.thread_count(conn)} conversations")
 
     if not dry_run and not from_store:
         keep_images(conn, did, pds)
 
-    # Every page written this run shows the pictures the store holds.
+    # Every page written this run shows the pictures the store contains.
     render.use_kept_images(store.kept_images(conn))
 
     # The pages are written from the store, so a post deleted from the account
@@ -375,7 +375,7 @@ def main():
                         help="stop after this many seconds and say what is left")
     parser.add_argument("--from-store", dest="from_store", action="store_true",
                         help="write the pages from what the store already "
-                             "holds, reaching no account")
+                             "contains, reaching no account")
     args = parser.parse_args()
     start = (datetime.strptime(args.start_from, "%Y-%m-%d").date()
              if args.start_from else None)

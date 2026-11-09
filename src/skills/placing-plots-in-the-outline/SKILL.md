@@ -27,6 +27,13 @@ note on Dan Wells' lectures, `seven_point_story.md`.
 
 - **Put a plot on the outline of the smallest tier that contains it from first
   beat to last** — a book, a cycle of books, the series.
+- **Let a book or cycle plot carry seed beats in earlier books, and keep its
+  tier.** This is the one exception to the bullet above. A seed sets the plot
+  up — a first meeting, a glimpse, a thing put in place — and explores
+  nothing: it moves none of the plot's questions and is no try, turn or
+  pinch. The sheet tags each seed with its book, as "(book 2)". A beat in an
+  earlier book that explores the plot is no seed, and the plot goes to the
+  smallest tier that contains every beat that explores it.
 - **Keep a beat in the sheet of the plot it moves, tagged with its book**, so a
   cycle plot's book 1 beats stay in the cycle sheet as "(book 1)".
 - **Treat the tiers as parallels.** A plot that recurs at series, cycle and

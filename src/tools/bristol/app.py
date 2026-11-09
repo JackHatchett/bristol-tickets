@@ -26,7 +26,7 @@ import payload  # noqa: E402  (bristol-local; the tree a built app carries)
 
 
 def _project_root() -> Path | None:
-    """The project root: the nearest ancestor holding src/app.md, else the one
+    """The project root: the nearest ancestor containing src/app.md, else the one
     the instance pointer names, else None.
 
     Located by marker rather than by folder name, so the install works whatever
@@ -70,7 +70,7 @@ def _discover_db() -> Path | None:
         if matches:
             return matches[0]
 
-    # 3. Legacy: a git-ignored one-line file next to app.py holding an
+    # 3. Legacy: a git-ignored one-line file next to app.py containing an
     #    absolute path, bundled into older .app builds.
     local_pointer = Path(__file__).resolve().parent / "tickets_db.local"
     if local_pointer.exists():

@@ -4,7 +4,7 @@ by itself.
 
 A job installed here is a program moving files: nothing starts a model and
 nothing costs anything per run. The schedule is the operating system's own — a
-launch agent on macOS, a cron line elsewhere — and this module holds the shape
+launch agent on macOS, a cron line elsewhere — and this module contains the shape
 of both so that two daily jobs are two sets of arguments rather than two scripts
 that drift apart.
 

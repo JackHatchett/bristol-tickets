@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """skills.py — install, list and load Agent Skills.
 
-A skill is a directory holding a SKILL.md whose YAML frontmatter carries `name`
+A skill is a directory containing a SKILL.md whose YAML frontmatter carries `name`
 and `description`, per the Agent Skills specification
-(github.com/agentskills/agentskills). Two roots hold them:
+(github.com/agentskills/agentskills). Two roots contain them:
 
     native      src/skills/ in this repository — Bristol's own converted
                 procedures, published with the code.
@@ -18,7 +18,7 @@ An imported skill lands in `<install_dir>/<name>/` and is listed and loadable at
 once. `audit` prints every script it carries. Nothing here executes a skill's
 code.
 
-An installed skill carries a `.origin.json` beside its SKILL.md holding the
+An installed skill carries a `.origin.json` beside its SKILL.md containing the
 repository, the path inside it, the resolved commit and the licence found, so
 `list` can name where a skill came from and `audit` can answer both questions
 without a second lookup. A source stating no licence records that as absent.
@@ -408,7 +408,7 @@ def cmd_list(args) -> int:
 # ---------------------------------------------------------------------------
 #
 # One skill, three facts a reader has to be told rather than left to infer:
-# where it came from, what is inside it, and which agents hold it. Every surface
+# where it came from, what is inside it, and which agents have it. Every surface
 # that shows a skill says them in these words, so the app, a detail view and an
 # import report never teach the same fact twice.
 
@@ -518,8 +518,8 @@ def subtitle_phrase(fields: dict) -> str:
 
 
 def holders_phrase(holders: list[str]) -> str:
-    """Which agents hold a skill, including when the answer is none."""
-    return "Held by " + (", ".join(holders) if holders else "no agent")
+    """Which agents have a skill, including when the answer is none."""
+    return "Attached to " + (", ".join(holders) if holders else "no agent")
 
 
 def _skill_record(skill_dir: Path, root_name: str) -> dict:
@@ -630,7 +630,7 @@ def resolve_address(address: str) -> tuple[str, str, str | None]:
     The forms a person has in the clipboard are what a repository host shows
     while looking at a folder or a file:
     `https://host/<owner>/<repo>/tree/<ref>/<path>` and the `blob` form ending
-    at a file, whose containing directory is what holds the skill.
+    at a file, whose containing directory is what contains the skill.
     """
     trimmed = address.rstrip("/")
     if "://" not in trimmed:
@@ -712,7 +712,7 @@ def cmd_install(args) -> int:
         source = clone / path
         if not (source / "SKILL.md").is_file():
             where = path or "The top level of the repository"
-            print(f"{where} holds no SKILL.md in {repo}. Open the skill's own "
+            print(f"{where} contains no SKILL.md in {repo}. Open the skill's own "
                   f"folder and paste that address.", file=sys.stderr)
             return 1
         name = args.name or read_frontmatter(source / "SKILL.md").get("name") or source.name
@@ -985,7 +985,7 @@ def cmd_convert(args) -> int:
 
 def carried_scanners() -> Path | None:
     """The scanners the downloaded app carries, or None outside the app, where
-    the interpreter's own packages hold them."""
+    the interpreter's own packages contain them."""
     here = Path(sys.executable).resolve().parent
     if here.name != "MacOS":
         return None
@@ -1215,7 +1215,7 @@ def cmd_package(args) -> int:
 
     fields = read_frontmatter(skill_dir / "SKILL.md")
     print(f"Packaged at {archive}")
-    print(f"Root of the archive: {args.name}/, holding {_spell(len(inventory))} "
+    print(f"Root of the archive: {args.name}/, containing {_spell(len(inventory))} "
           f"file{'' if len(inventory) == 1 else 's'}.")
     if record:
         print(f"Written by {record.get('repo', ABSENT)} at "
@@ -1256,7 +1256,7 @@ def cmd_remove(args) -> int:
               f"editing the repository, not from here.", file=sys.stderr)
         return 1
     # The directory goes first: a detachment recorded against a skill still on
-    # disk is a skill nobody holds, which is recoverable, and the reverse is an
+    # disk is a skill no agent has, which is recoverable, and the reverse is an
     # attachment naming nothing.
     try:
         shutil.rmtree(skill_dir)

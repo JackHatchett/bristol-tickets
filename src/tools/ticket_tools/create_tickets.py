@@ -28,7 +28,7 @@ import data_paths  # noqa: E402  (the shared declared-path resolver)
 
 
 def _project_root() -> Path:
-    """The project root: the nearest ancestor holding src/app.md.
+    """The project root: the nearest ancestor containing src/app.md.
 
     Located by marker rather than by folder name, so the install works whatever
     the user named the folder they cloned into.
@@ -37,7 +37,7 @@ def _project_root() -> Path:
         if (parent / "src" / "app.md").is_file():
             return parent
     raise SystemExit(
-        "no project root above this file (no ancestor holds src/app.md)"
+        "no project root above this file (no ancestor contains src/app.md)"
     )
 
 
@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS issue_log (
 
 
 -- task_event — the mechanical change log: one row per changed task field,
--- holding the field, its new value, the actor and an ISO timestamp. Written by
+-- containing the field, its new value, the actor and an ISO timestamp. Written by
 -- triggers in each writing connection's TEMP schema, in a fixed grammar, so no
 -- agent or person ever composes an entry. Title and description changes record
 -- only that they changed. Read by the Bristol Tickets Log pane, alongside
@@ -284,7 +284,7 @@ def migrate(conn: sqlite3.Connection) -> None:
 
     Every step is idempotent and non-destructive to content, so this is safe to
     run on every connection. Bristol Tickets carries its own copy in
-    ui/schema_guard.py — the two clients each hold their own DB logic so
+    ui/schema_guard.py — the two clients each keep their own DB logic so
     neither package depends on the other.
     """
     _ensure_link_dep_type(conn)

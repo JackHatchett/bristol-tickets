@@ -17,7 +17,7 @@ What an agent may do there is its `notebook_access`:
 - **read_all and write_all reach the whole notebook**, attached or not.
 - **per_folder reaches each attached folder as `folders` says**, and a folder
   with no entry is hidden. A folder attached inside another takes its own
-  setting for its own subtree; the deepest attached folder holding a path
+  setting for its own subtree; the deepest attached folder containing a path
   decides it.
 - **`folders` is kept while the mode is read_all or write_all**, so returning to
   per_folder brings every choice back.
@@ -109,7 +109,7 @@ def effective(entry, folders: list[str]) -> dict[str, str]:
 
 def may(entry, folders: list[str], relative: str) -> str:
     """read, write or hide for one path inside the notebook, written from the
-    notebook down: the deepest attached folder holding it decides."""
+    notebook down: the deepest attached folder containing it decides."""
     access = normalised(entry, folders)
     if access["mode"] == "read_all":
         return "read"
@@ -205,7 +205,7 @@ def set_access(slug: str, mode: str, folders: dict[str, str] | None,
 def migrate(data: dict | None = None) -> list[str]:
     """Carry a configuration from zones to folders. Returns what it changed.
 
-    Attaches every top-level folder the notebook holds where none is attached
+    Attaches every top-level folder the notebook contains where none is attached
     yet, so agents keep what they reached. Each agent's zones become per-folder
     choices: a writable zone or the archive it may move into is write, any other
     folder is read where it read the notebook and hidden where it did not. A

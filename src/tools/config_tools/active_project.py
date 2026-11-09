@@ -17,7 +17,7 @@ open, and the session asks which folder is meant.
 
 When the user says he is working the other project, the session moves with
 `--set`, which writes `agents.<slug>.active_project` into the git-ignored
-config, so the choice holds for later sessions and no tracked file changes.
+config, so the choice stays for later sessions and no tracked file changes.
 
 CLI
 ---

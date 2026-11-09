@@ -2,7 +2,7 @@
 """
 dashboard_data.py — the career dashboard's data, read from personal.db.
 
-Writes one JSON document holding what the dashboard draws from the database:
+Writes one JSON document containing what the dashboard draws from the database:
 each friend with their open asks and the introductions running through them,
 and the applications at interview stage. It reads and never writes the
 database; the JSON is a generated view, like the xlsx snapshots.

@@ -2,7 +2,7 @@
 
 The rule has three clauses. Keep every post on a path from the thread's root
 down to one of the account's own posts, so a conversation joined late still
-arrives with the context that led to it. Drop every branch holding none of
+arrives with the context that led to it. Drop every branch containing none of
 them, so a popular thread does not bury the exchange that happened. Keep a
 bounded number of posts that came after the account's last word, so a thread
 that keeps growing does not grow the page with it.
@@ -98,7 +98,7 @@ def solo_from_record(record, author):
 
     A post whose conversation was never kept — a reply to a thread the account
     can no longer fetch — still belongs on its day. It is shown as what the
-    store actually holds: the post's own words, and nothing implying replies
+    store actually contains: the post's own words, and nothing implying replies
     that cannot be shown.
     """
     value = record.get("value") or {}
@@ -267,14 +267,14 @@ def without(root, dropped):
 
     A post that goes leaves no placeholder and no gap in the shape: whatever
     answered it answers what it was answering instead. What stays is every
-    branch still holding one of the account's posts, and whatever was written
+    branch still containing one of the account's posts, and whatever was written
     under one of them, which is the tail the stored conversation was already
     cut back to. A conversation holding none of the account's posts is no
     longer a section, and the answer is None.
 
     The one post that cannot simply go is the one the whole conversation hangs
     from. Where that is the account's own and something under it stays, it
-    holds its place as the marker for a post that is not there, the same
+    keeps its place as the marker for a post that is not there, the same
     marker a post deleted by its author leaves.
     """
     def reaches(node):

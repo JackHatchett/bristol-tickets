@@ -476,7 +476,7 @@ def _recover_closed_at_from_the_log(conn: sqlite3.Connection) -> None:
 
     closed_at means the moment the work finished, and some cards carry the
     moment they were archived instead — a card finished on the 3rd and archived
-    on the 30th measuring its lead time to the 30th. The change log holds the
+    on the 30th measuring its lead time to the 30th. The change log contains the
     real one: the status row that reached `done`.
     Every card whose log carries one is set back to it, taking the last such row
     at or before the card was archived, since a card reopened and finished again

@@ -249,7 +249,7 @@ class SettingsTab(QWidget):
         clear_row.addStretch(1)
 
         # Where things are. Each button opens the window that repoints them,
-        # and carries the missing mark while anything it holds is not on disk.
+        # and carries the missing mark while anything it contains is not on disk.
         self.notebook_btn = QPushButton("Notebook…")
         self.notebook_btn.clicked.connect(
             lambda: self._open_folders(NotebookDialog))
@@ -448,7 +448,7 @@ class SettingsTab(QWidget):
     def _preview_themes(self, theme: str, collection: dict,
                         half: str | None = None) -> None:
         """Draw the running app in a theme the manage-themes window is still
-        holding, in the half it is showing.
+        editing, in the half it is showing.
 
         The half wins over the stored mode while that window is open, so the
         colours being edited are the colours on the board. Closing it draws the

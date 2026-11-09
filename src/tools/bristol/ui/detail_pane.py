@@ -280,7 +280,7 @@ class DetailPane(QWidget):
         self._attr_grid.setColumnStretch(1, 1)
 
     def _fit(self, view: QTextEdit, low_lines: int, high_lines: int) -> None:
-        """Size a read-only view to what it holds, within a bound: at least a
+        """Size a read-only view to what it contains, within a bound: at least a
         few lines so the section reads as present, at most a screenful so a long
         one scrolls inside its own field instead of pushing the log away.
 

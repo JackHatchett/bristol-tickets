@@ -24,7 +24,7 @@ Path resolution
 A declared path is one of four things:
 
     starting with @                a reference: `@<dotted.key>[/sub/path]`
-                                   resolves as the value that key holds, with
+                                   resolves as the value that key contains, with
                                    the sub-path appended
     absolute, or starting with ~   used as written, with ~ expanded
     starting with the notebook's   resolved inside the Markdown notebook's
@@ -84,7 +84,7 @@ DEFAULT_INSTANCE = "default"
 
 
 def project_root() -> Path:
-    """The project root: the nearest ancestor holding src/app.md.
+    """The project root: the nearest ancestor containing src/app.md.
 
     Located by marker rather than by folder name, so the install works whatever
     the user named the folder they cloned into.
@@ -93,7 +93,7 @@ def project_root() -> Path:
         if (parent / "src" / "app.md").is_file():
             return parent
     raise SystemExit(
-        "no project root above this file (no ancestor holds src/app.md)"
+        "no project root above this file (no ancestor contains src/app.md)"
     )
 
 
@@ -188,7 +188,7 @@ def dereference(value: str, _depth: int = 0) -> str:
     """The declared path a reference stands for, followed to its owning key.
 
     `@bristol_data.folders.logs/applications_snapshots` is the value
-    `bristol_data.folders.logs` holds with `/applications_snapshots` after it.
+    `bristol_data.folders.logs` contains with `/applications_snapshots` after it.
     A value that is not a reference comes back unchanged.
     """
     text = str(value).strip()
@@ -201,9 +201,9 @@ def dereference(value: str, _depth: int = 0) -> str:
         target = read_config.get(key)
     except KeyError:
         raise ValueError(f"data_paths: {text} refers to {key}, which config "
-                         f"does not hold") from None
+                         f"does not contain") from None
     if not isinstance(target, str) or not target.strip():
-        raise ValueError(f"data_paths: {text} refers to {key}, which holds no path")
+        raise ValueError(f"data_paths: {text} refers to {key}, which contains no path")
     base = dereference(target, _depth + 1).rstrip("/")
     return f"{base}/{rest}" if rest else base
 
@@ -295,7 +295,7 @@ def folder_grant(entry) -> dict | None:
     """One entry of `key_data_paths`, as a declared folder and its access.
 
     An entry written before access was recorded is a bare string, and it reads
-    as `write`: the key held the folders an agent owned, and owning one is
+    as `write`: the key listed the folders an agent owned, and owning one is
     writing in it. An entry naming an access this build does not know reads the
     same way, so a value from a later build never silently revokes a grant.
     """
@@ -352,7 +352,7 @@ def env_value(value) -> str:
 def agent_env(slug: str) -> dict[str, str]:
     """The environment an agent's tools expect, every reference resolved.
 
-    A reference whose key config no longer holds is left out, so the tool that
+    A reference whose key config no longer contains is left out, so the tool that
     reads the variable falls back to its own default.
     """
     env = read_config.get(f"agents.{slug}.env", {}) or {}

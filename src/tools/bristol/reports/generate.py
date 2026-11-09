@@ -234,7 +234,7 @@ def _select_ids(conn, args):
         return [int(part) for part in args.ids.replace(",", " ").split()]
     if args.last_batch:
         # The cards that left the board together: the most recent archival
-        # moment the change log holds, and everything archived within the same
+        # moment the change log contains, and everything archived within the same
         # second. closed_at is not what says this — it is when a card finished,
         # which across one batch is many different moments.
         row = conn.execute(

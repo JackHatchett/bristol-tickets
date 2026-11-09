@@ -58,14 +58,14 @@ SHELVED_TAG = "Shelved"
 UNSHELVED_TAG = "Not shelved"
 SIGNED_TAG = "Signed copy"
 
-# The library is not "every book item in Zotero". Zotero also holds the
+# The library is not "every book item in Zotero". Zotero also contains the
 # aspirational reading-list collections — ~1,700 titles the user has not read
 # and does not own — and counting those as "unread library" would redefine
 # every metric the snapshot has ever reported. An item belongs to the LIBRARY
 # iff it is in the read collection or carries an ownership tag; a list-only
 # title has neither.
 #
-# Item types: the library is not all `book` either. A magazine is held as a
+# Item types: the library is not all `book` either. A magazine is stored as a
 # `magazineArticle`, so LIBRARY_TYPES names every type the library counts.
 LIBRARY_TYPES = ("book", "magazineArticle")
 
@@ -113,7 +113,7 @@ def _parse_extra(extra: str | None) -> dict:
 
 
 def read_books(conn=None) -> list[dict]:
-    """Every book Zotero holds, as snapshot rows. Pass a connection to reuse
+    """Every book Zotero contains, as snapshot rows. Pass a connection to reuse
     one; otherwise a private copy is made and cleaned up."""
     if conn is None:
         with open_snapshot() as c:

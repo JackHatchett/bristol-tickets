@@ -8,7 +8,7 @@ uses, so the app and a session cannot disagree. Writing goes through
 the tools that own each part — so an agent made here and one made at the command
 line are the same object.
 
-The form holds every property an agent has and nothing else, and all of it is
+The form contains every property an agent has and nothing else, and all of it is
 editable but the name of an agent that already exists, which is what its charter
 file and its config key are named after.
 
@@ -18,10 +18,10 @@ typed, and the picked path is turned back into the spelling config stores by
 directions. A folder carries the access it is granted beside it, so adding a
 folder and deciding what may be done in it are one gesture. A notebook zone is a tick box per zone. An environment variable is a
 name beside a value. A key this build has no control for keeps its own field,
-named after the key and holding the JSON it holds, so nothing is lost and
+named after the key and containing the JSON it contains, so nothing is lost and
 nothing is guessed at.
 
-The charter is one Markdown editor holding the whole document. It is not
+The charter is one Markdown editor containing the whole document. It is not
 parsed: a charter is prose somebody wrote, and shredding it into fields would
 mean only the ones this app generated could be edited.
 """
@@ -326,7 +326,7 @@ class PathList(QWidget):
         self.list = QListWidget()
         # Its own name rather than the search list's: that one pads every
         # item for text a delegate draws, and a row here is a widget, which
-        # such padding shrinks out of the item holding it.
+        # such padding shrinks out of the item containing it.
         self.list.setObjectName("pathRows")
         self.list.setSelectionMode(QListWidget.NoSelection)
         self.list.setMinimumHeight(LAYOUT["path_list_min_h"])
@@ -390,7 +390,7 @@ class PathList(QWidget):
         # A row is as tall as its own contents once the stylesheet is on them,
         # and never shorter than one line of them: an unpolished widget reports
         # a height its padding has not reached yet, and a list item takes the
-        # height it is given rather than growing to what it holds.
+        # height it is given rather than growing to what it contains.
         holder.ensurePolished()
         item = QListWidgetItem()
         item.setSizeHint(holder.sizeHint().expandedTo(
@@ -528,7 +528,7 @@ class EnvList(QWidget):
 class KeyFields(QWidget):
     """One field per config key this build has no control of its own for.
 
-    Each is labelled with the key it holds and holds that key's value as the
+    Each is labelled with the key it contains and contains that key's value as the
     JSON it is. A flat list of strings would be the friendlier control, and it
     would be the wrong one: these values are objects, so a control that could
     only add a line would either refuse what is there or quietly flatten it.
@@ -556,7 +556,7 @@ class KeyFields(QWidget):
         self.setVisible(bool(extra))
 
     def values(self) -> dict:
-        """What the fields hold. Raises ValueError naming the key that is not
+        """What the fields contain. Raises ValueError naming the key that is not
         JSON, so a refusal can say which one."""
         out = {}
         for key, field in self._fields.items():
@@ -776,7 +776,7 @@ class AgentDialog(QDialog):
     def _charter_touched(self) -> bool:
         return self.charter.toPlainText() != getattr(self, "_skeleton", "")
 
-    # ----- what the form holds, and what it refuses -------------------------
+    # ----- what the form contains, and what it refuses -------------------------
 
     def values(self) -> dict:
         checked = []

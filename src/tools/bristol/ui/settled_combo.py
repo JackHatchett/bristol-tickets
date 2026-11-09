@@ -1,6 +1,6 @@
 """settled_combo.py — loading a picker, and the one that resists a stray gesture.
 
-A plain QComboBox takes the scroll wheel and the arrow keys whenever it holds
+A plain QComboBox takes the scroll wheel and the arrow keys whenever it contains
 focus, so a gesture aimed past it moves the value and every listener fires. A
 control whose value decides what a whole session means cannot move that way.
 This one moves when its list is open and a row is chosen, and at no other time.

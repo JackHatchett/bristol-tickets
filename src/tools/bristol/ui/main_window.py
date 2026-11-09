@@ -239,7 +239,7 @@ class MainWindow(QMainWindow):
         backlog_widget = QWidget()
         backlog_outer = QVBoxLayout(backlog_widget)
         # The board's filter narrows this list too, and the control that sets it
-        # is on the Board. A view that is holding cards back says so.
+        # is on the Board. A view that is leaving cards out says so.
         self.backlog_filter_note = QLabel()
         self.backlog_filter_note.setObjectName("formCaption")
         backlog_outer.addWidget(self.backlog_filter_note)
@@ -294,7 +294,7 @@ class MainWindow(QMainWindow):
         board_outer.setContentsMargins(0, 0, 0, 0)
         board_outer.setSpacing(space("lg"))
 
-        # One control row above the columns, holding what applies to the whole
+        # One control row above the columns, containing what applies to the whole
         # board and nothing beyond it. A single card in any column is created
         # from the master Create button, not from a per-column control. What
         # narrows the board reads left to right — the button, then what it is
@@ -360,7 +360,7 @@ class MainWindow(QMainWindow):
         main_splitter.addWidget(self.detail_pane)
 
         # Both panes are elastic (no max width — the user can widen the pane as
-        # far as they like). The pane opens at the width it last held, and
+        # far as they like). The pane opens at the width it last had, and
         # collapsed if that is how it was left; both are stored in the
         # configuration and written back as the user moves things.
         main_splitter.setStretchFactor(0, 1)
@@ -380,7 +380,7 @@ class MainWindow(QMainWindow):
             [LAYOUT["window_w"] - self._detail_width, self._detail_width])
         self._main_splitter = main_splitter
 
-        # Geometry saves are debounced, and held off entirely until the window
+        # Geometry saves are debounced, and put off entirely until the window
         # finishes constructing, so building the window writes nothing.
         self._geometry_ready = False
         self._splitter_save_timer = QTimer(self)
@@ -454,7 +454,7 @@ class MainWindow(QMainWindow):
 
     def _set_pane_collapsed(self, collapsed: bool, save: bool = True) -> None:
         """Collapse the pane to the window edge — the columns reflow into the
-        reclaimed width — or bring it back at the width it last held."""
+        reclaimed width — or bring it back at the width it last had."""
         if collapsed:
             sizes = self._main_splitter.sizes()
             if len(sizes) > 1 and sizes[1] > 0:
@@ -726,7 +726,7 @@ class MainWindow(QMainWindow):
             self.detail_pane.refresh_theme()
 
     def _repaint_cards(self) -> None:
-        """Update every viewport holding delegate-painted cards."""
+        """Update every viewport containing delegate-painted cards."""
         for col in getattr(self, "columns", {}).values():
             col.list_widget.viewport().update()
         if hasattr(self, "backlog_column"):

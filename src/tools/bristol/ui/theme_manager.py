@@ -58,7 +58,7 @@ from .theme import (
 # left empty.
 NEW_THEME_NAME = "New Theme"
 
-# The two halves a theme can hold, as the switch offers them. Follow System is
+# The two halves a theme can contain, as the switch offers them. Follow System is
 # not among them: this window edits palettes, and a palette is one half or the
 # other whatever the OS is doing.
 HALF_CHOICES: list[tuple[str, str]] = [
@@ -212,7 +212,7 @@ class ThemeManagerDialog(QDialog):
     # ----- what was built --------------------------------------------------
 
     def themes(self) -> dict[str, dict]:
-        """The collection as the window now holds it, the selected theme's
+        """The collection as the window now contains it, the selected theme's
         unsaved edits included."""
         collection = {theme_id: dict(record)
                       for theme_id, record in self._collection.items()}
@@ -391,7 +391,7 @@ class ThemeManagerDialog(QDialog):
         return ""
 
     def complaints(self) -> list[str]:
-        """Everything the window has to say about what it is holding."""
+        """Everything the window has to say about what it is containing."""
         lines = []
         problem = self.name_problem()
         if problem:

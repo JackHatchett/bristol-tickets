@@ -138,7 +138,7 @@ def localise(value, instance: str, notebook: str | None):
 
 
 def placeholders(entry: dict, prefix: str = "") -> list[str]:
-    """Every dotted key still holding a value the importer has to supply."""
+    """Every dotted key still containing a value the importer has to supply."""
     out: list[str] = []
     if isinstance(entry, dict):
         for key, value in entry.items():

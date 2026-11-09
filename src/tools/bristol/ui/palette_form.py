@@ -2,13 +2,13 @@
 
 Every colour a theme defines gets a row — a caption, a block of the colour
 itself, and the hex value — so a palette is edited in one place rather than
-through a picker at a time. The manage-themes dialog is what holds this form;
+through a picker at a time. The manage-themes dialog is what contains this form;
 what the rows are and what each key colours is ``ui/README.md``.
 
-Two things happen as a row is edited. The block repaints, and whoever holds the
+Two things happen as a row is edited. The block repaints, and whoever owns the
 form is told, so the running app can re-theme and the reading of what is
 unreadable can be taken again. The form itself never refuses a value and never
-saves one: it holds what the rows say, and ``complaints()`` states what stands
+saves one: it contains what the rows say, and ``complaints()`` states what stands
 between that and a palette that works.
 """
 
@@ -41,7 +41,7 @@ from .theme import (
 
 
 def is_colour(text: str) -> bool:
-    """True for a hex colour a palette can hold: ``#RRGGBB``, or ``#AARRGGBB``
+    """True for a hex colour a palette can contain: ``#RRGGBB``, or ``#AARRGGBB``
     for the one key that carries its own alpha."""
     body = text.strip()
     if not body.startswith("#"):
@@ -85,7 +85,7 @@ class ColourRow:
     # ----- the value -------------------------------------------------------
 
     def value(self) -> str:
-        """What the field holds, whether or not it is a colour yet."""
+        """What the field contains, whether or not it is a colour yet."""
         return self.hex.text().strip()
 
     def valid(self) -> bool:
@@ -136,9 +136,9 @@ class ColourRow:
 
 
 class PaletteForm(QWidget):
-    """A scrolling form over one palette. ``palette()`` is what the rows hold.
+    """A scrolling form over one palette. ``palette()`` is what the rows contain.
 
-    ``on_change`` is called every time a row is edited, so whoever holds the
+    ``on_change`` is called every time a row is edited, so whoever owns the
     form can re-theme the running app and re-read what is unreadable. Seating a
     palette with ``set_palette()`` never calls it: showing a stored value is not
     someone editing one.
@@ -190,10 +190,10 @@ class PaletteForm(QWidget):
 
         self._seating = False
 
-    # ----- what the rows hold ----------------------------------------------
+    # ----- what the rows contain ----------------------------------------------
 
     def palette(self) -> dict[str, str]:
-        """Every row that holds a colour. A row that does not is left out
+        """Every row that contains a colour. A row that does not is left out
         rather than stored empty."""
         return {key: row.value() for key, row in self.rows.items()
                 if row.valid()}

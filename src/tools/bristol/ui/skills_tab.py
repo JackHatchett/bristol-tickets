@@ -9,9 +9,9 @@ way.
 
 The page reads like the Backlog: the row that narrows the list at the top, with
 New Skill at its right, and each skill as a card under it — its name in Title
-Case, its subtitle, where it came from and which agents hold it. A card opens
+Case, its subtitle, where it came from and which agents have it. A card opens
 the skill's own window, and everything that changes a skill happens there:
-ticking the agents that hold it, and removing a downloaded one.
+ticking the agents that have it, and removing a downloaded one.
 
 New Skill opens a window offering the two ways a skill arrives: asking
 chief_of_staff for one, which files a card on the board, and importing one from
@@ -253,7 +253,7 @@ class NewSkillDialog(QDialog):
 
 class SkillDialog(QDialog):
     """One skill, whole: what it is, where it came from, what is in it, which
-    agents hold it, and its own text.
+    agents have it, and its own text.
 
     The tick boxes are the only thing here that changes anything, and they write
     through the same loader commands the command line calls. Everything else is
@@ -312,7 +312,7 @@ class SkillDialog(QDialog):
             column.addWidget(self.source_btn, 0, Qt.AlignLeft)
 
         column.addSpacing(space("md"))
-        column.addWidget(self._section("Held By"))
+        column.addWidget(self._section("Attached To"))
         self.boxes: dict[str, QCheckBox] = {}
         held = set(record.get("holders", []))
         for slug in agents:
@@ -365,7 +365,7 @@ class SkillDialog(QDialog):
         """Delete a downloaded skill, after a confirmation that says what goes
         with it."""
         record = self._record
-        held = (f" It is held by {', '.join(record['holders'])}, and removing "
+        held = (f" It is attached to {', '.join(record['holders'])}, and removing "
                 f"it detaches it." if record.get("holders") else "")
         if not dialogs.confirm(
             self, "Remove This Skill?",
@@ -535,7 +535,7 @@ class SkillsTab(QWidget):
 
     def _add_skill(self, record: dict) -> None:
         """One card: the name, the subtitle, where it came from, and a pill per
-        agent holding it."""
+        agent attached to it."""
         meta = "   ·   ".join(part for part in (
             record["said_origin"], record.get("said_scan", "")) if part)
         item = QListWidgetItem()
@@ -559,7 +559,7 @@ class SkillsTab(QWidget):
 
     def _new_skill(self) -> None:
         """Ask for a skill or import one. A skill that lands opens in its own
-        window, where the agents that should hold it are ticked; a request that
+        window, where the agents that should have it are ticked; a request that
         became a card shows on the board."""
         before = {s["name"] for s in self._listing.get("skills", [])}
         dialog = NewSkillDialog(self, self._run, self._file_request)

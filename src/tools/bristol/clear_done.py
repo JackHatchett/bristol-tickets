@@ -5,7 +5,7 @@ creations to now.
 A project card otherwise leaves Done only when its epic closes
 (`epic_closure.py`). Clearing Done is the user's second period boundary, for an
 effort still open or never closed. An epic closed afterwards still reports
-every finished card it holds, archived here or not, because its closure reads
+every finished card it contains, archived here or not, because its closure reads
 the epic's done cards whatever their tab.
 
 Each card keeps its own `closed_at`; the Archive orders by the change log's

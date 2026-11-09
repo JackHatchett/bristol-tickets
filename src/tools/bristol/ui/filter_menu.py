@@ -53,7 +53,7 @@ EPIC = "epic"
 FINISHED_EPICS = ("completed", "done")
 
 # The option matching cards that carry no epic at all. Stored as None because
-# that is what the column holds.
+# that is what the column contains.
 NO_EPIC_LABEL = "No epic"
 
 # The scope every count is taken over: the Board. It is the view the button
@@ -157,11 +157,11 @@ def _rows(conn: sqlite3.Connection, query: str, params=()) -> list:
 
 
 def assignee_options(conn: sqlite3.Connection, state: FilterState) -> list[tuple]:
-    """Every owner the board holds, as ``(value, label)``.
+    """Every owner the board contains, as ``(value, label)``.
 
     ``user`` is offered always, as the owner a card carries when nothing else
     claims it. An option that is ticked is offered even where the board no
-    longer holds a card for it, so it can be un-ticked.
+    longer contains a card for it, so it can be un-ticked.
     """
     present = {row[0] for row in _rows(
         conn, "SELECT DISTINCT COALESCE(assignee, 'user') FROM task "
@@ -175,7 +175,7 @@ def epic_options(conn: sqlite3.Connection, state: FilterState) -> list[tuple]:
     """Every epic in play, as ``(value, label)``, plus the no-epic option.
 
     Order is the epic table's, so the panel reads in the order the board was
-    built. The no-epic option is offered where the board holds a card with no
+    built. The no-epic option is offered where the board contains a card with no
     epic, or where it is already ticked.
     """
     options = [(eid, name) for eid, name, status in _rows(
@@ -263,7 +263,7 @@ class FilterMenu(QWidget):
         self.state = state
         self._rows: list[tuple[str, object, _FacetRow]] = []
 
-        # The popup is a transparent frame holding one panel, so the panel's
+        # The popup is a transparent frame containing one panel, so the panel's
         # rounded corners are drawn against nothing rather than against the
         # square corners of a window.
         self.setAttribute(Qt.WA_TranslucentBackground, True)

@@ -38,7 +38,7 @@ _context = None
 
 
 def certificate_authorities():
-    """One TLS context holding whatever certificate authorities this machine
+    """One TLS context containing whatever certificate authorities this machine
     has, from the first source that offers any.
 
     An interpreter is free to ship without a trust store of its own, and one
@@ -229,7 +229,7 @@ def read_posts(did, pds, since=None, progress=None):
 
 
 def read_records(did, pds, collection, since=None, progress=None):
-    """Every record the account holds in one collection, oldest first."""
+    """Every record the account has in one collection, oldest first."""
     collected = []
     cursor = None
     while True:
@@ -275,7 +275,7 @@ def profile(actor):
 def author_feed(actor, limit=25):
     """What the app view serves for an account, which is what a reader sees.
 
-    The account's own data server is the authority on what it holds; this is
+    The account's own data server is the authority on what it contains; this is
     the authority on what anyone else can still read, and the two can disagree
     for as long as it takes an indexer to catch up.
     """

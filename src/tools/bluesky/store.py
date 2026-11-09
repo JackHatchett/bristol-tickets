@@ -1,15 +1,15 @@
 """The account's own copy of what it posted, and of the conversations it sat in.
 
-Bluesky serves what an account holds now. A page rebuilt from it after a post
+Bluesky serves what an account has now. A page rebuilt from it after a post
 has been deleted loses that post, and loses the conversation around it as well,
 because a thread is fetched through the post that anchors it. This keeps both
 halves on the machine — every post record the account has ever been seen to
-hold, and each pruned conversation as it was last seen whole — and the
+contain, and each pruned conversation as it was last seen whole — and the
 notebook's pages are written from here rather than from the network.
 
 The store only ever gains. A post already kept is refreshed in place and never
-removed. A conversation is replaced only by a newly fetched one holding every
-one of the account's posts the kept copy held, so a thread that comes back
+removed. A conversation is replaced only by a newly fetched one containing every
+one of the account's posts the kept copy contained, so a thread that comes back
 short leaves what is kept alone, whatever made it short.
 """
 
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS other_record (
 );
 """
 
-# A column added to a table a database already holds, which a schema of
+# A column added to a table a database already contains, which a schema of
 # CREATE TABLE IF NOT EXISTS cannot reach.
 ADDED_COLUMNS = {"post": {"delete_sent_at": "TEXT"}}
 
@@ -200,13 +200,13 @@ def keep_posts(conn, records):
 
 
 def post_count(conn):
-    """How many post records the store holds."""
+    """How many post records the store contains."""
     with _LOCK:
         return conn.execute("SELECT COUNT(*) FROM post").fetchone()[0]
 
 
 def thread_count(conn):
-    """How many conversations the store holds."""
+    """How many conversations the store contains."""
     with _LOCK:
         return conn.execute("SELECT COUNT(*) FROM thread").fetchone()[0]
 
@@ -252,7 +252,7 @@ def records_by_day(conn, zone, since=None):
 
 
 def load_thread(conn, root_uri):
-    """One kept conversation, or None where the store has never held it."""
+    """One kept conversation, or None where the store has never contained it."""
     with _LOCK:
         row = conn.execute("SELECT tree FROM thread WHERE root_uri = ?",
                            (root_uri,)).fetchone()
@@ -264,10 +264,10 @@ def load_thread(conn, root_uri):
 def keep_thread(conn, root_uri, tree):
     """One conversation as just fetched, and the one the page is written from.
 
-    A fetched conversation replaces what is kept only where it still holds
-    every one of the account's posts the kept copy held. The answer is then
+    A fetched conversation replaces what is kept only where it still contains
+    every one of the account's posts the kept copy contained. The answer is then
     read back out of the store, so what reaches the page is always what the
-    store holds rather than what the network returned.
+    store contains rather than what the network returned.
     """
     with _LOCK:
         row = conn.execute("SELECT covers FROM thread WHERE root_uri = ?",

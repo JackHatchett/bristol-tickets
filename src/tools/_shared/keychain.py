@@ -32,13 +32,13 @@ def _keyring():
 
 
 def read(service: str, key: str) -> str | None:
-    """The secret, or None where the keychain holds none under that name.
+    """The secret, or None where the keychain has none under that name.
 
     A machine with no keychain at all is a different answer from a keychain
     with nothing in it — a sandbox, a container, a login that has never
     unlocked one — and it stops here rather than being read as an empty
     keychain, which would send the caller to store a secret where nothing can
-    hold it.
+    contain it.
     """
     keyring = _keyring()
     try:
@@ -46,7 +46,7 @@ def read(service: str, key: str) -> str | None:
     except keyring.errors.NoKeyringError as error:
         raise SystemExit(
             f"this machine has no keychain to read {service} / {key} from "
-            f"({error}). Run this on the machine that holds the keychain.")
+            f"({error}). Run this on the machine that has the keychain.")
 
 
 def write(service: str, key: str, value: str) -> None:

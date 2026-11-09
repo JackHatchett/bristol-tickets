@@ -4,7 +4,7 @@ to every constructed language and every main character's name already given.
 
 A language's sound is measured from the words its notes list: the share of
 words ending in a vowel (a vowel and a closing y or w is a vowel ending), the
-share holding a consonant cluster or closing on a consonant, its commonest
+share containing a consonant cluster or closing on a consonant, its commonest
 endings, its initials and its consonants, how many syllables its words run to,
 its stock of syllables, and its letter patterns — how often each letter follows
 each pair. Letter patterns are read as a reader sees the page: a letter carrying
@@ -31,12 +31,12 @@ batch's other familiars, for the same shape: syllable count, a cluster of
 consonant letters, last vowel and closing consonant. The batch's spread of
 syllable counts, formal and familiar, is printed, and read against the shares
 `--formal-shares` and `--familiar-shares` give, such as `2=1/6 3=2/5`: a
-count holding more names than its share of the batch rounds up to is flagged.
+count containing more names than its share of the batch rounds up to is flagged.
 Two main characters' names are too near when they share both their first
 letter and their last; `--character` makes that part of a name's verdict.
 
 Where the notes are is config, `agents.<agent>.sound_check`, the
-key of whichever agent holds it:
+key of whichever agent has it:
 
     {"languages": {"<language>": ["<note>", ...], ...},
      "outlines_dir": "<folder of *_outline.md notes>"}
@@ -368,7 +368,7 @@ def rows_in_note(text: str) -> list[tuple[str, str, str]]:
 
 
 def _settings() -> dict:
-    """The `sound_check` key of whichever agent's config entry holds one."""
+    """The `sound_check` key of whichever agent's config entry has one."""
     import read_config
     for entry in (read_config.get("agents", None) or {}).values():
         if isinstance(entry, dict) and entry.get("sound_check"):
@@ -478,7 +478,7 @@ def parse_shares(items: list[str] | None) -> dict[int, Fraction]:
 
 def spread(names: list[str], shares: dict[int, Fraction]) -> dict:
     """How many of the names run to each syllable count, and the counts
-    holding more than their share of the batch rounds up to."""
+    containing more than their share of the batch rounds up to."""
     counts = Counter(len(syllables(n)) for n in names)
     n = len(names)
     crowded = {}
