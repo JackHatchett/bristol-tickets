@@ -10,7 +10,7 @@ no runtime state.** Style contract:
 ```markdown
 # {{Folder name}}
 
-{{One or two sentences: what this folder holds and which conceptual layer it
+{{One or two sentences: what this folder contains and which conceptual layer it
 belongs to — runtime, config, data, tools, skills, templates.}}
 
 ## What belongs here

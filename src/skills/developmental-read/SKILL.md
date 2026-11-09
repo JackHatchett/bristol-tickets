@@ -1,6 +1,6 @@
 ---
 name: developmental-read
-description: Reads a finished draft for its structure the way a reader meets it - where attention holds and drifts, what confuses, which promises go unpaid - and reports back without rewriting a word, including a read by a second model that knows nothing of the project. Use when the author wants a draft read for what the story does rather than how the sentences run.
+description: Reads a finished draft for its structure the way a reader meets it - where attention stays and drifts, what confuses, which promises go unpaid - and reports back without rewriting a word, including a read by a second model that knows nothing of the project. Use when the author wants a draft read for what the story does rather than how the sentences run.
 license: MIT
 metadata:
   bristol.kind: playbook
@@ -27,13 +27,13 @@ is `src/skills/prose-drafting/SKILL.md`.
 ## The reads
 
 1. **Zero-context reader test.** Read the raw prose with no lore, outline or
-   reference material in hand: where attention held, where it drifted, what
+   reference material in hand: where attention stayed, where it drifted, what
    confused, what the reader expected next. **Withhold the reference material
    deliberately** — the read is worth having only while it is uncontaminated by
    context the real reader will not have. Where the session has already loaded
    the project, hand this read to the configured second model
    (`src/skills/external-ai-bridge/SKILL.md`); a session cannot unread what it
-   holds.
+   has read.
 2. **Reader critique.** Conversational, essayistic: what lands, what does not,
    where attention drifts, where a promise the prose made goes unpaid, where a
    beat the outline gives is missing from the page. **Directional suggestions,

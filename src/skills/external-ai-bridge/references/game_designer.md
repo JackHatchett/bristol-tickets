@@ -1,6 +1,6 @@
 # Gemini Gem Bridge — game_designer protocol
 
-Specializes `src/skills/external-ai-bridge/SKILL.md`, which holds the six
+Specializes `src/skills/external-ai-bridge/SKILL.md`, which states the six
 common invariants. This file carries only game_designer's delta.
 
 - **Memory model:** persistent KB, manual refresh — a design snapshot uploaded
@@ -14,7 +14,7 @@ common invariants. This file carries only game_designer's delta.
 - **Return format:** a JSON request and return pair in the project's
   `handoffs/requests/` and `handoffs/returns/` folders.
 - **Guardrails cited, never restated:** `src/agent_identities/game_designer.md`
-  holds the hard rules; `src/skills/design-proposals/SKILL.md` is the
+  states the hard rules; `src/skills/design-proposals/SKILL.md` is the
   procedure that files a return.
 
 ## One-time setup, per project

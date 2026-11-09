@@ -18,7 +18,7 @@ and name the files that are not skills at all. The specification is at
 
 ## Preconditions
 
-- **The file holds a procedure, or one agent's specialization of one.**
+- **The file contains a procedure, or one agent's specialization of one.**
   Everything else is out of scope —
   §The mapping.
 - **The file already satisfies the style contract.** A conversion moves a body;
@@ -75,7 +75,7 @@ Two fields are required and carry the whole routing surface.
   characters, lowercase `a-z` and `0-9` and hyphens, no leading or trailing
   hyphen, no consecutive hyphens, identical to the parent directory name.
   Where two source files share a basename, the maintaining agent's slug prefixes
-  both, because one flat directory holds every skill and the name is the
+  both, because one flat directory contains every skill and the name is the
   address.
 - **`description` — what the skill does, then the situations that call for
   it.** The user reads a list of these to decide what each skill is for, and a
@@ -142,10 +142,10 @@ src/skills/
 - **One flat directory per skill.** The specification requires `name` to match
   the parent directory and describes no category level, so the maintaining agent
   lives in `metadata` and never in the path.
-- **`references/` holds what the body would otherwise carry at length** — a
+- **`references/` contains what the body would otherwise carry at length** — a
   protocol's per-agent specializations, a long table, a worked example — one
   level deep from `SKILL.md`.
-- **`assets/` holds templates and other static resources.** `templates/` is a
+- **`assets/` contains templates and other static resources.** `templates/` is a
   client extension rather than a specification directory; do not create one.
 - **`scripts/` stays absent.** Executable behaviour is `src/tools/`.
 - **Create only the directories the skill actually fills.** An empty
@@ -155,7 +155,7 @@ src/skills/
 
 ### Step 1 — Confirm the file is in scope
 
-Read §The mapping. A file that holds neither a procedure nor an archetype is
+Read §The mapping. A file that contains neither a procedure nor an archetype is
 converted as part of another skill or not at all.
 
 ### Step 2 — Create the folder
@@ -244,7 +244,7 @@ result; this lists what differs at the input.
 
 ## Audit
 
-- Every directory under `src/skills/` holds a `SKILL.md` whose `name` equals the
+- Every directory under `src/skills/` contains a `SKILL.md` whose `name` equals the
   directory name.
 - No `SKILL.md` carries a top-level frontmatter key outside `name`,
   `description`, `license`, `compatibility`, `metadata` and `allowed-tools`.

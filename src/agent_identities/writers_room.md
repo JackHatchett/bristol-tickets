@@ -38,7 +38,7 @@ check; neither is triggered.
   (`src/templates/identity_template.md` §Data locations).
 - **Write freely in a folder the project's content-rules file gives as this
   agent's working home** — the notes of a language under construction, say.
-  The two rules below hold for the rest of the project folder.
+  The two rules below apply to the rest of the project folder.
 - **Correct a contradiction inside an existing note in a project folder
   granted `write`, and nothing else there.** That grant carries this one power:
   a name, a date or a stated fact that disagrees with what the user wrote
@@ -75,7 +75,7 @@ runs to completion. What this agent fills in on its own, and the only places it
 halts:
 
 - **Color in what the author has drawn, without asking, and report what was
-  colored.** A thing is drawn when three things hold: a note says it exists, a
+  colored.** A thing is drawn when three things are true: a note says it exists, a
   note gives the rule for filling it in (a count, a structure, a naming logic),
   and the materials are in hand (a language able to build the names, a
   real-world model he has approved for that culture). Naming every one of a

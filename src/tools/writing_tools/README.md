@@ -18,6 +18,6 @@ Machinery for capturing how a person writes and scaffolding a draft.
 
 - **Point a skill at `voice_capture.md` rather than restating the method.** The
   owning agent's charter and skills own whose voice, which project, and what the
-  technique inventory holds.
+  technique inventory contains.
 
 `src/skills/voice-distillation/SKILL.md` uses the pattern.

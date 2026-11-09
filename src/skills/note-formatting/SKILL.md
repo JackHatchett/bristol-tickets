@@ -18,7 +18,7 @@ Which folder of the notebook takes the write, and what happens when the note
 belongs in one the user authors, is `src/skills/notebook-proposal/SKILL.md`.
 What may be changed in a note already there — and what goes to the user first —
 is `src/templates/identity_template.md` §Changing a file that is already there.
-This owns the shape alone, and holds for a single note, a note inside a set, and
+This owns the shape alone, and applies to a single note, a note inside a set, and
 an edit to a note that is already there.
 
 A **hub note** is the one note in a set that links the others and is linked back
@@ -29,7 +29,7 @@ Two boundaries, both stated here so neither has to be guessed at:
 
 - **A skill defining the sections of a particular kind of file wins for those
   sections.** The filename, frontmatter, Title Case, spacing and links below
-  still hold.
+  still apply.
 - **A note the notebook assistant emits from a prompt is
   `src/skills/notebook-prompt-library/SKILL.md` §What a prompt may emit**, which
   takes its shape from the notebook's own templates. This governs what an agent
@@ -38,7 +38,7 @@ Two boundaries, both stated here so neither has to be guessed at:
   section** — `src/tools/personal_db/contacts_due.py` writes it. It is a
   statement about one day rather than an idea with neighbours, and a second run
   that day rewrites it. The filename, the frontmatter, Title Case and the
-  spacing below still hold.
+  spacing below still apply.
 - **A generated daily page carrying someone's own posts is
   `src/skills/bluesky-sync/SKILL.md`**, and three rules here do not reach it.
   Its headings are the handles of the people who wrote the posts, so Title Case
@@ -46,12 +46,12 @@ Two boundaries, both stated here so neither has to be guessed at:
   a day's record rather than an idea with neighbours. It is produced again from
   the source records rather than edited, so a correction goes into what
   generates it. The filename, the frontmatter and the link form below still
-  hold.
+  apply.
 
 ## The file
 
 - **Name the file in snake case** — lowercase, words joined by underscores, no
-  spaces — and name a folder holding a set the same way.
+  spaces — and name a folder containing a set the same way.
 - **Give the note one H1**, and write it for a person: it need not repeat the
   filename.
 
@@ -110,7 +110,7 @@ source_url: https://example.org/the-account-this-note-rests-on
   whose owner writes no particular way takes prose.
 - **The owner's shape governs the body and nothing else.** Where it and a rule
   here disagree, what a section is filled with is his; the filename, the
-  frontmatter, Title Case, the link form and the Related Notes section hold
+  frontmatter, Title Case, the link form and the Related Notes section apply
   whatever the shape is. An agent writing in someone's notebook is not choosing
   between this skill and the person whose notebook it is.
 
@@ -212,10 +212,10 @@ column — a dictionary, a register of names, a list of spent concepts.
 - **A link reads `[[some_filename]]`** → the alias is missing, and the reader
   gets a filename where a title belongs.
 - **An alias no longer matches the H1 after a retitle** → both move together.
-- **A hub section holds a paragraph** → it belongs in the note that section
+- **A hub section contains a paragraph** → it belongs in the note that section
   links to.
 - **A source the text names, cited only at the bottom** → §Links; it takes
-  its link where it is named, and `## Links` holds the sources the text never
+  its link where it is named, and `## Links` lists the sources the text never
   names.
 - **A Related Notes list repeating the body's links** → §Related Notes; only
   the hubs may repeat.

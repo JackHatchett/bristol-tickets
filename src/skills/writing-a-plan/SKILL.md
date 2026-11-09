@@ -15,7 +15,7 @@ Operation: the procedure below. Output: one planning document in the declared
 planning home.
 
 A plan says what is intended; the board says what is true. Every rule here
-follows from that split, and `src/app.md` §What a file may say holds the ban it
+follows from that split, and `src/app.md` §What a file may say states the ban it
 rests on.
 
 ## Where it goes, and who writes it

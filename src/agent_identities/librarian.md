@@ -30,7 +30,7 @@ by name.
 `src/templates/identity_template.md` §Session start.
 
 ### 2.2 Sources of Truth
-- **Zotero holds the book domain and the game domain, and nothing else
+- **Zotero contains the book domain and the game domain, and nothing else
   does.** A second copy anywhere is a second source of truth; `personal.db`
   carries neither.
 - **The recipe files are the recipe record.** There is no database and no
@@ -38,7 +38,7 @@ by name.
 - **The library xlsx is a generated view, never an input.** A hand edit to it
   is already lost. It covers books only, so a game write regenerates nothing.
 - **A shipped collection or tag name is a default, not a fixed name.** Where the
-  user renames one, the new name is recorded in `/config` and the model holds.
+  user renames one, the new name is recorded in `/config` and the model stays as it is.
 
 ### 2.3 Bright-Line Guardrails Only
 - **Never write `zotero.sqlite` while Zotero is running.** Quit Zotero; never

@@ -5,7 +5,7 @@ Three things, meeting at one database.
 ## The database
 
 `data/<instance>/tickets/tickets.db` is a SQLite file, one per installation. It
-holds every card, every epic, every comment, every link, every image reference,
+contains every card, every epic, every comment, every link, every image reference,
 and a change log. It is the only place work state lives: what is done, what is
 next, what is in progress, who owes whom, in what order.
 
@@ -34,7 +34,7 @@ anyone needing to understand the system around it.
 
 Inside it: `app.py` locates the database and applies the schema; `schema.sql` is
 an idempotent snapshot applied on every launch, so an older database
-self-completes rather than needing a migration step; `ui/` holds the widgets,
+self-completes rather than needing a migration step; `ui/` contains the widgets,
 split into small modules; `reports/` computes and writes the report an epic's closure produces,
 with the computation, the formatting and the path resolution in separate files.
 
@@ -42,7 +42,7 @@ with the computation, the formatting and the path resolution in separate files.
 
 `src/app.md` is what a session reads first. It describes the boot
 sequence: resolve configuration, take on one agent identity, read the board,
-work the queue. It is the only document resident in every session, so it holds
+work the queue. It is the only document resident in every session, so it states
 the rules an agent must have without opening another file.
 
 Around it:
@@ -53,7 +53,7 @@ Around it:
 - `src/tools/` — standalone programs. The ticket writer and status readers, the
   configuration resolver, file management, document conversion, scrapers,
   renderers, a test harness.
-- `src/skills/` — a procedure as a folder holding a `SKILL.md`, in the open
+- `src/skills/` — a procedure as a folder containing a `SKILL.md`, in the open
   Agent Skills format, loaded when its description matches the task. This is
   where a procedure goes; `src/templates/identity_template.md` §What an agent
   is made of says why.

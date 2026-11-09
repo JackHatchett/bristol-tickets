@@ -1,11 +1,11 @@
 # Personal Database
 
-One SQLite `personal.db` holding the personal-tracking domains that have no
+One SQLite `personal.db` containing the personal-tracking domains that have no
 better home, each rendering an xlsx snapshot. For a domain stored here the
 database is the source of truth and the xlsx is a generated view.
 
 - **A domain with a real application behind it lives in that application.**
-  Books live in Zotero, so this database holds no books tables and
+  Books live in Zotero, so this database contains no books tables and
   `render_snapshot.py --domain books` reads `tools/zotero/zotero_export.py`
   instead. A parallel copy here would be a second source of truth that drifts.
 - **The `domains` registry says which source a domain uses.** Registering a
@@ -81,7 +81,7 @@ data/<instance>/system/logs/<domain>_snapshots/
   column on `contact`: a person is attached to many of them over time.
 - **An introduction is an `applications` row whose `intro_stage` is set**,
   with `contact_link` rows labelled `introducer` (or `referrer`) and `intro
-  target`; one friend may hold both. The stage runs `to_ask`, `asked`,
+  target`; one friend may be both. The stage runs `to_ask`, `asked`,
   `introduced`, `submitted`, `interviewing`, and closes as `offer`, `rejected`,
   `no_response` or `dropped`. It is a column of its own because `status` is
   where the application stands with the employer, a different question.
@@ -170,7 +170,7 @@ python3 snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
 - **An open item closes itself once it is silent past its window** — 30 days
   for an application nobody at the company has answered, 21 after a recruiter
   screen or an interview, 30 for an introduction or an application waiting on
-  a referral. `silence.py` holds the windows and the reading of the last
+  a referral. `silence.py` gives the windows and the reading of the last
   touch: the date evaluated (a partial date read as the end of its period),
   `last_touch_on`, `intro_stage_on`, and the asks about it.
   `dashboard_data.py` hides the same items, from the same module.
@@ -181,7 +181,7 @@ python3 snapshot_archive.py --dir <...>/library_snapshots --stem library --apply
   `personal_write.py reopen` brings one back with a fresh window.
 - **`install_due_schedule.py` puts that capture on a daily schedule**, through
   `src/tools/_shared/install_schedule.py`, which is the same installer the
-  Bluesky copy uses. Run it on the machine that will hold the schedule: it takes
+  Bluesky copy uses. Run it on the machine that will run the schedule: it takes
   the interpreter, the repository and the log location from where it runs.
 
 `add-application` and `update-application` take the full column set as flags —
@@ -211,7 +211,7 @@ Three different artifacts live in a snapshot folder:
   `--no-archive`.
 - **Never delete `archive/` or `checkpoints/` as tidy-up.** They are a
   longitudinal record kept under a policy, not the duplicate files
-  `src/app.md` §What a file may say forbids. `checkpoints/` holds moments that
+  `src/app.md` §What a file may say forbids. `checkpoints/` contains moments that
   cannot be regenerated at all.
 - **Nothing schedules a render.** A cron entry or launchd job pointed at
   `render_snapshot.py` gets a daily one; by hand it works the same.

@@ -2,7 +2,7 @@
 
 The field set every video-game collection uses, whatever the collection. A
 point-and-click adventure and a strategy game differ in which collection they
-land in and in their tags, and in nothing else here. What holds for every kind
+land in and in their tags, and in nothing else here. What applies to every kind
 the library catalogues — the synopsis, the tags, the shared `extra` keys — is
 `../SKILL.md`.
 
@@ -41,7 +41,7 @@ language.
 
 ## The extra key a game has of its own
 
-| Key | Holds |
+| Key | Contains |
 | --- | --- |
 | `Engine` | The interpreter or engine: `SCI1`, `SCUMM`, `AGI`. |
 

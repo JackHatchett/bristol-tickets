@@ -69,5 +69,5 @@ declared folder, and its epics on the board.
 - **`care_manager` owns the care of family members.** A care cost the household
   carries arrives from that agent as a card carrying the figure, and enters the
   budget as a line.
-- **`career_coach`, where installed, holds the user's employment record.** Pay
+- **`career_coach`, where installed, keeps the user's employment record.** Pay
   is read from pay stubs, not from it.

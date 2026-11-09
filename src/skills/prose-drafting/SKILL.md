@@ -46,7 +46,7 @@ ask which rather than defaulting into drafting.
 anything here.**
 
 - **Default to a matter-of-fact register.** Whatever the world contains is
-  ordinary and native to it, never held up for the reader to marvel at.
+  ordinary and native to it, never shown off for the reader to marvel at.
 - **No elegant variation.** A thing keeps its word.
 - **Show the physics.** Make an abstraction tactile.
 - **Match sentence shape to the speed of the action.**

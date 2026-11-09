@@ -16,7 +16,7 @@ teaches plotting by, such as the heist or the assault on an invulnerable
 fortress. Operation: the steps below. Output: one beat sheet in the library
 for its kind and its line in that library's hub.
 
-Every rule of `src/skills/note-formatting/SKILL.md` holds for the sheet. The
+Every rule of `src/skills/note-formatting/SKILL.md` applies to the sheet. The
 sections below are the sheet's own, and win for those sections by that skill's
 first boundary.
 
@@ -36,7 +36,7 @@ first boundary.
   the story library's sheets as its model.
 - **A beat list assembled from several sheets for one work lives with that
   work**, in its project folder, linking the sheets it draws on. The libraries
-  hold archetypes only.
+  contain archetypes only.
 
 ## 2. Ask the author
 
@@ -88,7 +88,7 @@ One batch, in the session, before anything is written:
 - **A source that turns out to tell a different story is a Variation or a sheet
   of its own.** Decide which — an Alternate Ending, Optional Beats, an Optional
   Path, or its own sheet — and say which, with the reason, in the report.
-- **Merge before multiplying.** A story whose beats the sheet's core holds,
+- **Merge before multiplying.** A story whose beats the sheet's core contains,
   with an Alternate Ending, Optional Beats or an Optional Path, is a Variation
   rather than a new sheet.
 - **A classic met in research that is a different archetype gets a sheet or a
@@ -107,7 +107,7 @@ One batch, in the session, before anything is written:
   carry, and `source_url` the source the sheet chiefly rests on.
 - **H1**: the archetype's name, then a one-line summary of the whole plot with
   no closing period.
-- **`## Details`** holds exactly three bullets, each with nested bullets:
+- **`## Details`** contains exactly three bullets, each with nested bullets:
   - Promise to the Reader — what the archetype promises a reader who picks it
     up; on a historical sheet, what a reader recognizes when the trigger
     appears, such as labelled factions brawling in the street or one side
@@ -127,7 +127,7 @@ One batch, in the session, before anything is written:
   source, each cell the source's moment for that beat or "None" with a reason.
   Every sheet merged from two or more sources has one, historical sheets
   included; a sheet resting on a single source has none.
-- **`## Links`** holds the source stories, and the histories a historical
+- **`## Links`** lists the source stories, and the histories a historical
   sheet rests on. A story with a literature note in the
   notebook — a note tagged `media/` whose alias is its title — is linked to that
   note as `[[filename|Title]]`; any other story by a Markdown link to its outside
@@ -172,7 +172,7 @@ added, in the session or in the comment of the card that asked for it.
   generic and the history sits beneath it.
 - **A beat dropped because fewer than half the sources carry it, when it
   belongs to the theme they share** → §4.
-- **A new sheet for a story the core already holds** → §4; it is a Variation.
+- **A new sheet for a story the core already contains** → §4; it is a Variation.
 - **A distinct classic met in research and left unrecorded** → §4; a sheet or
   a card.
 - **A story the author disliked used as a source** → §2; it is dropped.

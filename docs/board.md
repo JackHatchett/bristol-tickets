@@ -21,29 +21,29 @@ cards onto the Board) or **Delete**.
 
 **Archive** — retired cards, most recently changed first, as a plain list.
 
-Five more tabs sit beside those three, and none of them holds cards.
+Five more tabs sit beside those three, and none of them shows cards.
 
 **Search** finds cards and epics by text and shows the matches as a list. It
 takes no filter: it is the one view whose job is to find a card the board is not
 showing.
 
-**Skills** lists every skill a session can load, which agents hold each one, and
+**Skills** lists every skill a session can load, which agents have each one, and
 takes the address of a new one. A skill opens into a view of its own — its text,
 its files, its source and a tick box per agent — and that is where a skill is
 attached to an agent. The row of controls under the list narrows the list
 instead: by text, by whether a skill came with Bristol or was downloaded, and by
-which agent holds it. Pasting an address and pressing Import scans the skill's
+which agent has it. Pasting an address and pressing Import scans the skill's
 code and, when the scan is clean, adds it to the list, ready for every session;
 a scan that finds a risk stops the import and shows what it found.
 [skills.md](skills.md) is the whole of it.
 
 **Agents** lists the agents this installation configures, and creates or edits
-any of them through a form holding everything an agent is, charter included, so
+any of them through a form showing everything an agent is, charter included, so
 an agent can be made and corrected with no AI and no text editor.
 [agents.md](agents.md) §Without an AI, and without a text editor describes the
 form field by field.
 
-**Settings** holds every choice this installation makes, the agent your next
+**Settings** contains every choice this installation makes, the agent your next
 session runs as included.
 
 ## The three columns
@@ -62,7 +62,7 @@ Drag a card to reorder it within a column or move it across. Position matters:
 the top of To Do is what an agent picks up next, and dragging is how you decide
 that.
 
-Above the columns sits one control row holding what applies to the Board:
+Above the columns sits one control row with what applies to the Board:
 **Filter**, and whatever it is currently set to.
 Each column carries its own header — its name and how many cards are in it, and
 nothing else, so the three read across one line.
@@ -72,14 +72,14 @@ the tabs, because each acts on every tab rather than on the Board alone.
 
 ## Filter
 
-**Filter** opens a panel of two facets. **Assignee** lists every owner the board
-holds, `user` first. **Epic** lists every epic in play, plus **No epic** for the
+**Filter** opens a panel of two facets. **Assignee** lists every owner on the
+board, `user` first. **Epic** lists every epic in play, plus **No epic** for the
 cards carrying none. Each row is a tick box and the number of board cards it
 matches; ticking one applies it at once, and the panel stays open.
 
 Options within a facet add up and the two facets narrow each other: ticking two
 agents shows both agents' cards, and adding an epic cuts that down to their
-cards in it. A count already knows what the other facet holds, so a row reading
+cards in it. A count already knows what the other facet contains, so a row reading
 0 is a row worth not clicking.
 
 What you have set shows on the control row as a chip — click its ✕ to drop that
@@ -108,7 +108,7 @@ pills. The tier and the size are drawn in the same quiet treatment as the rest �
 neither sorts anything, so neither is coloured like urgency. A card nobody has
 rated for a tier shows no tier pill.
 
-| Field | What it holds |
+| Field | What it contains |
 | --- | --- |
 | **Title** | Required. One outcome per card. |
 | **Record Type** | Build or Fix. Picking one pre-fills the description with that skeleton: a Build is a story plus acceptance criteria, a Fix is expected versus observed. |
@@ -137,12 +137,12 @@ relations:
 - **related** — they belong together.
 - **blocks** / **blocked by** — a dependency. The card it blocks may not start
   until this one is Done. This is the only mechanism that says *which* card is
-  in the way: there is no blocked flag holding an id to set and forget, and the
+  in the way: there is no blocked flag storing an id to set and forget, and the
   status readouts resolve a blocker live so a dependency that has been satisfied
   stops showing.
 
-Once a blocking card is Done, **Carried summaries** appears on the card it held
-up, under Links: each finished blocker's own last comment, oldest close first,
+Once a blocking card is Done, **Carried summaries** appears on the card it was
+blocking, under Links: each finished blocker's own last comment, oldest close first,
 so picking the card up starts with what was decided rather than a trip through
 another card's log. The status readouts print the same thing for the cards in
 your queue. It is a reading of the link and that comment, not a copy — editing
@@ -158,7 +158,7 @@ A card left on a decision or a capability is listed under NEEDS YOU when a
 session reads the board, since no agent can clear either by working. Moving a
 card to Done clears its reason.
 
-**Links to an address** hold a web URL, a `zotero://` citation, an
+**Links to an address** store a web URL, a `zotero://` citation, an
 `obsidian://` note, a filesystem path, or any other scheme, with an optional
 caption. Clicking hands the string to macOS. Bristol Tickets itself knows
 nothing about the schemes.
@@ -195,7 +195,7 @@ only that they changed, never the text.
 
 ## Leaving the board, and the report
 
-The Done column holds work waiting for something, and the two kinds of card
+The Done column contains work waiting for something, and the two kinds of card
 wait for different things.
 
 A card in the standing workstream — upkeep, a correction, a one-off request —

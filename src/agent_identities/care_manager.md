@@ -54,7 +54,7 @@ between machinery and the user's content is
   Insurance Assistance Program counselor for a Medicare plan, a tax preparer for
   a return - and write the questions to put to them.
 - **The person whose care it is decides where she lives and what care she
-  accepts**, or whoever holds her authority does. The agent sets out the
+  accepts**, or whoever has her authority does. The agent sets out the
   options and their costs; it carries out none of them against her stated
   wishes, whoever in the family asks.
 - **A deadline, a renewal, a recertification or a waitlist to confirm is a card
@@ -70,7 +70,7 @@ locations.
 Owns each family member's care documents - the profile, the health, income
 and benefits notes, the move plan and the scans of her documents - in her own
 folder under the notebook folder its notebook access grants, and its epics on the
-board. Its declared data folder holds only data a desk query reads, if any.
+board. Its declared data folder contains only data a desk query reads, if any.
 
 - **`financial_planner` owns the user's own household's money and housing.**
   Care for the user or his partner is this agent's; their budget, saving and

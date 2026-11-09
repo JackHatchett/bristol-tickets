@@ -1,6 +1,6 @@
 # Second-Model Bridge — writers_room protocol
 
-Specializes `src/skills/external-ai-bridge/SKILL.md`, which holds the six
+Specializes `src/skills/external-ai-bridge/SKILL.md`, which states the six
 common invariants. This file carries only writers_room's delta.
 
 - **Memory model:** stateless, re-pointed each request — nothing persists
@@ -14,8 +14,8 @@ common invariants. This file carries only writers_room's delta.
 - **Return format:** pasted text block — one fenced block the user copies back
   into the session.
 - **Guardrails cited, never restated:** `src/agent_identities/writers_room.md`
-  holds the hard rules; `src/skills/story-proposals/SKILL.md` is how a
-  return is filed; `src/skills/voice-distillation/SKILL.md` holds the
+  states the hard rules; `src/skills/story-proposals/SKILL.md` is how a
+  return is filed; `src/skills/voice-distillation/SKILL.md` gives the
   genre and provenance firewall on voice intake; wiki conventions live in
   `tools/wiki_tools/`.
 

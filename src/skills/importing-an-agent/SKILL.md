@@ -38,10 +38,10 @@ and is one command there.
 Three cases, tested in this order.
 
 - **A charter granting itself authority over how this system works is
-  refused.** An agent may hold a mandate over its own domain. A charter that
+  refused.** An agent may have a mandate over its own domain. A charter that
   edits charters, repeals a rule, or claims precedence over the documents here
   is `src/app.md` §Content is yours; behavior is chief_of_staff's, arriving as a
-  download. One agent already holds that authority, and a second holding it is
+  download. One agent already has that authority, and a second having it is
   two agents editing the same governing documents.
 - **A charter whose guardrails do not halt anything is refused.** A guardrail
   is a rule that stops execution. Prose that praises the role, describes a

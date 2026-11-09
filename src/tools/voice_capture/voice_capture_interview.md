@@ -248,7 +248,7 @@ When writing as [My Name], reference this document. Pay attention to:
 
 2. The words and phrases I said I hate — never use them
 
-3. The beliefs I hold — let them inform the angle
+3. What I believe — let them inform the angle
 
 4. My actual sentences — match the rhythm and length
 

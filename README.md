@@ -13,7 +13,7 @@ Bristol ships with some readymade agents, and you can ask the default agent to c
 
 You don't talk to your agents in the board - that stays in your AI app, though within your configured project it will begin to address you and work with you differently, with new powers.
 
-![The Bristol Tickets board: To Do, Doing and Done columns beside a detail pane holding one card's status, description, links and log.](media/board.png)
+![The Bristol Tickets board: To Do, Doing and Done columns beside a detail pane showing one card's status, description, links and log.](media/board.png)
 
 ## About me (optional)
 
@@ -39,7 +39,7 @@ later.
 
 ## Skills other people wrote
 
-A **skill** is a folder holding one Markdown file that tells an agent how to do
+A **skill** is a folder containing one Markdown file that tells an agent how to do
 one job. It is an open format, and people publish thousands of them free.
 Bristol reads them where they already are: point one setting
 (`skills.install_dir`, in your configuration) at a folder of skills you keep,
@@ -144,7 +144,7 @@ other's changes on its next read.
 - **The agent session** (`src/app.md`) — the agent reads `src/app.md`, resolves
   your config, takes on one agent identity, and works the board.
 
-`src/tools/` holds the rest of the standalone utilities, each independently
+`src/tools/` contains the rest of the standalone utilities, each independently
 runnable.
 
 ## Documentation

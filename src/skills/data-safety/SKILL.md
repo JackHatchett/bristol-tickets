@@ -1,6 +1,6 @@
 ---
 name: data-safety
-description: The rules every write to the book library obeys, including quitting Zotero first and what each field is allowed to hold. Use before anything writes to the library, and when a change to its shape is being weighed.
+description: The rules every write to the book library obeys, including quitting Zotero first and what each field is allowed to contain. Use before anything writes to the library, and when a change to its shape is being weighed.
 license: MIT
 compatibility: Needs python3 and a local Zotero data directory.
 metadata:
@@ -23,7 +23,7 @@ exception.**
 
 ## What is and is not the library
 
-Zotero holds more than the library: the aspirational reading-list collections
+Zotero contains more than the library: the aspirational reading-list collections
 run to thousands of titles the user has neither read nor owns. **An item belongs
 to the library only if it is in "Books I've Read" or carries an ownership tag.**
 Counting list-only titles as unread library would redefine every metric the

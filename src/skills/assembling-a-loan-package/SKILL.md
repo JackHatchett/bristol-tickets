@@ -83,7 +83,7 @@ documents never leave the machine they are on —
   but a guess wearing one's clothes.
 - **Put the assumptions in one table beside the projection**, never inside cell
   formulas or a footnote.
-- **Make the projection recomputable**: someone holding the assumption table and
+- **Make the projection recomputable**: someone given the assumption table and
   nothing else can rebuild every line of it. A line that cannot be rebuilt that
   way is removed or given the assumption it was hiding.
 - **Run month by month through the first year, then by year.** An annual average
@@ -107,7 +107,7 @@ Four things, and a handover missing one is not finished.
 - **What is in the package**, item by item, against the document list.
 - **What is missing**, and which item on the list each gap belongs to.
 - **What only the user can supply** — a signature, a certification, a personal
-  statement, a document held by his accountant or his bank.
+  statement, a document his accountant or his bank keeps.
 - **What the lender is most likely to push back on**, stated as the underwriter
   would name it, with where in the package the answer sits.
 
@@ -119,7 +119,7 @@ Four things, and a handover missing one is not finished.
 - **One folder per application**, named for the lender or the programme, in the
   folder `agents.business_advisor.key_data_paths` declares, resolved with
   `data_paths.ensure_dir()` at the moment of the write.
-- **The package holds the plan, the projections and the handover**, and nothing
+- **The package contains the plan, the projections and the handover**, and nothing
   about how far along the application is — `src/app.md` §What a file may say.
 - **A date becomes a card** — a submission deadline, a quote that expires, a
   rate lock, a form whose version is superseded — `ticket_write.py add-task

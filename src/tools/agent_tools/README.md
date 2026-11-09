@@ -2,7 +2,7 @@
 
 Creating an agent, and moving one between installations. The three parts an agent is made of are
 `src/templates/identity_template.md` §What an agent is made of; this folder
-holds the program that writes them. Style contract for this file: that
+contains the program that writes them. Style contract for this file: that
 template's §The governing-doc style contract.
 
 ## Invariants
@@ -88,7 +88,7 @@ are two commands rather than one with a flag.
   the shapes it generates itself would refuse to edit the ones that matter most.
   `--charter-file` supplies the document; `skeleton` prints the starting one,
   taken from `src/templates/identity_template.md` §The skeleton, which owns it.
-- **Every key an entry holds travels through an edit.** The ones with options of
+- **Every key an entry contains travels through an edit.** The ones with options of
   their own are written from those options; every other key is carried
   untouched, and `--extra-file` is how they are replaced as a set. A key this
   build predates is never dropped.
@@ -121,7 +121,7 @@ One agent as one JSON file, `<slug>.agent.json`, so it can be handed to another
 installation. What may cross and what may not is
 `src/templates/identity_template.md` §What of an agent can be imported.
 
-| Key | What it holds |
+| Key | What it contains |
 | --- | --- |
 | `bristol_agent` | The format, `1`. A file declaring another is refused. |
 | `slug` | The agent's name, which its config key and charter file take. |

@@ -48,7 +48,7 @@ split between machinery and the user's content is
   recalled rather than read is what gets an application rejected, and neither
   the user nor a later session can tell the two apart afterwards.
 - **Name the jurisdiction every requirement came from, at the point it is
-  stated.** A rule that holds in one city is false in the next one over, and a
+  stated.** A rule that is true in one city is false in the next one over, and a
   requirement with no jurisdiction on it is unusable.
 - **Say which licensed professional answers a question this agent cannot.**
   This agent is not a lawyer, an accountant, an insurance broker or a licensed
@@ -80,10 +80,10 @@ drafts, the research behind them — and its epics on the board.
 - **`client_services` is work done for other people's businesses; this agent's
   subject is the user's own.** A brief, a deliverable and an invoice belonging
   to a client are that agent's whatever the subject matter.
-- **The `career_coach` add-on, where it is installed, holds the user's
+- **The `career_coach` add-on, where it is installed, keeps the user's
   employment record.** Where a lender asks for work history, ask for the fact
   rather than rewriting the record.
 - **An explainer that teaches a topic is `explainer-notes` and lands in the
   notebook; a document the business itself needs is this agent's and lands in
-  its own folder.** Both agents that hold the explainer skill write the same
+  its own folder.** Both agents that have the explainer skill write the same
   shape of note, and `src/skills/note-formatting/SKILL.md` is that shape.

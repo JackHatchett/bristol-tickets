@@ -29,7 +29,7 @@ that agent.
 ## 1. The common contract
 
 An external AI is a stateless, non-authoritative collaborator. Six invariants
-hold regardless of agent, vendor or domain:
+apply regardless of agent, vendor or domain:
 
 1. **Stateless and non-authoritative.** It has no memory of prior sessions
    beyond what it is re-briefed, and nothing it produces is a fact. Its output
@@ -138,7 +138,7 @@ A `references/<agent>.md` is short. It:
    `data/*`), and return format (§1b).
 3. **Adds only genuinely domain-specific content** — the concrete handoff block
    or schema, the agent's status taxonomy, its module or mode library, an
-   operational quirk. That delta is what the archetype cannot hold.
+   operational quirk. That delta is what the archetype cannot contain.
 4. **Cites the owning charter for guardrails and the owning gatekeeping skill
    for how a return is filed**, restating neither.
 

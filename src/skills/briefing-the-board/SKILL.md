@@ -30,9 +30,9 @@ worked until the user picks. Writing and sizing cards is
 
 ## The read
 
-`python3 src/tools/ticket_tools/brief.py <your slug>`. One command holds the
+`python3 src/tools/ticket_tools/brief.py <your slug>`. One command gives the
 whole briefing: the epics in flight with cards open, the epics in flight
-holding nothing, the cards under no epic, the backlog, what finished most
+containing nothing, the cards under no epic, the backlog, what finished most
 recently, and the card the calling agent's queue would start at.
 
 - **Read nothing else to compose a briefing.** An epic printed with nothing

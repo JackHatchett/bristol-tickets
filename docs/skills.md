@@ -1,6 +1,6 @@
 # Skills
 
-A **skill** is a folder holding one Markdown file that tells an agent how to do
+A **skill** is a folder containing one Markdown file that tells an agent how to do
 one job: how to write a cover letter, how to catalogue a game, how to close a
 session. The file opens with a name and a one-line description saying when the
 skill applies, and that description is the whole of what a session reads until
@@ -121,7 +121,7 @@ the choice to you. `README.md` §Skills other people wrote itemises it.
 Nothing in this list is reviewed by Bristol, and each entry says what reviews
 it, which is usually less than it sounds.
 
-| Where | What it holds | What reviews it |
+| Where | What it contains | What reviews it |
 | --- | --- | --- |
 | `github.com/anthropics/skills` | The format's own template, and the skills behind one assistant's document handling | Nothing published; one vendor's repository |
 | `github.com/agentskills/agentskills` | The Agent Skills standard itself, not a catalogue | Its own contribution process |
@@ -168,5 +168,5 @@ python3 src/tools/skill_tools/skills.py remove <name>
 ```
 
 It deletes an installed skill and detaches it from every agent
-that held it. It refuses a skill that came with Bristol: those are source under
+that had it. It refuses a skill that came with Bristol: those are source under
 version control, and removing one is an edit to the repository.

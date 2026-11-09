@@ -16,7 +16,7 @@ Input: a person, and something outstanding with them. Operation: the rules
 below. Output: one contact row, the asks it carries, and the prose about them in
 the document that owns it.
 
-The database holds dates and state; it holds no description of anybody. What a
+The database records dates and state; it contains no description of anybody. What a
 person is like, what they said, what they do — that is prose, and
 §Where the prose goes says where. The mechanism is
 `src/tools/personal_db/README.md`; this owns when each write happens.
@@ -134,7 +134,7 @@ it.
 - **A second row for one person** → §The contact row: search first, and aliases.
 - **One ask carrying two things** → §The ask: they close separately.
 - **A description of a person in `notes`** → §Where the prose goes. `notes`
-  holds what a reader of the due list needs, and nothing that belongs in a
+  contains what a reader of the due list needs, and nothing that belongs in a
   document.
 - **A due item worked as though the agent could answer it** → §What a due item
   is.

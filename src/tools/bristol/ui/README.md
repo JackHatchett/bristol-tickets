@@ -1,6 +1,6 @@
 # The styling contract
 
-What an agent needs to style a new piece of Bristol Tickets. `theme.py` holds
+What an agent needs to style a new piece of Bristol Tickets. `theme.py` contains
 every visual constant the app draws with; this file says what each one means and
 which one to reach for.
 
@@ -10,7 +10,7 @@ which one to reach for.
 - **Take a gap, a corner or a font size from a token scale, never from a
   number.** `space("md")`, `radius("lg")`, `type_size("title")`.
 - **Read `C` and the token functions at paint time, not at import time.** A name
-  bound once at import holds the value the app started with.
+  bound once at import keeps the value the app started with.
 
 ## Scheme keys
 
@@ -59,7 +59,7 @@ coloured, never how far apart two things sit.
 | `RADIUS` | `sm` `md` `lg` `xl` `pill` | Corners. `sm` a checkbox or a tag, `md` a control, `lg` a card or panel, `xl` a modal, `pill` a full round. |
 | `TYPE` | `caption` `body` `title` `section` `display` | Font point size. `caption` a badge or metadata line, `body` running text, `title` a card title, `section` a section heading, `display` the largest thing on screen. |
 
-`LAYOUT` sits beside the scales and holds what sizes the window rather than the
+`LAYOUT` sits beside the scales and contains what sizes the window rather than the
 space inside it: the window's minimum and opening size, the splitter's opening
 split, the column and detail-pane minimum widths, the filter panel's width and
 the height its option list scrolls past, and the minimum sizes of the wizard and
@@ -128,17 +128,17 @@ key every scheme has to gain, which is a change to `theme.py` and to this file.
   one message a user must see. A success shows itself: the value in the
   control, the new card in the list, the window that opens next.
 - **Field labels, section headings and a list's own rows are not help text**,
-  and a count or a filter notice that says what a view is holding back is
+  and a count or a filter notice that says what a view is leaving out is
   state, not help.
 - **A name is Title Case; a sentence is sentence case.** A tab, a section
   heading, a field label, a picker option and a button all name something and are
   Title Cased. A tooltip, a placeholder, a notice and a checkbox whose label is a
   clause all say something and are not. "Hide Closed Items" states a mode; "Open
   this installation when Bristol Tickets starts" is a sentence.
-- **A picker holds the stored value in its item data and shows a caption.** The
+- **A picker keeps the stored value in its item data and shows a caption.** The
   two move independently, so a vocabulary is reworded without a migration and a
   column keeps the spelling every writer already uses. `settled_combo.fill_words`
-  loads one from `(value, caption)` pairs; `theme.py` holds the pairs.
+  loads one from `(value, caption)` pairs; `theme.py` contains the pairs.
 - **An option is a name, and its explanation is the picker's tooltip.** Effort
   offers Small through Extra Large and hovers the budget anchors; Blocked offers
   four names and hovers what each means. An option carrying its own explanation
@@ -227,13 +227,13 @@ any key the new palette is missing; the smoke check runs it.
 **`SCHEMES` and `THEMES` are rewritten at every launch** by
 `install_collection()`, from the collection an installation actually offers.
 The module-level values are what the build ships and what the shipped snapshot
-holds; nothing may read either dict expecting a particular theme to be in it.
+contains; nothing may read either dict expecting a particular theme to be in it.
 
 **A theme's schemes are named for the theme**: `<id>_light` and `<id>_dark`.
 The pairing is mechanical, so a theme the user adds and a theme this build
 ships have schemes named the same way.
 
-**`THEME_CHOICES` is ordered alphabetically by caption.** A picker holding two
+**`THEME_CHOICES` is ordered alphabetically by caption.** A picker with two
 dozen names is read by scanning to the letter, so a theme seated anywhere else
 in the list is one nobody finds — and the collection is ordered by name for the
 same reason, which is what `order_collection()` does.
@@ -295,7 +295,7 @@ rows `palette_form.py` draws.
 - **The collection goes behind a door and the choice does not.** A control sits
   on the narrowest surface its effect reaches; the theme is picked every
   session and the collection is touched rarely.
-- **Nothing reaches the configuration until Save.** The window holds a working
+- **Nothing reaches the configuration until Save.** The window keeps a working
   copy, previews the running app as it is edited, and a Cancel puts the
   installed collection and the theme in force back.
 - **The last theme cannot be deleted**, and deleting the theme in force moves
@@ -303,7 +303,7 @@ rows `palette_form.py` draws.
 - **A dark half is turned on whole or not at all.** Add Dark Half seeds every
   colour of it at once, so there is no partial half to define a minimum for,
   and Remove Dark Half makes the theme light-only again. The Light and Dark
-  switch says which half the rows hold; on a light-only theme Dark is
+  switch says which half the rows show; on a light-only theme Dark is
   unclickable and carries the reason, the way Settings offers a mode a theme
   cannot draw.
 - **The half being edited is the half the board previews**, whatever mode is

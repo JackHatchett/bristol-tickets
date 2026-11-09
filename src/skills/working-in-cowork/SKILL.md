@@ -1,6 +1,6 @@
 ---
 name: working-in-cowork
-description: The routes a session takes in Cowork, whose shell cannot remove a file — how a file is removed, how git is run in a connected folder, how a shell that has stopped answering is brought back, and where a step that needs a package or Qt is run instead. Use when a delete is refused, before running git in a connected folder, when calls start failing whatever they ask for, or when a step needs something the sandbox cannot hold.
+description: The routes a session takes in Cowork, whose shell cannot remove a file — how a file is removed, how git is run in a connected folder, how a shell that has stopped answering is brought back, and where a step that needs a package or Qt is run instead. Use when a delete is refused, before running git in a connected folder, when calls start failing whatever they ask for, or when a step needs something the sandbox cannot contain.
 license: MIT
 compatibility: A session running in Cowork, a mode in the Claude desktop app, with at least one folder connected to it.
 metadata:
@@ -12,7 +12,7 @@ metadata:
 # working-in-cowork
 
 Cowork runs a session in a Linux sandbox and reaches the folders the user
-connects through a file bridge, so the shell it holds is not the shell the
+connects through a file bridge, so the shell it has is not the shell the
 user's machine runs. Each route below is for one step that difference changes.
 Take one when the step in front of you is refused, never in advance of it.
 
@@ -26,7 +26,7 @@ on disk, and nothing left where they were.
    involved.
 2. **Rename every other unwanted file onto one sink path.** A rename onto a name
    already taken is what makes a whole set one file.
-3. **Put the sink at the root of the connected folder holding those files, never
+3. **Put the sink at the root of the connected folder containing those files, never
    inside a source tree.** A rename cannot leave the folder it starts in, so
    each connected folder needs its own; and a session that stops early leaves
    its sink where it put it, which among the files a project is made of is the
@@ -85,7 +85,7 @@ on disk, and nothing left where they were.
 ## Asking about the machine
 
 - **Ask a file whether an application is running, never a process.** The shell's
-  process table is the sandbox's own, and an application that holds a file open
+  process table is the sandbox's own, and an application that keeps a file open
   while it runs leaves that file where the bridge reads it.
 - **Quitting an application is the user's, or computer use.**
 

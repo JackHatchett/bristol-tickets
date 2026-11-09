@@ -41,7 +41,7 @@ bash run_smoke.sh bristol         # one or more named targets
   writes the charter and the config entry together, a refused edit writes
   neither, an edit reaches both, the charter file can be moved, and a fresh read
   finds what was entered. It also asserts every shipped charter reads back as
-  the file it is, that every key every entry holds reaches a field or `extra` so
+  the file it is, that every key every entry contains reaches a field or `extra` so
   an edit cannot drop one, and that neither agent tool imports anything reaching
   a network or a model. It runs in a scratch clone and touches no GUI, so it
   runs without Qt.

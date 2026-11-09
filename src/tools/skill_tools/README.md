@@ -1,7 +1,7 @@
 # Skill Tools
 
 The loader for Agent Skills — the open format at
-`github.com/agentskills/agentskills`, where a skill is a directory holding a
+`github.com/agentskills/agentskills`, where a skill is a directory containing a
 `SKILL.md` whose YAML frontmatter carries `name` and `description`. This file
 owns the *mechanism*: the two roots, the disclosure contract, and the scan
 every import passes. Converting a Bristol file into a skill is
@@ -140,7 +140,7 @@ python3 skills.py package <name> [--out DIR]
   table lists nothing. That is a statement about the table rather than a guess
   about the skill.
 - **`remove`** — delete an installed skill and detach it from
-  every agent that held it. The directory goes before the detachments, so a
+  every agent that had it. The directory goes before the detachments, so a
   filesystem that refuses the delete leaves the attachments intact rather than
   leaving an agent listing a skill that is gone. It refuses a native skill: those
   are source under version control, and removing one is an edit to the
@@ -227,7 +227,7 @@ skill's folder, so the whole of the discovery step is finding a folder in a
 browser. These are the places worth browsing, each with what reviews it, because
 nothing here is reviewed by Bristol.
 
-| Hub | What it holds | What reviews it | Address |
+| Hub | What it contains | What reviews it | Address |
 | --- | --- | --- | --- |
 | Anthropic's own | The specification, a skill template, and the skills behind a production assistant's document handling | Nothing published; it is one vendor's repository | `github.com/anthropics/skills` |
 | The specification | The Agent Skills standard and its reference material, not a catalogue | Its own contribution process | `github.com/agentskills/agentskills` |
@@ -257,7 +257,7 @@ repository is Apache-2.0 for most skills and source-available rather than open
 source for the four document skills. `install` records what it finds beside the
 skill and never infers one.
 
-## What a session holds, and what it defers
+## What a session loads, and what it defers
 
 - **At session start, one line per loadable skill** — its name, its origin and
   the sentence saying when it applies, the agent's own first. That is the whole

@@ -24,7 +24,7 @@ address from the browser's bar.
 **What appears:** an address of the form
 `github.com/<owner>/<repo>/tree/<branch>/<path>`. Looking at the `SKILL.md`
 file itself gives `blob` instead of `tree`, and that works too — the folder
-holding the file is what installs.
+containing the file is what installs.
 
 **What it means:** the address carries the repository and the path inside it,
 which is the whole of what the install command needs.
@@ -34,7 +34,7 @@ beside the `LICENSE` — the repository's own address is the skill's address, an
 the `SKILL.md` file's `blob` address installs it too.
 
 **Divergence:** a list such as awesome-hermes-skills links each entry to its
-repository rather than to the skill's folder. Where that repository holds
+repository rather than to the skill's folder. Where that repository contains
 several skills, its top level has no `SKILL.md`, and the install says so and
 asks for the skill's own folder; the user clicks through to the one wanted.
 
@@ -56,7 +56,7 @@ and presses Import.
 list is one the scan passed. A row saying some code was not scanned names code
 in a language the scanner does not read.
 
-**Divergence:** a repository holding several skills has no `SKILL.md` at its
+**Divergence:** a repository containing several skills has no `SKILL.md` at its
 top level, and the import says so and asks for the skill's own folder.
 
 ## Step 3 — Opening it

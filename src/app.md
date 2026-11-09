@@ -104,7 +104,7 @@ Before wrapping up a session that changed state, leave the board true.
 
 ## The board is the only channel
 
-`tickets.db` holds all work state, and nothing else does.
+`tickets.db` contains all work state, and nothing else does.
 
 - **Never derive a next action, an ordering, or an in-progress fact from
   anything but the board** — not a folder listing, a JSON status field, "the

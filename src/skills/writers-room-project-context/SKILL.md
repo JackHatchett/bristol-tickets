@@ -18,7 +18,7 @@ snapshot, which happens first.
 1. **Identify the active project** after the board snapshot, with `python3
    src/tools/config_tools/active_project.py <your slug>`, and **say which one
    it is before reading any of its content.** Where the user says he is working
-   the other, move with `--set <project>`; the choice holds for later sessions.
+   the other, move with `--set <project>`; the choice stays for later sessions.
 2. **Take where the project stands from the board and nothing else** — the
    snapshot the charter already ran. What is settled, what is open and what to
    work next are cards and their comments; a file saying any of it is a second
@@ -42,7 +42,7 @@ snapshot, which happens first.
 ## On-demand lookup
 
 When a request needs a project fact not in hand, read that project's router or
-index file to find which wiki file holds it, read **that one file**, and
+index file to find which wiki file contains it, read **that one file**, and
 continue. Needing three files to answer one question means the request is
 under-specified — ask rather than keep reading. Conventions:
 `tools/wiki_tools/`.

@@ -65,7 +65,7 @@ Eleven fields. A program missing any of the first eight is not worked yet.
 
 ## Moving across a state line
 
-- **Sort every program she holds into three**: follows her (federal cash
+- **Sort every program she has into three**: follows her (federal cash
   benefits paid to the person, with an address change), transfers through a
   process (a tenant-based housing voucher's portability), and ends at the old
   state's line (Medicaid, a state supplement, a building's subsidy, state
@@ -89,7 +89,7 @@ Eleven fields. A program missing any of the first eight is not worked yet.
 ## Where it goes
 
 - **One benefits document per person**, beside her profile in the folder
-  `agents.care_manager.key_data_paths` declares, holding programs and nothing
+  `agents.care_manager.key_data_paths` declares, containing programs and nothing
   about what has been done about them.
 - **A date becomes a card** - a renewal, a recertification, a waitlist to
   confirm, a window that closes - `ticket_write.py add-task --assignee

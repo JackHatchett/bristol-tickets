@@ -1,6 +1,6 @@
 # Configuration
 
-One file holds every choice an installation makes: `config/config.local.json`.
+One file contains every choice an installation makes: `config/config.local.json`.
 The setup wizard writes it, Bristol Tickets' Settings tab edits parts of it, and
 you can edit the rest by hand. It is git-ignored and never published.
 
@@ -81,12 +81,12 @@ and in the Manage Themes window that tab opens.
 | `themes` | absent | Which themes this installation offers, as the difference from what the build ships. |
 | `detail_width` | absent | The detail pane's width in device-independent pixels. |
 | `detail_collapsed` | absent | Whether the detail pane is collapsed to the window edge. |
-| `scheme` | absent | What a build before `theme` and `mode` wrote, holding both in one value. Read, never written. |
+| `scheme` | absent | What a build before `theme` and `mode` wrote, storing both in one value. Read, never written. |
 | `custom_scheme` | absent | What a build that offered one Custom option wrote, as a mapping of colour key to hex value. Read, never written. |
 
 `themes` carries only what differs from the build, under three keys:
 
-| Key | Holds |
+| Key | Contains |
 | --- | --- |
 | `added` | Each theme you added, whole: a `name`, a `light` palette, and a `dark` palette or `null`. |
 | `edited` | Each shipped theme you changed, under its id: the `name`, the `light` palette, the `dark` palette, or any of them. |
@@ -94,7 +94,7 @@ and in the Manage Themes window that tab opens.
 
 A theme you have not touched appears in none of them, which is what lets the
 themes a later release ships arrive in your list beside your own. A theme id is
-what `theme` holds, and it never changes: renaming a theme changes what you see
+what `theme` contains, and it never changes: renaming a theme changes what you see
 and nothing that is stored.
 
 An unrecognised `theme` falls back to the default, and so does one giving a
@@ -161,7 +161,7 @@ Point both at whatever vendor's models you run; nothing in the code gives one.
 | `description` | The one line the setup wizard's agent list and `docs/agents.md` show. |
 | `key_context_files` | Files this agent reads on sight. Declarative. |
 | `key_data_paths` | The folders this agent reaches, one **folder grant** each: `{ "path": "…", "access": "read" | "write" }`. The setup wizard creates them. Add and remove one in Bristol Tickets' Agents tab rather than by hand. |
-| `env` | Environment variables this agent's tools expect. A value naming a folder another key already holds is written `@<that.key>`, with a sub-path after it where needed — `@bristol_data.folders.logs/applications_snapshots` — so the folder is written once. `python3 src/tools/config_tools/data_paths.py --env <slug>` prints the values a tool is given. |
+| `env` | Environment variables this agent's tools expect. A value naming a folder another key already gives is written `@<that.key>`, with a sub-path after it where needed — `@bristol_data.folders.logs/applications_snapshots` — so the folder is written once. `python3 src/tools/config_tools/data_paths.py --env <slug>` prints the values a tool is given. |
 | `notebook_access` | `{ "mode": "per_folder" \| "read_all" \| "write_all", "folders": { "<attached folder>": "read" \| "write" \| "hide" } }` — what this agent may do in your notebook. Read All and Write All reach the whole notebook; Per Folder reaches each attached folder as `folders` says, and a folder with no entry is hidden. Set it in the agent's window in Bristol Tickets. |
 | `skills` | The skills attached to this agent, by name, in the order a session matches them. A skill named by no agent is available to every agent. Set it with `skills.py attach` and `detach` rather than by hand. |
 | `active_project` | Optional. Which of the agent's projects a session opens on, where it has more than one. An agent's projects are the `projects` entries under its folder grants; without this key a session opens on the first one listed. A session writes it when you say you are working the other one — `src/tools/config_tools/active_project.py`. |
@@ -245,12 +245,12 @@ rest are reference entries agents can consult. Delete any drive you do not have.
 
 ### `code_projects`
 
-**Optional.** Application code held as instance data, stewarded by
+**Optional.** Application code kept as instance data, stewarded by
 `game_designer`.
 
 | Key | Meaning |
 | --- | --- |
-| `root` | The folder holding every project. |
+| `root` | The folder containing every project. |
 | `projects.<slug>` | One entry per project: `path`, `status`, `owner`, `notes`. |
 
 ### `projects`
@@ -283,8 +283,8 @@ before anything is published (`src/tools/file_management/keyword_scan.py`).
 
 ### `tools`, `skills`
 
-**Required.** Each holds a `root` path and a `files` list. The roots point at
-`src/tools/` and `src/skills/`. `skills` also holds `install_dir`, the root a
+**Required.** Each gives a `root` path and a `files` list. The roots point at
+`src/tools/` and `src/skills/`. `skills` also gives `install_dir`, the root a
 downloaded skill lands in.
 
 ### `stack`

@@ -2,7 +2,7 @@
 
 Scheduled upkeep. Diagram generation is the whole of it.
 
-**Backups belong to the operating system.** This folder holds no backup mirror,
+**Backups belong to the operating system.** This folder contains no backup mirror,
 no drift detector and no mirror-log digest. A source falling outside the
 machine's own backup coverage is fixed in that tool's exclusion list, never by a
 second backup tool here.

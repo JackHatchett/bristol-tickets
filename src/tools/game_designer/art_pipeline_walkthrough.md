@@ -6,7 +6,7 @@ is a finished asset in the engine's format.
 
 - **Read the parameters from the project's art-direction file** — locked style
   reference, palette, aspect-ratio conventions. Check its actual name rather
-  than assuming one. This file holds the steps and never a project's look.
+  than assuming one. This file gives the steps and never a project's look.
 - **Trust a tool's on-screen labels over the wording here.**
 
 ## Stage 1 — generation
@@ -49,7 +49,7 @@ generated in any pose or scene.
 - **Settle the character's reference look in stage 1 first**, recording it
   through `src/skills/design-proposals/SKILL.md`. A model trained on an
   unsettled design locks in the wrong face.
-- **Reach for it only when stage 1 alone stops holding consistency.**
+- **Reach for it only when stage 1 alone stops keeping consistency.**
 
 1. **Create a character model** and upload a spread of that character's best
    generated outputs — varied angles and expressions, consistent outfit.

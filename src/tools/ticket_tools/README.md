@@ -3,7 +3,7 @@
 The non-UI ticket utilities used by agents and system processes. This file owns
 the board's *mechanism*: schema, CLI surface, storage semantics, and the
 conventions that describe how the data is shaped. The behavioural rules an agent
-must hold at all times — queue precedence, the `doing` rule, the board as the
+must follow at all times — queue precedence, the `doing` rule, the board as the
 only channel, what a file may say — are owned by `src/app.md`, which loads at
 every session start; this file references them and never restates them. Style
 contract for both: `src/templates/identity_template.md`.
@@ -13,13 +13,13 @@ contract for both: `src/templates/identity_template.md`.
 - **No personal data.** Never a literal username, home directory, or
   cloud-provider path. A directory representing a user is `<instance>`.
 - **Stable project-relative paths.** Find the project root by marker (the
-  nearest ancestor holding `src/app.md`) and resolve everything relative to the
+  nearest ancestor containing `src/app.md`) and resolve everything relative to the
   tool's own location — no environment variables, no config files, no external
   path sources.
 - **Canonical DB discovery.** The tickets database is the first match under
   `data/*/tickets/tickets.db`. Never assume the name of `<instance>`.
 - **One shared database per instance, never one per agent.** Scope an agent by
-  tagging, not by storage: `epic.owner` holds the slug that owns an epic (or a
+  tagging, not by storage: `epic.owner` stores the slug that owns an epic (or a
   descriptive string for genuinely shared work), and a task's owner is its
   `assignee`, else its epic's. Onboard an agent with
   `ticket_write.py add-epic --owner <slug>`; never provision a second database
@@ -53,7 +53,7 @@ The same reader for every other agent, requiring an `agent_slug` argument
 (`python3 agent_status.py librarian`). Scoped to that agent's own epics and
 cards, and printing no fleet section.
 
-- **Each front end holds its own slug, its own headings, and — for
+- **Each front end keeps its own slug, its own headings, and — for
   `cos_status.py` — the fleet section.** Everything else is
   `status_common.py`.
 - **Which one an agent runs stays two commands rather than a flag.** Which agent
@@ -91,7 +91,7 @@ the archive.
 ### brief.py
 `python3 brief.py <your slug>` — the whole board for a reader carrying none of
 it: every in-flight epic with its owner, its counts and its open cards; the
-in-flight epics holding nothing on the board; the cards under no epic; the
+in-flight epics containing nothing on the board; the cards under no epic; the
 backlog; and the card the calling agent's queue would start at. The procedure
 that reads it out to a person is `src/skills/briefing-the-board/SKILL.md`.
 
@@ -229,7 +229,7 @@ and a **status** (which board column):
 `backlog` is not a *status* value; it lives on the stage axis, and the CLI
 redirects `--status backlog` to a stage move.
 
-**A due date is optional, and it orders nothing.** `task.due_date` holds an
+**A due date is optional, and it orders nothing.** `task.due_date` stores an
 ISO date an outside deadline falls on — a filing window, a renewal, a date
 somebody else set — and most cards carry none. It is not a plan and not a
 forecast: board order is the queue (`src/app.md` Phase 3.2), and no reader sorts
@@ -253,7 +253,7 @@ every other value, including none, means project.
   opened first. `finishing.standing_conflict()` is the one place that says so.
 - **The kind is chosen from two values rather than typed** —
   `create_tickets.EPIC_KIND_PROJECT` and `EPIC_KIND_STANDING`. An older row
-  holding prose reads as project and keeps its text until someone chooses a
+  containing prose reads as project and keeps its text until someone chooses a
   kind over it.
 - **Two cards on one subject are a project.** A single card goes to standing;
   when a second joins it, both move to an epic of their own. The procedure is
@@ -268,7 +268,7 @@ every other value, including none, means project.
   sets it so. Nothing reaches the Archive unattributed, which is what keeps a
   period's project cost and upkeep cost comparable.
 
-**The Done column holds work waiting for something.** A project card waits for
+**The Done column contains work waiting for something.** A project card waits for
 its epic to close, which archives it and writes that epic's report, and the
 user declaring an effort over is what sets it. A standing card waits for
 nothing, so it is never in Done: marking it done archives it.
@@ -277,10 +277,10 @@ nothing, so it is never in Done: marking it done archives it.
 every card in Done moves to the Archive and one report covers them, from the
 earliest of their creations to now (`src/tools/bristol/clear_done.py`). Each
 card keeps its own `closed_at`. An epic closed afterwards still reports every
-done card it holds, archived by Clear Done or not.
+done card it contains, archived by Clear Done or not.
 
 **An epic's status has one vocabulary** — `not started`, `in progress`,
-`completed`, `on hold` — the set Bristol Tickets' epic dialog writes, held as
+`completed`, `on hold` — the set Bristol Tickets' epic dialog writes, stored as
 `create_tickets.EPIC_STATUS_CHOICES` and used by `add-epic`. The status scripts
 read it through two sets beside it: `EPIC_STATUS_IN_FLIGHT` is what they list as
 the active epics, and an epic outside `EPIC_STATUS_FINISHED` still carries its
@@ -299,7 +299,7 @@ Phase 3.3 states the rule). Their storage:
   precedence keeps a `doing` card first even when it is waiting on a `todo` one.
   Only the user drops the link or waves a card past an unmet blocker.
 - **A block reason** is `task.block_reason`, one of `dependency`, `decision`,
-  `capability`, `transient`, or NULL for a card nothing is holding up. It says
+  `capability`, `transient`, or NULL for a card nothing is blocking. It says
   what *kind* of thing is in the way and never which card: a `dependency` sends
   the reader to the `blocks` links above, so a blocker that finishes clears the
   display with no field to reset. The prose goes in an `add-issue-log` comment,
@@ -333,7 +333,7 @@ gives every session a second place to look.
 
 **A file an outside party needs is a payload, not a channel.** When something
 that genuinely cannot read `tickets.db` — an external service shown a JSON
-envelope — needs the data in a file, a ticket gives that file, the ticket holds
+envelope — needs the data in a file, a ticket gives that file, the ticket records
 the state, and deleting the file loses nothing. Never scan a payload to discover
 work.
 
@@ -347,7 +347,7 @@ their precedence rules live in `src/skills/manage-tickets/SKILL.md`
 **Keep a ticket single-outcome** — one Build or Fix per outcome, split rather
 than combined.
 
-**A Description holds its template and nothing else.** When *you* write or edit
+**A Description contains its template and nothing else.** When *you* write or edit
 a ticket body it contains exactly the Build or Fix skeleton: nothing above it,
 nothing after it, no extra headers, no provenance line, no note to the reader,
 no options-and-recommendations essay. You may rewrite a Description and its

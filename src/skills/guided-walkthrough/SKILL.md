@@ -2,7 +2,7 @@
 name: guided-walkthrough
 description: Walks the user through a feature of this system at their own machine, one step at a time, with the user doing every step and the session saying what should appear before each one. Use when a feature they own has never been used and reading about it has not been enough.
 license: MIT
-compatibility: Runs where the user is present at the machine holding the installation.
+compatibility: Runs where the user is present at the machine with the installation.
 metadata:
   bristol.kind: playbook
   bristol.maintainer: teaching_assistant
@@ -11,7 +11,7 @@ metadata:
 ---
 # guided-walkthrough
 
-Input: one feature of this system, and the user at the machine that holds the
+Input: one feature of this system, and the user at the machine that has the
 installation. Operation: the reference for that feature, run the way below.
 Output: the user having done it once, and the reference corrected by what
 happened.
@@ -56,7 +56,7 @@ appears on their screen.
   and what stopped it. Where the block is the system's rather than the user's,
   it is a card.
 
-## What a reference holds
+## What a reference contains
 
 - **One feature, and the file is named for it.**
 - **The steps in order**, each saying what the user does, what appears, and what

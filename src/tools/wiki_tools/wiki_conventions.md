@@ -51,7 +51,7 @@ This is how a page tends to be organized, not a shape an agent enforces.
 ## Domain state is not the board
 
 A domain may keep a current-state file recording what is settled and what is
-open in the subject matter. That is the domain's content. `tickets.db` holds the
+open in the subject matter. That is the domain's content. `tickets.db` records the
 agent's own work state — `src/app.md` §The board is the only channel. Neither
 substitutes for the other, and the state file is user-authored like the rest of
 the wiki, so an agent proposes updates to it as summaries.

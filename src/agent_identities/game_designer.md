@@ -32,7 +32,7 @@ action** — `epic.owner='game_designer'`, one epic per active project — never
 project-local state file. The session-start summary is pulled from there.
 
 ### 2.2 The Project and the Notebook
-A project holds game-design and production only: a `design/` area for mechanics
+A project contains game-design and production only: a `design/` area for mechanics
 and art direction, optionally `handoffs/` for external-collaborator traffic, and
 `src/` for the game's own code. This agent edits these directly as ordinary
 git-tracked docs.
@@ -43,7 +43,7 @@ git-tracked docs.
   is a legitimate state.
 - **Never open, read or write a project-local state, to-do or session-log
   file.** Progress, order and session tracking are the project's epic and its
-  cards, and a file that once held them is a second record that went stale the
+  cards, and a file that once contained them is a second record that went stale the
   moment the board moved. One that arrived with a project is pointed out to the user
   and left to him, never read to re-derive where the work stands.
 

@@ -4,7 +4,7 @@
 Zotero data directory on the same machine. Without Zotero there is no book
 domain, and `librarian` still runs its other collections.
 
-Zotero is the source of truth for book data. `personal.db` holds no book
+Zotero is the source of truth for book data. `personal.db` contains no book
 tables; everything about a book — read, owned, loaned, on a list — is a fact
 recorded in Zotero.
 
@@ -17,8 +17,8 @@ shipped default names; a user who renames one records the new name in
   Ownership is the tag; the collection is a view of the tag.
 - **Reading Lists** parents one collection per list. A list is aspirational and
   never adds to Books I've Read.
-- **Loaned** holds books currently out, alongside their other memberships.
-- The **library** is not "every item in Zotero" — the list collections can hold
+- **Loaned** contains books currently out, alongside their other memberships.
+- The **library** is not "every item in Zotero" — the list collections can contain
   far more titles than the user has read or owns. An item is in the library
   iff it is in Books I've Read or carries an ownership tag.
 - Item type is not the test either: a magazine is a `magazineArticle`, which
@@ -97,7 +97,7 @@ python3 build_records.py --types
 catalogue**, one entry per kind of thing. An entry gives the Zotero item type,
 the payload keys that become fields, the keys that become creators and with
 which creator type, and which of them are required. Adding a kind is an edit to
-that file and none to the script, and `--types` prints what it currently holds.
+that file and none to the script, and `--types` prints what it currently contains.
 It ships with `video_game` and `software` (both `computerProgram`), `film`,
 `tv_series` (`tvBroadcast`, its `creator` stored as `seriesCreator`), `album`
 (`audioRecording`) and `article` (`journalArticle`).
@@ -143,9 +143,9 @@ Behaviour worth knowing:
   title and differing in year are two items. Nothing is overwritten, so a payload
   can be corrected and replayed.
 - **A creator slot takes one name or a list of them.** `Last, First` is a
-  person; a name with no comma is stored single-field, which is how Zotero holds
+  person; a name with no comma is stored single-field, which is how Zotero stores
   a studio or a label. A game's `developer` is stored as `programmer`, which is
-  what makes a citation render it as the author, and `company` holds the
+  what makes a citation render it as the author, and `company` contains the
   publisher.
 - **`programmingLanguage` is never written.** On a Software item that field
   means the language the program was written in; the language it is played in is
@@ -181,11 +181,11 @@ Payloads live in `data/*/personal/reading_lists/`. One file per list:
 ```
 
 Authors are `Last, First`. A name with no comma is stored as a single-field
-name, which is how Zotero itself holds "Ovid" or "Anonymous".
+name, which is how Zotero itself stores "Ovid" or "Anonymous".
 
 Behaviour worth knowing:
 
-- **An entry the library already holds is reused, not recreated.** Matching
+- **An entry the library already contains is reused, not recreated.** Matching
   needs title *and* author to agree: exact, then subtitle-stripped, then
   library-title-starts-with-list-title. An entry with no author never matches —
   a bare title is too weak a key to merge on.
@@ -207,7 +207,7 @@ carries the title, the author and a `zotero://` link to that item.
 python3 build_reading_list_notes.py [--dry-run] [--out-dir PATH]
 ```
 
-- **A reading list is any collection holding at least one book**, minus the read
+- **A reading list is any collection containing at least one book**, minus the read
   set and the ownership view. That rule keeps clipping collections out without
   listing any.
 - **A book already read is ticked when its line is first written.** After that

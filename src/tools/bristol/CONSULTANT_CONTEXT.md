@@ -76,7 +76,7 @@ What the viewer touches:
 - **`task_link`** — one row per relation, either between two tasks or from a
   task to a URI. A task-to-task row is normalized so `task_id` is the lower id,
   making the link bidirectional by construction.
-- **`task_event`** — the change log: one row per changed field, holding the
+- **`task_event`** — the change log: one row per changed field, recording the
   field, its new value, the actor and a timestamp, appended by database
   triggers.
 - **`attachment`** — images pinned to a task; the files live in a directory

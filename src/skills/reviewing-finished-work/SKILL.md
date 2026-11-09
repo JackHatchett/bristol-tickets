@@ -16,7 +16,7 @@ the work. Operation: its own acceptance criteria, one at a time, against what is
 actually on disk. Output: one comment on that card, and the card closed or
 returned to its author.
 
-**The reviewer is not the author.** An agent holding both the authorship and the
+**The reviewer is not the author.** An agent with both the authorship and the
 judgement of one output is the case
 `src/templates/identity_template.md` §When one job is two agents names, and it
 is why this is a pass someone else runs rather than a section of the work.

@@ -1,7 +1,7 @@
 # Voice Capture
 
 Input is the user, answering. Operation is `voice_capture_interview.md`, a fixed
-100-question interview. Output is a `VOICE PROFILE` document holding how they
+100-question interview. Output is a `VOICE PROFILE` document stating how they
 think and write.
 
 - **Run it only on an explicit request for a capture or a recalibration** —

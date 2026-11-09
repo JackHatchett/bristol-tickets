@@ -79,7 +79,7 @@ What the tool handles for you:
   neither resolves.
 - **The icon**, copied from `icon.icns` next to the tool.
 
-The bundle holds absolute paths, so it is a per-machine artifact: it lives in
+The bundle contains absolute paths, so it is a per-machine artifact: it lives in
 `~/Applications`, outside the project, and is never committed.
 
 ---

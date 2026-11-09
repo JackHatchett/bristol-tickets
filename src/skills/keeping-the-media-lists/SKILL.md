@@ -14,7 +14,7 @@ metadata:
 Input: a work the user has not seen or read, and where it came from. Operation:
 the rules below. Output: one bullet on the watchlist or the reading list.
 
-Every rule of `src/skills/note-formatting/SKILL.md` holds for both notes. The
+Every rule of `src/skills/note-formatting/SKILL.md` applies to both notes. The
 sections below are the notes' own, and win for those sections by that skill's
 first boundary.
 
@@ -29,14 +29,14 @@ first boundary.
 
 ## The shape of each note
 
-- **The general list comes first**: one `##` section per genre, holding
+- **The general list comes first**: one `##` section per genre, containing
   recommendations that arrive from outside any project, such as a friend's. A
   genre with no entry has no section.
 - **Below it, one `##` section per project** that sends media to watch or read
   and analyze. Plot Archetypes is the first; a project that needs one adds its
   own section beneath the last.
 - **Entries are plain bullets, never checkboxes.** The user removes an entry
-  himself once he has seen or read the work, and moves what it held into a
+  himself once he has seen or read the work, and moves what it contained into a
   media note.
 
 ## The bullet

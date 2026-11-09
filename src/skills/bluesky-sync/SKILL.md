@@ -51,7 +51,7 @@ note the epic's cards link to. This owns what a session does.
 - **Each is a quote carrying a block identifier**, `^bsky-<record key>`, so one
   post embeds in another note as `![[bluesky_YYYY-MM-DD#^bsky-<record key>]]`.
   A post standing alone is a block quote with the identifier on its own line
-  after it; a post inside a conversation is one bullet holding the quote, its
+  after it; a post inside a conversation is one bullet containing the quote, its
   line breaks kept as `<br>`, with the identifier at the end of that bullet.
 - **An embed of a post inside a conversation carries the replies nested under
   it.** Obsidian embeds a list item together with its children, and an
@@ -69,7 +69,7 @@ note the epic's cards link to. This owns what a session does.
   than naming a day: a run covering several days costs seconds and picks up
   anything an earlier failure missed.
 - **A whole-history pass is `--all`**, and it is the same command.
-- **Use `--budget` where the host will not hold a long command**, and resume
+- **Use `--budget` where the host will not keep a long command running**, and resume
   from the day it gives with `--from`. `--skip-existing` skips days already
   written, which is for filling gaps rather than for rebuilding.
 - **Rebuild without `--skip-existing` after any change to how a page is
@@ -93,7 +93,7 @@ Work down this list; the earlier causes are far more common.
 
 ## A post with no conversation
 
-- **A post the store holds reaches its day whatever became of its thread.** A
+- **A post the store contains reaches its day whatever became of its thread.** A
   reply whose conversation was never kept is written as a section of its own,
   from the record itself, in the day's own order.
 - **Such a post implies no conversation it cannot show** — its own words, and

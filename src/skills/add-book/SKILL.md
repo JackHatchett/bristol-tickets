@@ -12,7 +12,7 @@ metadata:
 # add-book
 
 Getting books into the library. **Zotero is the library**: a book is added in
-Zotero, and nothing outside Zotero holds book data. Safety gates and field
+Zotero, and nothing outside Zotero contains book data. Safety gates and field
 conventions are `src/skills/data-safety/SKILL.md`.
 
 ## Preconditions
@@ -55,7 +55,7 @@ leave it blank, because a guessed identifier gets trusted once it is read back.
 The snapshot's columns map onto Zotero fields; the map at the top of
 `tools/zotero/zotero_export.py` is the reference for where Copy, Price paid,
 Genre, Shelved and Signed now sit. `extra` is Zotero's escape hatch, one
-`Key: value` per line, and holds the non-bibliographic columns rather than a
+`Key: value` per line, and gives the non-bibliographic columns rather than a
 new item type. The edition convention table is in `src/skills/data-safety/SKILL.md`.
 
 ## Tools

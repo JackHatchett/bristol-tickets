@@ -16,7 +16,7 @@ at runtime) and show it.
 A built `.app` also carries the project tree inside it, which is how Bristol
 installs from a download. That is `payload.py`, and it reads none of what it
 carries: the tree is bytes to copy, not files to interpret, so the
-mechanism-only rule holds.
+mechanism-only rule is kept.
 
 ## Folder layout
 
@@ -62,7 +62,7 @@ consultant to ingest in one pass.
 
 Every colour is a key in the live palette `C`, which a named scheme fills, and
 every gap, corner and font size is a step on one of three token scales. Nothing
-in the UI holds a hex value or a pixel count of its own, so a new palette is a
+in the UI contains a hex value or a pixel count of its own, so a new palette is a
 data change and a density change is one edit. `ui/README.md` is the contract an
 agent styles from: what each key means, which token governs which element, and
 how to answer an instruction given as intent. The scheme in force is
@@ -118,14 +118,14 @@ Finish creates the data folders each enabled agent declares, provisions
 `tickets/tickets.db` from `schema.sql`, writes `config/config.local.json` from
 `config/config.example.json` with the answers substituted in, and writes the
 instance pointer. Cancel writes nothing, and takes back a tree the same run
-placed — leaving a folder that already held anything as it stands.
+placed — leaving a folder that already contained anything as it stands.
 
 The run ends by saying where the installation went and offering the line to
 paste into an agent host that takes typed project instructions. Replacing an existing configuration
 asks first, and **File → Setup…** re-runs the flow from a running
 Bristol Tickets.
 
-A data folder already holding `tickets/tickets.db` is adopted rather than
+A data folder already containing `tickets/tickets.db` is adopted rather than
 created: the wizard offers it as you leave the first page, skips the two pages
 adoption needs no answers from, runs no schema against that board, leaves
 `config.local.json` as it stands, and writes only the instance pointer. The
@@ -133,11 +133,11 @@ summary page's tick box governs the pointer in both flows, so an installation
 can be set up or adopted without taking over which one the app opens.
 
 The wizard reads `config.example.json` as data and imports nothing from the rest
-of `src/tools`, so the mechanism-only rule holds.
+of `src/tools`, so the mechanism-only rule is kept.
 
 ## Settings
 
-The **Settings** tab holds every choice this installation makes, read and
+The **Settings** tab contains every choice this installation makes, read and
 written through `config_file.py` — the same file the wizard fills in, never a
 second store. A save round-trips the whole document, so a key an older build
 does not recognise survives untouched, and one Save commits the whole page.
@@ -175,7 +175,7 @@ keys, and this app only writes them.
 ## Filtering the board
 
 One **Filter** button on the Board opens a panel of facets: **Assignee**, every
-owner the board holds, and **Epic**, every epic in play plus the cards carrying
+owner on the board, and **Epic**, every epic in play plus the cards carrying
 none. Each row is a checkbox and the number of board cards it matches, and a
 click applies it at once — there is nothing to confirm on the way out.
 
@@ -203,10 +203,10 @@ one button rather than two permanent rows. Removing a link asks first.
   (`task_link`, normalized to `task_id` = the lower id), so a link is
   bidirectional by construction: it shows on both tickets, and one delete clears
   it from both.
-- **Address links** hold a web URL, a `zotero://` citation, an `obsidian://`
+- **Address links** store a web URL, a `zotero://` citation, an `obsidian://`
   note, or a filesystem path, with an optional caption. Clicking hands the
   string to the OS. Bristol Tickets therefore knows nothing about schemes, vault
-  names or user paths — the mechanism-only rule holds.
+  names or user paths — the mechanism-only rule is kept.
 
 Links may be added while a ticket is still being *created*: they buffer in the
 widget (shown as "on save") and are written once the INSERT yields an id.
@@ -234,7 +234,7 @@ pointer's config, then a legacy `bristol_reports.local`, then the config found
 by walking up the tree — see `reports/README.md`.
 
 `task_event` (`schema.sql`) is the mechanical change log: one row per changed
-task field, holding the field, its new value, the actor and a timestamp.
+task field, recording the field, its new value, the actor and a timestamp.
 Database triggers write every row, so a drag, a dialog edit, a card archived on
 finishing and a CLI call are all recorded the same way. The inspector's Log pane shows
 these interleaved with `issue_log` comments, filtered by two checkboxes —

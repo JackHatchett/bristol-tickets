@@ -26,7 +26,7 @@ write: `src/skills/data-safety/SKILL.md`.
 `python3 src/tools/zotero/build_records.py --types` prints them: the payload
 keys each kind carries, which are required, and which Zotero item type it
 becomes. That map is `src/tools/zotero/item_types.json`, and a kind the library
-should hold but the map does not is a card for `chief_of_staff` rather than an
+should contain but the map does not is a card for `chief_of_staff` rather than an
 edit made here.
 
 A video game's field-by-field template, including the conventions no other kind
@@ -92,7 +92,7 @@ about a fact neither qualifies, record neither and say so.
 | The Internet Archive's Wayback Machine | A stable URL for a page that has moved, which is the archive pair. |
 
 **Name in `catalog` whichever source the identity came from**, which is normally
-the first of these that held the thing.
+the first of these that listed the thing.
 
 ## Procedure
 
@@ -172,7 +172,7 @@ write reports the same book figures as before.
 `extra` is Zotero's escape hatch, and the library uses it as one `Key: value`
 per line. The keys that earn a line, whatever the kind:
 
-| Key | Holds |
+| Key | Contains |
 | --- | --- |
 | `Also released for` | Every other platform, edition, cut or pressing, semicolon-separated, with years where they differ from the record's date. |
 | `Adapted from` | The work this one adapts, with its author and year. |
@@ -191,7 +191,7 @@ here.
 
 Tags carry what the collection does not. Take the vocabulary from the source's
 own tags rather than inventing one — The Adventure Game Database's for a game,
-the genre and style terms of the database that held the thing for anything
+the genre and style terms of the database that listed the thing for anything
 else — and keep to the ones that would be used to find it again.
 
 ## Failure modes
@@ -218,7 +218,7 @@ else — and keep to the ones that would be used to find it again.
   a digital-only release or a fan game whose sources name no platform.
 - **A collection name that is not in configuration** → stop. Naming a new
   collection is a structural change and is the user's.
-- **A kind the map does not hold** → stop and file it for `chief_of_staff`.
+- **A kind the map does not contain** → stop and file it for `chief_of_staff`.
   Writing the fields by hand into the nearest kind produces a record whose type
   is wrong, and nothing downstream can tell.
 

@@ -1,6 +1,6 @@
 ---
 name: assessing-a-care-recipient
-description: Writes the profile a care plan is built on for one family member - what she needs help with, what she lives on and from which program, where she lives and what holds her there, who may decide for her, and what she wants - each fact with where it came from. Use when a family member's care is first taken up, and again when her health, income, housing or wishes change.
+description: Writes the profile a care plan is built on for one family member - what she needs help with, what she lives on and from which program, where she lives and what keeps her there, who may decide for her, and what she wants - each fact with where it came from. Use when a family member's care is first taken up, and again when her health, income, housing or wishes change.
 license: MIT
 compatibility: Needs python3 to resolve the notebook folder and to write the board.
 metadata:
@@ -37,15 +37,15 @@ Seven sections, in this order.
   retirement, SSDI, SSI, a state supplement, a pension, wages), the monthly
   figure, and the document it was read from. Assets by kind and rough size,
   because a means-tested program counts them.
-- **Her coverage** - Medicare parts held and any plan by name, Medicaid and the
+- **Her coverage** - Medicare parts she has and any plan by name, Medicaid and the
   state that pays it, a Medicare Savings Program, a drug plan, anything private.
-- **Where she lives and what holds her there** - the kind of housing, and for
-  subsidized housing which kind: a voucher she holds (tenant-based), a subsidy
+- **Where she lives and what keeps her there** - the kind of housing, and for
+  subsidized housing which kind: a voucher she has (tenant-based), a subsidy
   attached to the building (project-based, public housing, an elderly-housing
   building), or a reduced rent tied to her income. Which kind it is decides
   whether the help can move with her.
 - **Who may decide** - a power of attorney, a health-care proxy, a
-  representative payee, a guardian, each with who holds it and in which state
+  representative payee, a guardian, each with who has it and in which state
   it was made; or that none exists.
 
 ## How a fact enters it

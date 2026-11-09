@@ -12,7 +12,7 @@ metadata:
 # working-a-licence
 
 Input: a business described by what it does, where it does it and who it
-employs. Operation: the procedure below. Output: one research document holding
+employs. Operation: the procedure below. Output: one research document containing
 every requirement that combination triggers, and one card for every requirement
 carrying a date.
 
@@ -75,7 +75,7 @@ Ten fields. A requirement missing any of the first seven is not worked yet.
 - **Fee**, with the date the fee page was read beside it.
 - **Lead time** — the authority's published processing time, or `none
   published`.
-- **Prerequisites** — what has to be true, held or finished before the
+- **Prerequisites** — what has to be true, obtained or finished before the
   application may be filed.
 - **Source** — the authority's own page, as a link.
 - **Unresolved**, where the record leaves a question open.
@@ -96,7 +96,7 @@ Ten fields. A requirement missing any of the first seven is not worked yet.
   in the document's frontmatter. Fees change on a schedule the document does
   not.
 - **Name the jurisdiction at the point the requirement is stated.** A rule that
-  holds in one city is false in the next one over.
+  is true in one city is false in the next one over.
 - **Record both readings where the authority's page and the statute disagree**,
   and mark the disagreement unresolved.
 
@@ -136,7 +136,7 @@ Ten fields. A requirement missing any of the first seven is not worked yet.
 - **The research is one document per business**, named for the business, in the
   folder `agents.business_advisor.key_data_paths` declares, resolved with
   `data_paths.ensure_dir()` at the moment of the write.
-- **The document holds requirements and nothing about what has been done about
+- **The document contains requirements and nothing about what has been done about
   them** — `src/app.md` §What a file may say.
 - **A requirement carrying a date becomes a card** — a deadline, a renewal, a
   window that opens before filing, a certificate due within so many days —

@@ -17,7 +17,7 @@ below. Output: the piece written into the language's notes, sounding like that
 language alone.
 
 Who decides what, what to recommend and how a design is written down are
-`src/skills/designing-with-the-author/SKILL.md`, and hold here. The rules below
+`src/skills/designing-with-the-author/SKILL.md`, and apply here. The rules below
 are the language's own.
 
 ## Who decides
@@ -34,7 +34,7 @@ are the language's own.
 
 - **Read what the notes say about the speakers before coining a field** —
   their land and its ecology, their work, their history, their gods, and the
-  peoples they meet. A field of roots names what that world holds.
+  peoples they meet. A field of roots gives what that world contains.
 - **Give the world's own things words of their own**, and leave a thing the
   speakers never meet without one: a cave people has words for kinds of stone
   and darkness, and a borrowed word, or none, for the open sea.
@@ -71,7 +71,7 @@ are the language's own.
 ## When a rule changes
 
 - **Regenerate every word the new rule would have built differently**, as if
-  the rule had held from the start — roots, grammar words, names, the loans
+  the rule had applied from the start — roots, grammar words, names, the loans
   other languages took, and every name built from any of them.
 - **Carry a word over unchanged only where the rule leaves how it was built
   untouched.** A rule adding a vowel mark adds the mark to an existing name and
@@ -104,7 +104,7 @@ language coins. A language's sound is checked the same way, as a sample.
 - **Replace a sound the check reports too near before it reaches the author**,
   and give each sound offered its nearest language and score.
 - **Add a new language's notes to the `languages` of the `sound_check` key** of
-  the config entry of the agent holding the languages, in the session that
+  the config entry of the agent that builds the languages, in the session that
   writes its first words, and each chunk of a split dictionary in the session
   that makes the chunk.
 

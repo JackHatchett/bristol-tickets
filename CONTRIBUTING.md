@@ -12,10 +12,10 @@ done, not only the feature you have in mind.
 
 ## What is never committed
 
-- **`config/`** — everything but `config.example.json`. Your real config holds
+- **`config/`** — everything but `config.example.json`. Your real config contains
   absolute paths to your own machine.
 - **`data/`** — the tickets database, snapshots, logs, anything per-instance.
-- **`*.local` and `*.local.json`** — one-line pointer files holding real paths.
+- **`*.local` and `*.local.json`** — one-line pointer files containing real paths.
 - **A built `.app` or launcher.** Both bake in absolute paths and are
   per-machine artifacts.
 

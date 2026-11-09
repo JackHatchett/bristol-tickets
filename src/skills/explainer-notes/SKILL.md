@@ -24,7 +24,7 @@ wants a course, which this system does not build.
 - **The whole set is one sitting: 2,500 to 4,500 words.** Count it with a word
   count rather than judging it by feel.
 - **A single note is 250 to 800 words, and the hub is under 350.** A note past
-  the ceiling holds two ideas; a note under the floor is a sentence that belonged
+  the ceiling contains two ideas; a note under the floor is a sentence that belonged
   in another note.
 - **Cut whatever the reader did not come for.** Completeness is a course's
   virtue. Here the measure is whether a curious reader wanted the sentence, and
@@ -46,7 +46,7 @@ wants a course, which this system does not build.
   second summary of the topic from a different height. The set exists to be
   worth more than the answer in chat.
 
-## What one note holds
+## What one note contains
 
 - **One idea, and the note is named for it.** Depth belongs to the note that
   owns the concept — `src/skills/splitting-an-explanation/SKILL.md`.
@@ -105,7 +105,7 @@ Current events are this skill's normal case, and a course's never.
 - **Resolve the notebook's explainers location through
   `src/tools/config_tools/data_paths.py`**, and create it at the
   moment of the write.
-- **One directory per topic, named for the topic**, holding the hub and its
+- **One directory per topic, named for the topic**, containing the hub and its
   notes and nothing else.
 
 ## Procedure

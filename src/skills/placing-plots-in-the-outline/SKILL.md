@@ -16,7 +16,7 @@ tiered outline notes. Operation: the steps below. Output: the item in the
 custom beat sheet that owns it, and that sheet linked from the outline of its
 tier.
 
-Every rule of `src/skills/note-formatting/SKILL.md` holds for the outline
+Every rule of `src/skills/note-formatting/SKILL.md` applies to the outline
 notes and the custom beat sheets; the sections below are their own, and win
 for those sections by that skill's first boundary. Building an archetype sheet
 from published stories is `src/skills/building-a-beat-sheet/SKILL.md`; this
@@ -25,14 +25,14 @@ note on Dan Wells' lectures, `seven_point_story.md`.
 
 ## 1. Find the tier
 
-- **Put a plot on the outline of the smallest tier that holds it from first
+- **Put a plot on the outline of the smallest tier that contains it from first
   beat to last** — a book, a cycle of books, the series.
 - **Keep a beat in the sheet of the plot it moves, tagged with its book**, so a
   cycle plot's book 1 beats stay in the cycle sheet as "(book 1)".
 - **Treat the tiers as parallels.** A plot that recurs at series, cycle and
   book scale is one plot repeating with real differences, one sheet per tier,
   and never a subplot of the tier above; nesting that appears is an effect of
-  dependencies. No sheet holds another or sits within one: a sheet carries no
+  dependencies. No sheet contains another or sits within one: a sheet carries no
   Within or Holds, and each links its parallels in `## Related Notes`.
 - **Give each tier's parallel a smaller question than the tier above, never
   the same one.** The parallel scales its parent's question down to what its
@@ -58,7 +58,7 @@ note on Dan Wells' lectures, `seven_point_story.md`.
 - **A story plot is an action or a mystery**, the latter titled as its
   question: Who Is the Warlock?
 - **A reader's mystery is a story plot apparent to no character** — a question
-  only the reader holds. It has no carrier, and the outline lists it apart
+  only the reader has. It has no carrier, and the outline lists it apart
   (§4).
 - **A villain's scheme is a story plot scoped to that villain**, even where the
   villain carries every beat, when the villain has no emotional arc.
@@ -106,8 +106,8 @@ per plot, a row per chapter. It is where plots meet.
 - **Sort the outline's characters under four headings in `## Characters`**,
   each character once, at the heading for this tier:
   - **POV** — a point-of-view character, with a `Character -` slot and a
-    `Story -` slot, each holding one or more plots, and an optional
-    `Romance -` slot holding at most one;
+    `Story -` slot, each containing one or more plots, and an optional
+    `Romance -` slot containing at most one;
   - **Secondary** — a character with no point of view and at least one
     character plot, whose part may be to serve other plots' beats;
   - **Static** — a round character with no arc, and no slots;
@@ -162,7 +162,7 @@ per plot, a row per chapter. It is where plots meet.
 - **Folders**: the project's content-rules file gives them — the outline notes
   alone at the top of the plot folder, each sheet in its `<tier>/<kind>`
   subfolder, the tier `series`, `cycle_N` or `book_N` and the kind
-  `character`, `story`, `romance` or `setting`, which holds the setting
+  `character`, `story`, `romance` or `setting`, which contains the setting
   promises.
 - **Filename**: the plot's name in snake case.
 - **Frontmatter**: the notebook's plot-note keys — `aliases` with the H1,
@@ -170,8 +170,8 @@ per plot, a row per chapter. It is where plots meet.
 - **H1**: the plot's name; a mystery's name is its question.
 - **Summary**: one line under the H1 saying what the plot is and who carries
   it, with no closing period.
-- **`## Details`** holds four bullets in this order, the last two with nested
-  bullets, as the archetype sheets hold theirs, with no Variations:
+- **`## Details`** contains four bullets in this order, the last two with nested
+  bullets, as the archetype sheets give theirs, with no Variations:
   - Tier — `series`, `cycle N` or `book N`;
   - Kind — `character plot`, `story plot` or `romance`;
   - Promise to the Reader — what the plot promises a reader;
@@ -200,7 +200,7 @@ per plot, a row per chapter. It is where plots meet.
     cycle, each failure a beat of its own;
   - **Give how the beat happens as the draft stands as sub-bullets** under it,
     an option kept rather than a commitment.
-- **A sheet holds no `## Options`.** A candidate connection or choice is a
+- **A sheet contains no `## Options`.** A candidate connection or choice is a
   developmental idea (§8), and the matrix is where one is taken or dropped.
 - **Link every character, place, object and scene with a note where a beat or
   detail mentions it.**
@@ -214,7 +214,7 @@ per plot, a row per chapter. It is where plots meet.
 
 A setting promise is the sheet for one Key Worldbuilding entry (§4): the
 promise a piece of the world makes to the reader, set up, optionally kept alive,
-and resolved. Every rule above holds for it except where this says otherwise.
+and resolved. Every rule above applies to it except where this says otherwise.
 
 - **File it in its tier's `setting` folder, its Kind `story plot`**, named
   `promise_of_<item>`; a series-level setting plot the author names takes
@@ -225,7 +225,7 @@ and resolved. Every rule above holds for it except where this says otherwise.
   markdown_notebook.beat_sheets.story_dir`.
 - **Give in Differentiators the sense it fills and the archetype**, with the
   ending it takes, Met in Full or Transformed.
-- **Hold the archetype's six beats in `## Beats`**, each under the archetype's
+- **Keep the archetype's six beats in `## Beats`**, each under the archetype's
   own label and made specific to the item.
 - **Leave out `## Seven-Point Highlights`.**
 - **Give in `## Related Notes` the outline of its tier and the archetype.**
@@ -292,7 +292,7 @@ being taken for a decision.
 
 - **A book 1 beat of a cycle plot moved to the book outline** → §1; it stays
   in the cycle sheet, tagged "(book 1)".
-- **One sheet holding a series romance and its book romance** → §1; one sheet
+- **One sheet containing a series romance and its book romance** → §1; one sheet
   per tier.
 - **A book parallel asking the series' question** → §1; it asks a smaller
   one.
@@ -312,7 +312,7 @@ being taken for a decision.
   the slot as "unnamed".
 - **Seven-point labels filled out of the method's order, or left bare without
   a proposal** → §5.
-- **A setting promise with Seven-Point Highlights** → §5; it holds the
+- **A setting promise with Seven-Point Highlights** → §5; it contains the
   archetype's six beats alone.
 - **An outline's Setting with a sense left empty, or no spice** → §4.
 - **A run of beats reported without the slider check, where the project

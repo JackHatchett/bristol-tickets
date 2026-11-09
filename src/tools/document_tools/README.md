@@ -44,7 +44,7 @@ formatting standard, repairs what does not conform, and writes
 - **Run `--rename` only where your access gives the whole notebook write**,
   because it rewrites links in every folder.
 - **Without the grant, report what the dry run would change** and file a card
-  for an agent that holds it — never a command for the user to run.
+  for an agent that has it — never a command for the user to run.
 - **The filename convention is `recipe_<snake_case>.md`.** A name disagreeing
   with its H1 is flagged rather than renamed, because every recipe is reached by
   wiki-link from the hub. `--rename` opts in and rewrites the links across the
@@ -55,7 +55,7 @@ formatting standard, repairs what does not conform, and writes
   the hub and from any page; further aliases are kept after it.
 - **One blank line separates every heading from its block** and every block
   from the next heading.
-- **`rating` sits directly after `source_url`, and holds the user's own
+- **`rating` sits directly after `source_url`, and contains the user's own
   score**, a decimal from 1 to 5 that he writes. An existing value is kept
   unchanged and a missing key is added blank; no tool or agent fills it from a
   source's stars or reviews.

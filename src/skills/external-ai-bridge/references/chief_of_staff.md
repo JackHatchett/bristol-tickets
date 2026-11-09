@@ -1,6 +1,6 @@
 # Notebook-assistant bridge — chief_of_staff protocol
 
-Specializes `src/skills/external-ai-bridge/SKILL.md`, which holds the six common
+Specializes `src/skills/external-ai-bridge/SKILL.md`, which states the six common
 invariants. This file carries only the delta for how the notebook assistant and
 `chief_of_staff` coordinate: the assistant runs the custom prompts
 `chief_of_staff` authors, inside the user's Markdown notebook and nowhere else.

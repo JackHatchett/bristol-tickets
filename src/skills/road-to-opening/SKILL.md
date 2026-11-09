@@ -23,7 +23,7 @@ Three terms, used throughout:
   the next span something it cannot start without.
 - **The live stage** is the stage being worked now. It is the only one
   elaborated.
-- **A packet** is the folder holding the hub and whatever stage notes have been
+- **A packet** is the folder containing the hub and whatever stage notes have been
   elaborated so far.
 
 Two named practices give the shape. **Rolling wave planning** details the near
@@ -74,7 +74,7 @@ the stages before it, what it hands the ones after, and its gate.
 - **Build-out** — what the space has to become to pass inspection and open.
   Needs the lease and the licensing prerequisites. Hands on a dated path to an
   inspection.
-- **Hiring** — how many people, in what roles, what each has to hold, and what
+- **Hiring** — how many people, in what roles, what each has to have, and what
   employing them obliges. Needs the model's labour line and the people rules
   licensing imposes. Hands on staff and payroll obligations.
 - **Supply** — what is bought, from whom, on what terms and lead times. Needs
@@ -116,7 +116,7 @@ the stages before it, what it hands the ones after, and its gate.
 
 Every stage skill writes this shape and restates none of it.
 
-- **The hub** — one note per business, holding the concept sentence, the road as
+- **The hub** — one note per business, containing the concept sentence, the road as
   one bullet per stage in the order above, and a `## Related Notes` section
   linking each stage note that exists.
 - **A stage note** — what the stage has to answer, a wikilink to each of its
@@ -130,9 +130,9 @@ Every stage skill writes this shape and restates none of it.
 - **A value the session writes carries its source in the sentence that states
   it**, so what the agent produced and what the user produced are told apart by
   reading.
-- **The notes hold answers, evidence, sources, reasoning, and the questions
+- **The notes contain answers, evidence, sources, reasoning, and the questions
   still blank.**
-- **The board holds the live stage, every date, and every decision** — and
+- **The board records the live stage, every date, and every decision** — and
   nothing else about the packet.
 - **No note carries a status marker of any kind** — no checkbox, no `DONE`, no
   percentage, no line saying how far along anything is. Which stage is live is
@@ -166,7 +166,7 @@ one, with questions in an upstream form still blank.
   through `src/tools/config_tools/data_paths.py` with `ensure_dir()` at the
   moment of the write.
 - **The business's other documents stay in the folder
-  `agents.business_advisor.key_data_paths` declares.** The notebook holds what
+  `agents.business_advisor.key_data_paths` declares.** The notebook contains what
   the user hand-edits; research and drafts he reads rather than fills in are the
   other folder's.
 - **One packet per business.** A second concept is a second packet; a changed

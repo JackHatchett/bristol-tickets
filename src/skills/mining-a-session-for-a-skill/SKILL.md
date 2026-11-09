@@ -39,7 +39,7 @@ moved with their comments.
 
 - **The corpus is the session running this pass, and nothing else.** Never a
   past conversation, a conversation search, a stored memory, or any record that
-  outlives a session. The permission this skill holds is to look at what the
+  outlives a session. The permission this skill gives is to look at what the
   session in front of it just did, and it reaches no further whatever a host
   makes available.
 
@@ -48,7 +48,7 @@ moved with their comments.
   channel does not reach it; that section governs next actions, ordering and
   in-progress facts, all of which stay on the board here as everywhere.
 - **Nothing read here becomes a record of what happened.** Only a method that
-  holds for a class of task leaves this pass, which is why §What is worth
+  is true of a class of task leaves this pass, which is why §What is worth
   keeping tests for one; a skill stating what a session did would be the
   history the board already owns.
 - **Carry the evidence into the output.** A transcript is gone once the session
@@ -68,7 +68,7 @@ A candidate has to pass all four.
   that a session narrative is being minted as a skill.
 - **It is a method, not a decision.** What the user chose belongs to the card
   that carried the choice. How the work was done belongs to a skill.
-- **It holds when the environment changes.** A missing binary, an unmounted
+- **It stays true when the environment changes.** A missing binary, an unmounted
   volume, an ungranted permission and an unconfigured credential are all things
   the user can change; a rule written from one of them outlives its cause and
   gets cited for months. `src/skills/session-review/SKILL.md` §What is never a
@@ -87,7 +87,7 @@ owns the patch route and the card it files.
 
 ## Procedure for a new skill
 
-### Step 1 — Name the class and check it is not already held
+### Step 1 — Name the class and check no skill already covers it
 
 ```
 python3 src/tools/skill_tools/skills.py list

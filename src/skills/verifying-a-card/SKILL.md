@@ -71,7 +71,7 @@ Two things, and a step stating only one is not a verification.
 ## When it cannot run here
 
 - **Ask the user to clear a blocker only he can clear, and wait.** An
-  application holding a file open, a credential nobody has supplied, a service
+  application keeping a file open, a credential nobody has supplied, a service
   not granted: each is one sentence to him and a card that stays open, never a
   reason to run something else. Where the asking happens is
   `src/skills/manage-tickets/SKILL.md` §Asking the user for a decision.

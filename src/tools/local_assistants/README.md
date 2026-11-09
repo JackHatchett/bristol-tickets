@@ -16,7 +16,7 @@ These specialize `src/skills/external-ai-bridge/SKILL.md`; an assistant's own
 bridge protocol adds only its delta.
 
 - **The local model decides nothing canonical.** It never authors the thing it
-  operates on; the cloud agent holds the pen.
+  operates on; the cloud agent does the writing.
 - **The two coordinate through named files on disk** — the git-ignored data tree
   or a sanctioned notebook output directory, one appending and the other reading
   next session. They never run at once and there is no live channel.

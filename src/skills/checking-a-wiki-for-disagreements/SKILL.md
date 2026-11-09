@@ -1,6 +1,6 @@
 ---
 name: checking-a-wiki-for-disagreements
-description: Finds where a body of notes disagrees with itself — one name spelled two ways, one fact stated two ways — and files each disagreement where the user will meet it. Use when a wiki, a story bible or a documentation set has grown past what one session can hold, and when a disagreement in one is suspected or reported.
+description: Finds where a body of notes disagrees with itself — one name spelled two ways, one fact stated two ways — and files each disagreement where the user will meet it. Use when a wiki, a story bible or a documentation set has grown past what one session can read, and when a disagreement in one is suspected or reported.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3 and read access to the notes.
 metadata:
@@ -14,7 +14,7 @@ metadata:
 
 Input: a folder of notes about one subject. Operation: the machine pass, then
 the reading pass. Output: one card per disagreement, listing every note that
-holds it.
+states it.
 
 Catching a disagreement is worth as much as fixing one, and it does not depend
 on being allowed to fix anything: a folder an agent may only read is checked the
@@ -26,7 +26,7 @@ finding where it contradicts itself.
 
 - **Run `python3 src/tools/wiki_tools/name_variants.py <folder>`.** It finds one
   coined name spelled more than one way, with how often each spelling is used
-  and which notes hold it, and finds nothing else.
+  and which notes contain it, and finds nothing else.
 - **Judge every group it raises; it raises candidates rather than verdicts.**
   Three answers are usual: a spelling used once beside one used often is a typo;
   two spellings both used widely are a decision the user has to make; and two
@@ -53,12 +53,12 @@ becomes a re-reading of the whole wiki:
 
 - **One card per disagreement**, assigned to the agent that owns those notes,
   written as a fix: what is expected, and what the notes say instead.
-- **Name every note holding each side**, by path, with how often each spelling
+- **Name every note stating each side**, by path, with how often each spelling
   or claim appears. The card is what the user meets; a disagreement spoken only
   in a session is not recorded.
 - **A spelling is corrected rather than filed** where it is clear, and asked
   about in the session where it is not —
-  `src/skills/notebook-proposal/SKILL.md` §What a read-only note takes, which holds in
+  `src/skills/notebook-proposal/SKILL.md` §What a read-only note takes, which applies in
   a folder you may only read. The cards below are for everything else.
 - **Never file the fix as done by finding it.** What a card may then do about it
   is that agent's own write authority — `src/templates/identity_template.md`
@@ -74,5 +74,5 @@ becomes a re-reading of the whole wiki:
   right without a search of their own.
 - **Every group the tool raised filed as a card** → §The machine pass: three of
   the four answers are not findings.
-- **A finding held until it can be fixed** → catching is the output; the fix is
+- **A finding kept back until it can be fixed** → catching is the output; the fix is
   a separate authority and may never come.

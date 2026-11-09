@@ -92,7 +92,7 @@ The first thing it asks is which folder to put Bristol in — `~/Bristol` unless
 you say otherwise. That folder is the whole system: the agent files, your
 configuration, your data, your board. You will point your agent host at it, so
 somewhere you can find again is the right answer. Choosing a folder that already
-holds a Bristol installation takes that one on rather than overwriting it.
+contains a Bristol installation takes that one on rather than overwriting it.
 
 A run from source skips this question: the folder is the one you cloned.
 
@@ -119,16 +119,16 @@ an empty board. Four pages:
    what Finish does, and a tick box deciding whether this installation becomes
    the one Bristol Tickets opens at startup. Nothing has been written before you
    press Finish, and Cancel takes back the folder this run placed — one that
-   already held something of yours is left as it stands.
+   already contained something of yours is left as it stands.
 
 ### Creating, or adopting what is already there
 
-A data folder holding no board is **created**. Finish makes the data folders
+A data folder containing no board is **created**. Finish makes the data folders
 each enabled agent declares, provisions `tickets.db` with the schema, and writes
 `config/config.local.json` from the shipped template with your answers filled
 in.
 
-A data folder that already holds `tickets/tickets.db` is **adopted**. Setup says
+A data folder that already contains `tickets/tickets.db` is **adopted**. Setup says
 so as you leave the first page and offers to take it on. Nothing inside it is
 changed: no schema runs against that board, and `config/config.local.json` is
 left as it stands. Pages 2 and 3 are skipped, because adoption needs no answer

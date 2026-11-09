@@ -12,7 +12,7 @@ session: S00
 
 <!--
 BEFORE DRAFTING — fill in:
-  pov:        which character holds the chapter
+  pov:        whose point of view the chapter is told from
   location:   primary setting (wiki slug or description)
   story_time: in-world date/time if known
   function:   what this chapter must accomplish for the plot/arc

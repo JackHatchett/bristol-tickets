@@ -11,18 +11,18 @@ metadata:
 # designing-with-the-author
 
 Input: a piece of the world to design. Operation: the rules below. Output: a
-design the author has decided, written into the note that holds it. A
+design the author has decided, written into the note that owns it. A
 proposal's route into the notebook is `src/skills/story-proposals/SKILL.md`. A
 constructed language's own rules are
-`src/skills/building-a-constructed-language/SKILL.md`, which these rules hold
-for too.
+`src/skills/building-a-constructed-language/SKILL.md`, and these rules apply
+there too.
 
 ## Before proposing
 
 - **Read the project's content-rules file first** —
   `src/skills/writers-room-project-context/SKILL.md` step 3. Where the project
   keeps its guidance for agents apart from its notes, that guidance is the file,
-  and it holds the project's own lists of overused concepts and of assumptions
+  and it gives the project's own lists of overused concepts and of assumptions
   the author never set.
 
 ## Who decides what
@@ -31,7 +31,7 @@ The author draws the world and the session colors it in. He draws the shapes
 and chooses which crayons are in the box; the session fills the shapes, inside
 the lines and with those crayons.
 
-- **Color without asking when all three hold**, and report what was colored:
+- **Color without asking when all three are true**, and report what was colored:
   - a note says the thing exists;
   - a note gives the rule for filling it in — a count, a structure, a naming
     logic;
@@ -52,7 +52,7 @@ the lines and with those crayons.
 - **Follow a burst of questions to its end.** One question begets more, and the
   burst is finite: every new need becomes a question in the session or a card.
 - **Open each new card, and each new topic within one, with where the work
-  stands, before the first question**: what the notes already hold, which gaps
+  stands, before the first question**: what the notes already state, which gaps
   are open, and the goal each gap serves — a book's points of view, which plots
   have beats in it and which are empty, and where an idea the author raised
   could fit. A few lines, never pages.
@@ -116,7 +116,7 @@ entered on the project's list of spent concepts.
   nests.** How often a concept may recur scales with how often the narrative
   uses that kind of thing: several of a city's hundred lesser families may
   share one, and one first-rank house alone carries it. A use counts in its own
-  group and in every group holding that group.
+  group and in every group containing that group.
 - **Let a clear narrative connection carry a concept past its weight** — a
   sect's name echoing the faith it split from — and give the connection beside
   it.
@@ -126,7 +126,7 @@ entered on the project's list of spent concepts.
   fishing town shelters its boats in through the winter storms, kept by two rival
   guilds under a truce".
 - **Chain associations out from the question** — cave, cave painting,
-  painting — and start each chain from the whole of what the notes now hold,
+  painting — and start each chain from the whole of what the notes now state,
   never only from the setting first described.
 - **Keep the thing itself in reach.** A literal cave's name may still start
   from caves. A concept with nothing to do with the thing that does not also
@@ -145,7 +145,7 @@ entered on the project's list of spent concepts.
 
 Input: a coined proper name. Operation: `src/tools/wiki_tools/sound_check.py`,
 which reads every language and every main character's name from the notes
-listed under the `sound_check` key of the config entry of the agent holding
+listed under the `sound_check` key of the config entry of the agent that builds
 the languages. Output: the name, apart from every other language and every
 main character's name.
 
@@ -169,7 +169,7 @@ main character's name.
   count, a cluster, last vowel and closing consonant.
 - **Pass the shares the language's rules give each syllable count** with
   `--formal-shares` and `--familiar-shares`, as `3=2/5`; the batch flags a
-  count holding more of its names than its share allows.
+  count with more of its names than its share allows.
 - **Settle each flag by how linked the names are**, the count of notes each
   appears in beside it. Regenerate the less-linked name of a sharing pair, so
   a new name gives way to an established one; put a pair to the author only
@@ -218,7 +218,7 @@ name's sound. Output: options for each name, put to him by §Who decides what.
   each stands, and its titles.
 - **List each form turned down in a line**, with the mark that put it out.
 - **Carry the author's answer into the next round.** An opening, an ending, a
-  meaning or a concept he rules out holds for every later candidate, and a
+  meaning or a concept he rules out applies to every later candidate, and a
   concept he spends is entered by §Choosing a concept.
 
 ## Measuring completeness
@@ -229,5 +229,5 @@ name's sound. Output: options for each name, put to him by §Who decides what.
 
 ## Writing it down
 
-- **Write the decided design as he decided it**, in the note that holds it, by
+- **Write the decided design as he decided it**, in the note that owns it, by
   `src/templates/identity_template.md` §Words: the fact, and the sentence stops.

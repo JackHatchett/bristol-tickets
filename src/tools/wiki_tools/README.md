@@ -10,8 +10,8 @@ worldbuilding, a game's bible, a documentation set.
   lookup through a router. Load it when a task reads or proposes a change to a
   knowledge base.
 - **`name_variants.py`** — one coined name spelled more than one way across a
-  folder of notes, with how often each spelling is used and which notes hold it.
-  Run it when a body of notes has grown past what one session holds; the
+  folder of notes, with how often each spelling is used and which notes contain it.
+  Run it when a body of notes has grown past what one session can read; the
   procedure around it, including what a finding is and where it goes, is
   `src/skills/checking-a-wiki-for-disagreements/SKILL.md`.
 - **`sound_check.py`** — how near a coined name, or a sample of a language's

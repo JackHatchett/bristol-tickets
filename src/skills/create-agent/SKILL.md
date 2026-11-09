@@ -41,7 +41,7 @@ registration. For converting an existing pre-framework bundle, use
    reaches for when no session is running; `agents.py` is how an agent that
    already exists is changed.
 
-3. **Scaffold only what has real content to hold.** Most new agents start with
+3. **Scaffold only what has real content to contain.** Most new agents start with
    none of it and add as needs appear.
    - `src/skills/<skill-name>/` — once a real procedure exists. The format is
      `src/tools/skill_tools/README.md`, and turning an existing procedure file

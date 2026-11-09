@@ -55,7 +55,7 @@ that produce its data — and `access <agent>` says which of them an agent may
 write. An agent's `dashboard_access` is a Write to All toggle, on unless
 switched off, and the dashboards chosen while it is off; chief_of_staff writes
 to every one. `add`, `remove` and `set-access` write the key, and the program's
-docstring holds the rule. Settings lists the known dashboards and each agent's
+docstring states the rule. Settings lists the known dashboards and each agent's
 profile carries its toggle.
 
 ### data_paths.py
@@ -64,7 +64,7 @@ Resolves declared locations and creates them at the moment of a write.
 
 - `resolve(declared)` — the absolute path a declaration refers to. A value
   written `@<dotted.key>`, optionally followed by `/sub/path`, is a reference:
-  it resolves as the value that key holds, so a folder is written once and
+  it resolves as the value that key gives, so a folder is written once and
   every value that repeats it refers to the key that owns it. Reads
   config, and touches the disk only for an absolute declared path that is not
   there: a host may reach the user's folders somewhere other than where config
@@ -92,7 +92,7 @@ Resolves declared locations and creates them at the moment of a write.
   revokes a grant. What an agent may then do with a grant is
   `src/templates/identity_template.md` §Data locations.
 - `agent_env(slug)` — an agent's `env` block with every reference resolved to
-  an absolute path, and a reference to a key config no longer holds left out.
+  an absolute path, and a reference to a key config no longer contains left out.
   `python3 data_paths.py --env <slug>` prints it as `NAME=value` lines.
 - `agent_data_paths(slug[, access])` / `ensure_agent_data_paths(slug[, access])`
   — those grants resolved, or only the ones carrying one access.

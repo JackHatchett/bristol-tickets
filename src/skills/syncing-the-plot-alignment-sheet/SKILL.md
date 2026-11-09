@@ -1,6 +1,6 @@
 ---
 name: syncing-the-plot-alignment-sheet
-description: Carries changes between a novel's tiered plot notes and the plot alignment sheet - one column per plot, beats down the column - so that the notes hold every word and the sheet keeps the author's arrangement of where each beat sits, and tracks how each character's sliders move down the arranged beats once the arrangement is settled. Use when the author asks for a sync, sends notes or a revised copy of the sheet, comments on the sheet, when the sheet is to be rebuilt or given a new tab, or when the lined-up plotting is reviewed for movement.
+description: Carries changes between a novel's tiered plot notes and the plot alignment sheet - one column per plot, beats down the column - so that the notes contain every word and the sheet keeps the author's arrangement of where each beat sits, and tracks how each character's sliders move down the arranged beats once the arrangement is settled. Use when the author asks for a sync, sends notes or a revised copy of the sheet, comments on the sheet, when the sheet is to be rebuilt or given a new tab, or when the lined-up plotting is reviewed for movement.
 license: MIT
 compatibility: Runs where the Markdown notebook is reachable; needs python3 and a Google Sheets connector.
 metadata:
@@ -24,7 +24,7 @@ The shape of the notes themselves is
 
 ## Who owns what
 
-- **The notes hold every word in the sheet**: each title, promise and beat.
+- **The notes contain every word in the sheet**: each title, promise and beat.
   A word changes in the notes first, and the sheet follows.
 - **The arrangement is the author's**: which row a beat sits on, the blank
   rows and cells he leaves, and the order and width of the columns. A sync
@@ -62,7 +62,7 @@ The shape of the notes themselves is
    prints the writes and a report:
    - `set` — a cell's new text: a changed title, promise or beat, rewritten in
      place;
-   - `clear` — a beat the notes no longer hold, emptied where it sits;
+   - `clear` — a beat the notes no longer contain, emptied where it sits;
    - `set` for a new beat — the first empty cell below the beat before it,
      above the beat after it and inside its divider band;
    - `insert_row` — where no such cell exists: a blank row inserted across the
@@ -140,10 +140,10 @@ recorded sliders are the Sliders section of the character's note.
 - **Give the movement tab the outline tab's rows**: rows 1 to 3 its headers
   and from row 4 the same rows and divider bands, so row N of one sits beside
   row N of the other. Title it `Movement - <outline tab>`.
-- **Write in a character's cell, for each row holding a beat that character
+- **Write in a character's cell, for each row containing a beat that character
   acts in or suffers, every slider the row moves and which way** — `L+`, `P-`,
   `C+`, with a competency's own initial where the note scores competence per
-  competency — and `flat` where the beat moves none. A row holding no beat of
+  competency — and `flat` where the beat moves none. A row containing no beat of
   theirs stays blank. A cell carries a direction and never a number.
 - **Mark a flat stretch on the character's column**: two or more of that
   character's beats running down the column, blank rows passed over, with no
@@ -162,7 +162,7 @@ recorded sliders are the Sliders section of the character's note.
   `src/skills/placing-plots-in-the-outline/SKILL.md`, then reaches the sheet by
   §Sync.
 - **Rebuild the movement tab whole after a sync changes its outline's tab.**
-  Its rows follow the outline's tab and hold nothing the author arranges.
+  Its rows follow the outline's tab and contain nothing the author arranges.
 
 ## Failure modes
 

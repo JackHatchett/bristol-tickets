@@ -7,11 +7,11 @@ charter lists those skills, so adding one changes what the agent can do without
 the charter changing at all.
 
 Eight ship with Bristol, and more can be added from `src/addons/` (§Add-on agents). In full, an agent is three things: an entry in your
-configuration, holding its paths and settings; a charter, a Markdown file under
+configuration, giving its paths and settings; a charter, a Markdown file under
 `src/agent_identities/` (or, for an agent you imported, in your data folder) that it reads in full at the start of every session,
-holding who it is, what it is for and what it may not do; and skills, folders of
-instructions it opens only when a task calls for one. Which of the three holds a
-given fact follows from what a session does with the fact — look it up, hold it
+stating who it is, what it is for and what it may not do; and skills, folders of
+instructions it opens only when a task calls for one. Which of the three states a
+given fact follows from what a session does with the fact — look it up, keep it in mind
 throughout, or open it when the work needs it — rather than from what the fact
 is about. That shape is written down in `src/templates/identity_template.md`
 §What an agent is made of.
@@ -119,7 +119,7 @@ it comes up and raises the level as you take it on. It will not lock a technical
 choice — engine, language, art pipeline — before you understand the trade-off,
 and it invents no creative content you did not ask for.
 
-It also stewards `data/<instance>/code_projects/`, the folder holding every
+It also stewards `data/<instance>/code_projects/`, the folder containing every
 software project you are building with AI help, whether that is one game or
 several.
 
@@ -134,7 +134,7 @@ you have git installed.
 
 Paid client work, a favour for a friend, a volunteer commitment, a grant
 collaboration — "client" means the other party, not a billing relationship. It
-runs intake for a new engagement, keeps a registry of who and what, holds each
+runs intake for a new engagement, keeps a registry of who and what, records each
 project's own working state, and drafts the operator tasks a project needs.
 
 It drafts and never sends. Submitting a deliverable, contacting a client, and
@@ -208,10 +208,10 @@ Bristol Tickets' **Agents** tab does the same thing as a form. It lists the
 agents you have configured; **New Agent** opens a blank one, and opening a
 listed agent fills the form with everything that agent currently is.
 
-The form holds every property an agent has, and all of it is editable, each
+The form shows every property an agent has, and all of it is editable, each
 with the control its kind deserves:
 
-- the **charter** as one Markdown editor holding the whole document, beside the
+- the **charter** as one Markdown editor showing the whole document, beside the
   rest of the form rather than buried in it;
 - the **charter file**, the **data folders** and the **context files** as
   pickers — you choose a real folder or file, and the path is stored in the
@@ -226,7 +226,7 @@ with the control its kind deserves:
 - the **skills** attached to it as a tick list of every skill this
   installation can load;
 - and one field per key in the entry this build has no control of its own for,
-  named after the key and holding the JSON it holds. An agent with no such key
+  named after the key and showing the JSON it contains. An agent with no such key
   gets no such field.
 
 Nothing is read-only except the name of an agent that already exists, which is
@@ -244,7 +244,7 @@ on a plane.
 
 ### Starting from somebody else's
 
-An agent someone else refined arrives as one file — `<slug>.agent.json`, holding
+An agent someone else refined arrives as one file — `<slug>.agent.json`, containing
 the charter, the settings, and the address of every skill the agent uses.
 
 ```

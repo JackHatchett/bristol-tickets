@@ -34,7 +34,7 @@ by the user — as `session.suggested_commit` says.
 
 ## Committing
 
-Run in the shell that holds the repository — on the user's computer in Cowork,
+Run in the shell that reaches the repository — on the user's computer in Cowork,
 by `src/skills/working-in-cowork/SKILL.md` §Running git in a connected folder.
 The user chose this by the setting, so every step runs without asking him.
 

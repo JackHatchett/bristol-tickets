@@ -121,7 +121,7 @@ clone covers the second.
 Against the artifact a stranger actually gets, on the user's own machine.
 
 1. **Do steps 1 and 2 of §The clone first.** The pointer beats every other
-   resolution, so a machine still holding one never opens setup.
+   resolution, so a machine that still has one never opens setup.
 
 2. **Take the built app from the release** the workflow published, or from
    `make_release.py` where the release is not cut yet.
@@ -133,7 +133,7 @@ Against the artifact a stranger actually gets, on the user's own machine.
 
 4. **Give the placement page a scratch folder** — `~/Downloads/bristol_download`
    — then complete the wizard as in step 6 below. It passes when that folder
-   holds `src/`, `docs/`, the entry files, `config/config.local.json` and a
+   contains `src/`, `docs/`, the entry files, `config/config.local.json` and a
    board, and no `data/` belonging to anyone else.
 
 5. **Check the hand-off page** gives that folder and copies a line containing it.
@@ -141,7 +141,7 @@ Against the artifact a stranger actually gets, on the user's own machine.
 6. **Prove an update keeps the installation.** A user step: raise `src/VERSION`,
    rebuild, and open the new app. It passes when `src/VERSION` in the scratch
    folder rises, `config/config.local.json` is byte-identical, and the board
-   still holds the card step 7 of §The clone made.
+   still contains the card step 7 of §The clone made.
 
 7. **Then steps 7 through 10 of §The clone**, against the scratch folder.
 
@@ -157,7 +157,7 @@ Against the artifact a stranger actually gets, on the user's own machine.
    values from the real repository instead: `repo_root` is the clone,
    `config_path` is its `config/config.local.json`, and `data_root` and
    `instance_slug` are what that file's `important_paths.tickets_db` resolves
-   back to — the folder holding the installations, and the one installation's
+   back to — the folder containing the installations, and the one installation's
    folder beneath it. `src/tools/config_tools/instance_pointer.py` (no
    arguments) prints the pointer; `--write` reconstructs it from exactly those
    values.
@@ -189,7 +189,7 @@ Against the artifact a stranger actually gets, on the user's own machine.
    cd ~/Downloads/bristol_check && pip3 install -r requirements.txt
    ```
 
-   A Homebrew-managed Python refuses this; `docs/install.md` holds both ways
+   A Homebrew-managed Python refuses this; `docs/install.md` gives both ways
    round it.
 
 5. **Launch Bristol Tickets from the copy.** A user step. The session takes the
@@ -248,7 +248,7 @@ Against the artifact a stranger actually gets, on the user's own machine.
   pointer was not handed back. §The clone step 10, or
   `instance_pointer.py --write` from the real repo.
 - **The wizard offers to create rather than adopt** → the data folder it was
-  given holds no `tickets/tickets.db`. The folder to choose is the one the
+  given contains no `tickets/tickets.db`. The folder to choose is the one the
   pointer's `data_root` and `instance_slug` name together, not `data_root`
   alone.
 - **`TICKETS_DB` is set in the environment** → the wizard never opens, because

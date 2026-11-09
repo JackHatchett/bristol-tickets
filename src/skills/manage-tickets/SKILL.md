@@ -30,13 +30,13 @@ for all three: `src/templates/identity_template.md`.
 ## A closed card is history
 
 A card in `done` or the Archive is finished. It records what was decided when
-it closed, and the notes and the open cards hold what is decided now.
+it closed, and the notes and the open cards state what is decided now.
 
 - **Read a closed card only where the user or an open card points to it** — his
   message, a link or a blocker on an open card, or a status script's last
   finished lines.
 - **Read it as what was decided then.** Where it disagrees with a note or an
-  open card, the note or the open card holds.
+  open card, the note or the open card is right.
 - **Edit nothing on a closed card** — not its text, its fields or its status.
   Work it calls for is a new card, linked to it from the new card. A comment is
   always allowed.
@@ -199,13 +199,13 @@ lost the moment anyone reorders the column, so the two do different jobs and you
 do both.
 
 **7. Name another agent's card the moment it matters.** The snapshot's YOUR
-CARDS OTHER AGENTS WAIT ON section lists your cards that hold another agent's.
+CARDS OTHER AGENTS WAIT ON section lists your cards that block another agent's.
 
 - **Say so in the session when another agent's card blocks the work you would
   take next**, whenever you find it rather than at the close: the card, its
   agent, and what of yours it clears. Pausing until it is done, and asking the
   user to have it worked in a parallel session first, are both open.
-- **Say which agent to launch when you close a card that held another
+- **Say which agent to launch when you close a card that blocked another
   agent's**: the card now clear, its agent, and that the agent can run it.
 - **Move another agent's blockers up when every card of yours waits on them.**
   Put each blocking card at the top of its agent's `todo` column (`set-order
@@ -276,7 +276,7 @@ LLM Model Strength and Effort: <Max|Standard>
   sits indented beneath the one before, and the last is your own card.
 - **List one card of yours to run next, and every `doing` card of yours that
   is blocked**, each as the last step of its chain. Your next card, where
-  nothing holds it, is a top-level line of its own under your slug. Where a
+  nothing blocks it, is a top-level line of its own under your slug. Where a
   step waits on two agents' work, each is its own top-level line, the one to
   do first above, and the step beneath the first.
 - **Put the chains in the order the user should take them.** The block advises
@@ -286,16 +286,16 @@ LLM Model Strength and Effort: <Max|Standard>
   what to do, where, and what to tell the agent. "Read the last message of
   today's story_architect session and say whether its close is right" is the
   line; "your decision on #1119" is the misuse.
-- **Title the block Next Task where it holds one line.**
+- **Title the block Next Task where it has one line.**
 - **A session with nothing of its own left gives the reason and stops**:
   "Chief Of Staff Session Closed: board is clear" and no other line, whatever other agents
-  hold.
+  have.
 - **Take LLM Model Strength and Effort from the first top-level card** — its
   `task.tier`, by §Processing tier, rated and written to the card first where
   it has none. The block gives the level and never a model; config's `tiers`
   key maps each level to a model and an effort, and the user resolves it.
 - **Write nothing around it** — no account of the session's work, no partial
-  work, no restated rule. The cards hold all of it.
+  work, no restated rule. The cards record all of it.
 - **Write no state into any file to support it.** The block lives in the
   conversation; what it lists lives on the board, and `src/app.md` §The board is
   the only channel is unchanged by it.
@@ -329,7 +329,7 @@ is left for him to find.
 - **Record the answer on the card he decided about**, in one comment, in his
   words where the wording matters. The asking lives in the conversation and the
   decision lives on the board.
-- **Never hold a question for the close.** A decision that gates the work is
+- **Never keep a question for the close.** A decision that gates the work is
   asked when it is reached; a decision that gates the next card goes in the To
   Continue block.
 
@@ -349,7 +349,7 @@ not fit one session. Splitting after it stalls is the same work done twice.
   own is not a part.
 - **The split lands on the board before the work does**: `add-task` per part,
   each linked to the card that split, and that card closed with a comment listing
-  them. A split held in the session's head is a plan nobody else can read.
+  them. A split kept in the session's head is a plan nobody else can read.
 - **A card that resists splitting has a scope nobody has worked out yet**, and
   finding that out is the next action rather than starting it.
 

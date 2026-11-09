@@ -1,6 +1,6 @@
 # {{AGENT}} — coordination contract template
 
-Builds `references/<agent>.md` inside the skill holding the archetype it
+Builds `references/<agent>.md` inside the skill containing the archetype it
 specializes: a **coordination contract** describing how separate parties —
 agents, AI services, the user — work together. A contract answers "how do
 separate parties coordinate?", distinct from the skill body around it (a

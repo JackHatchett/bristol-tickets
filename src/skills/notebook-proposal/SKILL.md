@@ -1,6 +1,6 @@
 ---
 name: notebook-proposal
-description: Routes a fact worth keeping to the folder of the user's notebook that owns it, writing it where agents may write and summarizing it where the user authors, and holds the two edits any agent makes in a note the user authors - a spelling correction and a missing Related Notes section. Use when something worth keeping arrives from the user or from an outside collaborator, when a name in the notes is spelled more than one way, and before searching the notebook.
+description: Routes a fact worth keeping to the folder of the user's notebook that owns it, writing it where agents may write and summarizing it where the user authors, and gives the two edits any agent makes in a note the user authors - a spelling correction and a missing Related Notes section. Use when something worth keeping arrives from the user or from an outside collaborator, when a name in the notes is spelled more than one way, and before searching the notebook.
 license: MIT
 metadata:
   bristol.kind: playbook
@@ -113,6 +113,6 @@ headings and their spacing, the wikilinks, and the section that closes a note.
   accepted; it gets the same reconcile-and-cite treatment as the user's own
   idea.
 - **Never open a parallel log.** The notebook is the record, and
-  `agent_output_dir` holds summaries for the user to fold in rather than a
+  `agent_output_dir` contains summaries for the user to fold in rather than a
   second history.
 - **Never re-litigate a settled decision** unless the user asks to revisit it.

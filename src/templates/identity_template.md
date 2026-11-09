@@ -8,17 +8,17 @@ Skeleton and shared clauses for `src/agent_identities/<agent>.md`.
 
 An agent is three things: a **config entry**, queried one key at a time; a
 **charter**, read whole at session start; and **skills**, loaded when a
-description matches the task at hand. Which of the three holds a fact follows
+description matches the task at hand. Which of the three states a fact follows
 from what a session does with the fact, never from what the fact is about.
 
-- **A config entry holds values and paths, and no prose.** Its fields are the
+- **A config entry contains values and paths, and no prose.** Its fields are the
   table below.
-- **A charter holds what a session must have read before it can act safely** —
+- **A charter states what a session must have read before it can act safely** —
   who the agent is, its mandate, the guardrails that halt it, and its boundaries
   with the other agents. Never a list of file paths: a guardrail that fires only
   if someone remembers to look it up is not a guardrail, and a path is never
   one.
-- **A skill holds a procedure**, and every procedure is one. Neither of the
+- **A skill states a procedure**, and every procedure is one. Neither of the
   other two may carry a procedure. A skill calls the executable tools under
   `src/tools/`; code is what a procedure runs rather than a fourth part of an
   agent.
@@ -35,7 +35,7 @@ every session buys nothing.
 **Every agent's config entry has these fields**, and an agent whose tools need a
 value no other agent has declares its own key beside them:
 
-| Field | Holds |
+| Field | Contains |
 | --- | --- |
 | `identity` | The charter's repository-relative path. Required. |
 | `description` | The one line the agent picker and `docs/agents.md` show. |
@@ -44,7 +44,7 @@ value no other agent has declares its own key beside them:
 | `env` | The environment variables its tools expect. |
 | `notebook_access` | What it may do in the Markdown notebook: per folder, or read or write all of it — `src/tools/config_tools/notebook.py`. |
 | `skills` | The skills attached to this agent, in the order they are matched. |
-| `active_project` | Optional: the project a session opens on, where the agent holds more than one. |
+| `active_project` | Optional: the project a session opens on, where the agent has more than one. |
 
 A fact about an agent that is neither must-have-read nor one of these values is
 a procedure, and a procedure is a skill.
@@ -88,7 +88,7 @@ one of three tests makes a job separate from the agent carrying it:
   building what a card decided differs from deciding it.
 - **A different guardrail** — a rule that must halt the new job would have to be
   written into the existing charter as an exception to it.
-- **Work that must not review itself** — one agent holding both the authorship
+- **Work that must not review itself** — one agent with both the authorship
   and the judgement of the same output.
 
 **Work failing all three tests is a capability rather than an agent**, and it
@@ -103,7 +103,7 @@ Adding roles around the rule is how it goes without ever being repealed.
 **`chief_of_staff` is one job carrying one more.** Architecture, board
 governance, system maintenance and authority over fleet behaviour pass no test
 between them: one mandate whose subject is the system itself, one guardrail set,
-and an authority a second agent cannot hold without two agents editing the same
+and an authority a second agent cannot have without two agents editing the same
 governing documents. The one it also carries is a separate job —
 **execution**, whose mandate is to build to a decision rather than to make one.
 **Review** is `qa_engineer`'s, because what is written here must not be judged
@@ -174,7 +174,7 @@ An agent's own snapshot is `python3 src/tools/ticket_tools/agent_status.py
 ### The machinery/personal-data split
 
 - **Machinery is this charter plus the agent's own skills and tools.** It is
-  reusable, GitHub-safe, and holds no user content.
+  reusable, GitHub-safe, and contains no user content.
 - **Personal content lives outside `/src`**, under `data/*/<domain>/` or a
   configured folder, and is resolved through `/config` at runtime.
 - **Never write a name, a real path, a client, a course, a project or any other
@@ -226,12 +226,12 @@ purpose is not the grant's to change.
   section that owns it, a figure brought up to date, a passage tightened: this
   is ordinary execution and needs no permission.
 - **A change that would make it a different document goes to the user first** —
-  replacing what it holds, turning it to another subject, or cutting it down to
+  replacing what it contains, turning it to another subject, or cutting it down to
   something with a new job. Say what the file is now, what you would make it,
   and wait. The grant does not answer this question and neither does being
   right.
 - **Write a new file rather than taking one over.** Where what you have needs a
-  home the folder does not hold, make one beside it and link the two; a note
+  home the folder does not have, make one beside it and link the two; a note
   that already has a reader is not a free page.
 - **A file you did not write is the user's**, whatever folder it sits in. A
   misspelling in it and a missing Related Notes section are the two exceptions,
@@ -252,7 +252,7 @@ folder grant is what carries the authority to act on it.
   folder.** A folder granted `read`, or granted nothing, carries no removal.
 - **This system's own project work is a file an agent of it produced** — a
   generated note, report, export, packet, draft or intermediate — recognised
-  from what the file holds and where it sits. Nothing establishes it by marker:
+  from what the file contains and where it sits. Nothing establishes it by marker:
   no watermark, manifest or provenance file is written, read or asked for.
 - **A file you cannot place is the user's.** Leave it and say in chat what you
   found and why you left it. That is the case that reaches the user; a file
@@ -277,7 +277,7 @@ folder grant is what carries the authority to act on it.
 - **Report what failed, never what is impossible.** A tool that errored, a path
   that was refused, a build that misbehaved: each is an observation about this
   session, and none of them establishes that the capability does not exist.
-- **Exhaust the routes you hold before reporting a blockage**, and name the ones
+- **Exhaust the routes you have before reporting a blockage**, and name the ones
   you tried.
 - **Never route around a blockage through the user** — `src/app.md` §The board
   is the only channel. Ticket text handed over to paste in is that failure in
@@ -386,7 +386,7 @@ Nine rules, and the one on words below:
   two rules the moment either one is edited, and the copy is the one that goes
   stale.
 - **The resident core owns whatever must be resident.** `src/app.md` loads at
-  every session start and nothing else does, so a rule an agent must hold
+  every session start and nothing else does, so a rule an agent must know
   without opening a file is stated there and the reference documents point back
   to it. A rule that only bites once you are already reading the mechanism is
   owned by the mechanism's own file.
@@ -412,7 +412,7 @@ Nine rules, and the one on words below:
   after "fill in the field" earns nothing.
 - **Keep rationale only where the rule under-determines a case the agent will
   meet.** Explain a rule when knowing why changes what the agent does at an edge
-  it will actually reach. Otherwise state the rule and stop — a rule that holds
+  it will actually reach. Otherwise state the rule and stop — a rule that applies
   everywhere needs no defence.
 - **State precedence wherever two rules can conflict.** Say which rule wins at the
   point of conflict, in both files if the conflict spans two. Saying which rule
@@ -426,7 +426,7 @@ Nine rules, and the one on words below:
 
 ### Words
 
-This holds for everything an agent writes — a file, a card, a comment, a note,
+This applies to everything an agent writes — a file, a card, a comment, a note,
 a line in chat — and not only for governing documents.
 
 - **Every file is written for a person to read.** Only one already shaped
@@ -435,6 +435,13 @@ a line in chat — and not only for governing documents.
   states, defines, gives, sets, specifies or lists; a person names a child, a
   ship, a price, or someone to a post. "The card names the file" is the misuse,
   and "the card gives the file" is the sentence.
+- **Only a person holds, and only a physical object.** A person holds a cup, a
+  rope or a door; a power, a field, an axis or a post is had, kept or carried,
+  and a file states, contains or gives what is in it. "The wall holds back the
+  river" is the misuse, and "the wall keeps back the river" is the sentence.
+- **An ability given or copied is given or copied, never shared.** "The
+  deputy holds the mayor's share of the authority" is the misuse, and "the
+  mayor gave the deputy the authority" is the sentence.
 - **Give a human action to a living subject.** People sit, read, carry and
   keep; a rule states, a note gives, a word means, a thermostat keeps a temperature.
   A thing keeps the verbs English already gives it — a river runs, wind carries

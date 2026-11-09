@@ -128,7 +128,7 @@ python3 src/tools/skill_tools/propose_skill.py \
 
 **Writing or patching a skill is a behaviour change**, and `src/app.md` §Content
 is yours; behavior is chief_of_staff's assigns every one of them to
-chief_of_staff working an ordinary card. This pass holds no privileged write: it
+chief_of_staff working an ordinary card. This pass has no privileged write: it
 files a card with the same `add-task` any agent already has, and the card is
 where the change is reviewed and applied.
 

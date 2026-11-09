@@ -64,7 +64,7 @@ location. A data-folder README is read on demand by a human and never consulted
 at session start, so logic left there is invisible at runtime.
 
 **Step 2b — Quarantine any state-tracking file, never inherit it.** A legacy
-data root often holds a living `STATE.md`, `CHANGELOG.md` or `next_session.md`.
+data root often contains a living `STATE.md`, `CHANGELOG.md` or `next_session.md`.
 Check its claims against the board and against the thing it describes by direct
 inspection before believing any of them. Migrate still-open, user-confirmed
 items into the agent's board epic as tasks

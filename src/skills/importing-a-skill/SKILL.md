@@ -74,7 +74,7 @@ Four cases, tested in this order.
 - **Whether it carried executable code, and what read it.** A skill of Markdown
   says so. A skill carrying scripts states the scan's result and what it left
   unread.
-- **Which agent holds it, and what that agent can now do that it could not.**
+- **Which agent has it, and what that agent can now do that it could not.**
 
 ## Failure modes
 

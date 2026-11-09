@@ -18,7 +18,7 @@ report as JSON. Moves, renames and deletes nothing.
 `python3 keyword_scan.py` — walks `src/` for the keywords in the `keyword_scan`
 block of config and writes every match to
 `data/<instance>/system/logs/keyword_scan_results/keyword_scan_results.csv` as
-`file_path`, `line_number`, `matched_text`. Takes no arguments. The block holds
+`file_path`, `line_number`, `matched_text`. Takes no arguments. The block contains
 `keywords`, `exclude_suffixes` and `exclude_prefixes`.
 
 ### dedupe_photos.py

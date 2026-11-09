@@ -66,7 +66,7 @@ because the assistant invents one otherwise.
   `notes_dir/02_templates`**, copied key for key, rather than composing a new
   shape. A more specific template wins where one covers the note's kind.
 - **Write a literal `YYYY-MM-DD` date** wherever a template's `created` field
-  holds a Templater expression. The assistant does not execute
+  contains a Templater expression. The assistant does not execute
   `<% tp.file.creation_date() %>` and leaves it in the file as text.
 - **Carry the global header's keys —** `aliases`, `tags`, `created`, `status`,
   `source_url` (`template_000_header.md`) — **on any note no more specific
@@ -88,7 +88,7 @@ because the assistant invents one otherwise.
 - **Adding, renaming or removing a prompt updates the index in the same pass.**
   The folder is the source and the index is derived from it, so the two never
   land in separate sessions.
-- **The index holds no work state** — no status column, no what-changed
+- **The index contains no work state** — no status column, no what-changed
   section, no dates. `src/app.md` §What a file may say.
 
 ## Auditing the library
@@ -101,7 +101,7 @@ because the assistant invents one otherwise.
    ```
 
    It reports a missing key, a missing tag, a repeated order number, a wikilink
-   resolving to no note, and an emitted frontmatter block holding a Templater
+   resolving to no note, and an emitted frontmatter block containing a Templater
    expression or carrying no template's keys. Exit status is 1 when any check
    matched.
 2. **Read each note the checker lists**, against the two contracts above.

@@ -26,7 +26,7 @@ python3 src/tools/bluesky/sync.py --all         # the whole history
 - `--skip-existing` leaves a day whose page is already there.
 - `--from YYYY-MM-DD` begins at a date rather than the first.
 - `--budget SECONDS` stops after that long and gives the day it stopped at, for
-  a host that will not hold a long-running command.
+  a host that will not keep a long-running command alive.
 
 **A run reads the account, adds what it read to the store, and writes the pages
 from the store.** The network decides what the store gains; it never decides
@@ -38,24 +38,24 @@ window differs, so nothing about the backfill can drift from what runs daily.
 **A page is written whole, and only when its contents would differ.** An
 interrupted run is restarted rather than repaired.
 
-**A page shows the posts the notebook keeps.** The store holds every post the
+**A page shows the posts the notebook keeps.** The store contains every post the
 account made; `judge.py` says which of them a page leaves out, and the run
 reads that on every pass, so pruning survives a sync and a rebuild alike. A
 post nobody has judged is kept, which is what makes a daily run need no
 reader.
 
-**`--from-store` writes the pages from what the store already holds** and
+**`--from-store` writes the pages from what the store already contains** and
 reaches no account, which is the rebuild after a judgment changes.
 
 ### store.py
 
 The account's own copy, in `data/<instance>/bluesky/archive.db`: every post
-record the account has been seen to hold, and each pruned conversation as it was
+record the account has been seen to have, and each pruned conversation as it was
 last seen whole.
 
 **The store only gains.** A post already kept is refreshed in place and never
-removed, and a conversation is replaced only by a newly fetched one holding
-every one of the account's posts the kept copy held. A thread that comes back
+removed, and a conversation is replaced only by a newly fetched one containing
+every one of the account's posts the kept copy contained. A thread that comes back
 short, for whatever reason, leaves what is kept alone.
 
 **A conversation is kept as the page needs it.** A post as the app view returns
@@ -101,7 +101,7 @@ about to remove is kept first, and the moment each delete is sent is written
 down before it is sent, so a pass cut off partway says what is already gone and
 resumes from there rather than starting again.
 
-**It holds to the account's write budget** — 5,000 points an hour and 35,000 a
+**It keeps to the account's write budget** — 5,000 points an hour and 35,000 a
 day, at one point a delete — so the whole corpus goes inside two hours, and
 `--budget SECONDS` stops it early and says what is left.
 
@@ -135,7 +135,7 @@ posted, so two runs hand the same reader the same numbers and a verdict can be
 recorded by number rather than by address.
 
 **The standard `batch` prints is the only standard.** `--bare` leaves it out
-for a reader already holding it.
+for a reader who already has it.
 
 **A conversation is printed once, with every post of the account's being
 judged inside it numbered.** `--unjudged` skips posts already judged, which is
@@ -160,7 +160,7 @@ of both schedules is `src/tools/_shared/install_schedule.py`, which every daily
 job uses; this file is that installer called with the copy's own label, command
 and log.
 
-**Run it on the machine that will hold the schedule.** It takes the interpreter,
+**Run it on the machine that will run the schedule.** It takes the interpreter,
 the repository and the log location from where it is running, so a run from
 anywhere else writes another machine's paths into the schedule.
 
@@ -182,7 +182,7 @@ time.
 | `link_into_journal` | whether a journal page gains a link back |
 | `fetch_workers` | how many days are worked at once |
 | `index_file` | the filename, inside `notes_folder`, of the note listing every day page; unset, no index is written |
-| `index_related` | the links the index's Related Notes section holds, each a whole `[[target\|label]]` |
+| `index_related` | the links the index's Related Notes section contains, each a whole `[[target\|label]]` |
 
 **The app password `purge.py` signs in with is in the OS keychain**, under the
 service `bristol.bluesky` and the key `app_password`, and in no file at all.
@@ -217,7 +217,7 @@ is gone.
 `bluesky_archive` is the store against an account read twice, the second read
 shorter than the first: a post no longer served stays, a day the window opens
 partway through comes back whole, and a conversation is never traded for one
-holding less of what the account said.
+containing less of what the account said.
 
 `bluesky_images` is a picture kept once and a picture already gone, against a
 data server stood in for by a fetcher that records what it was asked: the bytes

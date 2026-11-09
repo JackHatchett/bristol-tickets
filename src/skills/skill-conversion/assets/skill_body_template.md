@@ -49,9 +49,9 @@ when there are none.}}
   from a file. A skill's step that scans a folder, reads a JSON status field or
   takes the latest file by name is a second tracker and a defect.
 - **Name the tool, never reimplement it.** Where a procedure calls a script,
-  give the exact command line and let `src/tools/` hold the behavior.
+  give the exact command line and let `src/tools/` contain the behavior.
 - **Provider-specific behavior goes to that provider's connected MCP**, never
   into a skill and never into a shared config file.
 - **A file an outside party must be shown, because it cannot read
-  `tickets.db`, is a payload**: a ticket gives it, the ticket holds the state,
+  `tickets.db`, is a payload**: a ticket gives it, the ticket records the state,
   and deleting it loses nothing.

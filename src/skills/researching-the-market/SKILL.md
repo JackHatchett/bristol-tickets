@@ -73,7 +73,7 @@ he is stuck on.
 - **Say what a value is when it is not a finding** — an estimate, a figure for a
   neighbouring area, a range two sources disagree across — in the same sentence.
 - **Leave a question that cannot be sourced blank**, and write beside it what
-  would answer it and where that is held.
+  would answer it and where that is kept.
 
 ## The gate
 
