@@ -46,6 +46,10 @@ the lines and with those crayons.
   batch, each name beside its sound-check score. A common word, such as air or
   heat, is the session's own and goes to him only as part of a language's
   design.
+- **Let a name given in a placeholder rendering stand without putting it to
+  him** — a land, people or place filled in at placeholder depth, which the
+  story may never reach. Once a story reaches a placeholder name, it goes to
+  him with its batch like any new name.
 - **Ask about anything missing one of the three.** It is still sketch, and the
   author draws it. The questions the session itself raises are his to answer, and so is every
   principle for how a class of things is built.
