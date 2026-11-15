@@ -2916,7 +2916,10 @@ def check_test_control() -> list[str]:
 
     from ui.main_window import TestControlWindow
 
-    TestControlWindow(conn)
+    # The window is held for the life of the process, as the running tool
+    # holds it.
+    global _test_control_window
+    _test_control_window = TestControlWindow(conn)
     ok.append("TestControlWindow builds against the seeded DB")
     return ok
 
@@ -4220,6 +4223,11 @@ def _orchestrate(names: list[str]) -> int:
         sys.stdout.write(proc.stdout)
         if proc.stderr.strip():
             sys.stderr.write(proc.stderr)
+        # A target that dies outright — a crash in Qt rather than a failed
+        # check — prints no line of its own, so the runner says which it was.
+        if proc.returncode != 0 and "SMOKE FAIL" not in proc.stdout:
+            print(f"SMOKE FAIL [{name}]: the process exited with code "
+                  f"{proc.returncode} and reported no failed check")
         rc = rc or proc.returncode
     print("SMOKE OK" if rc == 0 else "SMOKE FAILED")
     return rc
