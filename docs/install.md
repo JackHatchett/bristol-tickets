@@ -173,7 +173,8 @@ agent reads `src/app.md` on its own and takes it from there.
 Everything above is the download. The source is the same system with the build
 step in your hands: take it if you want to change Bristol, not to use it.
 
-Requires **macOS** and **Python 3.10 or later**.
+Requires **macOS or Linux**, and **Python 3.10 or later**. The download above is
+macOS only; on Linux the source is the way in.
 
 ```bash
 git clone https://github.com/JackHatchett/bristol-tickets.git bristol_tickets
@@ -208,7 +209,7 @@ One of them then needs a step pip cannot perform:
 
 | Tool | Extra step |
 | --- | --- |
-| PDF-to-Markdown OCR (`src/tools/document_tools/`) | `brew install tesseract ghostscript poppler` |
+| PDF-to-Markdown OCR (`src/tools/document_tools/`) | macOS: `brew install tesseract ghostscript poppler`. Debian or Ubuntu: `sudo apt install tesseract-ocr ghostscript poppler-utils` |
 
 ### Building the release
 
@@ -216,8 +217,8 @@ One of them then needs a step pip cannot perform:
 python3 src/tools/bristol/make_release.py
 ```
 
-Runs the publication checks, builds the bundle with the project tree staged
-inside it, writes the zip and its checksum, and prints the command that
+Builds on macOS only. Runs the publication checks, builds the bundle with the
+project tree staged inside it, writes the zip and its checksum, and prints the command that
 publishes them. `src/tools/bristol/BUILD_APP.md` covers what it does and the
 lighter live-source launcher for iterating.
 
@@ -225,7 +226,8 @@ lighter live-source launcher for iterating.
 
 Bristol Tickets finds its database in a fixed order: the `TICKETS_DB`
 environment variable, then the instance pointer at `~/Library/Application
-Support/BristolTickets/instance.json`, then a local pointer file, then by
+Support/BristolTickets/instance.json` (on Linux,
+`~/.config/BristolTickets/instance.json`), then a local pointer file, then by
 walking up the source tree looking for `data/*/tickets/tickets.db`. Running from
 inside the repository needs no pointer at all. Write one when you build a
 standalone app, which is relocatable and cannot see the repository:
