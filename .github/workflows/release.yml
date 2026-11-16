@@ -41,13 +41,14 @@ jobs:
         id: version
         run: echo "value=$(cat src/VERSION)" >> "$GITHUB_OUTPUT"
 
-      - name: Publish the release
+      - name: Create the release as a draft
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.value }}
         run: |
           cd src/tools/bristol/dist
           gh release create "v$VERSION" \
+            --draft --target "$GITHUB_SHA" \
             "BristolTickets-$VERSION.zip" \
             "BristolTickets-$VERSION.zip.sha256" \
             --title "Bristol Tickets $VERSION" \
