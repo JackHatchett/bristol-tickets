@@ -82,6 +82,21 @@ What the tool handles for you:
 The bundle contains absolute paths, so it is a per-machine artifact: it lives in
 `~/Applications`, outside the project, and is never committed.
 
+### On Linux
+
+```bash
+python3 src/tools/bristol/make_launcher_linux.py
+```
+
+That writes `~/.local/share/applications/bristol-tickets.desktop` — a desktop
+entry, the text file a Linux desktop reads to list an application — whose
+command runs this repo's `app.py` with a Python that has PySide6. Bristol
+Tickets then opens from the application menu under its own name and icon.
+
+Run the same command again after moving or renaming the folder, or after
+switching to a different Python. `--remove` deletes the entry. Like the bundle,
+it holds absolute paths and is never committed.
+
 ---
 
 ## One-time setup for building
