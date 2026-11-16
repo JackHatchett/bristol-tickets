@@ -95,7 +95,7 @@ Tickets then opens from the application menu under its own name and icon.
 
 Run the same command again after moving or renaming the folder, or after
 switching to a different Python. `--remove` deletes the entry. Like the bundle,
-it holds absolute paths and is never committed.
+it contains absolute paths and is never committed.
 
 ---
 

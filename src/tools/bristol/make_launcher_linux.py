@@ -8,7 +8,7 @@ application menu under its own name and icon; run it again after moving or
 renaming the repo, or after switching to a different Python, and the entry is
 repointed.
 
-The entry holds absolute paths, so it is a per-machine artifact and is never
+The entry contains absolute paths, so it is a per-machine artifact and is never
 committed; it lives in the user's own applications folder, outside the repo.
 
 Usage:
@@ -65,7 +65,7 @@ def find_python() -> str:
 def quoted(argument: str) -> str:
     """One argument of the entry's command, quoted as the desktop entry format
     requires: wrapped in double quotes, with the four characters the format
-    reserves inside them escaped. A path holding a space survives it."""
+    reserves inside them escaped. A path containing a space survives it."""
     for reserved in ("\\", '"', "`", "$"):
         argument = argument.replace(reserved, "\\" + reserved)
     # A literal percent sign is doubled, because a single one starts a field

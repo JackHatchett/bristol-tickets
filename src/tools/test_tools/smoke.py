@@ -2983,8 +2983,8 @@ def check_test_control() -> list[str]:
 
     from ui.main_window import TestControlWindow
 
-    # The window is held for the life of the process, as the running tool
-    # holds it.
+    # The window is kept for the life of the process, as the running tool
+    # keeps it.
     global _test_control_window
     _test_control_window = TestControlWindow(conn)
     ok.append("TestControlWindow builds against the seeded DB")

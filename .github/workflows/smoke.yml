@@ -35,7 +35,7 @@ jobs:
         run: python3 -m pip install --upgrade pip PySide6
 
       # The same configuration release.yml writes: the shipped example, with
-      # the home replaced by one nothing in the tree can name, so the identity
+      # the home replaced by one nothing in the tree contains, so the identity
       # scan has a real needle to look for.
       - name: Write the configuration the checks read
         run: |
