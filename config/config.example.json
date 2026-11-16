@@ -316,6 +316,10 @@
       "logs"
     ]
   },
+  "published_tree": {
+    "_note": "OPTIONAL. Names that must never appear in a published file or in any commit: smoke.py published_files reads the tree for them, and src/tools/test_tools/privacy_scan.py reads the whole history before every push.",
+    "private_names": []
+  },
   "stack": {
     "_notes": "OPTIONAL. Reference block. Stable ROLE -> current-tool bindings, so a charter names a role and this file names the tool. Change the tool here, not in seven charters.",
     "external_agent_roles": {

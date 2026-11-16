@@ -281,6 +281,14 @@ before anything is published (`src/tools/file_management/keyword_scan.py`).
 | `exclude_suffixes` | File extensions to skip. |
 | `exclude_prefixes` | Directory name prefixes to skip. |
 
+### `published_tree`
+
+**Optional.** Names that must never be published.
+
+| Key | Meaning |
+| --- | --- |
+| `private_names` | Names `smoke.py published_files` refuses in the tree and `src/tools/test_tools/privacy_scan.py` refuses anywhere in the history. |
+
 ### `tools`, `skills`
 
 **Required.** Each gives a `root` path and a `files` list. The roots point at

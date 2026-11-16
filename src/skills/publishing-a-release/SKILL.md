@@ -6,7 +6,7 @@ compatibility: Needs git available to the user in the project folder, and the Gi
 metadata:
   bristol.kind: playbook
   bristol.maintainer: chief_of_staff
-  bristol.scripts: src/tools/bristol/make_release.py src/tools/bristol/app.py src/tools/test_tools/smoke.py src/tools/config_tools/instance_pointer.py
+  bristol.scripts: src/tools/bristol/make_release.py src/tools/bristol/app.py src/tools/test_tools/smoke.py src/tools/test_tools/privacy_scan.py src/tools/config_tools/instance_pointer.py
   bristol.subtitle: Publish a Bristol release on GitHub
 ---
 # publishing-a-release
@@ -73,6 +73,23 @@ Session steps, run before `src/VERSION` is raised.
   `config/config.example.json`, `data/.gitkeep` and a placeholder home path are
   the whole of what may appear. **Fix anything else before the release is cut.**
 
+- **Scan the whole history for the configured private names** before anything
+  is pushed. The repository's pre-push hook runs the same scan on every push.
+
+  ```bash
+  python3 src/tools/test_tools/privacy_scan.py --rev HEAD
+  ```
+
+- **Bristol's files contain Bristol and nothing of the user's own.** No file,
+  name, word, path or example from the user's personal material is written into
+  them or pushed.
+
+- **Remove a private name from every unpushed commit, never only from the tip.**
+  `git filter-repo --replace-text` rewrites the commits not yet on `origin`.
+  A name already pushed needs the public history rewritten and force-pushed,
+  and GitHub Support asked to purge the pull-request references and cached
+  views that still reach the old commits.
+
 - **Leave `published_files` and `bristol` to the build**, which runs both itself
   and fails rather than shipping past them.
 
@@ -108,10 +125,13 @@ Proving a stranger can install Bristol costs the user an afternoon and removes
 the machine's instance pointer while it runs, so it is run against the change
 that could break an install rather than against every release.
 
-- **Run it when the diff since the last tag touches the install path** — the
-  setup wizard, `payload.py`, `setup.py`, `slim.py`, `make_release.py`, the
-  entry files at the root, or `docs/install.md`.
+- **Run it when the diff since the last tag changes what the install path
+  does** — the code of the setup wizard, `payload.py`, `setup.py`, `slim.py`,
+  `make_release.py` or the entry files at the root. A change to a comment, a
+  docstring, a message's wording or `docs/install.md` alone does not require it.
 - **Skip it otherwise**, and say on the card which files were checked for.
+- **The session runs every step it can reach itself**, and hands the user only
+  a step that needs his hands or his credentials.
 
 ## The first-install check
 
