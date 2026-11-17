@@ -1417,6 +1417,24 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("no menu route back to first-run setup")
         ok.append("File → Setup… is on the menu bar")
 
+        from PySide6.QtGui import QAction as _QAction
+        menus = [m.text() for m in win.menuBar().actions() if m.menu()]
+        if menus != ["File", "Edit", "View", "Window", "Help"]:
+            raise SmokeFailure(f"the menu bar reads {menus}")
+        roles = {a.text(): a.menuRole() for m in win.menuBar().actions()
+                 if m.menu() for a in m.menu().actions()}
+        if roles.get("Settings…") != _QAction.PreferencesRole \
+                or roles.get("About Bristol Tickets") != _QAction.AboutRole \
+                or roles.get("Quit Bristol Tickets") != _QAction.QuitRole:
+            raise SmokeFailure("About, Settings… or Quit is not filed in the "
+                               "application menu by its role")
+        views = [a.text() for m in win.menuBar().actions()
+                 if m.menu() and m.text() == "View" for a in m.menu().actions()]
+        if views[:len(win._tab_buttons)] != [b.text() for b in win._tab_buttons]:
+            raise SmokeFailure("the View menu does not list every tab")
+        ok.append("the menu bar carries File, Edit, View, Window and Help, and "
+                  "the application menu's About, Settings… and Quit")
+
         if wiz.project_root() != root:
             raise SmokeFailure("setup wizard cannot find the clone it lives in")
         if not wiz.needs_setup(None) and not (root / "config" / "config.local.json").exists():

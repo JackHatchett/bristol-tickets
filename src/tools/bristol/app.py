@@ -118,6 +118,10 @@ def main() -> None:
             "Install PySide6: pip3 install PySide6 --break-system-packages"
         )
 
+    # Before the QApplication, because AppKit reads the name as it starts.
+    from process_name import set_process_name
+    set_process_name("Bristol Tickets")
+
     app = QApplication(sys.argv)
     app.setApplicationName("Bristol Tickets")
     app.setApplicationDisplayName("Bristol Tickets")

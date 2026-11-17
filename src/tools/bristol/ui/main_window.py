@@ -36,8 +36,8 @@ import os
 import sqlite3
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -122,8 +122,6 @@ class MainWindow(QMainWindow):
         app = QApplication.instance()
         if app is not None:
             app.styleHints().colorSchemeChanged.connect(self._on_color_scheme_changed)
-
-        self._build_menu_bar()
 
         # One full-width header spans the window, and the splitter sits under
         # it: identity, the view tabs, Refresh and Create all read as one bar
@@ -353,7 +351,8 @@ class MainWindow(QMainWindow):
             on_appearance_changed=self._preview_appearance, conn=self.conn,
             on_board_changed=self._refresh_board)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
-
+        # After every tab exists, since the View menu lists them.
+        self._build_menu_bar()
 
         # The detail pane: the selected card, read and edited in place. A pane
         # write refreshes the board; the pane's collapse control hands the
@@ -674,14 +673,98 @@ class MainWindow(QMainWindow):
 
     # ----- Menu bar ---------------------------------------------------------
 
+    def _action(self, menu, text: str, slot, shortcut=None,
+                role=QAction.NoRole) -> QAction:
+        """One menu item. Every item states its role, because Qt otherwise
+        moves an item whose title merely resembles About, Settings or Quit
+        into the application menu."""
+        action = QAction(text, self)
+        action.setMenuRole(role)
+        if shortcut is not None:
+            action.setShortcut(QKeySequence(shortcut))
+        action.triggered.connect(lambda _checked=False: slot())
+        menu.addAction(action)
+        return action
+
     def _build_menu_bar(self) -> None:
-        """The window's one menu: re-running first-run setup."""
-        setup_action = QAction("Setup…", self)
-        # Setup is an ordinary item of the File menu, and its pinned role is
-        # what keeps it there.
-        setup_action.setMenuRole(QAction.NoRole)
-        setup_action.triggered.connect(self._open_setup_wizard)
-        self.menuBar().addMenu("File").addAction(setup_action)
+        """The Mac menu bar: the application menu (About, Settings…, Quit, which
+        Qt files there by role), then File, Edit, View, Window and Help."""
+        bar = self.menuBar()
+
+        file_menu = bar.addMenu("File")
+        self._action(file_menu, "New Card", self._open_global_create,
+                     QKeySequence.New)
+        self._action(file_menu, "Reload", self._refresh_board,
+                     QKeySequence.Refresh)
+        file_menu.addSeparator()
+        self._action(file_menu, "Setup…", self._open_setup_wizard)
+        file_menu.addSeparator()
+        self._action(file_menu, "Close Window", self.close, QKeySequence.Close)
+        # Filed in the application menu by their roles.
+        self._action(file_menu, "About Bristol Tickets", self._show_about,
+                     role=QAction.AboutRole)
+        self._action(file_menu, "Settings…",
+                     lambda: self._show_page(self._settings_tab_index),
+                     QKeySequence.Preferences, QAction.PreferencesRole)
+        self._action(file_menu, "Quit Bristol Tickets",
+                     QApplication.instance().quit if QApplication.instance()
+                     else self.close, QKeySequence.Quit, QAction.QuitRole)
+
+        edit_menu = bar.addMenu("Edit")
+        for text, method, key in (
+                ("Undo", "undo", QKeySequence.Undo),
+                ("Redo", "redo", QKeySequence.Redo),
+                (None, None, None),
+                ("Cut", "cut", QKeySequence.Cut),
+                ("Copy", "copy", QKeySequence.Copy),
+                ("Paste", "paste", QKeySequence.Paste),
+                ("Select All", "selectAll", QKeySequence.SelectAll)):
+            if text is None:
+                edit_menu.addSeparator()
+                continue
+            self._action(edit_menu, text,
+                         lambda m=method: self._edit_focused(m), key)
+
+        view_menu = bar.addMenu("View")
+        for number, button in enumerate(self._tab_buttons, start=1):
+            self._action(view_menu, button.text(),
+                         lambda i=number - 1: self._show_page(i),
+                         f"Ctrl+{number}" if number <= 9 else None)
+        view_menu.addSeparator()
+        self._action(view_menu, "Show or Hide Details",
+                     lambda: self._set_pane_collapsed(not self._pane_collapsed),
+                     "Ctrl+Alt+I")
+
+        window_menu = bar.addMenu("Window")
+        self._action(window_menu, "Minimize", self.showMinimized, "Ctrl+M")
+        self._action(window_menu, "Zoom",
+                     lambda: self.showNormal() if self.isMaximized()
+                     else self.showMaximized())
+
+        help_menu = bar.addMenu("Help")
+        self._action(help_menu, "Bristol Tickets Help", self._open_help)
+
+    def _edit_focused(self, method: str) -> None:
+        """Send an Edit menu command to the field that has the keyboard."""
+        widget = QApplication.focusWidget()
+        handler = getattr(widget, method, None)
+        if callable(handler):
+            handler()
+
+    def _show_about(self) -> None:
+        import payload  # bristol-local
+        root = config_file.project_root()
+        release = payload.version(root) if root is not None else None
+        notify(self, "About Bristol Tickets",
+               f"Bristol Tickets {release}" if release else "Bristol Tickets",
+               "Close")
+
+    def _open_help(self) -> None:
+        """The README the project ships, which is the guide to the app."""
+        root = config_file.project_root()
+        readme = root / "README.md" if root is not None else None
+        if readme is not None and readme.is_file():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(readme)))
 
     def _open_setup_wizard(self) -> None:
         """Run setup again, over the installation this window already has open."""
