@@ -94,7 +94,8 @@ One batch, in the session, before anything is written:
 - **A classic met in research that is a different archetype gets a sheet or a
   card.** A well-known story met while researching this sheet, judged a
   different archetype from it, is built as its own sheet in the same session or
-  filed as a backlog card for the agent that builds the sheets; the report
+  filed as a card on the active board for the agent that builds the sheets,
+  placed in its queue where it belongs; the report
   says which.
   What is judged is the stories this sheet's research meets, and no search
   goes out looking for new archetypes.

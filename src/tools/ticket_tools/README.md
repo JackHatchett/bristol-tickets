@@ -205,8 +205,9 @@ How the data is shaped, for every agent and the viewer alike. The rules for
 and a **status** (which board column):
 
 - `stage` — `backlog` | `active` | `archive`.
-  - `backlog` — real work, "get to it whenever," not on the board. The Backlog
-    tab is one manually-ordered list; new cards append to the bottom
+  - `backlog` — work the user has parked himself, not on the board. No agent
+    files a card here or moves one out unasked. The Backlog tab is one
+    manually-ordered list; a card moved there appends to the bottom
     (`task.sort_order`).
   - `active` — on the board, in play right now.
   - `archive` — retired. The Archive tab is a stripped chronological list,

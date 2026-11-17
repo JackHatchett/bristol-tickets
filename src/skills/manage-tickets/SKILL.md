@@ -182,9 +182,17 @@ reassign it to whoever acts next. Marking it `done` and opening a fresh card for
 the remainder clutters the board with duplicate walls. Open a new card only for
 genuinely new, separable work.
 
-**4. File new to-dos onto the active board.** `add-task` puts them there, and
-this includes cross-agent suggestions: `--assignee` = that agent or the user,
-`--reporter` = you, still on the active board.
+**4. File new to-dos onto the active board, placed where they belong.**
+`add-task` puts them there, and this includes cross-agent suggestions:
+`--assignee` = that agent or the user, `--reporter` = you, still on the active
+board.
+
+- **Never pass `--stage backlog`.** The Backlog tab is the user's own: a card
+  he moves there stays there until he moves it back, and no agent files into
+  it or pulls a card out of it unasked.
+- **Place each new card in its owner's queue** with `set-order --id N
+  --position K`, where you judge it should be worked, rather than leaving it at
+  the bottom of the column.
 
 **5. Scope each card to one agent's context.** The user runs sessions per agent,
 so a session loads that agent's charter and matches its own skills first. Write

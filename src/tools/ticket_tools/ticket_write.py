@@ -893,9 +893,10 @@ def main() -> None:
     # so it can still tell an unset --stage from an explicit one when the legacy
     # --status backlog is redirected onto the stage axis.
     pt.add_argument("--stage", default=None,
-                     help="which tab: backlog | active | archive (default active — "
-                          "a new card goes on the Board, where it is seen and "
-                          "worked). Pass 'backlog' for genuine 'whenever' work.")
+                     help="which tab: backlog | active | archive (default "
+                          "board.new_ticket_stage, active unless the user chose "
+                          "otherwise). An agent files to the active board: the "
+                          "Backlog tab is the user's own.")
     pt.add_argument("--status", default="todo",
                      help="board column: todo | doing | done (default todo). "
                           "'backlog' is accepted for back-compat and redirected to --stage backlog.")
