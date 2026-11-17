@@ -2718,7 +2718,7 @@ QLabel#appTitle {{
     font-size: {type_size('title')}pt;
     font-weight: 700;
 }}
-/* A view in the top bar: its icon and its name on the bar, a faint fill on
+/* A view in the top bar: its name on the bar, a faint fill on
    hover, and the open one in the accent on a faint fill of its own. */
 QPushButton#viewTab {{
     background: transparent;
@@ -2726,7 +2726,7 @@ QPushButton#viewTab {{
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
-    padding: 0px {s_md}px;
+    padding: 0px {s_lg}px;
     color: {C['INK_SOFT']};
     font-weight: 600;
 }}

@@ -707,9 +707,10 @@ def check_bristol() -> list[str]:
         if any(b.parent() is None or not header.isAncestorOf(b)
                for b in win._tab_buttons):
             raise SmokeFailure("a view segment sits outside the top bar")
-        if any(b.icon().isNull() for b in win._tab_buttons) or \
-                win.refresh_btn.icon().isNull():
-            raise SmokeFailure("a view or Refresh in the top bar has no icon")
+        if win.refresh_btn.icon().isNull() or \
+                any(not b.icon().isNull() for b in win._tab_buttons):
+            raise SmokeFailure("Refresh has no icon, or a view carries one "
+                               "beside its name")
         board_row = win.pages.widget(win._board_tab_index).layout().itemAt(0).layout()
         board_buttons = [
             board_row.itemAt(i).widget().text()

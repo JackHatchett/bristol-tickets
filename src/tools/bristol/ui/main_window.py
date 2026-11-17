@@ -125,13 +125,6 @@ class _HeaderBar(QWidget):
         window.showNormal() if window.isMaximized() else window.showMaximized()
 
 
-# The icon each view carries in the top bar, from ui/icons/.
-VIEW_ICONS = {
-    "Search": "search", "Backlog": "list-todo", "Board": "square-kanban",
-    "Archive": "archive", "Agents": "bot", "Skills": "sparkles",
-    "Settings": "settings",
-}
-
 # How far Create fades on a view with no cards to create.
 CREATE_FADED = 0.4
 
@@ -707,7 +700,7 @@ class MainWindow(QMainWindow):
         views.setObjectName("viewTabs")
         self._tab_row = QHBoxLayout(views)
         self._tab_row.setContentsMargins(0, 0, 0, 0)
-        self._tab_row.setSpacing(space("xs"))
+        self._tab_row.setSpacing(space("sm"))
         self._tab_buttons: list[QPushButton] = []
         # Exclusive, so the open view cannot be switched off by a second press
         # and exactly one view is always the one shown.
@@ -744,14 +737,9 @@ class MainWindow(QMainWindow):
         return header
 
     def _tint_header(self) -> None:
-        """Draw the top bar's icons in the theme's colors: a view in the soft
-        ink, the open one in the accent, Refresh in the soft ink and Create's
-        plus in the color its words are."""
-        for button in getattr(self, "_tab_buttons", []):
-            name = VIEW_ICONS.get(button.text())
-            if name:
-                button.setIcon(icons.toggle_icon(name, C["INK_SOFT"],
-                                                 C["ACCENT"]))
+        """Draw the top bar's icons in the theme's colors: Refresh in the soft
+        ink and Create's plus in the color its words are. The views are words
+        alone."""
         if hasattr(self, "refresh_btn"):
             self.refresh_btn.setIcon(icons.icon("refresh-cw", C["INK_SOFT"]))
             self.global_create_btn.setIcon(icons.icon("plus", C["ON_ACCENT"]))
@@ -764,7 +752,6 @@ class MainWindow(QMainWindow):
         button.setObjectName("viewTab")
         button.setCheckable(True)
         button.setFocusPolicy(Qt.TabFocus)
-        button.setIconSize(QSize(LAYOUT["header_icon"], LAYOUT["header_icon"]))
         # Toggled rather than clicked: an assistive tool presses a checkable
         # button by toggling it, which emits no click, and a pointer click
         # toggles it as well.
