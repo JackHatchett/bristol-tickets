@@ -125,6 +125,10 @@ class _HeaderBar(QWidget):
         window.showNormal() if window.isMaximized() else window.showMaximized()
 
 
+# The views drawn as an icon at the top bar's right, and their icons from
+# ui/icons/. Every other view is its name at the bar's centre.
+ICON_VIEWS = {"Search": "search", "Settings": "settings"}
+
 # How far Create fades on a view with no cards to create.
 CREATE_FADED = 0.4
 
@@ -193,9 +197,10 @@ class MainWindow(QMainWindow):
                                            LAYOUT["header_icon"]))
         self.refresh_btn.clicked.connect(self._refresh_board)
 
-        self.global_create_btn = QPushButton("Create")
+        self.global_create_btn = QPushButton()
         self.global_create_btn.setObjectName("toolbarCreate")
-        self.global_create_btn.setToolTip("Create a card or an epic.")
+        self.global_create_btn.setAccessibleName("Create")
+        self.global_create_btn.setToolTip("Create: a new card or epic.")
         self.global_create_btn.clicked.connect(self._open_global_create)
         self.global_create_btn.setIconSize(QSize(LAYOUT["header_icon"],
                                                  LAYOUT["header_icon"]))
@@ -727,8 +732,13 @@ class MainWindow(QMainWindow):
         right_row.setContentsMargins(0, 0, 0, 0)
         right_row.setSpacing(space("md"))
         right_row.addStretch(1)
+        # Search and Settings are views drawn as icons here, Search before the
+        # commands and Settings after them; _add_page seats them.
+        self._icon_slots = {"Search": QHBoxLayout(), "Settings": QHBoxLayout()}
+        right_row.addLayout(self._icon_slots["Search"])
         right_row.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
         right_row.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
+        right_row.addLayout(self._icon_slots["Settings"])
         for side in (left, right):
             side.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         bar.addWidget(left, 1)
@@ -737,9 +747,15 @@ class MainWindow(QMainWindow):
         return header
 
     def _tint_header(self) -> None:
-        """Draw the top bar's icons in the theme's colors: Refresh in the soft
-        ink and Create's plus in the color its words are. The views are words
-        alone."""
+        """Draw the top bar's icons in the theme's colors: Refresh and the
+        icon views in the soft ink, an open icon view in the accent, and
+        Create's plus in the color drawn on the accent. The other views are
+        words alone."""
+        for button in getattr(self, "_tab_buttons", []):
+            name = ICON_VIEWS.get(button.accessibleName())
+            if name:
+                button.setIcon(icons.toggle_icon(name, C["INK_SOFT"],
+                                                 C["ACCENT"]))
         if hasattr(self, "refresh_btn"):
             self.refresh_btn.setIcon(icons.icon("refresh-cw", C["INK_SOFT"]))
             self.global_create_btn.setIcon(icons.icon("plus", C["ON_ACCENT"]))
@@ -748,17 +764,28 @@ class MainWindow(QMainWindow):
         """Add a view and its button in the top bar."""
         index = self.pages.addWidget(widget)
 
-        button = QPushButton(name)
-        button.setObjectName("viewTab")
+        # Search and Settings are icons at the bar's right; every other view is
+        # its name at the centre.
+        icon_view = name in ICON_VIEWS
+        button = QPushButton("" if icon_view else name)
+        button.setAccessibleName(name)
+        button.setObjectName("toolbarToggle" if icon_view else "viewTab")
         button.setCheckable(True)
         button.setFocusPolicy(Qt.TabFocus)
+        if icon_view:
+            button.setToolTip(name)
+            button.setIconSize(QSize(LAYOUT["header_icon"],
+                                     LAYOUT["header_icon"]))
         # Toggled rather than clicked: an assistive tool presses a checkable
         # button by toggling it, which emits no click, and a pointer click
         # toggles it as well.
         button.toggled.connect(
             lambda checked, i=index: checked and self._show_page(i))
         self._tab_group.addButton(button)
-        self._tab_row.addWidget(button)
+        if icon_view:
+            self._icon_slots[name].addWidget(button, 0, Qt.AlignVCenter)
+        else:
+            self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
         return index
 
@@ -843,7 +870,7 @@ class MainWindow(QMainWindow):
 
         view_menu = bar.addMenu("View")
         for number, button in enumerate(self._tab_buttons, start=1):
-            self._action(view_menu, button.text(),
+            self._action(view_menu, button.accessibleName(),
                          lambda i=number - 1: self._show_page(i),
                          f"Ctrl+{number}" if number <= 9 else None)
         view_menu.addSeparator()

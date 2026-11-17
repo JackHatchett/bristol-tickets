@@ -164,6 +164,7 @@ LAYOUT = {
     "control_h": 34,       # every button, field and picker on a row: one height
     "toolbar_control_h": 28,  # a control in the top bar
     "header_icon": 16,        # an icon in the top bar
+    "toolbar_box_w": 34,      # an icon button in the top bar
     "header_mark_h": 20,      # the app's mark beside its name in the top bar
     "traffic_lights_tall_w": 96,  # the traffic lights in the tall title bar, and room past them
     "title_bar_h": 28,        # the Mac's title bar, which the top bar shares
@@ -2690,6 +2691,7 @@ def build_style_sheet() -> str:
     check_rule = f"image: url({check});" if check else ""
     ctl = control_height() - 2  # inside the 1px border every control draws
     tb_ctl = LAYOUT["toolbar_control_h"] - 2
+    tb_box = LAYOUT["toolbar_box_w"] - 2
 
     def _ink(alpha: float) -> str:
         ink = C["INK"].lstrip("#")[-6:]
@@ -2741,19 +2743,27 @@ QPushButton#viewTab:checked {{
 QPushButton#viewTab:focus {{
     outline: none;
 }}
-/* The top bar's Refresh: its icon alone, a faint fill on hover. */
-QPushButton#toolbarButton {{
-    background: transparent;
-    border: none;
+/* The top bar's icon buttons — Search, Refresh, Settings — each its icon in a
+   faint box; an open view's box takes the accent's edge. */
+QPushButton#toolbarButton, QPushButton#toolbarToggle {{
+    background-color: {ink_06};
+    border: 1px solid {ink_14};
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
-    min-width: {tb_ctl}px;
-    max-width: {tb_ctl}px;
+    min-width: {tb_box}px;
+    max-width: {tb_box}px;
     padding: 0px;
 }}
-QPushButton#toolbarButton:hover {{
+QPushButton#toolbarButton:hover, QPushButton#toolbarToggle:hover {{
+    background-color: {ink_14};
+}}
+QPushButton#toolbarToggle:checked {{
     background-color: {ink_10};
+    border-color: {C['ACCENT']};
+}}
+QPushButton#toolbarToggle:focus {{
+    outline: none;
 }}
 /* The top bar's Create: the primary button at the top bar's height. Where a
    view has no cards it is faded by an opacity effect rather than turned grey,
@@ -2765,8 +2775,9 @@ QPushButton#toolbarCreate, QPushButton#toolbarCreate:disabled {{
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
-    padding: 0px {s_lg}px;
-    font-weight: 600;
+    min-width: {tb_box}px;
+    max-width: {tb_box}px;
+    padding: 0px;
 }}
 QPushButton#toolbarCreate:hover {{
     background-color: {C['CREATE_HOVER']};

@@ -586,7 +586,7 @@ def check_bristol() -> list[str]:
         win = MainWindow(mconn)
         if hasattr(win, "handoff_note_edit"):
             raise SmokeFailure("Handoff tab still present — it is retired")
-        tab_names = {b.text() for b in win._tab_buttons}
+        tab_names = {b.accessibleName() for b in win._tab_buttons}
         if "Handoff" in tab_names:
             raise SmokeFailure("Handoff tab still present — it is retired")
         if len(win._tab_buttons) != win.pages.count():
@@ -602,10 +602,10 @@ def check_bristol() -> list[str]:
         # A launch opens on the active work, and the tab row keeps its order.
         if win.pages.currentIndex() != win._board_tab_index:
             raise SmokeFailure("the window did not open on the Board view")
-        selected = [b.text() for b in win._tab_buttons if b.isChecked()]
+        selected = [b.accessibleName() for b in win._tab_buttons if b.isChecked()]
         if selected != ["Board"]:
             raise SmokeFailure(f"the Board tab is not the selected one: {selected}")
-        if [b.text() for b in win._tab_buttons][0] != "Search":
+        if [b.accessibleName() for b in win._tab_buttons][0] != "Search":
             raise SmokeFailure("the tab row order changed to put Board first")
         ok.append("a launch opens on Board, with the tab row order unchanged")
 
@@ -683,7 +683,7 @@ def check_bristol() -> list[str]:
         # board on its own event; a column header carries no control at all,
         # which is what keeps the three names and counts on one line.
         from PySide6.QtCore import Qt as _Qt
-        from PySide6.QtWidgets import QPushButton, QToolBar
+        from PySide6.QtWidgets import QPushButton, QToolBar, QWidget
         import ui.theme as _theme
 
         if win.findChildren(QToolBar):
@@ -699,18 +699,25 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("the top bar is taller than a Mac's tall title bar")
         header_buttons = [b.text() or b.accessibleName()
                           for b in header.findChildren(QPushButton)]
-        if header_buttons[-2:] != ["Refresh", "Create"] or \
-                set(header_buttons[:-2]) != {b.text() for b in win._tab_buttons}:
+        views_named = {b.accessibleName() for b in win._tab_buttons}
+        centre = header.findChild(QWidget, "viewTabs")
+        at_centre = {b.accessibleName() for b in centre.findChildren(QPushButton)}
+        if set(header_buttons) != views_named | {"Refresh", "Create"} \
+                or at_centre != views_named - {"Search", "Settings"}:
             raise SmokeFailure(
-                f"the top bar should be the view segments, Refresh, Create, got "
+                f"the top bar should be the named views, then Search, Refresh, "
+                f"Create and Settings, got "
                 f"{header_buttons}")
         if any(b.parent() is None or not header.isAncestorOf(b)
                for b in win._tab_buttons):
             raise SmokeFailure("a view segment sits outside the top bar")
-        if win.refresh_btn.icon().isNull() or \
-                any(not b.icon().isNull() for b in win._tab_buttons):
-            raise SmokeFailure("Refresh has no icon, or a view carries one "
-                               "beside its name")
+        for b in win._tab_buttons + [win.refresh_btn, win.global_create_btn]:
+            if b.text() and not b.icon().isNull():
+                raise SmokeFailure(f"{b.accessibleName()} carries an icon beside "
+                                   f"its name")
+            if not b.text() and b.icon().isNull():
+                raise SmokeFailure(f"{b.accessibleName() or 'a button'} in the "
+                                   f"top bar has neither a name nor an icon")
         board_row = win.pages.widget(win._board_tab_index).layout().itemAt(0).layout()
         board_buttons = [
             board_row.itemAt(i).widget().text()
@@ -1464,7 +1471,7 @@ def check_bristol() -> list[str]:
                                "application menu by its role")
         views = [a.text() for m in win.menuBar().actions()
                  if m.menu() and m.text() == "View" for a in m.menu().actions()]
-        if views[:len(win._tab_buttons)] != [b.text() for b in win._tab_buttons]:
+        if views[:len(win._tab_buttons)] != [b.accessibleName() for b in win._tab_buttons]:
             raise SmokeFailure("the View menu does not list every tab")
         ok.append("the menu bar carries File, Edit, View, Window and Help, and "
                   "the application menu's About, Settings… and Quit")
@@ -1850,7 +1857,7 @@ def check_bristol() -> list[str]:
                 agent_win = MainWindow(mconn)
                 if hasattr(agent_win, "agent_combo"):
                     raise SmokeFailure("an agent control still stands in the header")
-                if agent_win._tab_buttons[-1].text() != "Settings":
+                if agent_win._tab_buttons[-1].accessibleName() != "Settings":
                     raise SmokeFailure("no Settings tab alongside the board tabs")
             finally:
                 config_file.path = _orig_path
@@ -2155,7 +2162,7 @@ def check_bristol() -> list[str]:
                       "from a skill's own view")
 
             skills_win = MainWindow(mconn)
-            names = [b.text() for b in skills_win._tab_buttons]
+            names = [b.accessibleName() for b in skills_win._tab_buttons]
             if "Skills" not in names or names.index("Skills") > names.index("Settings"):
                 raise SmokeFailure("no Skills tab before Settings")
             ok.append("the Skills tab stands in the header")
