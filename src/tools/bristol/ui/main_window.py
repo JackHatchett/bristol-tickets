@@ -129,6 +129,11 @@ class _HeaderBar(QWidget):
 # ui/icons/. Every other view is its name at the bar's centre.
 ICON_VIEWS = {"Search": "search", "Settings": "settings"}
 
+# The named views that open a group of their own at the bar's centre, set apart
+# by a gap: Backlog, Board and Archive are one board's future, present and
+# past; Agents and Skills are the fleet.
+VIEW_GROUP_STARTS = {"Agents"}
+
 # How far Create fades on a view with no cards to create.
 CREATE_FADED = 0.4
 
@@ -782,6 +787,8 @@ class MainWindow(QMainWindow):
         if icon_view:
             self._icon_slots[name].addWidget(button, 0, Qt.AlignVCenter)
         else:
+            if name in VIEW_GROUP_STARTS and self._tab_row.count():
+                self._tab_row.addSpacing(space("2xl"))
             self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
         return index
