@@ -609,6 +609,24 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("the tab row order changed to put Board first")
         ok.append("a launch opens on Board, with the tab row order unchanged")
 
+        # Search and Archive are tables that sort by header, and the search
+        # field follows the typing.
+        if [win.search_results.horizontalHeaderItem(c).text()
+                for c in range(win.search_results.columnCount())] != \
+                ["Type", "#", "Title", "Status", "Closed"]:
+            raise SmokeFailure("the Search results do not carry their headers")
+        if not win.search_results.isSortingEnabled() \
+                or not win.archive_results.isSortingEnabled():
+            raise SmokeFailure("a results table does not sort by its headers")
+        win.search_input.setText("zz-no-card-says-this")
+        win._search_settle.timeout.emit()
+        if win.search_results.count() != 0:
+            raise SmokeFailure("typing in the search field did not search")
+        win.search_input.clear()
+        win._execute_global_search()
+        ok.append("Search and Archive are sortable tables, and Search follows "
+                  "the typing")
+
         # An assistive tool presses a tab by toggling it, which emits no click.
         archive_tab = win._tab_buttons[win._archive_tab_index]
         archive_tab.toggle()
@@ -2479,7 +2497,7 @@ def check_bristol() -> list[str]:
                 f"archiving rewrote closed_at to {closed!r}; it is the finish, "
                 f"{finished!r}")
         awin._refresh_board()
-        order = [awin.archive_results.item(i).text()
+        order = [awin.archive_results.row_text(i)
                  for i in range(awin.archive_results.count())]
         if len(order) != 2 or f"#{swept}" not in order[0]:
             raise SmokeFailure(

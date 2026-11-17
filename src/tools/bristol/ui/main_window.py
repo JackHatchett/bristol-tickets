@@ -46,8 +46,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QMainWindow,
     QFrame,
     QPushButton,
@@ -65,12 +63,14 @@ from .dialogs import confirm, notify
 from .filter_menu import FilterMenu, FilterState, applied
 from .links import remove_links_for_task
 from .kanban_column import KanbanColumn
+from .results_table import ResultsTable, magnifier_icon
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
 from .agents_tab import AgentsTab
 from .settings_tab import SettingsTab
 from .skills_tab import SkillsTab
 from .theme import (
+    C,
     COLUMNS,
     LAYOUT,
     appearance_choice,
@@ -91,6 +91,21 @@ SPLITTER_SETTLE_MS = 800
 # it. Short enough that a card closed elsewhere leaves To Do while the user is
 # still looking, long enough that the check costs nothing.
 BOARD_POLL_MS = 2000
+
+# How long the search field waits after the last key before it searches, so a
+# word typed quickly is one search rather than one per letter.
+SEARCH_SETTLE_MS = 250
+
+
+def _kind(record_type: str | None) -> str:
+    return "Fix" if (record_type or "build").lower() == "fix" else "Build"
+
+
+def _status_word(status: str | None) -> str:
+    """A stored status as the board's column names it."""
+    words = {"todo": "To Do", "doing": "Doing", "done": "Done"}
+    return words.get(status or "", (status or "").replace("_", " ").title())
+
 
 # How many filter chips stand on the control row before the rest are counted.
 # Past this the row would push the board's own controls around, and the panel
@@ -211,14 +226,22 @@ class MainWindow(QMainWindow):
 
         search_bar_layout = QHBoxLayout()
         search_bar_layout.setSpacing(space("md"))
+        # A search field: a leading glass, a clear button, and results that
+        # follow the typing after a short pause.
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search issues and epics")
+        self.search_input.setObjectName("searchField")
+        self.search_input.setPlaceholderText("Search cards and epics")
+        self.search_input.setClearButtonEnabled(True)
+        self._search_glass = self.search_input.addAction(
+            magnifier_icon(C["INK_SOFT"]), QLineEdit.LeadingPosition)
+        self._search_settle = QTimer(self)
+        self._search_settle.setSingleShot(True)
+        self._search_settle.setInterval(SEARCH_SETTLE_MS)
+        self._search_settle.timeout.connect(self._execute_global_search)
+        self.search_input.textChanged.connect(
+            lambda _text: self._search_settle.start())
         self.search_input.returnPressed.connect(self._execute_global_search)
         search_bar_layout.addWidget(self.search_input, 1)
-
-        search_go_btn = QPushButton("Find")
-        search_go_btn.clicked.connect(self._execute_global_search)
-        search_bar_layout.addWidget(search_go_btn)
 
         self.hide_closed_checkbox = QCheckBox("Hide Closed Items")
         self.hide_closed_checkbox.setChecked(True)
@@ -230,10 +253,10 @@ class MainWindow(QMainWindow):
         self.search_count.setObjectName("formCaption")
         search_layout.addWidget(self.search_count)
 
-        self.search_results = QListWidget()
-        self.search_results.setObjectName("searchResults")
-        self.search_results.itemClicked.connect(self._on_search_item_clicked)
-        self.search_results.itemDoubleClicked.connect(self._on_search_item_double_clicked)
+        self.search_results = ResultsTable(
+            ["Type", "#", "Title", "Status", "Closed"], stretch=2)
+        self.search_results.picked.connect(self._update_inspector)
+        self.search_results.opened.connect(self._open_record)
         search_layout.addWidget(self.search_results, 1)
         self._search_tab_index = self._add_page(search_widget, "Search")
 
@@ -331,10 +354,10 @@ class MainWindow(QMainWindow):
         self.archive_filter_note = QLabel()
         self.archive_filter_note.setObjectName("formCaption")
         archive_layout.addWidget(self.archive_filter_note)
-        self.archive_results = QListWidget()
-        self.archive_results.setObjectName("searchResults")
-        self.archive_results.itemClicked.connect(self._on_archive_item_clicked)
-        self.archive_results.itemDoubleClicked.connect(self._on_archive_item_double_clicked)
+        self.archive_results = ResultsTable(
+            ["Type", "#", "Title", "Status", "Archived"], stretch=2)
+        self.archive_results.picked.connect(self._update_inspector)
+        self.archive_results.opened.connect(self._open_record)
         archive_layout.addWidget(self.archive_results)
         self._archive_tab_index = self._add_page(archive_widget, "Archive")
 
@@ -838,6 +861,8 @@ class MainWindow(QMainWindow):
             self.backlog_column.list_widget.viewport().update()
         if hasattr(self, "archive_results"):
             self.archive_results.viewport().update()
+        if hasattr(self, "_search_glass"):
+            self._search_glass.setIcon(magnifier_icon(C["INK_SOFT"]))
 
     def _on_color_scheme_changed(self, *args) -> None:
         """OS switched between light and dark. It reaches the app only while the
@@ -918,7 +943,6 @@ class MainWindow(QMainWindow):
         updated_at so they still sort sanely. closed_at is not read here: it is
         when the work finished, which is a different moment and is what the
         reports measure to. A stripped one-line-per-ticket view like Search."""
-        self.archive_results.clear()
         narrow, params = filters.where("t")
         query = (
             "SELECT t.id, t.title, t.status, COALESCE(t.record_type,'build'), "
@@ -932,26 +956,17 @@ class MainWindow(QMainWindow):
             rows = self.conn.execute(query, tuple(params)).fetchall()
         except sqlite3.OperationalError:
             rows = []
-        for tid, title, status, rtype, archived in rows:
-            kind = "Fix" if (rtype or "build").lower() == "fix" else "Build"
-            when = _fmt_dt(archived)
-            item = QListWidgetItem(
-                f"{kind}   #{tid}   {title}   ·   {status}   ·   {when}")
-            item.setData(Qt.UserRole, (tid, "task"))
-            self.archive_results.addItem(item)
+        self.archive_results.set_rows(
+            ((_kind(rtype), (f"#{tid}", tid), title, _status_word(status),
+              (_fmt_dt(archived), archived or "")), (tid, "task"))
+            for tid, title, status, rtype, archived in rows)
 
-    def _on_archive_item_clicked(self, item: QListWidgetItem):
-        data = item.data(Qt.UserRole)
-        if data:
-            self._update_inspector(data[0], data[1])
-
-    def _on_archive_item_double_clicked(self, item: QListWidgetItem):
-        data = item.data(Qt.UserRole)
-        if data:
-            dlg = UnifiedRecordDialog(self, self.conn, mode=data[1], record_id=data[0])
-            if dlg.exec() == QDialog.Accepted:
-                dlg.save_data()
-                self._refresh_board()
+    def _open_record(self, record_id: int, mode: str) -> None:
+        """Edit a record a results table was double-clicked on."""
+        dlg = UnifiedRecordDialog(self, self.conn, mode=mode, record_id=record_id)
+        if dlg.exec() == QDialog.Accepted:
+            dlg.save_data()
+            self._refresh_board()
 
     def _open_global_create(self):
         # A new task's default Stage follows the tab Create was pressed on
@@ -973,7 +988,8 @@ class MainWindow(QMainWindow):
             self.detail_pane.show_task(record_id)
 
     def _execute_global_search(self):
-        self.search_results.clear()
+        self._search_settle.stop()
+        found_rows = []
         term = f"%{self.search_input.text().strip()}%"
         hide_closed = self.hide_closed_checkbox.isChecked()
 
@@ -983,49 +999,38 @@ class MainWindow(QMainWindow):
         # Done column), plus finished epics.
         try:
             task_query = (
-                "SELECT t.id, t.title, t.status, COALESCE(t.record_type,'build') FROM task t "
+                "SELECT t.id, t.title, t.status, COALESCE(t.record_type,'build'), "
+                "t.closed_at FROM task t "
                 "WHERE (t.title LIKE ? OR t.description LIKE ?)"
             )
             if hide_closed:
                 task_query += " AND t.stage != 'archive' AND t.status != 'done'"
             task_query += " ORDER BY t.title COLLATE NOCASE LIMIT 50"
 
-            for row in self.conn.execute(task_query, (term, term)).fetchall():
-                kind = "Fix" if (row[3] or "build").lower() == "fix" else "Build"
-                item = QListWidgetItem(
-                    f"{kind}   #{row[0]}   {row[1]}   ·   {row[2]}")
-                item.setData(Qt.UserRole, (row[0], "task"))
-                self.search_results.addItem(item)
+            for tid, title, status, rtype, closed in self.conn.execute(
+                    task_query, (term, term)).fetchall():
+                found_rows.append((
+                    (_kind(rtype), (f"#{tid}", tid), title, _status_word(status),
+                     (_fmt_dt(closed) if closed else "", closed or "")),
+                    (tid, "task")))
 
             epic_query = "SELECT id, name, status FROM epic WHERE (name LIKE ? OR description LIKE ?)"
             if hide_closed:
                 epic_query += " AND status NOT IN ('completed', 'done', 'on hold')"
             epic_query += " ORDER BY name COLLATE NOCASE LIMIT 50"
 
-            for row in self.conn.execute(epic_query, (term, term)).fetchall():
-                item = QListWidgetItem(
-                    f"Epic   #{row[0]}   {row[1]}   ·   {row[2]}")
-                item.setData(Qt.UserRole, (row[0], "epic"))
-                self.search_results.addItem(item)
+            for eid, name, status in self.conn.execute(
+                    epic_query, (term, term)).fetchall():
+                found_rows.append((
+                    ("Epic", (f"#{eid}", eid), name, _status_word(status),
+                     ("", "")), (eid, "epic")))
         except sqlite3.OperationalError:
             pass
+        self.search_results.set_rows(found_rows)
         found = self.search_results.count()
         self.search_count.setText(
             "No results" if not found
             else f"{found} result" + ("" if found == 1 else "s"))
-
-    def _on_search_item_clicked(self, item: QListWidgetItem):
-        data = item.data(Qt.UserRole)
-        if data:
-            self._update_inspector(data[0], data[1])
-
-    def _on_search_item_double_clicked(self, item: QListWidgetItem):
-        data = item.data(Qt.UserRole)
-        if data:
-            dlg = UnifiedRecordDialog(self, self.conn, mode=data[1], record_id=data[0])
-            if dlg.exec() == QDialog.Accepted:
-                dlg.save_data()
-                self._refresh_board()
 
     def _read_data_version(self) -> int | None:
         try:

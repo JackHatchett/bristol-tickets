@@ -2926,6 +2926,29 @@ QListWidget#searchResults::item:hover:!selected,
 QListWidget#themeList::item:hover:!selected {{
     background: {C['HOVER_BG']};
 }}
+/* The Search and Archive results: a table read as a list, with a header per
+   fact and alternate rows, and the selection in the accent the lists use. */
+QTableWidget#resultsTable {{
+    background-color: {C['LIST_BG']};
+    alternate-background-color: {C['SURFACE']};
+    color: {C['INK']};
+    border: 1px solid {C['BORDER']};
+    border-radius: {r_lg}px;
+    outline: 0;
+}}
+QTableWidget#resultsTable::item {{ padding: {s_sm}px {s_md}px; border: none; }}
+QTableWidget#resultsTable::item:selected {{
+    background-color: {C['SEL_BG']};
+    color: {C['ACCENT_DK']};
+}}
+QHeaderView::section {{
+    background-color: {C['CANVAS']};
+    color: {C['INK_SOFT']};
+    border: none;
+    border-bottom: 1px solid {C['BORDER']};
+    padding: {s_sm}px {s_md}px;
+    font-weight: 600;
+}}
 QComboBox, QLineEdit, QAbstractSpinBox, QTextEdit {{
     background-color: {C['SURFACE']};
     border: 1px solid {C['BORDER']};
