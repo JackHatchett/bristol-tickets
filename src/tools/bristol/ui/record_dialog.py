@@ -462,16 +462,17 @@ class UnifiedRecordDialog(QDialog):
 
         self.button_box.addStretch()
         # Delete sits far left as the destructive action (added above when
-        # editing); Cancel and OK sit right as secondary and primary, in the
-        # same button ranks the rest of the app uses.
+        # editing); Cancel and the action sit right as secondary and primary,
+        # in the same button ranks the rest of the app uses.
         standard_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         standard_buttons.accepted.connect(self.accept)
         standard_buttons.rejected.connect(self.reject)
         self.button_box.addWidget(standard_buttons)
-        # Kept disabled while a required field is empty. Save silently dropped
-        # such a record — including a long Description the user had just typed —
-        # so the button must not be pressable in the state that would lose it.
+        # The default button names its action. A save tried with a required
+        # field empty is refused in accept(), which keeps the window open with
+        # the typing in it and only then marks the field.
         self.ok_button = standard_buttons.button(QDialogButtonBox.Ok)
+        self.ok_button.setText("Save" if record_id is not None else "Create")
         self.ok_button.setObjectName("globalCreateBtn")
         # Pinned OUTSIDE the scroll area — the save button stays reachable no
         # matter how tall the body grows.
@@ -581,9 +582,10 @@ class UnifiedRecordDialog(QDialog):
             "Close without saving", "Keep editing", destructive=True)
 
     def accept(self):
-        """Belt and braces: OK is already disabled while a required field is
-        empty, but Enter and programmatic accepts reach here too. Refuse rather
-        than close, since closing is what used to discard the user's typing."""
+        """Refuse a save with a required field empty rather than close, since
+        closing is what would discard the user's typing, and from here on mark
+        every empty required field."""
+        self._save_tried = True
         missing = self._missing_required()
         if missing:
             self._refresh_required_state()
@@ -662,18 +664,13 @@ class UnifiedRecordDialog(QDialog):
         widget.style().polish(widget)
 
     def _refresh_required_state(self, *args) -> None:
-        """Mark every empty required field red and keep OK unclickable until none
-        are left. Called on construction and on every keystroke in a required
-        field, so the button and the borders can never disagree with the form."""
-        missing = self._missing_required()
-        self._set_missing(self.title_edit, self.title_edit in missing)
-        self._set_missing(self.title_label, self.title_edit in missing)
-        if getattr(self, "ok_button", None) is not None:
-            self.ok_button.setEnabled(not missing)
-            self.ok_button.setToolTip(
-                f"{self.title_label.text().rstrip(' *')} is required"
-                if missing else ""
-            )
+        """Mark every empty required field red once a save has been tried with
+        one empty, and never before. Called on construction, on every keystroke
+        in a required field and on each refused save."""
+        shown = (self._missing_required()
+                 if getattr(self, "_save_tried", False) else [])
+        self._set_missing(self.title_edit, self.title_edit in shown)
+        self._set_missing(self.title_label, self.title_edit in shown)
 
     def _update_visible_fields(self):
         is_task = (self.type_combo.currentText() == "Task / Issue")
@@ -699,8 +696,8 @@ class UnifiedRecordDialog(QDialog):
             self.links.setVisible(is_task)
 
         # The required field's LABEL changes with the kind ("Task Title *" vs
-        # "Epic Name *"), so its red state and the OK tooltip are recomputed
-        # whenever the kind does.
+        # "Epic Name *"), so its red state is recomputed whenever the kind
+        # does.
         self._refresh_required_state()
 
     def _load_existing_data(self):

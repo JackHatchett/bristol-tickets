@@ -217,6 +217,7 @@ def check_bristol() -> list[str]:
     # renamed, edited and deleted, a shipped theme's edit living only in the
     # configuration, a restore putting the shipped values back, and the last
     # theme refusing to go.
+    from PySide6.QtWidgets import QDialog
     from ui.theme_manager import ThemeManagerDialog
 
     manager = ThemeManagerDialog(collection, theme.DEFAULT_THEME)
@@ -248,8 +249,13 @@ def check_bristol() -> list[str]:
     if not manager.name_problem():
         raise SmokeFailure("a name already in the list is not refused")
     manager.rename("")
-    if not manager.name_problem():
-        raise SmokeFailure("an empty name is not refused")
+    if manager.name_problem() or manager.name.property("fieldMissing"):
+        raise SmokeFailure("an empty name is marked before any save was tried")
+    manager.accept()
+    if manager.result() == QDialog.Accepted:
+        raise SmokeFailure("a save with an empty theme name closed the window")
+    if not manager.name_problem() or not manager.name.property("fieldMissing"):
+        raise SmokeFailure("an empty name is not refused once a save is tried")
     manager.rename("Test Theme Renamed")
     if manager.name_problem():
         raise SmokeFailure("a name in neither fault is refused")
@@ -1157,33 +1163,35 @@ def check_bristol() -> list[str]:
 
         # Required-field guard. A titleless save used to close the dialog and
         # write nothing, silently destroying whatever Description had been typed
-        # — so the assertions that matter are that OK cannot be pressed, that
-        # accept() refuses even if something calls it directly, and that the
-        # empty field is marked.
+        # — so the assertions that matter are that accept() refuses and keeps
+        # the typing, that the empty field carries no mark before a save is
+        # tried and carries one after, and that the default button names its
+        # action.
         from PySide6.QtWidgets import QDialog
         req_dlg = UnifiedRecordDialog(win, mconn, mode="task")
-        if req_dlg.ok_button.isEnabled():
-            raise SmokeFailure("OK is clickable on a dialog with no title")
-        if not req_dlg.title_edit.property("fieldMissing"):
-            raise SmokeFailure("empty required title is not marked fieldMissing")
+        if req_dlg.ok_button.text() != "Create":
+            raise SmokeFailure(
+                f"a new record's default button reads {req_dlg.ok_button.text()!r}, not 'Create'")
+        if req_dlg.title_edit.property("fieldMissing"):
+            raise SmokeFailure("empty required title is marked before any save was tried")
         req_dlg.desc_edit.setPlainText("a description the user would hate to lose")
         req_dlg.accept()
         if req_dlg.result() == QDialog.Accepted:
             raise SmokeFailure("accept() closed the dialog with a missing title")
         if req_dlg.desc_edit.toPlainText() != "a description the user would hate to lose":
             raise SmokeFailure("the refused accept discarded the Description")
+        if not req_dlg.title_edit.property("fieldMissing"):
+            raise SmokeFailure("empty required title is not marked after a tried save")
         req_dlg.title_edit.setText("Now it has a title")
-        if not req_dlg.ok_button.isEnabled():
-            raise SmokeFailure("OK stayed disabled after the title was filled in")
         if req_dlg.title_edit.property("fieldMissing"):
             raise SmokeFailure("fieldMissing did not clear once the title was filled in")
         req_dlg.title_edit.setText("   ")
-        if req_dlg.ok_button.isEnabled():
+        if not req_dlg.title_edit.property("fieldMissing"):
             raise SmokeFailure("whitespace-only title counted as a title")
         req_dlg.type_combo.setCurrentText("Epic")  # required label changes with kind
-        if req_dlg.ok_button.isEnabled():
-            raise SmokeFailure("switching kind re-enabled OK with an empty name")
-        ok.append("Record dialog blocks save while a required field is empty")
+        if not req_dlg.title_label.property("fieldMissing"):
+            raise SmokeFailure("switching kind cleared the mark on an empty name")
+        ok.append("Record dialog refuses a save with a required field empty, marking it only then")
 
         # One field, everywhere a person types more than a word. A one-line
         # field scrolls sideways and hides what came before, so the shared one
@@ -1546,6 +1554,14 @@ def check_bristol() -> list[str]:
             config_file.path = lambda: written_config
             try:
                 wizard = wiz.SetupWizard(scratch_root)
+                from PySide6.QtWidgets import QWizard
+                for role, word in ((QWizard.CancelButton, "Cancel"),
+                                   (QWizard.BackButton, "Go Back"),
+                                   (QWizard.NextButton, "Continue")):
+                    if wizard.buttonText(role) != word:
+                        raise SmokeFailure(
+                            f"the setup assistant's button reads "
+                            f"{wizard.buttonText(role)!r}, not {word!r}")
                 # A machine with no configuration and no pointer opens on the
                 # operating system's user name, which is the first-run default.
                 if wizard.instance_page.slug_edit.text() != wiz.default_slug():

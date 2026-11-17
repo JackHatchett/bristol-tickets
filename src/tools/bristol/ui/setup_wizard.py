@@ -586,6 +586,15 @@ class SetupWizard(QWizard):
         self.setWindowTitle("Bristol Tickets — Setup")
         self.setWizardStyle(QWizard.ModernStyle)
         self.setOption(QWizard.NoBackButtonOnStartPage, True)
+        # A Mac assistant's words and order, whatever wizard style draws it:
+        # Cancel, then Go Back, then the button that carries the run forward.
+        self.setButtonText(QWizard.CancelButton, "Cancel")
+        self.setButtonText(QWizard.BackButton, "Go Back")
+        self.setButtonText(QWizard.NextButton, "Continue")
+        self.setButtonText(QWizard.FinishButton, "Finish")
+        self.setButtonLayout([QWizard.Stretch, QWizard.CancelButton,
+                              QWizard.BackButton, QWizard.NextButton,
+                              QWizard.FinishButton])
         self.setMinimumSize(LAYOUT["wizard_min_w"], LAYOUT["wizard_min_h"])
 
         self.instance_page = InstancePage(root)

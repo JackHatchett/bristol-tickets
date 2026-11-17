@@ -106,6 +106,8 @@ class ThemeManagerDialog(QDialog):
         # with no dark half has only the one to be on.
         self._half = LIGHT_MODE
         self._seating = False
+        # An empty name is marked only once a save has been tried with it.
+        self._save_tried = False
 
 
         self.list = QListWidget()
@@ -369,7 +371,7 @@ class ThemeManagerDialog(QDialog):
             return ""
         name = self.name.text().strip()
         if not name:
-            return "A theme needs a name."
+            return "A theme needs a name." if self._save_tried else ""
         taken = {record["name"].casefold()
                  for theme_id, record in self._collection.items()
                  if theme_id != self._selected}
@@ -567,6 +569,8 @@ class ThemeManagerDialog(QDialog):
         window back. A palette under the readable ratio is still the user's to
         choose, so this names every pair that falls short and asks once.
         """
+        self._save_tried = True
+        self._mark_name()
         if self.name_problem() or self.form.broken():
             self._read_notice()
             return
