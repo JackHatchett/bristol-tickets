@@ -2195,6 +2195,36 @@ def set_scheme(name: str) -> None:
     C.update(scheme)
 
 
+# The app's one typeface, Inter, under the SIL Open Font License; its files and
+# the licence ship in ui/fonts/. Bundled so the text looks the same on every Mac,
+# whatever fonts that Mac has.
+TYPEFACE = "Inter"
+FONT_DIR = Path(__file__).resolve().parent / "fonts"
+
+
+def install_typeface(app) -> bool:
+    """Register the bundled typeface and make it the application's font, at the
+    platform's own default size. Returns whether it took.
+
+    Every font built with ``QFont()`` afterwards starts from it, and the style
+    sheet names sizes and weights only, so one call sets the face everywhere.
+    The monospace face kept for templates is set by name and stays.
+    """
+    from PySide6.QtGui import QFontDatabase
+
+    families: set[str] = set()
+    for file in sorted(FONT_DIR.glob("*.ttf")):
+        font_id = QFontDatabase.addApplicationFont(str(file))
+        if font_id >= 0:
+            families.update(QFontDatabase.applicationFontFamilies(font_id))
+    if TYPEFACE not in families:
+        return False
+    font = app.font()
+    font.setFamily(TYPEFACE)
+    app.setFont(font)
+    return True
+
+
 def apply_scheme(app, theme: str | None, mode: str | None,
                  stored: dict | None = None,
                  legacy_custom: dict | None = None) -> None:
@@ -2213,6 +2243,8 @@ def apply_scheme(app, theme: str | None, mode: str | None,
     if app is not None:
         from .popups import install as install_popups
         install_popups(app)
+        if app.font().family() != TYPEFACE:
+            install_typeface(app)
         app.setStyleSheet(build_style_sheet())
 
 

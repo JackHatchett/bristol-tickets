@@ -34,3 +34,9 @@ Copyright Lucide Icons and Contributors. Licensed under the ISC License; the
 icons Lucide derives from Feather are copyright Cole Bemis and licensed under
 the MIT License. Both texts are in `ui/icons/LICENSE`, which ships beside the
 icons in `ui/icons/`. Source: <https://lucide.dev>.
+
+## Inter
+
+Copyright 2016 The Inter Project Authors. Licensed under the SIL Open Font
+License, Version 1.1; the text is in `ui/fonts/LICENSE.txt`, which ships beside
+the font files in `ui/fonts/`. Source: <https://rsms.me/inter/>.
