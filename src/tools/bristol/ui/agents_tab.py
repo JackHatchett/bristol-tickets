@@ -65,6 +65,7 @@ from .dialogs import as_sheet, confirm, list_buttons, notify
 from .growing_edit import GrowingTextEdit
 from .settled_combo import SettledComboBox, fill_words
 from .row_card import card_list
+from . import icons
 from .theme import CARD_ROLE, LAYOUT, agent_caption, space
 
 AGENTS_CLI = Path("src") / "tools" / "agent_tools" / "agents.py"
@@ -490,7 +491,10 @@ class EnvList(QWidget):
         choose.setAutoDefault(False)
         choose.setMaximumWidth(LAYOUT["env_choose_w"])
         choose.clicked.connect(lambda: self._pick_into(value_edit))
-        drop = QPushButton("✕")
+        drop = QPushButton()
+        icons.tint(drop, "x")
+        drop.setToolTip("Remove this variable")
+        drop.setAccessibleName("Remove this variable")
         drop.setAutoDefault(False)
         drop.setMaximumWidth(LAYOUT["env_choose_w"])
         drop.clicked.connect(lambda _=False: self._drop(holder))

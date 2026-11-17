@@ -2631,78 +2631,27 @@ def live_scheme(app, theme: str | None, mode: str | None) -> str:
 
 
 def chevron_image(colour: str, direction: str = "down") -> str | None:
-    """A chevron in the given colour and direction (``down`` or ``up``), as a
-    cached image file the stylesheet can point a combo box's or spin box's
-    arrow at. Returns None when nothing can be written, in which case the
-    arrow rule is left out.
+    """Lucide's chevron in the given colour and direction (``down`` or ``up``),
+    as an image file the stylesheet can point a combo box's or spin box's arrow
+    at. Returns None when nothing can be written, in which case the arrow rule
+    is left out.
     """
-    try:
-        from PySide6.QtCore import QDir
-        from PySide6.QtGui import QPainter, QPen, QPixmap
+    from .icons import image_file
 
-        folder = Path(QDir.tempPath()) / "bristol_tickets_ui"
-        target = folder / f"chevron_{direction}_{colour.lstrip('#')}.png"
-        if target.exists():
-            return str(target)
-        folder.mkdir(parents=True, exist_ok=True)
-
-        width, height = space("lg"), space("md")
-        pixmap = QPixmap(width, height)
-        pixmap.fill(Qt.transparent)
-        painter = QPainter(pixmap)
-        try:
-            painter.setRenderHint(QPainter.Antialiasing, True)
-            pen = QPen(QColor(colour), 1.6)
-            pen.setCapStyle(Qt.RoundCap)
-            pen.setJoinStyle(Qt.RoundJoin)
-            painter.setPen(pen)
-            inset = 1
-            if direction == "up":
-                painter.drawLine(inset, height - inset, width // 2, inset)
-                painter.drawLine(width // 2, inset, width - inset, height - inset)
-            else:
-                painter.drawLine(inset, inset, width // 2, height - inset)
-                painter.drawLine(width // 2, height - inset, width - inset, inset)
-        finally:
-            painter.end()
-        return str(target) if pixmap.save(str(target)) else None
-    except Exception:  # noqa: BLE001 — an arrow is never worth failing a paint
-        return None
+    # The chevron's own part of Lucide's 24-unit drawing, stroke included, at
+    # the arrow's width-to-height ratio.
+    return image_file(f"chevron-{direction}", colour, space("lg"), space("md"),
+                      (4, 7, 16, 10))
 
 
 def check_image(colour: str) -> str | None:
-    """A check mark in the given colour, as a cached image file the stylesheet
+    """Lucide's check in the given colour, as an image file the stylesheet
     points a checked checkbox indicator at. Returns None when nothing can be
     written, in which case the checked state is a plain accent fill."""
-    try:
-        from PySide6.QtCore import QDir
-        from PySide6.QtGui import QPainter, QPen, QPixmap
+    from .icons import image_file
 
-        folder = Path(QDir.tempPath()) / "bristol_tickets_ui"
-        target = folder / f"check_{colour.lstrip('#')}.png"
-        if target.exists():
-            return str(target)
-        folder.mkdir(parents=True, exist_ok=True)
-
-        side = space("md")
-        pixmap = QPixmap(side, side)
-        pixmap.fill(Qt.transparent)
-        painter = QPainter(pixmap)
-        try:
-            painter.setRenderHint(QPainter.Antialiasing, True)
-            pen = QPen(QColor(colour), 1.6)
-            pen.setCapStyle(Qt.RoundCap)
-            pen.setJoinStyle(Qt.RoundJoin)
-            painter.setPen(pen)
-            inset = 1
-            elbow = side * 2 // 5
-            painter.drawLine(inset, side * 3 // 5, elbow, side - inset)
-            painter.drawLine(elbow, side - inset, side - inset, inset)
-        finally:
-            painter.end()
-        return str(target) if pixmap.save(str(target)) else None
-    except Exception:  # noqa: BLE001 — a tick is never worth failing a paint
-        return None
+    side = space("md") + 2
+    return image_file("check", colour, side, side, (3, 3, 18, 18))
 
 
 def build_style_sheet() -> str:

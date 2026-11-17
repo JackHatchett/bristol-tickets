@@ -242,9 +242,11 @@ class MainWindow(QMainWindow):
         body_row.setContentsMargins(0, 0, 0, 0)
         body_row.setSpacing(0)
         body_row.addWidget(main_splitter, 1)
-        self.pane_reveal = QPushButton("❮")
+        self.pane_reveal = QPushButton()
         self.pane_reveal.setObjectName("paneReveal")
+        icons.tint(self.pane_reveal, "chevron-left", size=14)
         self.pane_reveal.setToolTip("Show the detail pane")
+        self.pane_reveal.setAccessibleName("Show the detail pane")
         self.pane_reveal.setCursor(Qt.PointingHandCursor)
         self.pane_reveal.setFixedWidth(space("2xl"))
         self.pane_reveal.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
@@ -633,8 +635,11 @@ class MainWindow(QMainWindow):
                 stale.deleteLater()
         chips = applied(self.conn, self.filters)
         for kind, value, label in chips[:CHIPS_SHOWN]:
-            chip = QPushButton(f"{label}  ✕")
+            chip = QPushButton(label)
             chip.setObjectName("filterChip")
+            # The way to remove the filter sits after its name.
+            chip.setLayoutDirection(Qt.RightToLeft)
+            icons.tint(chip, "x", "NEUTRAL_TX", size=10)
             chip.setCursor(Qt.PointingHandCursor)
             chip.setToolTip("Remove this filter")
             chip.clicked.connect(
@@ -995,6 +1000,7 @@ class MainWindow(QMainWindow):
             self.archive_results.viewport().update()
         if hasattr(self, "_search_glass"):
             self._search_glass.setIcon(magnifier_icon(C["INK_SOFT"]))
+        icons.retint()
         self._tint_header()
 
     def _on_color_scheme_changed(self, *args) -> None:

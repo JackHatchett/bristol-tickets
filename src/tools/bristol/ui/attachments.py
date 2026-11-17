@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
 )
 
 from .dialogs import confirm, notify
+from . import icons
 from .theme import LAYOUT, space
 
 THUMB_MAX = 160  # longest edge of an inline thumbnail, in px
@@ -323,10 +324,12 @@ class AttachmentBar(QWidget):
             name = QLabel(display)
             name.setToolTip(filename)
             rl.addWidget(name, 1)
-            x = QPushButton("X")
+            x = QPushButton()
             x.setObjectName("attachRemoveBtn")
+            icons.tint(x, "x")
             x.setFixedWidth(space("2xl"))
             x.setToolTip("Remove attachment (moves the file to images/_trash)")
+            x.setAccessibleName("Remove attachment")
             x.clicked.connect(
                 lambda _=False, a=att_id, d=display: self._confirm_remove(a, d))
             rl.addWidget(x)

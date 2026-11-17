@@ -51,6 +51,7 @@ from .growing_edit import GrowingTextEdit
 from .links import LinkBar, carried_summaries
 from .record_dialog import STAGES, section_widget
 from .settled_combo import fill_words
+from . import icons
 from .theme import (
     BLOCK_REASON_CHOICES,
     BLOCK_REASON_HINT,
@@ -119,9 +120,11 @@ class DetailPane(QWidget):
         self.title.setFont(title_font)
         self.title.setObjectName("inspectorTitle")
         head.addWidget(self.title, 1)
-        self.collapse_btn = QPushButton("❯")
+        self.collapse_btn = QPushButton()
         self.collapse_btn.setObjectName("paneToggle")
+        icons.tint(self.collapse_btn, "chevron-right", size=14)
         self.collapse_btn.setToolTip("Collapse the detail pane")
+        self.collapse_btn.setAccessibleName("Collapse the detail pane")
         self.collapse_btn.setCursor(Qt.PointingHandCursor)
         self.collapse_btn.clicked.connect(self._collapse)
         head.addWidget(self.collapse_btn, 0, Qt.AlignTop)

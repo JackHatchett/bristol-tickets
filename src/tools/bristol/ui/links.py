@@ -67,6 +67,7 @@ import config_file  # bristol-local: the one config.local.json reader/writer
 
 from .dialogs import as_sheet, confirm, notify
 from .growing_edit import GrowingTextEdit
+from . import icons
 from .theme import LAYOUT, space
 
 MAX_LABEL_CHARS = 72  # where a long URI is shortened in a confirm message;
@@ -608,10 +609,12 @@ class LinkBar(QWidget):
             body.clicked.connect(lambda _=False: on_click())
         body.setToolTip(tooltip)
         rl.addWidget(body, 1)
-        x = QPushButton("X")
+        x = QPushButton()
         x.setObjectName("attachRemoveBtn")
+        icons.tint(x, "x")
         x.setFixedWidth(space("2xl"))
         x.setToolTip("Remove this link")
+        x.setAccessibleName("Remove this link")
         x.clicked.connect(lambda _=False: on_remove())
         rl.addWidget(x)
         return row

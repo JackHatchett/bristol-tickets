@@ -9,7 +9,7 @@ whatever format it is drawn in.
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
@@ -100,21 +100,7 @@ class ResultsTable(QTableWidget):
 
 
 def magnifier_icon(colour: str, size: int = 16) -> QIcon:
-    """The search field's leading glass, drawn in ``colour``."""
-    pixmap = QPixmap(size * 2, size * 2)
-    pixmap.setDevicePixelRatio(2)
-    pixmap.fill(Qt.transparent)
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.Antialiasing)
-    pen = QPen(QColor(colour))
-    pen.setWidthF(1.6)
-    pen.setCapStyle(Qt.RoundCap)
-    painter.setPen(pen)
-    radius = size * 0.3
-    centre = size * 0.42
-    painter.drawEllipse(int(centre - radius), int(centre - radius),
-                        int(radius * 2), int(radius * 2))
-    painter.drawLine(int(centre + radius * 0.7), int(centre + radius * 0.7),
-                     int(size * 0.85), int(size * 0.85))
-    painter.end()
-    return QIcon(pixmap)
+    """The search field's leading glass: Lucide's search, drawn in ``colour``."""
+    from .icons import icon
+
+    return icon("search", colour, size)

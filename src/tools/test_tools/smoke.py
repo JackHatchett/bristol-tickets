@@ -76,6 +76,22 @@ def check_bristol() -> list[str]:
         raise SmokeFailure("the typeface ships without its licence")
     ok.append(f"{_theme.TYPEFACE} is bundled with its licence and is the app's font")
 
+    # One icon set: every icon the app draws is a Lucide file, and the arrow,
+    # check and glass images come from it in the color asked for.
+    from ui import icons as _icons
+    for _name in ("search", "plus", "refresh-cw", "settings", "x", "check",
+                  "chevron-down", "chevron-up", "chevron-left", "chevron-right"):
+        if 'class="lucide lucide-' + _name + '"' not in _icons._svg(_name):
+            raise SmokeFailure(f"the {_name} icon is not Lucide's")
+    for _path in (_theme.chevron_image("#123456"), _theme.chevron_image("#123456", "up"),
+                  _theme.check_image("#123456")):
+        if not _path or "lucide_" not in _path or not Path(_path.replace(".png", "@2x.png")).is_file():
+            raise SmokeFailure(f"a style sheet image is not drawn from Lucide at both densities: {_path}")
+    from ui.results_table import magnifier_icon as _glass
+    if _glass("#123456").isNull():
+        raise SmokeFailure("the search glass draws nothing")
+    ok.append("every icon is Lucide's, the style sheet's arrows and check included")
+
     from PySide6.QtGui import QColor, QPixmap
 
     from ui.attachments import AttachmentBar, ImagePreviewDialog
@@ -2475,7 +2491,7 @@ def check_bristol() -> list[str]:
 
             def cross(widget):
                 for button in widget.findChildren(_Button):
-                    if button.text() == "✕":
+                    if button.accessibleName() == "Remove this variable":
                         return button
                 raise SmokeFailure("a row on the agent form has no ✕")
 
