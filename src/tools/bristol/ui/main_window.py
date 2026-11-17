@@ -1,10 +1,9 @@
 """ui/main_window.py — the top-level window.
 
-This module is the ``MainWindow`` shell: one full-width header bar carrying the
-app's identity, the view tabs, Refresh and Create; the views those tabs switch between
-(Search, Backlog, Board, Archive, Settings); and the right-hand inspector panel.
-The header spans the window and the splitter sits under it, so nothing above the
-board floats on an alignment of its own.
+This module is the ``MainWindow`` shell: one Mac toolbar, unified with the
+title bar, carrying the views as a segmented control and Create at a fixed place
+at its right; the views that control switches between (Search, Backlog, Board,
+Archive, Agents, Skills, Settings); and the right-hand inspector panel.
 
 The Kanban model puts a task's tab in ``task.stage`` (backlog | active |
 archive) and its manual order in ``task.sort_order``. The
@@ -47,11 +46,11 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
-    QFrame,
     QPushButton,
     QSizePolicy,
     QSplitter,
     QStackedWidget,
+    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -138,17 +137,17 @@ class MainWindow(QMainWindow):
         if app is not None:
             app.styleHints().colorSchemeChanged.connect(self._on_color_scheme_changed)
 
-        # One full-width header spans the window, and the splitter sits under
-        # it: identity, the view tabs, Refresh and Create all read as one bar
-        # rather than floats on separate alignments.
+        # The toolbar is the Mac's own, drawn into the title bar; the window
+        # title names the app, so the toolbar carries only the views and the
+        # commands.
         shell = QWidget()
         shell_layout = QVBoxLayout(shell)
         shell_layout.setContentsMargins(0, 0, 0, 0)
         shell_layout.setSpacing(0)
         self.setCentralWidget(shell)
 
-        # The pages the header switches between. Built before the header so a
-        # tab button has something to select.
+        # The pages the toolbar switches between. Built before the toolbar so
+        # a segment has something to select.
         self.pages = QStackedWidget()
 
         main_splitter = QSplitter(Qt.Horizontal)
@@ -162,14 +161,12 @@ class MainWindow(QMainWindow):
         outer_layout.setSpacing(space("lg"))
         main_splitter.addWidget(left_container)
 
-        # Refresh reloads every view, so it belongs beside Create in the one
-        # bar that spans every tab rather than on the Board.
-        self.refresh_btn = QPushButton("Refresh")
-        self.refresh_btn.setToolTip("Reload every view from the database.")
-        self.refresh_btn.clicked.connect(self._refresh_board)
-
+        # Create is the toolbar's one command, at its right on every view; a
+        # view with no cards greys it rather than dropping it. There is no
+        # Refresh: the views follow the database on their own.
         self.global_create_btn = QPushButton("Create")
         self.global_create_btn.setObjectName("globalCreateBtn")
+        self.global_create_btn.setToolTip("Create a card or an epic.")
         self.global_create_btn.clicked.connect(self._open_global_create)
 
         # The board's filter. One state narrows the board, the Backlog and
@@ -215,7 +212,8 @@ class MainWindow(QMainWindow):
         self.pane_reveal.setVisible(False)
         body_row.addWidget(self.pane_reveal)
 
-        shell_layout.addWidget(self._build_header())
+        self.setUnifiedTitleAndToolBarOnMac(True)
+        self.addToolBar(Qt.TopToolBarArea, self._build_toolbar())
         shell_layout.addWidget(board_and_pane, 1)
         outer_layout.addWidget(self.pages)
 
@@ -326,8 +324,6 @@ class MainWindow(QMainWindow):
         # narrows the board reads left to right — the button, then what it is
         # narrowed to. Sweeping the Done column is Settings' Clear Done, beside
         # the reports it belongs with.
-        # Refresh is not here either: it reloads every view, so it lives in the
-        # header that spans every tab.
         board_controls = QHBoxLayout()
         board_controls.setSpacing(space("md"))
         board_controls.addWidget(self.filter_btn)
@@ -374,6 +370,7 @@ class MainWindow(QMainWindow):
             on_appearance_changed=self._preview_appearance, conn=self.conn,
             on_board_changed=self._refresh_board)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
+        self._seat_segments()
         # After every tab exists, since the View menu lists them.
         self._build_menu_bar()
 
@@ -609,55 +606,51 @@ class MainWindow(QMainWindow):
             rest.setToolTip("Open Filter to see the rest.")
             self.chip_row.addWidget(rest)
 
-    # ----- The header bar ---------------------------------------------------
+    # ----- The toolbar -----------------------------------------------------
 
-    def _build_header(self) -> QWidget:
-        """The one header bar: identity at the left, the view tabs beside it,
-        Refresh and Create at the right, everything on one vertical centre line
-        and closed by a single hairline. Refresh and Create act on tickets, so
-        they are shown only on the pages that show tickets — see
-        _sync_pane_to_page."""
-        header = QWidget()
-        header.setObjectName("appHeader")
-        bar = QHBoxLayout(header)
-        bar.setContentsMargins(space("xl"), space("md"), space("xl"),
-                               space("sm"))
-        bar.setSpacing(space("lg"))
+    def _build_toolbar(self) -> QToolBar:
+        """The one toolbar, unified with the title bar on the Mac: the views as
+        a segmented control at its centre and Create at its right. Every view
+        shows the same toolbar; a command a view has no use for is greyed in
+        its place — see _sync_pane_to_page."""
+        toolbar = QToolBar("Toolbar", self)
+        toolbar.setObjectName("mainToolbar")
+        toolbar.setMovable(False)
+        toolbar.setFloatable(False)
+        # The toolbar is part of the window, not a panel the user can hide.
+        toolbar.toggleViewAction().setVisible(False)
+        toolbar.setContextMenuPolicy(Qt.PreventContextMenu)
 
-        identity = QLabel("Bristol Tickets")
-        identity.setObjectName("appIdentity")
-        bar.addWidget(identity, 0, Qt.AlignVCenter)
-
-        separator = QFrame()
-        separator.setObjectName("headerRule")
-        separator.setFrameShape(QFrame.VLine)
-        separator.setFixedWidth(1)
-        bar.addWidget(separator, 0, Qt.AlignVCenter)
-
-        self._tab_buttons: list[QPushButton] = []
-        # Exclusive, so the open tab cannot be switched off by a second press
-        # and exactly one tab is always the one shown.
-        self._tab_group = QButtonGroup(self)
-        self._tab_group.setExclusive(True)
-        self._tab_row = QHBoxLayout()
+        segments = QWidget()
+        segments.setObjectName("viewSegments")
+        self._tab_row = QHBoxLayout(segments)
         self._tab_row.setContentsMargins(0, 0, 0, 0)
         self._tab_row.setSpacing(0)
-        bar.addLayout(self._tab_row)
+        self._tab_buttons: list[QPushButton] = []
+        # Exclusive, so the open view cannot be switched off by a second press
+        # and exactly one segment is always the one shown.
+        self._tab_group = QButtonGroup(self)
+        self._tab_group.setExclusive(True)
 
-        bar.addStretch(1)
-        bar.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
-        bar.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
-        return header
+        def spring() -> QWidget:
+            spacer = QWidget()
+            spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            return spacer
+
+        toolbar.addWidget(spring())
+        toolbar.addWidget(segments)
+        toolbar.addWidget(spring())
+        toolbar.addWidget(self.global_create_btn)
+        return toolbar
 
     def _add_page(self, widget: QWidget, name: str) -> int:
-        """Add a view and its tab. The tab is a flat button in the header: hover
-        changes its state, and the selected one carries an accent underline."""
+        """Add a view and its segment in the toolbar's segmented control."""
         index = self.pages.addWidget(widget)
 
         button = QPushButton(name)
-        button.setObjectName("viewTab")
+        button.setObjectName("viewSegment")
         button.setCheckable(True)
-        button.setCursor(Qt.PointingHandCursor)
+        button.setFocusPolicy(Qt.TabFocus)
         # Toggled rather than clicked: an assistive tool presses a checkable
         # button by toggling it, which emits no click, and a pointer click
         # toggles it as well.
@@ -667,6 +660,17 @@ class MainWindow(QMainWindow):
         self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
         return index
+
+    def _seat_segments(self) -> None:
+        """Tell each segment where it sits, so the control's ends are rounded
+        and the segments between them are square."""
+        last = len(self._tab_buttons) - 1
+        for position, button in enumerate(self._tab_buttons):
+            button.setProperty(
+                "segment", "first" if position == 0
+                else "last" if position == last else "middle")
+            button.style().unpolish(button)
+            button.style().polish(button)
 
     def _show_page(self, index: int) -> None:
         self.pages.setCurrentIndex(index)
@@ -688,11 +692,9 @@ class MainWindow(QMainWindow):
         cards = index in self._card_page_indexes
         self.detail_pane.setVisible(cards and not self._pane_collapsed)
         self.pane_reveal.setVisible(cards and self._pane_collapsed)
-        # Refresh and Create belong to the same pages: they sit in the header
-        # above the detail column there, and a page with no tickets carries
-        # neither. Kept out of the pane itself so a collapsed pane keeps them.
-        self.refresh_btn.setVisible(cards)
-        self.global_create_btn.setVisible(cards)
+        # Create stays in its place on every view and is greyed where there
+        # are no cards to create.
+        self.global_create_btn.setEnabled(cards)
 
     # ----- Menu bar ---------------------------------------------------------
 
@@ -1060,5 +1062,5 @@ class MainWindow(QMainWindow):
         self._load_archive(self.filters)
         self._execute_global_search()
         # Skills are not in the database and take no filter; they are
-        # reloaded here so one Refresh means the same thing on every tab.
+        # reloaded here so one reload means the same thing on every tab.
         self.skills_tab.reload()

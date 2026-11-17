@@ -2693,38 +2693,38 @@ QMainWindow, QWidget#leftContainer, QDialog {{
 QSplitter::handle {{
     background-color: {C['CANVAS']};
 }}
-/* The header bar: one full-width strip carrying identity, the agent selector,
-   the view tabs and Create, closed by a single hairline. */
-QWidget#appHeader {{
-    background-color: {C['CANVAS']};
-    border-bottom: 1px solid {C['BORDER']};
-}}
-QLabel#appIdentity {{
-    color: {C['INK']};
-    font-size: {type_size('section')}pt;
-    font-weight: 700;
-}}
-QFrame#headerRule {{ background-color: {C['BORDER']}; border: none; }}
-/* A view tab is text on the canvas: hover changes its state, and the selected
-   one is carried by weight and an accent underline rather than a fill. */
-QPushButton#viewTab {{
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
+/* The views as one segmented control in the toolbar: a bordered capsule whose
+   ends are rounded, the open view filled with the accent. The toolbar itself is
+   left to the platform, which draws it into the title bar. */
+QPushButton#viewSegment {{
+    background-color: {C['SURFACE']};
+    border: 1px solid {C['BORDER']};
+    border-left: none;
     border-radius: 0px;
-    padding: {s_md}px {s_lg}px;
-    margin: 0px {s_xs}px;
-    color: {C['INK_SOFT']};
-    font-weight: 600;
-}}
-QPushButton#viewTab:hover {{
-    background-color: {C['HOVER_BG']};
+    padding: {s_xs}px {s_lg}px;
+    margin: 0px;
     color: {C['INK']};
+    font-weight: 500;
 }}
-QPushButton#viewTab:checked {{
-    color: {C['ACCENT']};
-    border-bottom: 2px solid {C['ACCENT']};
-    font-weight: 700;
+QPushButton#viewSegment[segment="first"] {{
+    border-left: 1px solid {C['BORDER']};
+    border-top-left-radius: {r_md}px;
+    border-bottom-left-radius: {r_md}px;
+}}
+QPushButton#viewSegment[segment="last"] {{
+    border-top-right-radius: {r_md}px;
+    border-bottom-right-radius: {r_md}px;
+}}
+QPushButton#viewSegment:hover {{
+    background-color: {C['HOVER_BG']};
+}}
+QPushButton#viewSegment:checked {{
+    background-color: {C['ACCENT']};
+    border-color: {C['ACCENT']};
+    color: {C['ON_ACCENT']};
+}}
+QPushButton#viewSegment:focus {{
+    outline: none;
 }}
 QGroupBox {{
     font-weight: 600;
@@ -3170,13 +3170,12 @@ QPushButton, QLineEdit, QComboBox, QAbstractSpinBox {{
     padding-bottom: 0px;
 }}
 /* Text-like buttons are not controls on a row: they keep their own height. */
-QPushButton#viewTab, QPushButton#linkRow, QPushButton#filterClear,
+QPushButton#linkRow, QPushButton#filterClear,
 QPushButton#filterChip, QPushButton#paneToggle, QPushButton#paneReveal,
 QPushButton#attachRemoveBtn, QPushButton#exampleLink {{
     min-height: 0px;
     max-height: 9999px;
 }}
-QPushButton#viewTab {{ padding: {s_md}px {s_lg}px; }}
 QPushButton#linkRow, QPushButton#attachRemoveBtn {{ padding: {s_xs}px 0px; }}
 QPushButton#filterClear, QPushButton#paneToggle,
 QPushButton#paneReveal {{ padding: {s_xs}px {s_md}px; }}

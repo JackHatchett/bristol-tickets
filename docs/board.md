@@ -9,7 +9,9 @@ an agent working the board makes exactly the same changes you would.
 
 ## The tabs
 
-A card's **stage** decides which tab it lives in. Stage is independent of the
+The tabs are the segmented control at the centre of the window's toolbar, and
+**View** in the menu bar lists them too. A card's **stage** decides which tab it
+lives in. Stage is independent of the
 column a card sits in.
 
 **Backlog** — real work you have not committed to. One manually ordered list,
@@ -67,8 +69,9 @@ Above the columns sits one control row with what applies to the Board:
 Each column carries its own header — its name and how many cards are in it, and
 nothing else, so the three read across one line.
 
-**Refresh** and **Create** sit together at the right of the header bar, above
-the tabs, because each acts on every tab rather than on the Board alone.
+**Create** sits at the right of the toolbar on every tab, greyed on the tabs
+that show no cards. There is no Refresh: every tab redraws within a couple of
+seconds of any change to the board, whoever made it.
 
 ## Filter
 

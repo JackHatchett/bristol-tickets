@@ -675,25 +675,38 @@ def check_bristol() -> list[str]:
         ok.append("a write from another connection reaches the Board on the "
                   "next poll")
 
-        # Where a control sits says what it reaches. Refresh reloads every
-        # view, so it is in the header beside Create and reachable from any
-        # tab; the board's own control row narrows the board and offers nothing
-        # else, since each kind of card leaves the board on its own event; a
-        # column header carries no control at all, which is what keeps the three
+        # Where a control sits says what it reaches. The toolbar is the one
+        # Mac toolbar, unified with the title bar: the views as a segmented
+        # control, then Create, the same on every view and with no Refresh; the
+        # board's own control row narrows the board and offers nothing else,
+        # since each kind of card leaves the board on its own event; a column
+        # header carries no control at all, which is what keeps the three
         # names and counts on one line.
-        from PySide6.QtWidgets import QPushButton
+        from PySide6.QtWidgets import QPushButton, QToolBar
 
-        header_bar = win.centralWidget().layout().itemAt(0).widget()
-        header_layout = header_bar.layout()
-        header_buttons = [
-            header_layout.itemAt(i).widget().text()
-            for i in range(header_layout.count())
-            if isinstance(header_layout.itemAt(i).widget(), QPushButton)]
-        if header_buttons[-2:] != ["Refresh", "Create"]:
+        toolbars = win.findChildren(QToolBar)
+        if len(toolbars) != 1:
+            raise SmokeFailure(f"the window should carry one toolbar, got {len(toolbars)}")
+        toolbar = toolbars[0]
+        # Qt reports the unified title bar only where it can draw one.
+        if sys.platform == "darwin" and not win.unifiedTitleAndToolBarOnMac():
+            raise SmokeFailure("the toolbar is not unified with the title bar")
+        if toolbar.isMovable() or toolbar.toggleViewAction().isVisible():
+            raise SmokeFailure("the toolbar can be moved or hidden")
+        toolbar_buttons = [b.text() for b in toolbar.findChildren(QPushButton)]
+        if "Refresh" in toolbar_buttons or hasattr(win, "refresh_btn"):
+            raise SmokeFailure("a Refresh button survives")
+        if toolbar_buttons[-1:] != ["Create"] or \
+                set(toolbar_buttons[:-1]) != {b.text() for b in win._tab_buttons}:
             raise SmokeFailure(
-                f"header should end on Refresh then Create, got {header_buttons}")
-        if header_layout.getContentsMargins()[3] <= 0:
-            raise SmokeFailure("the header's controls sit on its closing hairline")
+                f"the toolbar should be the view segments then Create, got "
+                f"{toolbar_buttons}")
+        if win.centralWidget().findChildren(QPushButton, "viewSegment"):
+            raise SmokeFailure("a view segment sits outside the toolbar")
+        ends = [b.property("segment") for b in win._tab_buttons]
+        if ends[0] != "first" or ends[-1] != "last" or \
+                set(ends[1:-1]) - {"middle"}:
+            raise SmokeFailure(f"the segments are not seated end to end: {ends}")
         board_row = win.pages.widget(win._board_tab_index).layout().itemAt(0).layout()
         board_buttons = [
             board_row.itemAt(i).widget().text()
@@ -709,21 +722,25 @@ def check_bristol() -> list[str]:
         for key, column in win.columns.items():
             if column.findChildren(QPushButton):
                 raise SmokeFailure(f"the {key} column header carries a control")
-        win._show_page(win._settings_tab_index)
-        if not (win.refresh_btn.isHidden() and win.global_create_btn.isHidden()):
-            raise SmokeFailure("Refresh and Create show on a page with no tickets")
-        for page_index in sorted(win._card_page_indexes):
+        # A toolbar lays its widgets out only once shown, so whether Create is
+        # there is read from the toolbar's action for it.
+        create_action = next(
+            (a for a in toolbar.actions()
+             if toolbar.widgetForAction(a) is win.global_create_btn), None)
+        for page_index in range(win.pages.count()):
             win._show_page(page_index)
-            if win.refresh_btn.isHidden() or win.global_create_btn.isHidden():
-                raise SmokeFailure("Refresh and Create are missing from a ticket page")
-        win._show_page(0)
-        win.refresh_btn.click()
-        if win.columns["todo"].list_widget.count() != 1:
-            raise SmokeFailure("Refresh did not reload the board from another tab")
+            if create_action is None or not create_action.isVisible() \
+                    or toolbar.isHidden():
+                raise SmokeFailure("Create left the toolbar on a view")
+            if win.global_create_btn.isEnabled() != \
+                    (page_index in win._card_page_indexes):
+                raise SmokeFailure(
+                    "Create should be greyed exactly on the views with no cards")
         win._show_page(win._board_tab_index)
-        ok.append("Refresh and Create are the header's on the ticket pages only; the board's row "
-                  "narrows the board and nothing more; a column header contains "
-                  "no control")
+        ok.append("one unified toolbar: the views as segments, then Create, "
+                  "greyed on the views with no cards, and no Refresh; the "
+                  "board's row narrows the board and nothing more; a column "
+                  "header contains no control")
 
         # ---- What the board is showing ------------------------------------
         # One filter state narrows the board, the Backlog and the Archive and
