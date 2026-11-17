@@ -20,17 +20,70 @@ Payload, under ``CARD_ROLE``:
 from __future__ import annotations
 
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QFontMetrics
+from PySide6.QtGui import QColor, QFont, QFontMetrics
 from PySide6.QtWidgets import QListWidget
 
 from .card_delegate import CardDelegate
-from .theme import C, space
+from .theme import C, CARD_ROLE, space, type_size
 
 
 class RowCardDelegate(CardDelegate):
-    """A board card whose footer is meta text and neutral pills."""
+    """A board card whose footer is meta text and neutral pills.
+
+    A row is only as tall as what it says: with no meta text its pills sit
+    beside the name, and with neither it has no footer at all. Its pills read at
+    body size, since on these lists they are what the row is scanned for."""
+
+    def _small_font(self) -> QFont:
+        font = QFont()
+        font.setPointSize(type_size("body"))
+        return font
+
+    @staticmethod
+    def _pills(data: dict) -> list[str]:
+        return [str(p) for p in data.get("pills", []) if str(p).strip()]
+
+    def _inline(self, data: dict) -> bool:
+        """Whether the pills sit beside the name rather than in a footer."""
+        return not (data.get("meta") or "").strip() and bool(self._pills(data))
+
+    def _has_footer(self, data: dict) -> bool:
+        return bool((data.get("meta") or "").strip())
+
+    def _title_width(self, content_w: int, data: dict) -> int:
+        if not self._inline(data):
+            return content_w
+        font = self._small_font()
+        taken = sum(self._pill_width(p, font) + space("sm")
+                    for p in self._pills(data))
+        return max(40, content_w - taken)
+
+    def sizeHint(self, option, index):
+        size = super().sizeHint(option, index)
+        data = index.data(CARD_ROLE) or {}
+        if not self._has_footer(data):
+            size.setHeight(size.height() - self.GAP - self.FOOT_H)
+        return size
+
+    def paint(self, painter, option, index):
+        # Where the name starts, for pills drawn beside it.
+        self._title_top = option.rect.top() + self.MARGIN + self.PAD
+        super().paint(painter, option, index)
 
     def _draw_footer(self, painter, data, cx, y, cw) -> None:
+        if self._inline(data):
+            font = self._small_font()
+            x = cx + cw
+            for text in reversed(self._pills(data)):
+                width = self._pill_width(text, font)
+                x -= width
+                self._draw_pill(painter, x, self._title_top, text,
+                                C["NEUTRAL_BG"], C["NEUTRAL_TX"], font,
+                                width=width)
+                x -= space("sm")
+            return
+        if not self._has_footer(data):
+            return
         sfont = self._small_font()
         fm = QFontMetrics(sfont)
         gap = space("sm")

@@ -53,7 +53,8 @@ from . import dialogs
 from .links import open_uri
 from .growing_edit import GrowingTextEdit
 from .row_card import card_list
-from .theme import CARD_ROLE, LAYOUT, agent_caption, fill_agents, space
+from .results_table import magnifier_icon
+from .theme import C, CARD_ROLE, LAYOUT, agent_caption, fill_agents, space
 
 TICKETS_CLI = Path("src") / "tools" / "ticket_tools" / "ticket_write.py"
 STANDING_KIND = "standing"  # create_tickets.EPIC_KIND_STANDING
@@ -411,6 +412,9 @@ class SkillsTab(QWidget):
         # The top row narrows the list, and New Skill sits at its right edge.
         self.search = QLineEdit()
         self.search.setPlaceholderText("Filter")
+        self.search.setClearButtonEnabled(True)
+        self.search.addAction(magnifier_icon(C["INK_SOFT"]),
+                              QLineEdit.LeadingPosition)
         self.search.textChanged.connect(self._fill_list)
         self.source = QComboBox()
         self.source.addItems([ANY_SOURCE, CAME_WITH, DOWNLOADED])
