@@ -43,6 +43,7 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QDialog,
+    QFrame,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
@@ -130,7 +131,7 @@ class _HeaderBar(QWidget):
 ICON_VIEWS = {"Search": "search", "Settings": "settings"}
 
 # The named views that open a group of their own at the bar's centre, set apart
-# by a gap: Backlog, Board and Archive are one board's future, present and
+# by a gap and a hairline: Backlog, Board and Archive are one board's future, present and
 # past; Agents and Skills are the fleet.
 VIEW_GROUP_STARTS = {"Agents"}
 
@@ -788,7 +789,14 @@ class MainWindow(QMainWindow):
             self._icon_slots[name].addWidget(button, 0, Qt.AlignVCenter)
         else:
             if name in VIEW_GROUP_STARTS and self._tab_row.count():
-                self._tab_row.addSpacing(space("2xl"))
+                # A short upright hairline in the gap, clear of the bar's top
+                # and bottom edges.
+                divider = QFrame()
+                divider.setObjectName("headerDivider")
+                divider.setFixedSize(1, LAYOUT["header_divider_h"])
+                self._tab_row.addSpacing(space("lg"))
+                self._tab_row.addWidget(divider, 0, Qt.AlignVCenter)
+                self._tab_row.addSpacing(space("lg"))
             self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
         return index

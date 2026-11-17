@@ -164,6 +164,7 @@ LAYOUT = {
     "control_h": 34,       # every button, field and picker on a row: one height
     "toolbar_control_h": 28,  # a control in the top bar
     "header_icon": 16,        # an icon in the top bar
+    "header_divider_h": 16,   # the hairline between the top bar's groups of views
     "toolbar_box_w": 34,      # an icon button in the top bar
     "header_mark_h": 20,      # the app's mark beside its name in the top bar
     "traffic_lights_tall_w": 96,  # the traffic lights in the tall title bar, and room past them
@@ -2742,6 +2743,10 @@ QPushButton#viewTab:checked {{
 }}
 QPushButton#viewTab:focus {{
     outline: none;
+}}
+QFrame#headerDivider {{
+    background-color: {ink_14};
+    border: none;
 }}
 /* The top bar's icon buttons — Search, Refresh, Settings — each its icon in a
    faint box; an open view's box takes the accent's edge. */
