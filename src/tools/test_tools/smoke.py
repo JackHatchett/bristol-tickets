@@ -694,10 +694,11 @@ def check_bristol() -> list[str]:
         if sys.platform == "darwin" and not win._header_in_title_bar \
                 and hasattr(_Qt.WindowType, "ExpandedClientAreaHint"):
             raise SmokeFailure("the top bar is not in the title bar's band")
-        if win._header_in_title_bar and \
-                header.maximumHeight() > _theme.LAYOUT["title_bar_h"]:
-            raise SmokeFailure("the top bar is taller than the title bar")
-        header_buttons = [b.text() for b in header.findChildren(QPushButton)]
+        from ui import mac_window as _mac_window
+        if header.maximumHeight() > _mac_window.TALL_TITLE_BAR:
+            raise SmokeFailure("the top bar is taller than a Mac's tall title bar")
+        header_buttons = [b.text() or b.accessibleName()
+                          for b in header.findChildren(QPushButton)]
         if header_buttons[-2:] != ["Refresh", "Create"] or \
                 set(header_buttons[:-2]) != {b.text() for b in win._tab_buttons}:
             raise SmokeFailure(
@@ -706,10 +707,9 @@ def check_bristol() -> list[str]:
         if any(b.parent() is None or not header.isAncestorOf(b)
                for b in win._tab_buttons):
             raise SmokeFailure("a view segment sits outside the top bar")
-        ends = [b.property("segment") for b in win._tab_buttons]
-        if ends[0] != "first" or ends[-1] != "last" or \
-                set(ends[1:-1]) - {"middle"}:
-            raise SmokeFailure(f"the segments are not seated end to end: {ends}")
+        if any(b.icon().isNull() for b in win._tab_buttons) or \
+                win.refresh_btn.icon().isNull():
+            raise SmokeFailure("a view or Refresh in the top bar has no icon")
         board_row = win.pages.widget(win._board_tab_index).layout().itemAt(0).layout()
         board_buttons = [
             board_row.itemAt(i).widget().text()

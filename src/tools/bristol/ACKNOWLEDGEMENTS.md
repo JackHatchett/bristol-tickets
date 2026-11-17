@@ -27,3 +27,10 @@ Qt for Python's own source is at <https://code.qt.io/cgit/pyside/pyside-setup.gi
 Copyright the Python Software Foundation. Licensed under the PSF License
 Agreement, <https://docs.python.org/3/license.html>. A bundle built with py2app
 carries a copy of the interpreter.
+
+## Lucide icons
+
+Copyright Lucide Icons and Contributors. Licensed under the ISC License; the
+icons Lucide derives from Feather are copyright Cole Bemis and licensed under
+the MIT License. Both texts are in `ui/icons/LICENSE`, which ships beside the
+icons in `ui/icons/`. Source: <https://lucide.dev>.

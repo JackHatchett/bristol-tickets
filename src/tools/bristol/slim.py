@@ -22,11 +22,11 @@ import sys
 from pathlib import Path
 
 # What the board imports. Every other PySide6 module goes.
-MODULES = ("QtCore", "QtGui", "QtWidgets")
+MODULES = ("QtCore", "QtGui", "QtWidgets", "QtSvg")
 
-# The Qt frameworks the bundle keeps beside those three.
+# The Qt frameworks the bundle keeps beside those.
 FRAMEWORKS = MODULES + ("QtDBus", "QtNetwork", "QtPrintSupport",
-                        "QtSvg", "QtSvgWidgets")
+                        "QtSvgWidgets")
 
 # The plugin folders the bundle keeps.
 PLUGINS = ("platforms", "styles", "imageformats", "iconengines", "tls",

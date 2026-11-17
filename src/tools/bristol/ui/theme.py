@@ -162,7 +162,10 @@ TYPE = {"caption": 8, "body": 10, "title": 11, "section": 12, "display": 14}
 # needs one names it here rather than writing the number.
 LAYOUT = {
     "control_h": 34,       # every button, field and picker on a row: one height
-    "toolbar_control_h": 22,  # a control in the top bar: the Mac's small size
+    "toolbar_control_h": 28,  # a control in the top bar
+    "header_icon": 16,        # an icon in the top bar
+    "header_mark_h": 20,      # the app's mark beside its name in the top bar
+    "traffic_lights_tall_w": 96,  # the traffic lights in the tall title bar, and room past them
     "title_bar_h": 28,        # the Mac's title bar, which the top bar shares
     "traffic_lights_w": 80,   # the close, minimize and zoom buttons, and room past them
     "filter_field_max_w": 420,  # a Filter field, before its pickers
@@ -2693,7 +2696,7 @@ def build_style_sheet() -> str:
         r, g, b = (int(ink[i:i + 2], 16) for i in (0, 2, 4))
         return f"rgba({r}, {g}, {b}, {alpha})"
 
-    ink_06, ink_14 = _ink(0.06), _ink(0.14)
+    ink_06, ink_10, ink_14 = _ink(0.06), _ink(0.10), _ink(0.14)
     s_xs, s_sm, s_md, s_lg, s_xl, s_2xl = (space("xs"), space("sm"), space("md"),
                                            space("lg"), space("xl"), space("2xl"))
     return f"""
@@ -2709,55 +2712,48 @@ QWidget#appHeader {{
     background-color: {C['CANVAS']};
     border-bottom: 1px solid {C['BORDER']};
 }}
-/* The views as one segmented control in the top bar: a faint track of the
-   theme's ink, square segments between two rounded ends, and the open view
-   filled with the accent. */
-QPushButton#viewSegment {{
-    background-color: {ink_06};
-    border: 1px solid {ink_14};
-    border-left: none;
-    border-radius: 0px;
-    min-height: {tb_ctl}px;
-    max-height: {tb_ctl}px;
-    padding: 0px {s_lg}px;
-    margin: 0px;
+/* The app's name beside its mark. */
+QLabel#appTitle {{
     color: {C['INK']};
-    font-weight: 500;
+    font-size: {type_size('title')}pt;
+    font-weight: 700;
 }}
-QPushButton#viewSegment[segment="first"] {{
-    border-left: 1px solid {ink_14};
-    border-top-left-radius: {r_md}px;
-    border-bottom-left-radius: {r_md}px;
-}}
-QPushButton#viewSegment[segment="last"] {{
-    border-top-right-radius: {r_md}px;
-    border-bottom-right-radius: {r_md}px;
-}}
-QPushButton#viewSegment:hover {{
-    background-color: {ink_14};
-}}
-QPushButton#viewSegment:checked {{
-    background-color: {C['ACCENT']};
-    border-color: {C['ACCENT']};
-    color: {C['ON_ACCENT']};
-    font-weight: 600;
-}}
-QPushButton#viewSegment:focus {{
-    outline: none;
-}}
-/* The top bar's Refresh: an ordinary button on the segments' track. */
-QPushButton#toolbarButton {{
-    background-color: {ink_06};
-    border: 1px solid {ink_14};
+/* A view in the top bar: its icon and its name on the bar, a faint fill on
+   hover, and the open one in the accent on a faint fill of its own. */
+QPushButton#viewTab {{
+    background: transparent;
+    border: none;
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
-    padding: 0px {s_lg}px;
+    padding: 0px {s_md}px;
+    color: {C['INK_SOFT']};
+    font-weight: 600;
+}}
+QPushButton#viewTab:hover {{
+    background-color: {ink_06};
     color: {C['INK']};
-    font-weight: 500;
+}}
+QPushButton#viewTab:checked {{
+    background-color: {ink_10};
+    color: {C['ACCENT']};
+}}
+QPushButton#viewTab:focus {{
+    outline: none;
+}}
+/* The top bar's Refresh: its icon alone, a faint fill on hover. */
+QPushButton#toolbarButton {{
+    background: transparent;
+    border: none;
+    border-radius: {r_md}px;
+    min-height: {tb_ctl}px;
+    max-height: {tb_ctl}px;
+    min-width: {tb_ctl}px;
+    max-width: {tb_ctl}px;
+    padding: 0px;
 }}
 QPushButton#toolbarButton:hover {{
-    background-color: {ink_14};
+    background-color: {ink_10};
 }}
 /* The top bar's Create: the primary button at the top bar's height. Where a
    view has no cards it is faded by an opacity effect rather than turned grey,

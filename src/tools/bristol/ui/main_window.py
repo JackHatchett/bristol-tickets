@@ -36,7 +36,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtCore import QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
@@ -58,6 +58,7 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local: the one config.local.json reader/writer
 
+from . import icons, mac_window
 from .detail_pane import DetailPane
 from .dialogs import confirm, notify
 from .filter_menu import FilterMenu, FilterState, applied
@@ -124,6 +125,13 @@ class _HeaderBar(QWidget):
         window.showNormal() if window.isMaximized() else window.showMaximized()
 
 
+# The icon each view carries in the top bar, from ui/icons/.
+VIEW_ICONS = {
+    "Search": "search", "Backlog": "list-todo", "Board": "square-kanban",
+    "Archive": "archive", "Agents": "bot", "Skills": "sparkles",
+    "Settings": "settings",
+}
+
 # How far Create fades on a view with no cards to create.
 CREATE_FADED = 0.4
 
@@ -184,15 +192,20 @@ class MainWindow(QMainWindow):
         # Refresh and Create are the top bar's commands, at its right on every
         # view. Refresh reloads every view at once; Create is faded on a view
         # with no cards rather than dropped.
-        self.refresh_btn = QPushButton("Refresh")
+        self.refresh_btn = QPushButton()
         self.refresh_btn.setObjectName("toolbarButton")
-        self.refresh_btn.setToolTip("Reload every view from the database.")
+        self.refresh_btn.setAccessibleName("Refresh")
+        self.refresh_btn.setToolTip("Refresh: reload every view from the database.")
+        self.refresh_btn.setIconSize(QSize(LAYOUT["header_icon"],
+                                           LAYOUT["header_icon"]))
         self.refresh_btn.clicked.connect(self._refresh_board)
 
         self.global_create_btn = QPushButton("Create")
         self.global_create_btn.setObjectName("toolbarCreate")
         self.global_create_btn.setToolTip("Create a card or an epic.")
         self.global_create_btn.clicked.connect(self._open_global_create)
+        self.global_create_btn.setIconSize(QSize(LAYOUT["header_icon"],
+                                                 LAYOUT["header_icon"]))
 
         # The board's filter. One state narrows the board, the Backlog and
         # the Archive; the button opens the panel that sets it, and the chips
@@ -395,7 +408,7 @@ class MainWindow(QMainWindow):
             on_appearance_changed=self._preview_appearance, conn=self.conn,
             on_board_changed=self._refresh_board)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
-        self._seat_segments()
+        self._tint_header()
         # After every tab exists, since the View menu lists them.
         self._build_menu_bar()
 
@@ -636,8 +649,12 @@ class MainWindow(QMainWindow):
     def _merge_title_bar(self) -> bool:
         """Draw the window's own top bar in the title bar, where the platform
         can: the content runs up under a title bar with no background of its
-        own, so the traffic lights, the title and the header share one band in
-        the window's colour. Returns whether that is how the window is drawn."""
+        own, so the traffic lights and the top bar share one band in the
+        window's color. Where AppKit can be asked, the band is the tall one a
+        Mac app with a toolbar has, the lights at its centre and the system
+        title hidden (``_tall_title_bar``). Returns whether the band is
+        shared."""
+        self._tall_title_bar = False
         expanded = getattr(Qt.WindowType, "ExpandedClientAreaHint", None)
         clear = getattr(Qt.WindowType, "NoTitleBarBackgroundHint", None)
         if sys.platform != "darwin" or expanded is None or clear is None:
@@ -648,39 +665,52 @@ class MainWindow(QMainWindow):
         # area the title bar leaves.
         self.setAttribute(Qt.WA_LayoutOnEntireRect, True)
         self.setAttribute(Qt.WA_ContentsMarginsRespectsSafeArea, False)
+        self._tall_title_bar = mac_window.tall_title_bar(self)
         return True
 
     def _build_header(self) -> QWidget:
-        """The one top bar: the views as a segmented control at its centre and
-        Refresh and Create at its right. In the title bar it is the title bar's height and
-        starts past the traffic lights; elsewhere it is a strip of its own above
-        the content. Every view shows it the same; a command a view has no use
-        for is faded in its place — see _sync_pane_to_page."""
+        """The one top bar: the app's mark and name at its left where the
+        system title is hidden, the views at its centre, and Refresh and Create
+        at its right. Every view shows it the same; a command a view has no
+        use for is faded in its place — see _sync_pane_to_page."""
         header = _HeaderBar()
         header.setObjectName("appHeader")
         # A QWidget subclass paints its stylesheet background only when asked.
         header.setAttribute(Qt.WA_StyledBackground, True)
         bar = QHBoxLayout(header)
-        if self._header_in_title_bar:
-            # The title sits beside the traffic lights, so the segments stand
-            # at the centre, clear of both, and a hairline's worth lower so they
-            # share the lights' centre line.
+        bar.setSpacing(space("lg"))
+        if self._tall_title_bar:
+            header.setFixedHeight(mac_window.TALL_TITLE_BAR)
+            bar.setContentsMargins(LAYOUT["traffic_lights_tall_w"], 0,
+                                   space("lg"), 0)
+        elif self._header_in_title_bar:
             header.setFixedHeight(LAYOUT["title_bar_h"])
-            bar.setContentsMargins(LAYOUT["traffic_lights_w"], space("xs"),
+            bar.setContentsMargins(LAYOUT["traffic_lights_w"], 0,
                                    space("md"), 0)
         else:
-            header.setFixedHeight(LAYOUT["title_bar_h"] + space("lg"))
+            header.setFixedHeight(mac_window.TALL_TITLE_BAR)
             bar.setContentsMargins(space("xl"), 0, space("xl"), 0)
-        bar.setSpacing(space("lg"))
 
-        segments = QWidget()
-        segments.setObjectName("viewSegments")
-        self._tab_row = QHBoxLayout(segments)
+        # The app names itself where the platform's title is not drawn.
+        identity = QWidget()
+        identity_row = QHBoxLayout(identity)
+        identity_row.setContentsMargins(0, 0, 0, 0)
+        identity_row.setSpacing(space("md"))
+        self._mark = QLabel()
+        self._mark.setPixmap(icons.mark(LAYOUT["header_mark_h"]))
+        title = QLabel("Bristol Tickets")
+        title.setObjectName("appTitle")
+        identity_row.addWidget(self._mark, 0, Qt.AlignVCenter)
+        identity_row.addWidget(title, 0, Qt.AlignVCenter)
+
+        views = QWidget()
+        views.setObjectName("viewTabs")
+        self._tab_row = QHBoxLayout(views)
         self._tab_row.setContentsMargins(0, 0, 0, 0)
-        self._tab_row.setSpacing(0)
+        self._tab_row.setSpacing(space("xs"))
         self._tab_buttons: list[QPushButton] = []
         # Exclusive, so the open view cannot be switched off by a second press
-        # and exactly one segment is always the one shown.
+        # and exactly one view is always the one shown.
         self._tab_group = QButtonGroup(self)
         self._tab_group.setExclusive(True)
 
@@ -688,21 +718,53 @@ class MainWindow(QMainWindow):
         self._create_fade.setOpacity(1.0)
         self.global_create_btn.setGraphicsEffect(self._create_fade)
 
-        bar.addStretch(1)
-        bar.addWidget(segments, 0, Qt.AlignVCenter)
-        bar.addStretch(1)
-        bar.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
-        bar.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
+        # The views stand at the bar's centre whatever is either side of them:
+        # the two sides are given the same width.
+        left = QWidget()
+        left_row = QHBoxLayout(left)
+        left_row.setContentsMargins(0, 0, 0, 0)
+        left_row.addWidget(identity, 0, Qt.AlignVCenter)
+        left_row.addStretch(1)
+        # Hidden once it has a parent: a parentless widget made visible
+        # would open as a window of its own.
+        identity.setHidden(self._header_in_title_bar
+                           and not self._tall_title_bar)
+        right = QWidget()
+        right_row = QHBoxLayout(right)
+        right_row.setContentsMargins(0, 0, 0, 0)
+        right_row.setSpacing(space("md"))
+        right_row.addStretch(1)
+        right_row.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
+        right_row.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
+        for side in (left, right):
+            side.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        bar.addWidget(left, 1)
+        bar.addWidget(views, 0, Qt.AlignVCenter)
+        bar.addWidget(right, 1)
         return header
 
+    def _tint_header(self) -> None:
+        """Draw the top bar's icons in the theme's colors: a view in the soft
+        ink, the open one in the accent, Refresh in the soft ink and Create's
+        plus in the color its words are."""
+        for button in getattr(self, "_tab_buttons", []):
+            name = VIEW_ICONS.get(button.text())
+            if name:
+                button.setIcon(icons.toggle_icon(name, C["INK_SOFT"],
+                                                 C["ACCENT"]))
+        if hasattr(self, "refresh_btn"):
+            self.refresh_btn.setIcon(icons.icon("refresh-cw", C["INK_SOFT"]))
+            self.global_create_btn.setIcon(icons.icon("plus", C["ON_ACCENT"]))
+
     def _add_page(self, widget: QWidget, name: str) -> int:
-        """Add a view and its segment in the top bar's segmented control."""
+        """Add a view and its button in the top bar."""
         index = self.pages.addWidget(widget)
 
         button = QPushButton(name)
-        button.setObjectName("viewSegment")
+        button.setObjectName("viewTab")
         button.setCheckable(True)
         button.setFocusPolicy(Qt.TabFocus)
+        button.setIconSize(QSize(LAYOUT["header_icon"], LAYOUT["header_icon"]))
         # Toggled rather than clicked: an assistive tool presses a checkable
         # button by toggling it, which emits no click, and a pointer click
         # toggles it as well.
@@ -712,17 +774,6 @@ class MainWindow(QMainWindow):
         self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
         return index
-
-    def _seat_segments(self) -> None:
-        """Tell each segment where it sits, so the control's ends are rounded
-        and the segments between them are square."""
-        last = len(self._tab_buttons) - 1
-        for position, button in enumerate(self._tab_buttons):
-            button.setProperty(
-                "segment", "first" if position == 0
-                else "last" if position == last else "middle")
-            button.style().unpolish(button)
-            button.style().polish(button)
 
     def _show_page(self, index: int) -> None:
         self.pages.setCurrentIndex(index)
@@ -918,6 +969,7 @@ class MainWindow(QMainWindow):
             self.archive_results.viewport().update()
         if hasattr(self, "_search_glass"):
             self._search_glass.setIcon(magnifier_icon(C["INK_SOFT"]))
+        self._tint_header()
 
     def _on_color_scheme_changed(self, *args) -> None:
         """OS switched between light and dark. It reaches the app only while the
