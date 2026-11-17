@@ -718,6 +718,9 @@ def check_bristol() -> list[str]:
             if not b.text() and b.icon().isNull():
                 raise SmokeFailure(f"{b.accessibleName() or 'a button'} in the "
                                    f"top bar has neither a name nor an icon")
+            if not b.text() and b.toolTip():
+                raise SmokeFailure(f"{b.accessibleName()} carries hover text; "
+                                   f"the top bar's icons explain themselves")
         board_row = win.pages.widget(win._board_tab_index).layout().itemAt(0).layout()
         board_buttons = [
             board_row.itemAt(i).widget().text()

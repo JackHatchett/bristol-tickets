@@ -192,7 +192,6 @@ class MainWindow(QMainWindow):
         self.refresh_btn = QPushButton()
         self.refresh_btn.setObjectName("toolbarButton")
         self.refresh_btn.setAccessibleName("Refresh")
-        self.refresh_btn.setToolTip("Refresh: reload every view from the database.")
         self.refresh_btn.setIconSize(QSize(LAYOUT["header_icon"],
                                            LAYOUT["header_icon"]))
         self.refresh_btn.clicked.connect(self._refresh_board)
@@ -200,7 +199,6 @@ class MainWindow(QMainWindow):
         self.global_create_btn = QPushButton()
         self.global_create_btn.setObjectName("toolbarCreate")
         self.global_create_btn.setAccessibleName("Create")
-        self.global_create_btn.setToolTip("Create: a new card or epic.")
         self.global_create_btn.clicked.connect(self._open_global_create)
         self.global_create_btn.setIconSize(QSize(LAYOUT["header_icon"],
                                                  LAYOUT["header_icon"]))
@@ -773,7 +771,6 @@ class MainWindow(QMainWindow):
         button.setCheckable(True)
         button.setFocusPolicy(Qt.TabFocus)
         if icon_view:
-            button.setToolTip(name)
             button.setIconSize(QSize(LAYOUT["header_icon"],
                                      LAYOUT["header_icon"]))
         # Toggled rather than clicked: an assistive tool presses a checkable
