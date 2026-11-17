@@ -71,13 +71,13 @@ class ColourRow:
         self.swatch = QPushButton()
         self.swatch.setFixedWidth(LAYOUT["palette_swatch_w"])
         self.swatch.setCursor(Qt.PointingHandCursor)
-        self.swatch.setToolTip("Pick this colour")
+        self.swatch.setToolTip("Pick this color")
         self.swatch.clicked.connect(self._pick)
 
         self.hex = QLineEdit(value)
         self.hex.setFixedWidth(LAYOUT["palette_hex_w"])
         self.hex.setAlignment(Qt.AlignCenter)
-        self.hex.setToolTip("The colour as hex — type it, or use the swatch.")
+        self.hex.setToolTip("The color as hex — type it, or use the swatch.")
         self.hex.textChanged.connect(self._typed)
 
         self._paint_swatch(value)
@@ -103,7 +103,7 @@ class ColourRow:
         offers the alpha slider and its value comes back in the same spelling.
         """
         current = QColor(self.value()) if self.valid() else QColor(Qt.white)
-        title = f"{key_caption(self.key)} colour"
+        title = f"{key_caption(self.key)} color"
         with_alpha = len(self.value().lstrip("#")) == 8
         if with_alpha:
             chosen = QColorDialog.getColor(current, self.swatch, title,
@@ -228,8 +228,8 @@ class PaletteForm(QWidget):
         lines = []
         broken = self.broken()
         if broken:
-            lines.append(f"Not a hex colour: {', '.join(broken)}. "
-                         "A colour is #RRGGBB.")
+            lines.append(f"Not a hex color: {', '.join(broken)}. "
+                         "A color is #RRGGBB.")
         lines.extend(self.unreadable())
         return lines
 

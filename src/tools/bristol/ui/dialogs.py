@@ -10,6 +10,8 @@ The styling contract these draw against is ``ui/README.md``.
 
 from __future__ import annotations
 
+import sys
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
@@ -28,26 +30,69 @@ DESTRUCTIVE = "deleteBtn"
 ORDINARY = ""
 
 
+def as_sheet(dialog: QDialog) -> bool:
+    """Open ``dialog`` as a sheet on its parent's window, where the platform has
+    sheets: it drops from that window's title bar and holds that window alone.
+    Returns whether it is one.
+
+    A sheet has no title bar, so its title is the heading inside it; a dialog
+    in a window of its own carries its title in the title bar and no heading.
+    Call before the dialog is shown.
+    """
+    if sys.platform != "darwin" or dialog.parentWidget() is None:
+        return False
+    dialog.setWindowFlag(Qt.Sheet, True)
+    dialog.setWindowModality(Qt.WindowModal)
+    return True
+
+
+def list_buttons(on_add, on_remove, add_tip: str, remove_tip: str):
+    """The + and − pair that sits under an editable list, at its left edge.
+    Returns ``(add, remove, row)``; the caller places ``row`` under the list and
+    enables ``remove`` while a row is selected."""
+    add = QPushButton("+")
+    remove = QPushButton("\u2212")
+    for button, slot, tip in ((add, on_add, add_tip),
+                              (remove, on_remove, remove_tip)):
+        button.setObjectName("listEditBtn")
+        button.setAutoDefault(False)
+        button.setToolTip(tip)
+        button.setAccessibleName(tip)
+        button.clicked.connect(lambda _checked=False, f=slot: f())
+    row = QHBoxLayout()
+    row.setContentsMargins(0, 0, 0, 0)
+    row.setSpacing(0)
+    row.addWidget(add)
+    row.addWidget(remove)
+    row.addStretch(1)
+    return add, remove, row
+
+
 class Modal(QDialog):
     """A titled question or notice with its buttons on one row.
 
     ``buttons`` is a list of ``(label, rank, result)`` in the order they are
-    drawn, left to right. ``default_index`` names the one Enter presses, and
-    its result is also what closing the window or pressing Esc returns.
+    drawn, left to right. ``default_index`` names the one Return presses, and
+    ``escape_index`` the one whose result closing the window or pressing Esc
+    returns, the default's unless given.
     """
 
     def __init__(self, parent, title: str, body: str,
                  buttons: list[tuple[str, str, object]],
-                 default_index: int = 0) -> None:
+                 default_index: int = 0,
+                 escape_index: int | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setModal(True)
         self.setMinimumWidth(LAYOUT["small_dialog_min_w"])
-        self._result: object = buttons[default_index][2] if buttons else None
+        if escape_index is None:
+            escape_index = default_index
+        self._result: object = buttons[escape_index][2] if buttons else None
 
         heading = QLabel(title)
         heading.setObjectName("dialogHeading")
         heading.setWordWrap(True)
+        heading.setVisible(as_sheet(self))
 
         text = QLabel(body)
         text.setWordWrap(True)
@@ -89,15 +134,15 @@ def confirm(parent, title: str, body: str, accept_label: str,
             cancel_label: str = "Cancel", destructive: bool = False) -> bool:
     """Ask a yes/no question. True when the user chose to go ahead.
 
-    The action's button carries the destructive rank where what it does cannot
-    be undone and the primary rank otherwise. The way out carries the ordinary
-    rank, and is what Enter, Esc and the title-bar close all land on, so no
-    stray keypress reaches the action.
+    The action's button, at the right, carries the destructive rank where what
+    it does cannot be undone and the primary rank otherwise. Return presses the
+    action unless it is destructive, when Return presses the way out; Esc and
+    the title-bar close always land on the way out.
     """
     dialog = Modal(parent, title, body, [
         (cancel_label, ORDINARY, False),
         (accept_label, DESTRUCTIVE if destructive else PRIMARY, True),
-    ], default_index=0)
+    ], default_index=0 if destructive else 1, escape_index=0)
     dialog.exec()
     return bool(dialog.choice())
 

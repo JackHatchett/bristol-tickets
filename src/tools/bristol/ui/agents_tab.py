@@ -61,7 +61,7 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local; see module docstring
 
-from .dialogs import confirm, notify
+from .dialogs import as_sheet, confirm, list_buttons, notify
 from .growing_edit import GrowingTextEdit
 from .settled_combo import SettledComboBox, fill_words
 from .row_card import card_list
@@ -328,21 +328,19 @@ class PathList(QWidget):
         # item for text a delegate draws, and a row here is a widget, which
         # such padding shrinks out of the item containing it.
         self.list.setObjectName("pathRows")
-        self.list.setSelectionMode(QListWidget.NoSelection)
+        self.list.setSelectionMode(QListWidget.SingleSelection)
         self.list.setMinimumHeight(LAYOUT["path_list_min_h"])
 
-        self.add_btn = QPushButton(add_label)
-        self.add_btn.setAutoDefault(False)
-        self.add_btn.clicked.connect(self._add)
-
-        row = QHBoxLayout()
-        row.setSpacing(space("md"))
-        row.addWidget(self.add_btn)
-        row.addStretch(1)
+        subject = "folder" if kind == "dir" else "file"
+        self.add_btn, self.remove_btn, row = list_buttons(
+            self._add, self._drop_selected, add_label.rstrip("…"),
+            f"Remove the selected {subject}")
+        self.list.itemSelectionChanged.connect(self._sync_remove)
+        self._sync_remove()
 
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
-        column.setSpacing(space("sm"))
+        column.setSpacing(0)
         column.addWidget(self.list)
         column.addLayout(row)
 
@@ -374,10 +372,6 @@ class PathList(QWidget):
             combo = fill_words(SettledComboBox(), ACCESS_CHOICES)
             combo.setCurrentIndex(
                 max(0, combo.findData(access)))
-        drop = QPushButton("✕")
-        drop.setAutoDefault(False)
-        drop.setMaximumWidth(LAYOUT["env_choose_w"])
-
         line = QHBoxLayout(holder)
         line.setContentsMargins(space("sm"), space("xs"), space("sm"),
                                 space("xs"))
@@ -385,7 +379,6 @@ class PathList(QWidget):
         line.addWidget(label, 1)
         if combo is not None:
             line.addWidget(combo)
-        line.addWidget(drop)
 
         # A row is as tall as its own contents once the stylesheet is on them,
         # and never shorter than one line of them: an unpolished widget reports
@@ -398,7 +391,14 @@ class PathList(QWidget):
         self.list.addItem(item)
         self.list.setItemWidget(item, holder)
         self._rows.append((item, declared, combo))
-        drop.clicked.connect(lambda: self._drop(item))
+
+    def _sync_remove(self) -> None:
+        self.remove_btn.setEnabled(bool(self.list.selectedItems()))
+
+    def _drop_selected(self) -> None:
+        selected = self.list.selectedItems()
+        if selected:
+            self._drop(selected[0])
 
     def _drop(self, item: QListWidgetItem) -> None:
         declared = next((d for i, d, _ in self._rows if i is item), "")
@@ -703,6 +703,7 @@ class AgentDialog(QDialog):
 
         heading = QLabel(self.windowTitle())
         heading.setObjectName("dialogHeading")
+        heading.setVisible(as_sheet(self))
 
         self.save_btn = QPushButton("Create" if self.creating else "Save")
         self.save_btn.setObjectName("globalCreateBtn")
@@ -954,11 +955,11 @@ class ImportAgentDialog(QDialog):
 
         cancel = QPushButton("Cancel")
         cancel.setAutoDefault(False)
-        cancel.setDefault(True)
         cancel.clicked.connect(self.reject)
-        self.accept_btn = QPushButton("Accept")
+        self.accept_btn = QPushButton("Import Agent")
         self.accept_btn.setObjectName("globalCreateBtn")
         self.accept_btn.setAutoDefault(False)
+        self.accept_btn.setDefault(True)
         self.accept_btn.clicked.connect(self.accept)
 
         row = QHBoxLayout()

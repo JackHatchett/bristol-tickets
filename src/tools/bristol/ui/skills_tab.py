@@ -110,9 +110,6 @@ class NewSkillDialog(QDialog):
         self.setModal(True)
         self.setMinimumWidth(LAYOUT["dialog_min_w"])
 
-        heading = QLabel("New Skill")
-        heading.setObjectName("dialogHeading")
-
         self.request_choice = QRadioButton("Request From Chief of Staff")
         self.import_choice = QRadioButton("Import From GitHub")
         for choice in (self.request_choice, self.import_choice):
@@ -163,7 +160,7 @@ class NewSkillDialog(QDialog):
         cancel = QPushButton("Cancel")
         cancel.setAutoDefault(False)
         cancel.clicked.connect(self.reject)
-        self.go_btn = QPushButton("Submit")
+        self.go_btn = QPushButton("Request Skill")
         self.go_btn.setObjectName("globalCreateBtn")
         self.go_btn.setDefault(True)
         self.go_btn.clicked.connect(self._go)
@@ -178,8 +175,6 @@ class NewSkillDialog(QDialog):
         column.setContentsMargins(space("xl"), space("xl"), space("xl"),
                                   space("xl"))
         column.setSpacing(space("md"))
-        column.addWidget(heading)
-        column.addSpacing(space("sm"))
         column.addWidget(self.request_choice)
         column.addWidget(self.request_fields)
         column.addSpacing(space("sm"))
@@ -204,7 +199,7 @@ class NewSkillDialog(QDialog):
         importing = self.import_choice.isChecked()
         self.request_fields.setVisible(requesting)
         self.import_fields.setVisible(importing)
-        self.go_btn.setText("Import" if importing else "Submit")
+        self.go_btn.setText("Import Skill" if importing else "Request Skill")
         if requesting:
             ready = bool(self.title.text().strip()
                          and self.request.toPlainText().strip())
@@ -278,6 +273,7 @@ class SkillDialog(QDialog):
         heading = QLabel(_title(record))
         heading.setObjectName("dialogHeading")
         heading.setWordWrap(True)
+        heading.setVisible(dialogs.as_sheet(self))
 
         subtitle = QLabel(record.get("subtitle", ""))
         subtitle.setWordWrap(True)

@@ -38,7 +38,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from .dialogs import confirm
+from .dialogs import confirm, list_buttons
 from .palette_form import PaletteForm, complete_palette
 from .settled_combo import fill_words
 from .theme import (
@@ -107,33 +107,21 @@ class ThemeManagerDialog(QDialog):
         self._half = LIGHT_MODE
         self._seating = False
 
-        heading = QLabel("Manage Themes")
-        heading.setObjectName("dialogHeading")
-
 
         self.list = QListWidget()
         self.list.setObjectName("themeList")
         self.list.setMinimumWidth(LAYOUT["theme_list_min_w"])
         self.list.currentRowChanged.connect(self._row_chosen)
 
-        self.add_button = QPushButton("Add")
-        self.add_button.setToolTip(
-            "A new theme, seeded from the one selected.")
-        self.add_button.clicked.connect(self._add_clicked)
-        self.delete_button = QPushButton("Delete")
-        self.delete_button.setObjectName("deleteBtn")
-        self.delete_button.clicked.connect(self._delete_clicked)
+        self.add_button, self.delete_button, left_buttons = list_buttons(
+            self._add_clicked, self._delete_clicked,
+            "Add a theme, seeded from the one selected",
+            "Delete the selected theme")
         self.restore_button = QPushButton("Restore Shipped Themes")
         self.restore_button.setToolTip(
             "Put every theme this build ships back as it ships it. Themes you "
             "added are untouched.")
         self.restore_button.clicked.connect(self._restore_clicked)
-
-        left_buttons = QHBoxLayout()
-        left_buttons.setSpacing(space("md"))
-        left_buttons.addWidget(self.add_button)
-        left_buttons.addWidget(self.delete_button)
-        left_buttons.addStretch(1)
 
         left = QVBoxLayout()
         left.setSpacing(space("md"))
@@ -156,7 +144,7 @@ class ThemeManagerDialog(QDialog):
 
         self.half = fill_words(QComboBox(), HALF_CHOICES)
         self.half.setToolTip(
-            "Which half of this theme the colours below belong to.")
+            "Which half of this theme the colors below belong to.")
         self.half.currentIndexChanged.connect(self._half_chosen)
 
         self.dark_half = QPushButton(ADD_DARK_HALF)
@@ -202,7 +190,6 @@ class ThemeManagerDialog(QDialog):
         column.setContentsMargins(space("xl"), space("xl"), space("xl"),
                                   space("xl"))
         column.setSpacing(space("lg"))
-        column.addWidget(heading)
         column.addLayout(columns, 1)
         column.addWidget(self.notice)
         column.addWidget(buttons)
@@ -428,7 +415,7 @@ class ThemeManagerDialog(QDialog):
             return
         name = self._collection[self._selected]["name"]
         if not confirm(self, f"Remove {name}'s dark half?",
-                       f"{name} goes back to light only, and the colours in "
+                       f"{name} goes back to light only, and the colors in "
                        f"its dark half are gone. Dark and Follow System stop "
                        f"being offered for it.",
                        "Remove", destructive=True):
@@ -453,7 +440,7 @@ class ThemeManagerDialog(QDialog):
 
     def _restore_clicked(self) -> None:
         if not confirm(self, "Restore shipped themes?",
-                       "Every theme this build ships goes back to the colours "
+                       "Every theme this build ships goes back to the colors "
                        "and the name it ships with, and any you deleted come "
                        "back. Themes you added are untouched.",
                        "Restore"):
@@ -542,7 +529,7 @@ class ThemeManagerDialog(QDialog):
             self.dark_half.setToolTip(
                 "This theme goes back to light only."
                 if has_dark else
-                "Give this theme a dark half, every colour of it at once.")
+                "Give this theme a dark half, every color of it at once.")
             self.form.set_palette(record["dark"] if self._half == DARK_MODE
                                   else record["light"],
                                   self._half == DARK_MODE)

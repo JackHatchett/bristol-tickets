@@ -162,6 +162,9 @@ TYPE = {"caption": 8, "body": 10, "title": 11, "section": 12, "display": 14}
 # needs one names it here rather than writing the number.
 LAYOUT = {
     "control_h": 34,       # every button, field and picker on a row: one height
+    "toolbar_control_h": 22,  # a control in the top bar: the Mac's small size
+    "title_bar_h": 28,        # the Mac's title bar, which the top bar shares
+    "traffic_lights_w": 80,   # the close, minimize and zoom buttons, and room past them
     "filter_field_max_w": 420,  # a Filter field, before its pickers
     "window_min_w": 1240,
     "window_min_h": 780,
@@ -325,8 +328,8 @@ WARM_LIGHT = {
     "BTN_HOVER":    "#ffe9d2",  # button hover fill
     "BTN_PRESSED":  "#ffddb8",  # button pressed fill
     "CREATE_HOVER": "#a83a0b",  # accent (Create) button hover fill
-    "DELETE_BG":    "#c53a20",  # delete button fill (5.3:1 under white)
-    "DELETE_HOVER": "#b03118",  # delete button hover fill
+    "DELETE_BG":    "#c53a20",  # destructive button text
+    "DELETE_HOVER": "#b03118",  # destructive button text on hover
     "MISSING":      "#d61f1f",  # required-but-empty field border (bright red)
     "DISABLED_BG":  "#f3ece0",  # unclickable button fill
     "DISABLED_TX":  "#b3a389",  # unclickable button text
@@ -358,8 +361,8 @@ WARM_DARK = {
     "BTN_HOVER":    "#40311f",  # button hover fill
     "BTN_PRESSED":  "#4a3826",  # button pressed fill
     "CREATE_HOVER": "#fb8b3d",  # accent (Create) button hover fill
-    "DELETE_BG":    "#e0563b",  # delete button fill (4.8:1 under ON_ACCENT)
-    "DELETE_HOVER": "#ea6448",  # delete button hover fill
+    "DELETE_BG":    "#e0563b",  # destructive button text
+    "DELETE_HOVER": "#ea6448",  # destructive button text on hover
     "MISSING":      "#ff5449",  # required-but-empty field border (bright red)
     "DISABLED_BG":  "#241c14",  # unclickable button fill
     "DISABLED_TX":  "#6b5b45",  # unclickable button text
@@ -393,8 +396,8 @@ COOL_LIGHT = {
     "BTN_HOVER":    "#f1f5f9",  # button hover fill
     "BTN_PRESSED":  "#e2e8f0",  # button pressed fill
     "CREATE_HOVER": "#1d4ed8",  # accent (Create) button hover fill
-    "DELETE_BG":    "#dc2626",  # delete button fill
-    "DELETE_HOVER": "#b91c1c",  # delete button hover fill
+    "DELETE_BG":    "#dc2626",  # destructive button text
+    "DELETE_HOVER": "#b91c1c",  # destructive button text on hover
     "MISSING":      "#dc2626",  # required-but-empty field border
     "DISABLED_BG":  "#f1f5f9",  # unclickable button fill
     "DISABLED_TX":  "#94a3b8",  # unclickable button text
@@ -426,8 +429,8 @@ COOL_DARK = {
     "BTN_HOVER":    "#2b333d",  # button hover fill
     "BTN_PRESSED":  "#333c48",  # button pressed fill
     "CREATE_HOVER": "#60a5fa",  # accent (Create) button hover fill
-    "DELETE_BG":    "#ef4444",  # delete button fill (5.0:1 under ON_ACCENT)
-    "DELETE_HOVER": "#f87171",  # delete button hover fill
+    "DELETE_BG":    "#ef4444",  # destructive button text
+    "DELETE_HOVER": "#f87171",  # destructive button text on hover
     "MISSING":      "#f87171",  # required-but-empty field border
     "DISABLED_BG":  "#1a1f26",  # unclickable button fill
     "DISABLED_TX":  "#5b6672",  # unclickable button text
@@ -2020,7 +2023,7 @@ MODE_CHOICES: list[tuple[str, str]] = [
 ]
 
 # What a mode the theme in force cannot offer says when the pointer rests on it.
-NO_DARK_HALF = "This theme has no dark colours yet."
+NO_DARK_HALF = "This theme has no dark colors yet."
 
 # What a build before the theme and the mode were separate controls stored in
 # one key, and the theme and mode each of its values named. A configuration
@@ -2683,6 +2686,14 @@ def build_style_sheet() -> str:
         if chevron and chevron_up else "")
     check_rule = f"image: url({check});" if check else ""
     ctl = control_height() - 2  # inside the 1px border every control draws
+    tb_ctl = LAYOUT["toolbar_control_h"] - 2
+
+    def _ink(alpha: float) -> str:
+        ink = C["INK"].lstrip("#")[-6:]
+        r, g, b = (int(ink[i:i + 2], 16) for i in (0, 2, 4))
+        return f"rgba({r}, {g}, {b}, {alpha})"
+
+    ink_06, ink_14 = _ink(0.06), _ink(0.14)
     s_xs, s_sm, s_md, s_lg, s_xl, s_2xl = (space("xs"), space("sm"), space("md"),
                                            space("lg"), space("xl"), space("2xl"))
     return f"""
@@ -2693,21 +2704,28 @@ QMainWindow, QWidget#leftContainer, QDialog {{
 QSplitter::handle {{
     background-color: {C['CANVAS']};
 }}
-/* The views as one segmented control in the toolbar: a bordered capsule whose
-   ends are rounded, the open view filled with the accent. The toolbar itself is
-   left to the platform, which draws it into the title bar. */
+/* The top bar: the window's own background, closed by one hairline. */
+QWidget#appHeader {{
+    background-color: {C['CANVAS']};
+    border-bottom: 1px solid {C['BORDER']};
+}}
+/* The views as one segmented control in the top bar: a faint track of the
+   theme's ink, square segments between two rounded ends, and the open view
+   filled with the accent. */
 QPushButton#viewSegment {{
-    background-color: {C['SURFACE']};
-    border: 1px solid {C['BORDER']};
+    background-color: {ink_06};
+    border: 1px solid {ink_14};
     border-left: none;
     border-radius: 0px;
-    padding: {s_xs}px {s_lg}px;
+    min-height: {tb_ctl}px;
+    max-height: {tb_ctl}px;
+    padding: 0px {s_lg}px;
     margin: 0px;
     color: {C['INK']};
     font-weight: 500;
 }}
 QPushButton#viewSegment[segment="first"] {{
-    border-left: 1px solid {C['BORDER']};
+    border-left: 1px solid {ink_14};
     border-top-left-radius: {r_md}px;
     border-bottom-left-radius: {r_md}px;
 }}
@@ -2716,15 +2734,47 @@ QPushButton#viewSegment[segment="last"] {{
     border-bottom-right-radius: {r_md}px;
 }}
 QPushButton#viewSegment:hover {{
-    background-color: {C['HOVER_BG']};
+    background-color: {ink_14};
 }}
 QPushButton#viewSegment:checked {{
     background-color: {C['ACCENT']};
     border-color: {C['ACCENT']};
     color: {C['ON_ACCENT']};
+    font-weight: 600;
 }}
 QPushButton#viewSegment:focus {{
     outline: none;
+}}
+/* The top bar's Refresh: an ordinary button on the segments' track. */
+QPushButton#toolbarButton {{
+    background-color: {ink_06};
+    border: 1px solid {ink_14};
+    border-radius: {r_md}px;
+    min-height: {tb_ctl}px;
+    max-height: {tb_ctl}px;
+    padding: 0px {s_lg}px;
+    color: {C['INK']};
+    font-weight: 500;
+}}
+QPushButton#toolbarButton:hover {{
+    background-color: {ink_14};
+}}
+/* The top bar's Create: the primary button at the top bar's height. Where a
+   view has no cards it is faded by an opacity effect rather than turned grey,
+   as the Mac dims a toolbar item it has no use for. */
+QPushButton#toolbarCreate, QPushButton#toolbarCreate:disabled {{
+    background-color: {C['ACCENT']};
+    color: {C['ON_ACCENT']};
+    border: 1px solid {C['ACCENT']};
+    border-radius: {r_md}px;
+    min-height: {tb_ctl}px;
+    max-height: {tb_ctl}px;
+    padding: 0px {s_lg}px;
+    font-weight: 600;
+}}
+QPushButton#toolbarCreate:hover {{
+    background-color: {C['CREATE_HOVER']};
+    border-color: {C['CREATE_HOVER']};
 }}
 QGroupBox {{
     font-weight: 600;
@@ -3151,14 +3201,22 @@ QPushButton[missing="true"] {{
     border: 1px solid {C['MISSING']};
     color: {C['MISSING']};
 }}
+/* A destructive action is an ordinary button whose words are red, as the Mac
+   marks one; the fill stays the plain button's. */
 QPushButton#deleteBtn {{
-    background-color: {C['DELETE_BG']};
-    color: {C['ON_ACCENT']};
-    border: 1px solid {C['DELETE_BG']};
+    color: {C['DELETE_BG']};
 }}
 QPushButton#deleteBtn:hover {{
-    background-color: {C['DELETE_HOVER']};
-    border-color: {C['DELETE_HOVER']};
+    color: {C['DELETE_HOVER']};
+}}
+/* The + and − under an editable list: two square buttons joined at their
+   shared edge. */
+QPushButton#listEditBtn {{
+    min-width: {ctl}px;
+    max-width: {ctl}px;
+    padding: 0px;
+    border-radius: 0px;
+    font-weight: 600;
 }}
 /* One height for every control that can share a row. Padding and border are
    zeroed vertically and the height is fixed outright, so a field, a picker, a

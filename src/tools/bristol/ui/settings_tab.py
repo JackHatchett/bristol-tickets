@@ -153,7 +153,7 @@ class SettingsTab(QWidget):
 
         self.manage = QPushButton("Manage Themes…")
         self.manage.setToolTip(
-            "Add a theme, rename one, change any theme's colours, or delete "
+            "Add a theme, rename one, change any theme's colors, or delete "
             "the ones you do not want.")
         self.manage.clicked.connect(self._manage_themes)
 

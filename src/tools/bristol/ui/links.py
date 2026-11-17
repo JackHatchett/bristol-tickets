@@ -65,7 +65,7 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local: the one config.local.json reader/writer
 
-from .dialogs import confirm, notify
+from .dialogs import as_sheet, confirm, notify
 from .growing_edit import GrowingTextEdit
 from .theme import LAYOUT, space
 
@@ -364,6 +364,10 @@ class AddLinkDialog(QDialog):
         self.setMinimumWidth(LAYOUT["small_dialog_min_w"])
 
         v = QVBoxLayout(self)
+        heading = QLabel("Add Link")
+        heading.setObjectName("dialogHeading")
+        heading.setVisible(as_sheet(self))
+        v.addWidget(heading)
 
         self.issue_radio = QRadioButton("Link to another ticket")
         self.issue_radio.setChecked(True)
@@ -408,6 +412,9 @@ class AddLinkDialog(QDialog):
 
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.add_button = buttons.button(QDialogButtonBox.Ok)
+        self.add_button.setText("Add Link")
+        self.add_button.setObjectName("globalCreateBtn")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         v.addWidget(buttons)

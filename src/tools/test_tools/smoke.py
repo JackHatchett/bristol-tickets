@@ -675,34 +675,37 @@ def check_bristol() -> list[str]:
         ok.append("a write from another connection reaches the Board on the "
                   "next poll")
 
-        # Where a control sits says what it reaches. The toolbar is the one
-        # Mac toolbar, unified with the title bar: the views as a segmented
-        # control, then Create, the same on every view and with no Refresh; the
-        # board's own control row narrows the board and offers nothing else,
-        # since each kind of card leaves the board on its own event; a column
-        # header carries no control at all, which is what keeps the three
-        # names and counts on one line.
+        # Where a control sits says what it reaches. The top bar is one band:
+        # the views as a segmented control, then Create, the same on every
+        # view, Refresh and Create at its right, and on the Mac it shares the title bar's
+        # band at the title bar's height. The board's own control row narrows
+        # the board and offers nothing else, since each kind of card leaves the
+        # board on its own event; a column header carries no control at all,
+        # which is what keeps the three names and counts on one line.
+        from PySide6.QtCore import Qt as _Qt
         from PySide6.QtWidgets import QPushButton, QToolBar
+        import ui.theme as _theme
 
-        toolbars = win.findChildren(QToolBar)
-        if len(toolbars) != 1:
-            raise SmokeFailure(f"the window should carry one toolbar, got {len(toolbars)}")
-        toolbar = toolbars[0]
-        # Qt reports the unified title bar only where it can draw one.
-        if sys.platform == "darwin" and not win.unifiedTitleAndToolBarOnMac():
-            raise SmokeFailure("the toolbar is not unified with the title bar")
-        if toolbar.isMovable() or toolbar.toggleViewAction().isVisible():
-            raise SmokeFailure("the toolbar can be moved or hidden")
-        toolbar_buttons = [b.text() for b in toolbar.findChildren(QPushButton)]
-        if "Refresh" in toolbar_buttons or hasattr(win, "refresh_btn"):
-            raise SmokeFailure("a Refresh button survives")
-        if toolbar_buttons[-1:] != ["Create"] or \
-                set(toolbar_buttons[:-1]) != {b.text() for b in win._tab_buttons}:
+        if win.findChildren(QToolBar):
+            raise SmokeFailure("a toolbar stands beside the top bar")
+        header = win.centralWidget().layout().itemAt(0).widget()
+        if header is None or header.objectName() != "appHeader":
+            raise SmokeFailure("the top bar is not the window's first row")
+        if sys.platform == "darwin" and not win._header_in_title_bar \
+                and hasattr(_Qt.WindowType, "ExpandedClientAreaHint"):
+            raise SmokeFailure("the top bar is not in the title bar's band")
+        if win._header_in_title_bar and \
+                header.maximumHeight() > _theme.LAYOUT["title_bar_h"]:
+            raise SmokeFailure("the top bar is taller than the title bar")
+        header_buttons = [b.text() for b in header.findChildren(QPushButton)]
+        if header_buttons[-2:] != ["Refresh", "Create"] or \
+                set(header_buttons[:-2]) != {b.text() for b in win._tab_buttons}:
             raise SmokeFailure(
-                f"the toolbar should be the view segments then Create, got "
-                f"{toolbar_buttons}")
-        if win.centralWidget().findChildren(QPushButton, "viewSegment"):
-            raise SmokeFailure("a view segment sits outside the toolbar")
+                f"the top bar should be the view segments, Refresh, Create, got "
+                f"{header_buttons}")
+        if any(b.parent() is None or not header.isAncestorOf(b)
+               for b in win._tab_buttons):
+            raise SmokeFailure("a view segment sits outside the top bar")
         ends = [b.property("segment") for b in win._tab_buttons]
         if ends[0] != "first" or ends[-1] != "last" or \
                 set(ends[1:-1]) - {"middle"}:
@@ -722,23 +725,18 @@ def check_bristol() -> list[str]:
         for key, column in win.columns.items():
             if column.findChildren(QPushButton):
                 raise SmokeFailure(f"the {key} column header carries a control")
-        # A toolbar lays its widgets out only once shown, so whether Create is
-        # there is read from the toolbar's action for it.
-        create_action = next(
-            (a for a in toolbar.actions()
-             if toolbar.widgetForAction(a) is win.global_create_btn), None)
         for page_index in range(win.pages.count()):
             win._show_page(page_index)
-            if create_action is None or not create_action.isVisible() \
-                    or toolbar.isHidden():
-                raise SmokeFailure("Create left the toolbar on a view")
+            if win.global_create_btn.isHidden() or win.refresh_btn.isHidden() \
+                    or not header.isAncestorOf(win.global_create_btn):
+                raise SmokeFailure("Refresh or Create left the top bar on a view")
             if win.global_create_btn.isEnabled() != \
                     (page_index in win._card_page_indexes):
                 raise SmokeFailure(
                     "Create should be greyed exactly on the views with no cards")
         win._show_page(win._board_tab_index)
-        ok.append("one unified toolbar: the views as segments, then Create, "
-                  "greyed on the views with no cards, and no Refresh; the "
+        ok.append("one top bar: the views as segments, then Create, "
+                  "faded on the views with no cards, and Refresh beside it; the "
                   "board's row narrows the board and nothing more; a column "
                   "header contains no control")
 
@@ -2127,7 +2125,7 @@ def check_bristol() -> list[str]:
                 imp = NewSkillDialog(None, lambda *a: _stub_run(stab, *a),
                                      lambda t, b: "")
                 imp.import_choice.setChecked(True)
-                if imp.go_btn.text() != "Import" or imp.import_fields.isHidden():
+                if imp.go_btn.text() != "Import Skill" or imp.import_fields.isHidden():
                     raise SmokeFailure("choosing Import does not open the import")
                 if not imp.example.text().startswith("Example: https://github.com/"):
                     raise SmokeFailure("the Import window carries no example address")
@@ -2409,8 +2407,8 @@ def check_bristol() -> list[str]:
                       "contains, a path row for the path and the access it has, "
                       "and the form scrolls rather than squeezing")
 
-            # Every ✕ on the form asks before it drops a row, and the question
-            # names what would go. The question is a modal, so the answer is
+            # The folder list's − and every variable's ✕ ask before they drop a
+            # row, and the question names what would go. The question is a modal, so the answer is
             # supplied rather than clicked.
             import ui.agents_tab as _agents_tab
             from PySide6.QtWidgets import QPushButton as _Button
@@ -2437,12 +2435,14 @@ def check_bristol() -> list[str]:
                 raise SmokeFailure("a row on the agent form has no ✕")
 
             _agents_tab.confirm = answered
+            guarded.data_paths.list.setCurrentRow(0)
+            if not guarded.data_paths.remove_btn.isEnabled():
+                raise SmokeFailure("selecting a folder does not enable its −")
             try:
                 for caption, named, button, count in (
                         ("Folders",
                          folder_grant(guarded.data_paths.values()[0])["path"],
-                         cross(guarded.data_paths.list.itemWidget(
-                             guarded.data_paths.list.item(0))),
+                         guarded.data_paths.remove_btn,
                          lambda: len(guarded.data_paths.values())),
                         ("Environment Variables",
                          guarded.env._rows[0][1].text().strip(),
@@ -2468,8 +2468,8 @@ def check_bristol() -> list[str]:
                             f"{caption}: an accepted question left the row")
             finally:
                 _agents_tab.confirm = real_confirm
-            ok.append("every ✕ on the agent form asks by name, and drops a row "
-                      "only on an accept")
+            ok.append("the folder list's − and every variable's ✕ ask by name, "
+                      "and drop a row only on an accept")
 
         # ---- closed_at is the finish; the Archive orders by the archival ----
         # A card finished on one day and archived on another separates the two

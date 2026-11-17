@@ -146,9 +146,6 @@ class NotebookDialog(QDialog):
         self.setMinimumWidth(LAYOUT["dialog_min_w"])
         self.setMinimumHeight(LAYOUT["wizard_min_h"])
 
-        heading = QLabel("Notebook")
-        heading.setObjectName("dialogHeading")
-
         self.root_label = _path_label("", False)
         change = QPushButton("Change…")
         change.clicked.connect(self._change)
@@ -160,15 +157,9 @@ class NotebookDialog(QDialog):
         self.list = QListWidget()
         self.list.setObjectName("searchResults")
         self.list.currentItemChanged.connect(lambda *_: self._sync())
-        self.add_btn = QPushButton("Add…")
-        self.add_btn.clicked.connect(self._add)
-        self.remove_btn = QPushButton("Remove")
-        self.remove_btn.clicked.connect(self._remove)
-        folder_actions = QHBoxLayout()
-        folder_actions.setSpacing(space("md"))
-        folder_actions.addWidget(self.add_btn)
-        folder_actions.addWidget(self.remove_btn)
-        folder_actions.addStretch(1)
+        self.add_btn, self.remove_btn, folder_actions = dialogs.list_buttons(
+            self._add, self._remove, "Attach a folder",
+            "Detach the selected folder")
 
         close = QPushButton("Close")
         close.setObjectName("globalCreateBtn")
@@ -181,7 +172,6 @@ class NotebookDialog(QDialog):
         column.setContentsMargins(space("xl"), space("xl"), space("xl"),
                                   space("xl"))
         column.setSpacing(space("md"))
-        column.addWidget(heading)
         column.addSpacing(space("sm"))
         column.addWidget(_caption("Notebook Folder"))
         column.addLayout(root_row)
@@ -274,21 +264,12 @@ class DashboardsDialog(QDialog):
         self.setMinimumWidth(LAYOUT["dialog_min_w"])
         self.setMinimumHeight(LAYOUT["wizard_min_h"])
 
-        heading = QLabel("Dashboards")
-        heading.setObjectName("dialogHeading")
-
         self.list = QListWidget()
         self.list.setObjectName("searchResults")
         self.list.currentItemChanged.connect(lambda *_: self._sync())
-        self.add_btn = QPushButton("Add…")
-        self.add_btn.clicked.connect(self._add)
-        self.remove_btn = QPushButton("Remove")
-        self.remove_btn.clicked.connect(self._remove)
-        actions = QHBoxLayout()
-        actions.setSpacing(space("md"))
-        actions.addWidget(self.add_btn)
-        actions.addWidget(self.remove_btn)
-        actions.addStretch(1)
+        self.add_btn, self.remove_btn, actions = dialogs.list_buttons(
+            self._add, self._remove, "Add a dashboard",
+            "Remove the selected dashboard")
 
         close = QPushButton("Close")
         close.setObjectName("globalCreateBtn")
@@ -301,7 +282,6 @@ class DashboardsDialog(QDialog):
         column.setContentsMargins(space("xl"), space("xl"), space("xl"),
                                   space("xl"))
         column.setSpacing(space("md"))
-        column.addWidget(heading)
         column.addSpacing(space("sm"))
         column.addWidget(_caption("Known Dashboards"))
         column.addWidget(self.list, 1)
@@ -366,9 +346,6 @@ class LocationsDialog(QDialog):
         self.setMinimumWidth(LAYOUT["agent_dialog_min_w"])
         self.setMinimumHeight(LAYOUT["agent_dialog_min_h"])
 
-        heading = QLabel("Locations")
-        heading.setObjectName("dialogHeading")
-
         self.body = QWidget()
         self.rows = QVBoxLayout(self.body)
         self.rows.setContentsMargins(0, 0, space("lg"), 0)
@@ -391,7 +368,6 @@ class LocationsDialog(QDialog):
         column.setContentsMargins(space("xl"), space("xl"), space("xl"),
                                   space("xl"))
         column.setSpacing(space("md"))
-        column.addWidget(heading)
         column.addWidget(scroll, 1)
         column.addLayout(foot)
         self.reload()

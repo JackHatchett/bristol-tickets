@@ -1,8 +1,8 @@
 """ui/main_window.py — the top-level window.
 
-This module is the ``MainWindow`` shell: one Mac toolbar, unified with the
-title bar, carrying the views as a segmented control and Create at a fixed place
-at its right; the views that control switches between (Search, Backlog, Board,
+This module is the ``MainWindow`` shell: one top bar, drawn in the Mac's title
+bar, carrying the views as a segmented control and Create at a fixed place at
+its right; the views that control switches between (Search, Backlog, Board,
 Archive, Agents, Skills, Settings); and the right-hand inspector panel.
 
 The Kanban model puts a task's tab in ``task.stage`` (backlog | active |
@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, QUrl
@@ -42,6 +43,7 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QDialog,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -50,7 +52,6 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSplitter,
     QStackedWidget,
-    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -106,6 +107,26 @@ def _status_word(status: str | None) -> str:
     return words.get(status or "", (status or "").replace("_", " ").title())
 
 
+class _HeaderBar(QWidget):
+    """The top bar. Where it stands in the title bar its empty stretches move
+    the window when dragged and zoom it when double-clicked, as a title bar's
+    do."""
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802 — Qt's name
+        handle = self.window().windowHandle()
+        if event.button() == Qt.LeftButton and handle is not None:
+            handle.startSystemMove()
+            return
+        super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802
+        window = self.window()
+        window.showNormal() if window.isMaximized() else window.showMaximized()
+
+
+# How far Create fades on a view with no cards to create.
+CREATE_FADED = 0.4
+
 # How many filter chips stand on the control row before the rest are counted.
 # Past this the row would push the board's own controls around, and the panel
 # is one click away.
@@ -137,16 +158,15 @@ class MainWindow(QMainWindow):
         if app is not None:
             app.styleHints().colorSchemeChanged.connect(self._on_color_scheme_changed)
 
-        # The toolbar is the Mac's own, drawn into the title bar; the window
-        # title names the app, so the toolbar carries only the views and the
-        # commands.
+        # The top bar shares the title bar's band; the window title names the
+        # app, so the bar carries only the views and the commands.
         shell = QWidget()
         shell_layout = QVBoxLayout(shell)
         shell_layout.setContentsMargins(0, 0, 0, 0)
         shell_layout.setSpacing(0)
         self.setCentralWidget(shell)
 
-        # The pages the toolbar switches between. Built before the toolbar so
+        # The pages the top bar switches between. Built before the bar so
         # a segment has something to select.
         self.pages = QStackedWidget()
 
@@ -161,11 +181,16 @@ class MainWindow(QMainWindow):
         outer_layout.setSpacing(space("lg"))
         main_splitter.addWidget(left_container)
 
-        # Create is the toolbar's one command, at its right on every view; a
-        # view with no cards greys it rather than dropping it. There is no
-        # Refresh: the views follow the database on their own.
+        # Refresh and Create are the top bar's commands, at its right on every
+        # view. Refresh reloads every view at once; Create is faded on a view
+        # with no cards rather than dropped.
+        self.refresh_btn = QPushButton("Refresh")
+        self.refresh_btn.setObjectName("toolbarButton")
+        self.refresh_btn.setToolTip("Reload every view from the database.")
+        self.refresh_btn.clicked.connect(self._refresh_board)
+
         self.global_create_btn = QPushButton("Create")
-        self.global_create_btn.setObjectName("globalCreateBtn")
+        self.global_create_btn.setObjectName("toolbarCreate")
         self.global_create_btn.setToolTip("Create a card or an epic.")
         self.global_create_btn.clicked.connect(self._open_global_create)
 
@@ -212,8 +237,8 @@ class MainWindow(QMainWindow):
         self.pane_reveal.setVisible(False)
         body_row.addWidget(self.pane_reveal)
 
-        self.setUnifiedTitleAndToolBarOnMac(True)
-        self.addToolBar(Qt.TopToolBarArea, self._build_toolbar())
+        self._header_in_title_bar = self._merge_title_bar()
+        shell_layout.addWidget(self._build_header())
         shell_layout.addWidget(board_and_pane, 1)
         outer_layout.addWidget(self.pages)
 
@@ -606,20 +631,47 @@ class MainWindow(QMainWindow):
             rest.setToolTip("Open Filter to see the rest.")
             self.chip_row.addWidget(rest)
 
-    # ----- The toolbar -----------------------------------------------------
+    # ----- The top bar -----------------------------------------------------
 
-    def _build_toolbar(self) -> QToolBar:
-        """The one toolbar, unified with the title bar on the Mac: the views as
-        a segmented control at its centre and Create at its right. Every view
-        shows the same toolbar; a command a view has no use for is greyed in
-        its place — see _sync_pane_to_page."""
-        toolbar = QToolBar("Toolbar", self)
-        toolbar.setObjectName("mainToolbar")
-        toolbar.setMovable(False)
-        toolbar.setFloatable(False)
-        # The toolbar is part of the window, not a panel the user can hide.
-        toolbar.toggleViewAction().setVisible(False)
-        toolbar.setContextMenuPolicy(Qt.PreventContextMenu)
+    def _merge_title_bar(self) -> bool:
+        """Draw the window's own top bar in the title bar, where the platform
+        can: the content runs up under a title bar with no background of its
+        own, so the traffic lights, the title and the header share one band in
+        the window's colour. Returns whether that is how the window is drawn."""
+        expanded = getattr(Qt.WindowType, "ExpandedClientAreaHint", None)
+        clear = getattr(Qt.WindowType, "NoTitleBarBackgroundHint", None)
+        if sys.platform != "darwin" or expanded is None or clear is None:
+            return False
+        self.setWindowFlag(expanded, True)
+        self.setWindowFlag(clear, True)
+        # The layout reaches the window's top edge rather than stopping at the
+        # area the title bar leaves.
+        self.setAttribute(Qt.WA_LayoutOnEntireRect, True)
+        self.setAttribute(Qt.WA_ContentsMarginsRespectsSafeArea, False)
+        return True
+
+    def _build_header(self) -> QWidget:
+        """The one top bar: the views as a segmented control at its centre and
+        Refresh and Create at its right. In the title bar it is the title bar's height and
+        starts past the traffic lights; elsewhere it is a strip of its own above
+        the content. Every view shows it the same; a command a view has no use
+        for is faded in its place — see _sync_pane_to_page."""
+        header = _HeaderBar()
+        header.setObjectName("appHeader")
+        # A QWidget subclass paints its stylesheet background only when asked.
+        header.setAttribute(Qt.WA_StyledBackground, True)
+        bar = QHBoxLayout(header)
+        if self._header_in_title_bar:
+            # The title sits beside the traffic lights, so the segments stand
+            # at the centre, clear of both, and a hairline's worth lower so they
+            # share the lights' centre line.
+            header.setFixedHeight(LAYOUT["title_bar_h"])
+            bar.setContentsMargins(LAYOUT["traffic_lights_w"], space("xs"),
+                                   space("md"), 0)
+        else:
+            header.setFixedHeight(LAYOUT["title_bar_h"] + space("lg"))
+            bar.setContentsMargins(space("xl"), 0, space("xl"), 0)
+        bar.setSpacing(space("lg"))
 
         segments = QWidget()
         segments.setObjectName("viewSegments")
@@ -632,19 +684,19 @@ class MainWindow(QMainWindow):
         self._tab_group = QButtonGroup(self)
         self._tab_group.setExclusive(True)
 
-        def spring() -> QWidget:
-            spacer = QWidget()
-            spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-            return spacer
+        self._create_fade = QGraphicsOpacityEffect(self.global_create_btn)
+        self._create_fade.setOpacity(1.0)
+        self.global_create_btn.setGraphicsEffect(self._create_fade)
 
-        toolbar.addWidget(spring())
-        toolbar.addWidget(segments)
-        toolbar.addWidget(spring())
-        toolbar.addWidget(self.global_create_btn)
-        return toolbar
+        bar.addStretch(1)
+        bar.addWidget(segments, 0, Qt.AlignVCenter)
+        bar.addStretch(1)
+        bar.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
+        bar.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
+        return header
 
     def _add_page(self, widget: QWidget, name: str) -> int:
-        """Add a view and its segment in the toolbar's segmented control."""
+        """Add a view and its segment in the top bar's segmented control."""
         index = self.pages.addWidget(widget)
 
         button = QPushButton(name)
@@ -695,6 +747,7 @@ class MainWindow(QMainWindow):
         # Create stays in its place on every view and is greyed where there
         # are no cards to create.
         self.global_create_btn.setEnabled(cards)
+        self._create_fade.setOpacity(1.0 if cards else CREATE_FADED)
 
     # ----- Menu bar ---------------------------------------------------------
 

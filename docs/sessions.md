@@ -88,7 +88,8 @@ by assigning a card.
 The board is not read-only while a session runs. Drag a card, write a comment,
 change a description, retire something — whichever surface acts, the other sees
 it on its next read. The window redraws within a couple of seconds of a change
-an agent makes while it is open, whichever tab you are on.
+an agent makes while it is open, and **Refresh**, in the top bar, reloads every
+tab at once.
 
 The rules above bind the agents, not you. Chat is how you talk to your agent and
 it does not need to be a card first: ask, think out loud, change your mind, correct
