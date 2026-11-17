@@ -44,10 +44,11 @@ Two things, and a step stating only one is not a verification.
 - **The session that made the change runs the check**: a command it runs, a
   value it reads back from config, a changed passage it reads against each
   criterion in turn.
-- **The user reviews only where he asked for it, or a special circumstance
-  calls for it** — a change to how an application looks, which no session can
-  see (`src/skills/checking-a-bristol-change/SKILL.md` §What a visible change
-  additionally needs), or anything sent or published in his name.
+- **The user reviews only where he asked for it, or for anything sent or
+  published in his name.** A change to how an application looks is the
+  session's to look at, on his running app through computer use —
+  `src/skills/checking-a-bristol-change/SKILL.md` §What a visible change
+  additionally needs.
 - **A card awaiting his review stays assigned to its agent, in `doing`.** Its
   comment gives what to open, what to do there and what would fail it, and
   says the next session asks him whether he has reviewed it before

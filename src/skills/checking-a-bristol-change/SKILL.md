@@ -1,6 +1,6 @@
 ---
 name: checking-a-bristol-change
-description: What a change to Bristol Tickets has to pass before its card may close — the smoke targets that run wherever the session is, the route for the two that build Qt widgets, and the handover that puts a visible change in front of the user. Use when a change to Bristol Tickets is being checked.
+description: What a change to Bristol Tickets has to pass before its card may close — the smoke targets that run wherever the session is, the route for the two that build Qt widgets, and the session's own look at a visible change on the user's running app. Use when a change to Bristol Tickets is being checked.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3, and for the two Qt targets a shell that has PySide6 or can install it.
 metadata:
@@ -85,26 +85,25 @@ output, from a shell that has Qt.
    snapshot, and a pass against a stale one reports on code the user does not
    have.
 
-6. **Leave the archive at the staging location and write nothing outside it.**
-   The next run overwrites it, which is what a container is for.
+6. **Delete the archive once its runs are done, and write nothing outside the
+   staging location.** A run's archive is an intermediate, never a file left
+   behind.
 
 ## What a visible change additionally needs
 
-- **Hand a visible change to the user to look at.** Run every check above, put
-  what each run produced on the card, and leave it in `doing` with its agent,
-  by `src/skills/verifying-a-card/SKILL.md` §What a verification states.
-- **Never open Bristol Tickets to look at it yourself.** The look is the user's,
-  and a session that reaches for the application spends his attention on
-  answering for it instead of on the change.
-- **Name the unchecked criteria one at a time in that comment**, so what is
-  being asked for is a short list rather than the whole card read again.
+- **Look at a visible change yourself, on the user's running app**, through
+  computer use: relaunch or refresh it, capture the screens the card names in
+  each mode it names, and close the card on what the captures show.
+- **Never hand a change to the user to look at.** He reads no card he did not
+  write and does not check a session's changes; a card waiting on his look is a
+  card left open.
 - **An offscreen render is not the look.** It draws the wrong control set, fonts
   and pixel ratio, so a Qt target passing says the widgets build and nothing
-  further; never offer one as what a change looks like.
+  further.
 - **A change nothing can see — storage, a migration, which card is next — is
-  checked by the smoke targets and no further**, and closes without a handover.
+  checked by the smoke targets and no further.**
 - **Put back any of the user's own settings a run changed**, in the session that
-  changed them, and say so on the card.
+  changed them.
 
 ## Failure modes
 
@@ -118,12 +117,12 @@ output, from a shell that has Qt.
   → the staging location is declared so that no run has to choose one.
 - **An offscreen screenshot offered as the look of a change** → it is the wrong
   platform's controls, and the user is the one who says.
-- **A visible change closed without a handover** → the criterion the card states
-  was never checked by anyone.
+- **A visible change handed to the user, or closed without a capture** → the
+  criterion the card states was never checked by the session.
+- **An archive left at the staging location** → an intermediate outlived its run.
 
 ## Audit
 
 **Whether the two Qt targets ran against the tree as it stands now**,
-**whether a card carrying a visible criterion was handed over rather than
-closed**, and **whether anything a run created sits outside the declared
-staging location.**
+**whether a card carrying a visible criterion was closed on the session's own
+captures**, and **whether anything a run created is left anywhere.**
