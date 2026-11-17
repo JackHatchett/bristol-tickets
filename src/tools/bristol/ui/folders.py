@@ -13,6 +13,7 @@ there.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -43,6 +44,7 @@ NOTEBOOK_CLI = Path("src") / "tools" / "config_tools" / "notebook.py"
 LOCATIONS_CLI = Path("src") / "tools" / "config_tools" / "locations.py"
 DASHBOARDS_CLI = Path("src") / "tools" / "config_tools" / "dashboards.py"
 MISSING = "Missing"
+MISSING_HEADING = "Missing: not found on this computer"
 
 
 def run(script: Path, *args: str) -> tuple[int, str, str]:
@@ -87,10 +89,48 @@ def _caption(text: str) -> QLabel:
     return label
 
 
-def _path_label(text: str, missing: bool) -> QLabel:
-    label = QLabel(text)
-    label.setObjectName("pathRow")
-    label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+def shortened(path: str) -> str:
+    """A path as a person reads it: the home folder is ``~``."""
+    home = str(Path.home())
+    if path == home:
+        return "~"
+    if path.startswith(home + os.sep):
+        return "~" + path[len(home):]
+    return path
+
+
+class PathLabel(QLabel):
+    """A path shortened to fit: the home folder as ``~``, and what still does
+    not fit cut from the middle, so both the place it starts and the name it
+    ends in stay readable. The whole path is the tooltip."""
+
+    def __init__(self, path: str = "", parent=None) -> None:
+        super().__init__(parent)
+        self.setObjectName("pathRow")
+        self._path = ""
+        # Cut at the window's edge rather than widening it.
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.set_path(path)
+
+    def set_path(self, path: str, full: str | None = None) -> None:
+        self._path = shortened(path or "")
+        self.setToolTip(full or path or "")
+        self._fit()
+
+    def resizeEvent(self, event):  # noqa: N802 (Qt override)
+        super().resizeEvent(event)
+        self._fit()
+
+    def _fit(self) -> None:
+        width = self.contentsRect().width()
+        shown = self._path if width <= 0 else self.fontMetrics().elidedText(
+            self._path, Qt.ElideMiddle, width)
+        if shown != self.text():
+            self.setText(shown)
+
+
+def _path_label(text: str, missing: bool) -> PathLabel:
+    label = PathLabel(text)
     label.setProperty("fieldMissing", missing)
     return label
 
@@ -157,7 +197,7 @@ class NotebookDialog(QDialog):
         state = notebook_state()
         self._state = state
         shown = state.get("root_path") or state.get("root") or "—"
-        self.root_label.setText(shown)
+        self.root_label.set_path(shown)
         self.root_label.setProperty("fieldMissing", not state.get("root_exists"))
         self.root_label.style().unpolish(self.root_label)
         self.root_label.style().polish(self.root_label)
@@ -369,8 +409,9 @@ class LocationsDialog(QDialog):
             head = MISSING if not row["exists"] else row["label"].split(" › ")[0]
             if head != group:
                 group = head
-                header = QLabel(head)
+                header = QLabel(f"⚠ {MISSING_HEADING}" if head == MISSING else head)
                 header.setObjectName("sectionHeader")
+                header.setProperty("fieldMissing", head == MISSING)
                 header.setContentsMargins(0, space("md"), 0, 0)
                 self.rows.addWidget(header)
             self.rows.addWidget(self._row(row))
@@ -381,15 +422,16 @@ class LocationsDialog(QDialog):
         line = QHBoxLayout(holder)
         line.setContentsMargins(0, 0, 0, 0)
         line.setSpacing(space("md"))
-        name = QLabel(row["label"].split(" › ", 1)[-1])
+        # A missing location keeps where it is set in its name, since the
+        # Missing section gathers rows from every group.
+        name = QLabel(row["label"] if not row["exists"]
+                      else row["label"].split(" › ", 1)[-1])
         name.setFixedWidth(LAYOUT["palette_caption_w"] + LAYOUT["env_name_w"])
         name.setWordWrap(True)
         line.addWidget(name)
         path = _path_label(row["value"], not row["exists"])
-        # A long path is cut at the window's edge rather than widening it; the
-        # whole of it is the tooltip.
-        path.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-        path.setToolTip(row["resolved"])
+        path.set_path(row["value"], row["resolved"] if row["exists"]
+                      else f"{row['resolved']}\nNot found on this computer.")
         line.addWidget(path, 1)
         change = QPushButton("Change…")
         change.clicked.connect(lambda _=False, r=row: self._change(r))

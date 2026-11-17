@@ -2201,8 +2201,7 @@ def apply_scheme(app, theme: str | None, mode: str | None,
     because a stored choice can name a theme only the collection has.
     """
     register_collection(stored, legacy_custom)
-    set_scheme(resolve_scheme(
-        theme, mode, is_dark_scheme(app) if app is not None else False))
+    set_scheme(live_scheme(app, theme, mode))
     if app is not None:
         from .popups import install as install_popups
         install_popups(app)
@@ -2538,6 +2537,59 @@ def is_dark_scheme(app) -> bool:
         return False
 
 
+# The colour scheme the platform is held to, or None while it follows the OS.
+# Kept here rather than read back from Qt, because Qt reports a held scheme as
+# the OS's own.
+_held_scheme = None
+
+
+def scheme_is_dark(name: str) -> bool:
+    """True when ``name`` is the dark half of a theme."""
+    return any(dark == name for _light, dark in THEMES.values())
+
+
+def _hold_platform(app, scheme) -> None:
+    """Hold the platform to ``scheme``, a ``Qt.ColorScheme``, or let it follow
+    the OS where ``scheme`` is None.
+
+    The hold is recorded before Qt is told, because telling Qt raises its
+    colour-scheme signal, which re-enters the theme and must find the hold
+    already in place. A Qt without the call leaves the platform following the
+    OS."""
+    global _held_scheme
+    if scheme == _held_scheme:
+        return
+    previous, _held_scheme = _held_scheme, scheme
+    hints = app.styleHints()
+    try:
+        if scheme is None:
+            hints.unsetColorScheme()
+        else:
+            hints.setColorScheme(scheme)
+    except AttributeError:
+        _held_scheme = previous
+
+
+def live_scheme(app, theme: str | None, mode: str | None) -> str:
+    """The scheme a theme and a mode mean now, with the platform held to its
+    light or dark.
+
+    The platform draws the title bar, the window frame and every control a
+    stylesheet leaves to Qt's palette, so it is held to the half Bristol draws:
+    a pinned mode holds it, and Follow System lets the OS's own setting through
+    before that setting is read.
+    """
+    if app is None:
+        return resolve_scheme(theme, mode, False)
+    if mode == SYSTEM_MODE:
+        _hold_platform(app, None)
+    name = resolve_scheme(theme, mode, is_dark_scheme(app))
+    if mode != SYSTEM_MODE:
+        _hold_platform(app, Qt.ColorScheme.Dark if scheme_is_dark(name)
+                       else Qt.ColorScheme.Light)
+    return name
+
+
 def chevron_image(colour: str, direction: str = "down") -> str | None:
     """A chevron in the given colour and direction (``down`` or ``up``), as a
     cached image file the stylesheet can point a combo box's or spin box's
@@ -2692,6 +2744,7 @@ QGroupBox::title {{
 }}
 QListWidget {{
     background-color: {C['LIST_BG']};
+    color: {C['INK']};
     border: 1px solid {C['BORDER']};
     border-radius: {r_lg}px;
     padding: {s_sm}px;
@@ -2747,10 +2800,14 @@ QLabel#pathRow {{
     border: 1px solid {C['BORDER']};
     border-radius: {r_md}px;
     padding: {s_md}px {s_lg}px;
-    color: {C['INK_SOFT']};
-    font-family: Menlo, Consolas, monospace;
+    color: {C['INK']};
     font-size: {type_size('body')}pt;
 }}
+QLabel#pathRow[fieldMissing="true"] {{
+    color: {C['MISSING']};
+    border-color: {C['MISSING']};
+}}
+QLabel#sectionHeader[fieldMissing="true"] {{ color: {C['MISSING']}; }}
 QLabel#formCaption {{ color: {C['INK_SOFT']}; }}
 /* The filter panel: one raised surface under the Filter button, containing a
    section per facet and one row per option. A row is a whole click target, so
@@ -2774,7 +2831,8 @@ QWidget#facetRow {{ border-radius: {r_md}px; }}
 QWidget#facetRow:hover {{ background-color: {C['HOVER_BG']}; }}
 QLabel#facetCount {{ color: {C['INK_SOFT']}; }}
 QScrollArea#filterScroll, QScrollArea#filterScroll > QWidget > QWidget,
-QScrollArea#paletteScroll, QScrollArea#paletteScroll > QWidget > QWidget {{
+QScrollArea#paletteScroll, QScrollArea#paletteScroll > QWidget > QWidget,
+QScrollArea#recordScroll, QScrollArea#recordScroll > QWidget > QWidget {{
     background: transparent;
     border: none;
 }}
@@ -2854,12 +2912,18 @@ QListWidget::item:selected {{ background: transparent; }}
 QListWidget#searchResults::item, QListWidget#themeList::item {{
     padding: {s_md}px {s_lg}px;
     border-radius: {r_md}px;
+    border-left: 3px solid transparent;
 }}
+/* The selected row also carries an accent bar, because a scheme's hover and
+   selection fills sit close enough that a hovered row would otherwise read as
+   a second selection. */
 QListWidget#searchResults::item:selected, QListWidget#themeList::item:selected {{
     background: {C['SEL_BG']};
     color: {C['ACCENT_DK']};
+    border-left: 3px solid {C['ACCENT']};
 }}
-QListWidget#searchResults::item:hover, QListWidget#themeList::item:hover {{
+QListWidget#searchResults::item:hover:!selected,
+QListWidget#themeList::item:hover:!selected {{
     background: {C['HOVER_BG']};
 }}
 QComboBox, QLineEdit, QAbstractSpinBox, QTextEdit {{
@@ -2978,7 +3042,13 @@ QPushButton#linkRow:hover {{ color: {C['ACCENT_DK']}; text-decoration: underline
 QPushButton#attachRemoveBtn {{ padding: {s_xs}px 0px; }}
 /* A link row that is not clickable (a pending link on an unsaved ticket). */
 QLabel#linkRowText {{ color: {C['INK_SOFT']}; font-size: {type_size('body')}pt; }}
-QCheckBox {{ color: {C['INK']}; background: transparent; }}
+QCheckBox {{
+    color: {C['INK']};
+    background: transparent;
+    spacing: {s_md}px;
+    padding: {s_xs}px 0px;
+}}
+QRadioButton {{ spacing: {s_md}px; }}
 /* The checkbox is the scheme's own control: a surface with an accent
    hairline, an accent fill when checked — never the platform's indicator. */
 QCheckBox::indicator {{
@@ -2990,6 +3060,20 @@ QCheckBox::indicator {{
 }}
 QCheckBox::indicator:hover {{ border-color: {C['ACCENT']}; }}
 QCheckBox::indicator:checked {{
+    background-color: {C['ACCENT']};
+    border-color: {C['ACCENT']};
+    {check_rule}
+}}
+/* A tickable list row draws the same box a checkbox does, so an unticked one
+   reads on a dark list as well as a light one. */
+QListWidget::indicator {{
+    width: {s_lg}px;
+    height: {s_lg}px;
+    border: 1px solid {C['ACCENT']};
+    border-radius: {r_sm}px;
+    background-color: {C['SURFACE']};
+}}
+QListWidget::indicator:checked {{
     background-color: {C['ACCENT']};
     border-color: {C['ACCENT']};
     {check_rule}
@@ -3235,13 +3319,6 @@ def _fmt_dt(value: str | None) -> str:
         return dt.strftime("%Y-%m-%d %H:%M")
     except (ValueError, TypeError):
         return str(value)[:16]
-
-
-def _get_epic_badge(epic_name: str, epic_id: int | None) -> str:
-    if not epic_name or epic_id is None:
-        return ""
-    first_letter = epic_name.strip()[0].upper() if epic_name.strip() else "E"
-    return f"[{first_letter}{epic_id}] "
 
 
 def size_label(code: str | None) -> str:

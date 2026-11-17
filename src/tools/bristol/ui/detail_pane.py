@@ -26,7 +26,7 @@ from __future__ import annotations
 import html
 import sqlite3
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -37,6 +37,8 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
+    QStyle,
+    QStyleOptionComboBox,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -64,13 +66,23 @@ from .theme import (
     select_agent,
     LAYOUT,
     _fmt_dt,
-    _get_epic_badge,
     _utcnow,
     log_entries,
     relative_time,
     space,
     type_size,
 )
+
+def _picker_width(combo: QComboBox) -> int:
+    """How wide ``combo`` has to be to show its current value whole, in the
+    style it is drawn in."""
+    option = QStyleOptionComboBox()
+    combo.initStyleOption(option)
+    metrics = combo.fontMetrics()
+    text = QSize(metrics.horizontalAdvance(combo.currentText()), metrics.height())
+    return combo.style().sizeFromContents(
+        QStyle.CT_ComboBox, option, text, combo).width()
+
 
 class DetailPane(QWidget):
     """The board's right-hand pane. ``show_task`` / ``show_epic`` point it at a
@@ -136,7 +148,10 @@ class DetailPane(QWidget):
         self.block_combo = fill_words(QComboBox(), BLOCK_REASON_CHOICES,
                                       hint=BLOCK_REASON_HINT)
 
-        for position, (caption, widget) in enumerate((
+        self._control_grid = grid
+        self._control_columns = 0
+        self._control_rows = []
+        for caption, widget in (
             ("Status", self.status_combo),
             ("Stage", self.stage_combo),
             ("Owner", self.owner_combo),
@@ -144,14 +159,13 @@ class DetailPane(QWidget):
             ("Tier", self.tier_combo),
             ("Size", self.size_combo),
             ("Blocked", self.block_combo),
-        )):
-            row, column = divmod(position, 2)
+        ):
             label = QLabel(caption)
             label.setObjectName("formCaption")
-            grid.addWidget(label, row, column * 2)
-            grid.addWidget(widget, row, column * 2 + 1)
-        grid.setColumnStretch(1, 1)
-        grid.setColumnStretch(3, 1)
+            self._control_rows.append((label, widget))
+            widget.currentIndexChanged.connect(
+                lambda _index: self._reflow_controls())
+        self._reflow_controls()
         root.addWidget(self.controls)
 
         self.status_combo.currentIndexChanged.connect(
@@ -279,10 +293,13 @@ class DetailPane(QWidget):
             self._attr_grid.addWidget(value_label, row, 1, Qt.AlignLeft | Qt.AlignTop)
         self._attr_grid.setColumnStretch(1, 1)
 
-    def _fit(self, view: QTextEdit, low_lines: int, high_lines: int) -> None:
+    def _fit(self, view: QTextEdit, low_lines: int,
+             high_lines: int | None) -> None:
         """Size a read-only view to what it contains, within a bound: at least a
-        few lines so the section reads as present, at most a screenful so a long
-        one scrolls inside its own field instead of pushing the log away.
+        few lines so the section reads as present, and at most ``high_lines``
+        where one is given, past which it scrolls inside its own field. With no
+        upper bound the view is as tall as its text and the pane's own scroll
+        is the only one.
 
         Called again on every resize, since a narrower pane rewraps the text
         into more lines than it was measured at."""
@@ -292,21 +309,50 @@ class DetailPane(QWidget):
             document.setTextWidth(width)
         line = QFontMetrics(view.font()).lineSpacing()
         wanted = int(document.size().height()) + space("md") * 2
-        low, high = line * low_lines, line * high_lines
+        low = line * low_lines
+        high = wanted if high_lines is None else line * high_lines
         view.setFixedHeight(max(low, min(wanted, high)))
         view.setVerticalScrollBarPolicy(
             Qt.ScrollBarAsNeeded if wanted > high else Qt.ScrollBarAlwaysOff)
 
     def _fit_description(self) -> None:
-        self._fit(self.desc, 3, 18)
+        # Unbounded: the card's own text scrolls with the pane, so the pane
+        # carries one scroll bar rather than one inside another.
+        self._fit(self.desc, 3, None)
 
     def _fit_handoffs(self) -> None:
-        # Bounded below the description's eighteen: the card's own text is the
-        # tallest thing in the pane, and what it waited on reads under it.
+        # Bounded at fourteen lines: the card's own text is the tallest thing
+        # in the pane, and what it waited on reads under it.
         self._fit(self.handoff_view, 3, 14)
+
+    def _reflow_controls(self) -> None:
+        """Lay the pickers out two to a row where the pane is wide enough to
+        show every current value whole, and one to a row where it is not."""
+        grid = self._control_grid
+        gap = grid.horizontalSpacing()
+        caption = max(label.sizeHint().width()
+                      for label, _widget in self._control_rows)
+        pair = caption + gap + max(_picker_width(widget)
+                                   for _label, widget in self._control_rows)
+        width = self.controls.width() or self.width()
+        columns = 2 if 2 * pair + gap <= width else 1
+        if columns == self._control_columns:
+            return
+        self._control_columns = columns
+        for label, widget in self._control_rows:
+            grid.removeWidget(label)
+            grid.removeWidget(widget)
+        for position, (label, widget) in enumerate(self._control_rows):
+            row, column = divmod(position, columns)
+            grid.addWidget(label, row, column * 2)
+            grid.addWidget(widget, row, column * 2 + 1)
+        for column in range(4):
+            grid.setColumnStretch(column, 1 if column % 2 and column < 2 * columns
+                                  else 0)
 
     def resizeEvent(self, event):  # noqa: N802 (Qt override)
         super().resizeEvent(event)
+        self._reflow_controls()
         if self.task_id is not None or self.epic_id is not None:
             self._fit_description()
             self._fit_handoffs()
@@ -365,8 +411,7 @@ class DetailPane(QWidget):
         self.task_id = task_id
         self.epic_id = None
 
-        badge = _get_epic_badge(epic_name, joined_epic_id)
-        self.title.setText(f"#{task_id} {badge}{title}")
+        self.title.setText(f"#{task_id} {title}")
 
         self.controls.setVisible(True)
         self.status_combo.setCurrentIndex(max(self.status_combo.findData(
@@ -419,7 +464,7 @@ class DetailPane(QWidget):
         self.clear()
         self._loading = True
         self.epic_id = epic_id
-        self.title.setText(f"[Epic #{epic_id}] {name}")
+        self.title.setText(f"Epic #{epic_id} {name}")
         self.desc.setPlainText(desc or "(No details provided)")
         self._fit_description()
         self._set_attributes([

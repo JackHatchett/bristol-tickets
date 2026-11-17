@@ -200,6 +200,7 @@ class UnifiedRecordDialog(QDialog):
         outer.setContentsMargins(0, 0, 0, 0)
 
         self._scroll = QScrollArea()
+        self._scroll.setObjectName("recordScroll")
         self._scroll.setWidgetResizable(True)
         self._scroll.setFrameShape(QFrame.NoFrame)
         # No visible bars: the wheel/trackpad still scrolls, and a permanent
@@ -510,7 +511,24 @@ class UnifiedRecordDialog(QDialog):
             chrome = self.height() - self._scroll.viewport().height()
             wanted = body.sizeHint().height() + chrome
             self.resize(self.width(), min(wanted, self.maximumHeight()))
+        self._keep_on_screen()
         event.accept()
+
+    def _keep_on_screen(self) -> None:
+        """Move the window up until its frame, title bar and buttons included,
+        sits inside the screen's usable area. It is placed at the size it opens
+        with and only then grown to the ticket, so the growth is what carries
+        its bottom under the Dock."""
+        screen = self.screen() or QApplication.primaryScreen()
+        if screen is None:
+            return
+        area = screen.availableGeometry()
+        frame = self.frameGeometry()
+        shift = min(0, area.bottom() - frame.bottom())
+        if frame.top() + shift < area.top():
+            shift = area.top() - frame.top()
+        if shift:
+            self.move(self.x(), self.y() + shift)
 
     # ----- unsaved-changes guard ------------------------------
 

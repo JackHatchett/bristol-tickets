@@ -482,7 +482,8 @@ class EnvList(QWidget):
         holder = QWidget()
         name_edit = QLineEdit(name)
         name_edit.setPlaceholderText("Name")
-        name_edit.setMaximumWidth(LAYOUT["env_name_w"])
+        name_edit.setCursorPosition(0)
+        name_edit.textChanged.connect(lambda _text: self._fit_names())
         value_edit = QLineEdit(value)
         value_edit.setPlaceholderText("Value")
         choose = QPushButton("…")
@@ -502,6 +503,22 @@ class EnvList(QWidget):
         row.addWidget(drop)
         self.rows.addWidget(holder)
         self._rows.append((holder, name_edit, value_edit))
+        self._fit_names()
+
+    def _fit_names(self) -> None:
+        """Give every name box one width, wide enough for the longest name, so
+        each name shows whole and the value boxes start in one column."""
+        if not self._rows:
+            return
+        sample = self._rows[0][1]
+        metrics = sample.fontMetrics()
+        longest = max(metrics.horizontalAdvance(name.text() or name.placeholderText())
+                      for _holder, name, _value in self._rows)
+        margins = sample.textMargins()
+        width = max(LAYOUT["env_name_w"],
+                    longest + margins.left() + margins.right() + 4 * space("md"))
+        for _holder, name, _value in self._rows:
+            name.setFixedWidth(width)
 
     def _pick_into(self, field: QLineEdit) -> None:
         """A value that names a folder is picked; one that does not is typed."""
@@ -583,8 +600,8 @@ class AgentDialog(QDialog):
         # been written.
         self.status = ""
 
-        slug = record["slug"] if record else "New Agent"
-        self.setWindowTitle(slug)
+        self.setWindowTitle(agent_caption(record["slug"]) if record
+                            else "New Agent")
         self.setModal(True)
         self.setMinimumWidth(LAYOUT["agent_dialog_min_w"])
         self.setMinimumHeight(LAYOUT["agent_dialog_min_h"])
@@ -684,7 +701,7 @@ class AgentDialog(QDialog):
         split.setStretchFactor(0, 3)
         split.setStretchFactor(1, 4)
 
-        heading = QLabel(agent_caption(slug) if self._record else slug)
+        heading = QLabel(self.windowTitle())
         heading.setObjectName("dialogHeading")
 
         self.save_btn = QPushButton("Create" if self.creating else "Save")

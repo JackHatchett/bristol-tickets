@@ -135,9 +135,7 @@ class KanbanColumn(QWidget):
         query = self._SELECT + "WHERE t.stage='active' AND t.status = ?" + narrow
         params = [self.status_key, *narrow_params]
         query += " ORDER BY t.sort_order ASC, t.id ASC"
-        for row in self.conn.execute(query, tuple(params)).fetchall():
-            self._add_item(*row)
-        self._set_count()
+        self._fill(self.conn.execute(query, tuple(params)).fetchall())
 
     def load_backlog_tasks(self, filters):
         """BACKLOG column: every stage='backlog' task as one manual list,
@@ -146,8 +144,27 @@ class KanbanColumn(QWidget):
         narrow, params = filters.where("t")
         query = self._SELECT + "WHERE t.stage='backlog'" + narrow
         query += " ORDER BY t.sort_order ASC, t.id ASC"
-        for row in self.conn.execute(query, tuple(params)).fetchall():
+        self._fill(self.conn.execute(query, tuple(params)).fetchall())
+
+    def _fill(self, rows) -> None:
+        """Replace the cards with ``rows``, keeping where the list was scrolled
+        to, which cards were selected and which were ticked. A reload is then
+        the same view brought up to date, rather than a reset of it."""
+        view = self.list_widget
+        scrolled = view.verticalScrollBar().value()
+        chosen = {item.data(Qt.UserRole) for item in view.selectedItems()}
+        ticked = set(self.checked_ids()) if self.is_backlog else set()
+        view.clear()
+        for row in rows:
             self._add_item(*row)
+        for index in range(view.count()):
+            item = view.item(index)
+            task_id = item.data(Qt.UserRole)
+            if task_id in ticked:
+                item.setData(Qt.CheckStateRole, Qt.Checked)
+            if task_id in chosen:
+                item.setSelected(True)
+        view.verticalScrollBar().setValue(scrolled)
         self._set_count()
 
     def _add_item(self, task_id, title, tier, epic_name, epic_id, _status,
@@ -174,7 +191,8 @@ class KanbanColumn(QWidget):
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setData(Qt.CheckStateRole, Qt.Unchecked)
         item.setToolTip(
-            f"{title}\n\nNo epic yet — open it and choose one, or the "
+            f"{title}\n\nThe dot marks a card with no epic yet. Open it and "
+            "choose one, or the "
             "standing workstream for a card that is the whole of its own "
             "subject." if epic_id is None else title)
         self.list_widget.addItem(item)

@@ -609,6 +609,20 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("the tab row order changed to put Board first")
         ok.append("a launch opens on Board, with the tab row order unchanged")
 
+        # An assistive tool presses a tab by toggling it, which emits no click.
+        archive_tab = win._tab_buttons[win._archive_tab_index]
+        archive_tab.toggle()
+        if win.pages.currentIndex() != win._archive_tab_index:
+            raise SmokeFailure("toggling a tab, as an accessibility press does, "
+                               "did not open its view")
+        archive_tab.toggle()
+        if not archive_tab.isChecked() or \
+                sum(1 for b in win._tab_buttons if b.isChecked()) != 1:
+            raise SmokeFailure("a second press switched the open tab off")
+        win._show_page(win._board_tab_index)
+        ok.append("a tab opens its view when toggled, and a second press "
+                  "leaves it open")
+
         # Kanban stage model: tabs populate from task.stage.
         win._refresh_board()
         if win.columns["todo"].list_widget.count() != 1:
@@ -618,6 +632,30 @@ def check_bristol() -> list[str]:
         if win.archive_results.count() != 1:
             raise SmokeFailure("Archive should show one archived task")
         ok.append("Board/Backlog/Archive populate by stage")
+
+        # A card another session closes leaves To Do without a Refresh.
+        with tempfile.TemporaryDirectory() as watched_dir:
+            watched_path = Path(watched_dir) / "watched.db"
+            fconn = sqlite3.connect(watched_path)
+            mconn.backup(fconn)
+            watched = MainWindow(fconn)
+            before = watched.columns["todo"].list_widget.count()
+            other = sqlite3.connect(watched_path)
+            other.execute("UPDATE task SET status='done' "
+                          "WHERE stage='active' AND status='todo'")
+            other.commit()
+            other.close()
+            watched._reload_if_changed()
+            after = watched.columns["todo"].list_widget.count()
+            watched._board_watch.stop()
+            watched.close()
+            fconn.close()
+        if (before, after) != (1, 0):
+            raise SmokeFailure(
+                f"a card closed by another connection stayed in To Do "
+                f"({before} before, {after} after the poll)")
+        ok.append("a write from another connection reaches the Board on the "
+                  "next poll")
 
         # Where a control sits says what it reaches. Refresh reloads every
         # view, so it is in the header beside Create and reachable from any
@@ -873,7 +911,7 @@ def check_bristol() -> list[str]:
                 raise SmokeFailure(
                     f"card #{task_id} should {'' if expected else 'not '}be "
                     "marked as having no epic")
-            says_so = "No epic yet" in (item.toolTip() or "")
+            says_so = "no epic yet" in (item.toolTip() or "")
             if says_so != expected:
                 raise SmokeFailure(
                     f"card #{task_id}'s tooltip should {'' if expected else 'not '}"

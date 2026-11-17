@@ -59,11 +59,32 @@ _STEP_NAMES = {"key_data_paths": "Folder", "key_context_files": "Context File",
 
 _SMALL = {"a", "an", "the", "and", "or", "of", "for", "to", "in", "on", "by"}
 
+# Words a key spells in lower case that are written otherwise: acronyms, and
+# names whose capitals are their own.
+_SPELLED = {"ai": "AI", "api": "API", "csv": "CSV", "db": "DB", "id": "ID",
+            "pdf": "PDF", "qa": "QA", "ui": "UI", "url": "URL",
+            "icloud": "iCloud", "onedrive": "OneDrive", "gdrive": "Google Drive",
+            "github": "GitHub"}
+
 
 def _words(text: str) -> str:
-    parts = [w for w in text.split("_") if w]
-    return " ".join(w if i and w in _SMALL else w[:1].upper() + w[1:]
-                    for i, w in enumerate(parts))
+    """A key as words: qa_engineer is QA Engineer, external1 is External 1."""
+    parts = []
+    for word in (w for w in text.split("_") if w):
+        stem = word.rstrip("0123456789")
+        parts.append(stem)
+        if stem != word:
+            parts.append(word[len(stem):])
+    out = []
+    for i, word in enumerate(w for w in parts if w):
+        low = word.lower()
+        if low in _SPELLED:
+            out.append(_SPELLED[low])
+        elif i and low in _SMALL:
+            out.append(low)
+        else:
+            out.append(word[:1].upper() + word[1:])
+    return " ".join(out)
 
 
 def _label(pointer: list) -> str:

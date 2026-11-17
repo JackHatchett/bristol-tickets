@@ -40,6 +40,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
     QApplication,
+    QButtonGroup,
     QCheckBox,
     QDialog,
     QHBoxLayout,
@@ -75,8 +76,7 @@ from .theme import (
     appearance_choice,
     apply_scheme,
     build_style_sheet,
-    is_dark_scheme,
-    resolve_scheme,
+    live_scheme,
     set_scheme,
     space,
     _fmt_dt,
@@ -86,6 +86,11 @@ from .theme import (
 # How long the splitter may keep moving before its width is written to the
 # configuration, so a drag lands as one save rather than a stream of them.
 SPLITTER_SETTLE_MS = 800
+
+# How often the window asks the database whether another connection wrote to
+# it. Short enough that a card closed elsewhere leaves To Do while the user is
+# still looking, long enough that the check costs nothing.
+BOARD_POLL_MS = 2000
 
 # How many filter chips stand on the control row before the rest are counted.
 # Past this the row would push the board's own controls around, and the panel
@@ -380,6 +385,15 @@ class MainWindow(QMainWindow):
             [LAYOUT["window_w"] - self._detail_width, self._detail_width])
         self._main_splitter = main_splitter
 
+        # Another session or the command line writing the board is seen within
+        # a poll: SQLite's data_version moves only on a commit made through some
+        # other connection, so this window's own writes never trigger a reload.
+        self._data_version = self._read_data_version()
+        self._board_watch = QTimer(self)
+        self._board_watch.setInterval(BOARD_POLL_MS)
+        self._board_watch.timeout.connect(self._reload_if_changed)
+        self._board_watch.start()
+
         # Geometry saves are debounced, and put off entirely until the window
         # finishes constructing, so building the window writes nothing.
         self._geometry_ready = False
@@ -599,6 +613,10 @@ class MainWindow(QMainWindow):
         bar.addWidget(separator, 0, Qt.AlignVCenter)
 
         self._tab_buttons: list[QPushButton] = []
+        # Exclusive, so the open tab cannot be switched off by a second press
+        # and exactly one tab is always the one shown.
+        self._tab_group = QButtonGroup(self)
+        self._tab_group.setExclusive(True)
         self._tab_row = QHBoxLayout()
         self._tab_row.setContentsMargins(0, 0, 0, 0)
         self._tab_row.setSpacing(0)
@@ -618,7 +636,12 @@ class MainWindow(QMainWindow):
         button.setObjectName("viewTab")
         button.setCheckable(True)
         button.setCursor(Qt.PointingHandCursor)
-        button.clicked.connect(lambda _checked, i=index: self._show_page(i))
+        # Toggled rather than clicked: an assistive tool presses a checkable
+        # button by toggling it, which emits no click, and a pointer click
+        # toggles it as well.
+        button.toggled.connect(
+            lambda checked, i=index: checked and self._show_page(i))
+        self._tab_group.addButton(button)
         self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
         return index
@@ -701,8 +724,7 @@ class MainWindow(QMainWindow):
         """Draw the app in the theme and mode the Settings tab is offering,
         before the configuration says so."""
         app = QApplication.instance()
-        set_scheme(resolve_scheme(
-            theme, mode, is_dark_scheme(app) if app is not None else False))
+        set_scheme(live_scheme(app, theme, mode))
         sheet = build_style_sheet()
         if app is not None:
             app.setStyleSheet(sheet)
@@ -921,6 +943,21 @@ class MainWindow(QMainWindow):
             if dlg.exec() == QDialog.Accepted:
                 dlg.save_data()
                 self._refresh_board()
+
+    def _read_data_version(self) -> int | None:
+        try:
+            return self.conn.execute("PRAGMA data_version").fetchone()[0]
+        except sqlite3.Error:
+            return None
+
+    def _reload_if_changed(self) -> None:
+        """Reload every view when another connection has committed to the
+        board since the last look."""
+        version = self._read_data_version()
+        if version is None or version == self._data_version:
+            return
+        self._data_version = version
+        self._refresh_board()
 
     def _refresh_board(self):
         """Reload every view from the database, through the board's filter.

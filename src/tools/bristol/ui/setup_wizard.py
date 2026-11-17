@@ -39,7 +39,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from PySide6.QtCore import QRegularExpression, Qt
-from PySide6.QtGui import QColor, QPalette, QRegularExpressionValidator
+from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -60,7 +60,7 @@ import instance
 import payload
 
 from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
-from .theme import C, LAYOUT, space, type_size
+from .theme import LAYOUT, space, type_size
 
 
 def page_title(text: str) -> str:
@@ -72,11 +72,44 @@ def page_title(text: str) -> str:
 
 def page_layout(page: QWidget) -> QVBoxLayout:
     """A wizard page's column, on the app's margins and spacing so a page reads
-    as the same application as the board behind it."""
+    as the same application as the board behind it, opening on the page's own
+    title and subtitle where it has them."""
     layout = QVBoxLayout(page)
     layout.setContentsMargins(space("xl"), space("lg"), space("xl"), space("lg"))
     layout.setSpacing(space("lg"))
+    if isinstance(page, HeadedPage):
+        heading = QVBoxLayout()
+        heading.setSpacing(space("xs"))
+        heading.addWidget(page.heading)
+        heading.addWidget(page.subheading)
+        layout.addLayout(heading)
     return layout
+
+
+class HeadedPage(QWizardPage):
+    """A wizard page that carries its title and subtitle in its own body.
+
+    Qt's wizard draws a page's title in a header band of its own, which takes
+    no stylesheet and indents the subtitle under the title. Kept off Qt's
+    title, the band never shows, and the page's heading is drawn in the theme
+    on one left edge like every other dialog's."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.heading = QLabel()
+        self.heading.setObjectName("dialogHeading")
+        self.heading.setTextFormat(Qt.RichText)
+        self.subheading = QLabel()
+        self.subheading.setObjectName("formCaption")
+        self.subheading.setWordWrap(True)
+        self.subheading.setVisible(False)
+
+    def setTitle(self, text: str) -> None:  # noqa: N802 (Qt name)
+        self.heading.setText(text)
+
+    def setSubTitle(self, text: str) -> None:  # noqa: N802 (Qt name)
+        self.subheading.setText(text)
+        self.subheading.setVisible(bool(text))
 
 SLUG_PATTERN = r"[a-z0-9][a-z0-9_-]*"
 REQUIRED_AGENT = "chief_of_staff"
@@ -224,7 +257,7 @@ def existing_installation(root: Path) -> tuple[Path | None, Path | None]:
     return configured_instance_dir(root), pointed_instance_dir()
 
 
-class InstancePage(QWizardPage):
+class InstancePage(HeadedPage):
     """The installation's name, and the folder its data lives in."""
 
     def __init__(self, root: Path) -> None:
@@ -337,7 +370,7 @@ class InstancePage(QWizardPage):
         ))
 
 
-class AgentsPage(QWizardPage):
+class AgentsPage(HeadedPage):
     """Which of the shipped agents this installation runs."""
 
     def __init__(self, root: Path) -> None:
@@ -398,7 +431,7 @@ class AgentsPage(QWizardPage):
                 if box.isChecked() or slug == REQUIRED_AGENT]
 
 
-class IntegrationsPage(QWizardPage):
+class IntegrationsPage(HeadedPage):
     """Optional folders outside the clone that agents read and write."""
 
     def __init__(self) -> None:
@@ -424,7 +457,7 @@ class IntegrationsPage(QWizardPage):
         layout.addStretch(1)
 
 
-class SummaryPage(QWizardPage):
+class SummaryPage(HeadedPage):
     """What Finish will write, and which installation the app opens after it."""
 
     def __init__(self, wizard: "SetupWizard") -> None:
@@ -552,12 +585,6 @@ class SetupWizard(QWizard):
         self.db_path: Path | None = None
         self.setWindowTitle("Bristol Tickets — Setup")
         self.setWizardStyle(QWizard.ModernStyle)
-        self.setTitleFormat(Qt.RichText)
-        # The wizard's header band takes its ground from the palette's Base
-        # role rather than from the stylesheet.
-        palette = self.palette()
-        palette.setColor(QPalette.Base, QColor(C["CANVAS"]))
-        self.setPalette(palette)
         self.setOption(QWizard.NoBackButtonOnStartPage, True)
         self.setMinimumSize(LAYOUT["wizard_min_w"], LAYOUT["wizard_min_h"])
 
