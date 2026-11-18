@@ -689,7 +689,7 @@ class MainWindow(QMainWindow):
         if self._tall_title_bar:
             header.setFixedHeight(mac_window.TALL_TITLE_BAR)
             bar.setContentsMargins(LAYOUT["traffic_lights_tall_w"], 0,
-                                   space("lg"), 0)
+                                   LAYOUT["traffic_lights_inset"], 0)
         elif self._header_in_title_bar:
             header.setFixedHeight(LAYOUT["title_bar_h"])
             bar.setContentsMargins(LAYOUT["traffic_lights_w"], 0,

@@ -167,7 +167,8 @@ LAYOUT = {
     "header_divider_h": 16,   # the hairline between the top bar's groups of views
     "toolbar_box_w": 34,      # an icon button in the top bar
     "header_mark_h": 20,      # the app's mark beside its name in the top bar
-    "traffic_lights_tall_w": 96,  # the traffic lights in the tall title bar, and room past them
+    "traffic_lights_tall_w": 80,  # the traffic lights in the tall title bar, and room past them
+    "traffic_lights_inset": 11,   # the window's edge to the red light; the top bar's right end keeps the same
     "title_bar_h": 28,        # the Mac's title bar, which the top bar shares
     "traffic_lights_w": 80,   # the close, minimize and zoom buttons, and room past them
     "filter_field_max_w": 420,  # a Filter field, before its pickers
