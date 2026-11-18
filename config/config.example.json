@@ -63,6 +63,7 @@
     "recipes_dir": "/path/to/notebook/recipes",
     "agent_output_dir": "/path/to/notebook/ai_workspace/ai_output",
     "reports_dir": "/path/to/notebook/ai_workspace/bristol_reports",
+    "design_system_dir": "/path/to/notebook/bristol_app/design_system",
     "watchlist_path": "/path/to/notebook/watchlist.md",
     "reading_list_path": "/path/to/notebook/reading_list.md"
   },

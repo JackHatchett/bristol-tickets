@@ -97,7 +97,7 @@ def toggle_icon(name: str, off: str, on: str, size: int = 16) -> QIcon:
 _TINTED: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
 
 
-def tint(button, name: str, key: str = "INK_SOFT", size: int = 12) -> None:
+def tint(button, name: str, key: str = "INK_SOFT", size: int = 14) -> None:
     """Give ``button`` the icon ``name`` in the theme color ``key``, and keep
     it in that color when the theme or the mode changes."""
     from .theme import C

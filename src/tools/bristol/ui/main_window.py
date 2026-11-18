@@ -639,7 +639,7 @@ class MainWindow(QMainWindow):
             chip.setObjectName("filterChip")
             # The way to remove the filter sits after its name.
             chip.setLayoutDirection(Qt.RightToLeft)
-            icons.tint(chip, "x", "NEUTRAL_TX", size=10)
+            icons.tint(chip, "x", "NEUTRAL_TX")
             chip.setCursor(Qt.PointingHandCursor)
             chip.setToolTip("Remove this filter")
             chip.clicked.connect(

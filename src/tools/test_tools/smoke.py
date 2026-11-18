@@ -58,18 +58,18 @@ def check_bristol() -> list[str]:
         importlib.import_module(f"ui.{mod.name}")
     ok.append("all ui.* modules import")
 
-    # One typeface, bundled: the app's font becomes it at the platform's own
+    # One typeface, bundled: the app's font becomes it at the type scale's body
     # size, and a font built afterwards starts from it.
     from PySide6.QtGui import QFont as _QFont
 
     from ui import theme as _theme
-    _size = app.font().pointSizeF()
+    _size = float(_theme.type_size("body"))
     if not _theme.install_typeface(app):
         raise SmokeFailure(f"the bundled {_theme.TYPEFACE} did not register from {_theme.FONT_DIR}")
     if app.font().family() != _theme.TYPEFACE or app.font().pointSizeF() != _size:
         raise SmokeFailure(
             f"the app font is {app.font().family()} {app.font().pointSizeF()}pt, "
-            f"not {_theme.TYPEFACE} at the platform's {_size}pt")
+            f"not {_theme.TYPEFACE} at the body size, {_size}pt")
     if _QFont().family() != _theme.TYPEFACE:
         raise SmokeFailure("a font built after the install does not start from the typeface")
     if not (_theme.FONT_DIR / "LICENSE.txt").is_file():

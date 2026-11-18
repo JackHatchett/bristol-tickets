@@ -155,7 +155,7 @@ def select_agent(combo, slug: str | None) -> None:
 # points.
 SPACE = {"xs": 2, "sm": 4, "md": 7, "lg": 11, "xl": 16, "2xl": 24}
 RADIUS = {"sm": 4, "md": 7, "lg": 10, "xl": 12, "pill": 999}
-TYPE = {"caption": 8, "body": 10, "title": 11, "section": 12, "display": 14}
+TYPE = {"caption": 10, "body": 13, "title": 13, "section": 15, "display": 17}
 
 # Window geometry, in device-independent pixels, and the splitter's opening
 # split. Not a spacing scale — these size the window itself, and a module that
@@ -2204,8 +2204,9 @@ FONT_DIR = Path(__file__).resolve().parent / "fonts"
 
 
 def install_typeface(app) -> bool:
-    """Register the bundled typeface and make it the application's font, at the
-    platform's own default size. Returns whether it took.
+    """Register the bundled typeface and make it the application's font, at
+    ``TYPE["body"]``. Returns whether the typeface took; the size is set either
+    way.
 
     Every font built with ``QFont()`` afterwards starts from it, and the style
     sheet names sizes and weights only, so one call sets the face everywhere.
@@ -2218,12 +2219,13 @@ def install_typeface(app) -> bool:
         font_id = QFontDatabase.addApplicationFont(str(file))
         if font_id >= 0:
             families.update(QFontDatabase.applicationFontFamilies(font_id))
-    if TYPEFACE not in families:
-        return False
     font = app.font()
-    font.setFamily(TYPEFACE)
+    font.setPointSize(type_size("body"))
+    installed = TYPEFACE in families
+    if installed:
+        font.setFamily(TYPEFACE)
     app.setFont(font)
-    return True
+    return installed
 
 
 def apply_scheme(app, theme: str | None, mode: str | None,
@@ -2701,13 +2703,13 @@ QWidget#appHeader {{
 QLabel#appTitle {{
     color: {C['INK']};
     font-size: {type_size('title')}pt;
-    font-weight: 700;
+    font-weight: 600;
 }}
 /* A view in the top bar: its name on the bar, a faint fill on
    hover, and the open one in the accent on a faint fill of its own. */
 QPushButton#viewTab {{
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
@@ -2721,10 +2723,10 @@ QPushButton#viewTab:hover {{
 }}
 QPushButton#viewTab:checked {{
     background-color: {ink_10};
-    color: {C['ACCENT']};
+    color: {C['ACCENT_DK']};
 }}
 QPushButton#viewTab:focus {{
-    outline: none;
+    border-color: {C['ACCENT']};
 }}
 QFrame#headerDivider {{
     background-color: {ink_14};
@@ -2749,8 +2751,8 @@ QPushButton#toolbarToggle:checked {{
     background-color: {ink_10};
     border-color: {C['ACCENT']};
 }}
-QPushButton#toolbarToggle:focus {{
-    outline: none;
+QPushButton#toolbarButton:focus, QPushButton#toolbarToggle:focus {{
+    border-color: {C['ACCENT']};
 }}
 /* The top bar's Create: the primary button at the top bar's height. Where a
    view has no cards it is faded by an opacity effect rather than turned grey,
@@ -2784,7 +2786,7 @@ QGroupBox::title {{
     subcontrol-position: top left;
     left: {s_xl}px;
     padding: 0 {s_md}px;
-    color: {C['ACCENT']};
+    color: {C['ACCENT_DK']};
 }}
 QListWidget {{
     background-color: {C['LIST_BG']};
@@ -2807,7 +2809,7 @@ QListWidget#columnCards {{
 QLabel#columnName {{
     color: {C['INK']};
     font-size: {type_size('title')}pt;
-    font-weight: 700;
+    font-weight: 600;
 }}
 QLabel#columnCount {{ color: {C['INK_SOFT']}; }}
 /* The detail pane is a sidebar surface: the one raised region right of the
@@ -2830,8 +2832,9 @@ QPushButton#paneToggle, QPushButton#paneReveal {{
     border-radius: {r_md}px;
     padding: {s_xs}px {s_md}px;
     color: {C['INK_SOFT']};
-    font-weight: 700;
+    font-weight: 400;
 }}
+QPushButton#paneToggle:focus {{ background-color: {C['HOVER_BG']}; border: 1px solid {C['ACCENT']}; }}
 QPushButton#paneToggle:hover, QPushButton#paneReveal:hover {{
     background-color: {C['HOVER_BG']};
     color: {C['INK']};
@@ -2866,12 +2869,12 @@ QFrame#filterMenu {{
 QLabel#filterTitle {{
     color: {C['INK']};
     font-size: {type_size('section')}pt;
-    font-weight: 700;
+    font-weight: 600;
 }}
 QLabel#facetHeading {{
     color: {C['INK_SOFT']};
     font-size: {type_size('caption')}pt;
-    font-weight: 700;
+    font-weight: 600;
 }}
 QWidget#facetRow {{ border-radius: {r_md}px; }}
 QWidget#facetRow:hover {{ background-color: {C['HOVER_BG']}; }}
@@ -2887,11 +2890,10 @@ QPushButton#filterClear {{
     background: transparent;
     border: none;
     padding: {s_xs}px {s_md}px;
-    color: {C['ACCENT']};
-    font-weight: 600;
-}}
-QPushButton#filterClear:hover {{
     color: {C['ACCENT_DK']};
+    font-weight: 400;
+}}
+QPushButton#filterClear:hover, QPushButton#filterClear:focus {{
     text-decoration: underline;
 }}
 QPushButton#filterClear:disabled {{
@@ -2909,11 +2911,12 @@ QPushButton#filterBtn[active="true"] {{
 QPushButton#filterChip {{
     background-color: {C['NEUTRAL_BG']};
     color: {C['NEUTRAL_TX']};
-    border: none;
+    border: 1px solid transparent;
     border-radius: {r_sm}px;
     padding: {s_sm}px {s_lg}px;
-    font-weight: 600;
+    font-weight: 400;
 }}
+QPushButton#filterChip:focus {{ border-color: {C['ACCENT']}; }}
 QPushButton#filterChip:hover {{
     background-color: {C['SEL_BG']};
     color: {C['ACCENT_DK']};
@@ -3004,6 +3007,13 @@ QComboBox, QLineEdit, QAbstractSpinBox, QTextEdit {{
     selection-background-color: {C['ACCENT']};
     selection-color: {C['ON_ACCENT']};
 }}
+/* A picker is a button that opens a list, so it takes the control face. */
+QComboBox, QDateEdit {{
+    background-color: {C['BTN_BG']};
+    border: 1px solid {C['BTN_BORDER']};
+}}
+QComboBox:hover, QDateEdit:hover {{ background-color: {C['BTN_HOVER']}; }}
+QComboBox:on {{ background-color: {C['BTN_PRESSED']}; }}
 QComboBox:focus, QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus {{
     border: 1px solid {C['ACCENT']};
 }}
@@ -3015,9 +3025,9 @@ QLineEdit[fieldMissing="true"], QTextEdit[fieldMissing="true"],
 QLineEdit[fieldMissing="true"]:focus, QTextEdit[fieldMissing="true"]:focus {{
     border: 2px solid {C['MISSING']};
 }}
-QLabel[fieldMissing="true"] {{ color: {C['MISSING']}; font-weight: 600; }}
+QLabel[fieldMissing="true"] {{ color: {C['MISSING']}; }}
 /* A formCaption carries its own missing state. */
-QLabel#formCaption[fieldMissing="true"] {{ color: {C['MISSING']}; font-weight: 600; }}
+QLabel#formCaption[fieldMissing="true"] {{ color: {C['MISSING']}; }}
 /* A picker opens this app's own list rather than the platform's menu: a raised
    surface with a rounded corner, room around every option, and the same
    selected fill a list row takes. popups.py makes its window transparent so
@@ -3050,7 +3060,7 @@ QComboBox QAbstractItemView::item:selected {{
 QTextEdit[growing="true"] {{ padding: {s_sm}px {s_md}px; }}
 /* A choice that opens a section of a window: a round mark beside a heading. */
 QRadioButton {{ color: {C['INK']}; background: transparent; spacing: {s_md}px; }}
-QRadioButton#choiceHeading {{ font-weight: 700; }}
+QRadioButton#choiceHeading {{ font-weight: 600; }}
 QRadioButton::indicator {{
     width: {s_lg}px;
     height: {s_lg}px;
@@ -3083,14 +3093,14 @@ QSpinBox::up-button {{ subcontrol-position: top right; }}
 QSpinBox::down-button {{ subcontrol-position: bottom right; }}
 {spin_arrow_rule}
 QLabel {{ color: {C['INK']}; background: transparent; }}
-QLabel#inspectorTitle {{ color: {C['ACCENT']}; }}
+QLabel#inspectorTitle {{ color: {C['ACCENT_DK']}; }}
 QLabel#sectionHeader {{ color: {C['INK_SOFT']}; font-weight: 600; }}
 /* The one thing a confirmation or a notice says first: the largest text in a
    modal that carries no icon, since the words are all it has. */
 QLabel#dialogHeading {{
     color: {C['INK']};
     font-size: {type_size('section')}pt;
-    font-weight: 700;
+    font-weight: 600;
 }}
 QLabel#metaText {{ color: {C['INK_SOFT']}; }}
 /* A link row is a quiet reference, not a headline: left-aligned accent text
@@ -3101,11 +3111,11 @@ QPushButton#linkRow {{
     border: none;
     padding: {s_xs}px 0px;
     text-align: left;
-    color: {C['ACCENT']};
+    color: {C['ACCENT_DK']};
     font-size: {type_size('body')}pt;
     font-weight: 400;
 }}
-QPushButton#linkRow:hover {{ color: {C['ACCENT_DK']}; text-decoration: underline; }}
+QPushButton#linkRow:hover, QPushButton#linkRow:focus {{ text-decoration: underline; }}
 /* The ✕ that removes a link or attachment: the ordinary button face, minus
    the wide padding that would clip the mark inside its narrow fixed square. */
 QPushButton#attachRemoveBtn {{ padding: {s_xs}px 0px; }}
@@ -3162,11 +3172,12 @@ QPushButton {{
     border: 1px solid {C['BTN_BORDER']};
     border-radius: {r_md}px;
     padding: {s_md}px {s_lg}px;
-    font-weight: 600;
-    color: {C['ACCENT_DK']};
+    font-weight: 400;
+    color: {C['INK']};
 }}
 QPushButton:hover {{ background-color: {C['BTN_HOVER']}; }}
 QPushButton:pressed {{ background-color: {C['BTN_PRESSED']}; }}
+QPushButton:focus {{ border-color: {C['ACCENT']}; }}
 /* A button kept unclickable until its form is valid must LOOK unclickable —
    Qt's default disabled rendering is barely distinguishable under this
    stylesheet, which would read as "the button is broken". */
@@ -3184,6 +3195,9 @@ QPushButton#globalCreateBtn {{
 QPushButton#globalCreateBtn:hover {{
     background-color: {C['CREATE_HOVER']};
     border-color: {C['CREATE_HOVER']};
+}}
+QPushButton#globalCreateBtn:focus, QPushButton#toolbarCreate:focus {{
+    border-color: {C['ON_ACCENT']};
 }}
 /* The id selector outranks the generic :disabled rule, so the primary button
    needs its own unclickable look or it would stay accent-filled while dead. */
@@ -3212,7 +3226,7 @@ QPushButton#listEditBtn {{
     max-width: {ctl}px;
     padding: 0px;
     border-radius: 0px;
-    font-weight: 600;
+    font-weight: 400;
 }}
 /* One height for every control that can share a row. Padding and border are
    zeroed vertically and the height is fixed outright, so a field, a picker, a
@@ -3244,7 +3258,7 @@ QPushButton#exampleLink {{
     color: {C['INK_SOFT']};
     font-weight: 400;
 }}
-QPushButton#exampleLink:hover {{ color: {C['ACCENT']}; text-decoration: underline; }}
+QPushButton#exampleLink:hover, QPushButton#exampleLink:focus {{ color: {C['ACCENT_DK']}; text-decoration: underline; }}
 """
 
 

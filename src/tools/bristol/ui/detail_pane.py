@@ -116,7 +116,7 @@ class DetailPane(QWidget):
         self.title.setWordWrap(True)
         title_font = QFont()
         title_font.setPointSize(type_size("section"))
-        title_font.setBold(True)
+        title_font.setWeight(QFont.DemiBold)
         self.title.setFont(title_font)
         self.title.setObjectName("inspectorTitle")
         head.addWidget(self.title, 1)

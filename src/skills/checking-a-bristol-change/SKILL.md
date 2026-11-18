@@ -1,6 +1,6 @@
 ---
 name: checking-a-bristol-change
-description: What a change to Bristol Tickets has to pass before its card may close — the smoke targets that run wherever the session is, the route for the two that build Qt widgets, and the session's own look at a visible change on the user's running app. Use when a change to Bristol Tickets is being checked.
+description: What a change to Bristol Tickets is built to and has to pass before its card may close — the design system its values come from, the smoke targets that run wherever the session is, the route for the two that build Qt widgets, and the session's own look at a visible change on the user's running app. Use when a change to Bristol Tickets is being made or checked.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3, and for the two Qt targets a shell that has PySide6 or can install it.
 metadata:
@@ -11,12 +11,27 @@ metadata:
 ---
 # checking-a-bristol-change
 
-Input: a change to Bristol Tickets. Operation: the runs below. Output: what each
+Input: a change to Bristol Tickets. Operation: the reference and the runs below. Output: what each
 run produced, in the closing comment of the card the change belongs to.
 
 `src/skills/verifying-a-card/SKILL.md` owns the rule that a card states its check
 before it may close, and what a closing comment carries. This owns what the
 check is when the thing changed is Bristol Tickets.
+
+## What a change is built to
+
+- **Build a visible change to the design system** — the notebook folder
+  `markdown_notebook.design_system_dir` gives, read with
+  `python3 src/tools/config_tools/read_config.py
+  markdown_notebook.design_system_dir`, starting at its hub,
+  `bristol_design_system.md`. Its foundation pages give every color role, type
+  size, gap, corner, edge, shadow, icon size and contrast minimum by token, and
+  its theme pages give each theme's values.
+- **Bring a value that departs from a token to the token, or change the page in
+  the same commit.** A value the system has no token for is added to the page
+  whose subject it is.
+- **Where the key is absent or its folder is not there, the styling contract in
+  `src/tools/bristol/ui/README.md` is the reference.**
 
 ## What runs wherever the session already is
 
@@ -120,9 +135,12 @@ output, from a shell that has Qt.
 - **A visible change handed to the user, or closed without a capture** → the
   criterion the card states was never checked by the session.
 - **An archive left at the staging location** → an intermediate outlived its run.
+- **A visible change drawing a value no page of the design system gives** →
+  §What a change is built to; the code and the page disagree.
 
 ## Audit
 
+**Whether a visible change draws only values the design system gives**,
 **Whether the two Qt targets ran against the tree as it stands now**,
 **whether a card carrying a visible criterion was closed on the session's own
 captures**, and **whether anything a run created is left anywhere.**

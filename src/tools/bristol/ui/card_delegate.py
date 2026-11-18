@@ -388,7 +388,7 @@ class CardDelegate(QStyledItemDelegate):
             painter.drawLine(int(box.center().x() - 1), int(box.bottom() - space("sm")),
                              int(box.right() - space("xs")), int(box.top() + space("sm")))
         else:
-            painter.setPen(QPen(QColor(C["INK_SOFT"]), 1.4))
+            painter.setPen(QPen(QColor(C["ACCENT"]), 1))
             painter.setBrush(QColor(C["SURFACE"]))
             painter.drawRoundedRect(box, radius("sm"), radius("sm"))
         painter.restore()
