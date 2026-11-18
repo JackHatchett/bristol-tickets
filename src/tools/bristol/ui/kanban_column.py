@@ -29,13 +29,14 @@ The parent (MainWindow) is expected to expose ``_refresh_board`` and
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QEvent, Qt, QTimer
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QHBoxLayout,
     QLabel,
     QListWidget,
+    QListView,
     QListWidgetItem,
     QVBoxLayout,
     QWidget,
@@ -61,6 +62,16 @@ class _DndListWidget(QListWidget):
 
     def dropEvent(self, event):  # noqa: N802 (Qt override)
         self._column._handle_drop(event)
+
+    # A card's height is measured in the theme's fonts. A change of theme or
+    # font re-measures every card without changing the list's width, so the
+    # cards are laid out again here as they are on a resize.
+    _RELAYOUT_ON = (QEvent.StyleChange, QEvent.FontChange, QEvent.PaletteChange)
+
+    def changeEvent(self, event):  # noqa: N802 (Qt override)
+        super().changeEvent(event)
+        if event.type() in self._RELAYOUT_ON:
+            self.scheduleDelayedItemsLayout()
 
 
 class KanbanColumn(QWidget):
@@ -105,6 +116,15 @@ class KanbanColumn(QWidget):
         self.list_widget.setMouseTracking(True)
         self.list_widget.setUniformItemSizes(False)
         self.list_widget.setSpacing(0)
+        # A card's height depends on the width its title wraps in, and Qt asks
+        # the delegate again at paint. Laying the cards out again whenever the
+        # viewport's width changes, as it does when the scroll bar appears or
+        # the theme restyles it, keeps each card's slot the height it is
+        # painted at. A top-to-bottom list re-lays out on a change of width
+        # only when it wraps its text, so wrapping is on; the delegate draws
+        # every card's text itself, so it changes nothing else.
+        self.list_widget.setResizeMode(QListView.Adjust)
+        self.list_widget.setWordWrap(True)
         # A card is sized to the viewport, so the column never scrolls sideways.
         self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.list_widget.setItemDelegate(

@@ -10,14 +10,13 @@ connection's own file, keeping this module mechanism-only and path-agnostic.
 
 Remove is a soft-delete: the file is moved into ``images/_trash/`` rather than
 destroyed, and the DB link is dropped either way so the UI never shows a
-dangling row.
+dangling row. The storage is ``attachment_store`` beside ``app.py``; this
+module is the widgets over it.
 """
 
 from __future__ import annotations
 
-import shutil
 import sqlite3
-from datetime import datetime, timezone
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
@@ -45,110 +44,14 @@ IMAGE_FILTER = (
 )
 
 
-# ---------------------------------------------------------------------------
-# Storage helpers (path-agnostic: everything is derived from the connection)
-# ---------------------------------------------------------------------------
-
-def images_dir(conn: sqlite3.Connection) -> Path | None:
-    """The per-instance images directory (created on demand), resolved from the
-    connection's own database file so nothing is hardcoded. Returns None for an
-    in-memory / pathless DB."""
-    try:
-        row = conn.execute("PRAGMA database_list").fetchone()
-        db_file = row[2] if row else None
-    except sqlite3.OperationalError:
-        db_file = None
-    if not db_file:
-        return None
-    d = Path(db_file).resolve().parent / "images"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
-def attachment_path(conn: sqlite3.Connection, filename: str) -> Path | None:
-    """Resolve a stored attachment filename to its on-disk path (or None if the
-    images dir can't be resolved). The file may not exist — the caller checks."""
-    d = images_dir(conn)
-    if d is None:
-        return None
-    return d / filename
-
-
-def _safe_name(name: str) -> str:
-    keep = "-_.() "
-    cleaned = "".join(c if (c.isalnum() or c in keep) else "_" for c in name).strip()
-    return cleaned or "image"
-
-
-def list_attachments(conn: sqlite3.Connection, task_id: int | None):
-    if task_id is None:
-        return []
-    try:
-        return conn.execute(
-            "SELECT id, filename, original_name FROM attachment "
-            "WHERE task_id=? ORDER BY id",
-            (task_id,),
-        ).fetchall()
-    except sqlite3.OperationalError:
-        return []
-
-
-def add_attachment(conn: sqlite3.Connection, task_id: int | None, source_path: str):
-    """Copy ``source_path`` into the images dir under a unique, predictable name
-    and record it. Returns the stored filename, or None on failure."""
-    if task_id is None:
-        return None
-    d = images_dir(conn)
-    if d is None:
-        return None
-    src = Path(source_path)
-    if not src.is_file():
-        return None
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    base = _safe_name(src.name)
-    dest = d / f"task{task_id}_{stamp}_{base}"
-    i = 1
-    while dest.exists():  # rare same-second collision
-        dest = d / f"task{task_id}_{stamp}_{i}_{base}"
-        i += 1
-    try:
-        shutil.copy2(src, dest)
-    except OSError:
-        return None
-    conn.execute(
-        "INSERT INTO attachment (task_id, filename, original_name, created_at) "
-        "VALUES (?,?,?,?)",
-        (task_id, dest.name, src.name, datetime.now(timezone.utc).isoformat()),
-    )
-    conn.commit()
-    return dest.name
-
-
-def remove_attachment(conn: sqlite3.Connection, attachment_id: int) -> None:
-    """Drop the attachment record and move its file into ``images/_trash/`` (a
-    recoverable soft-delete). If the move fails, the DB link is still removed so
-    the UI never shows a dangling entry."""
-    row = conn.execute(
-        "SELECT filename FROM attachment WHERE id=?", (attachment_id,)
-    ).fetchone()
-    if row:
-        d = images_dir(conn)
-        if d is not None:
-            src = d / row[0]
-            if src.exists():
-                trash = d / "_trash"
-                trash.mkdir(parents=True, exist_ok=True)
-                target = trash / src.name
-                n = 1
-                while target.exists():
-                    target = trash / f"{src.stem}_{n}{src.suffix}"
-                    n += 1
-                try:
-                    shutil.move(str(src), str(target))
-                except OSError:
-                    pass
-    conn.execute("DELETE FROM attachment WHERE id=?", (attachment_id,))
-    conn.commit()
+# Storage is ``attachment_store``, which the command line shares.
+from attachment_store import (  # noqa: E402,F401  (bristol-local)
+    add_attachment,
+    attachment_path,
+    images_dir,
+    list_attachments,
+    remove_attachment,
+)
 
 
 # ---------------------------------------------------------------------------

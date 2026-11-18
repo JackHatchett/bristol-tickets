@@ -106,6 +106,11 @@ Usage:
         `link-list` prints ids; `link-remove --id` deletes one, and for an issue
         link that clears it from both tickets at once.
 
+    python3 ticket_write.py add-attachment --task N --file PATH [--author SLUG]
+        Copies an image into the board's images folder and records it on the
+        card, through the same module Bristol Tickets' attachment bar uses
+        (src/tools/bristol/attachment_store.py). The original stays where it is.
+
 DB discovery: same project-relative rule as cos_status.py / agent_status.py
 (find the project root, then data/*/tickets/tickets.db). Resolved design: there is ONE shared tickets.db for the whole fleet, not one per
 agent. Every agent reads and writes the same database; `epic.owner` tags
@@ -404,6 +409,44 @@ def _epic_closure():
     except ImportError:
         return None
     return epic_closure
+
+
+def _attachment_store():
+    """Where a card's images are kept — the same module Bristol Tickets'
+    attachment bar calls, so an image attached here is stored as one attached
+    there is."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "bristol"))
+    import attachment_store
+    return attachment_store
+
+
+def add_attachment(args: argparse.Namespace) -> None:
+    """Attach an image file to a card: copied into the board's images folder
+    and recorded in the attachment table, as the viewer records one."""
+    source = Path(args.file).expanduser()
+    if not source.is_file():
+        sys.exit(f"add-attachment: ERROR — no file at {source}")
+    conn = connect(args.author)
+    try:
+        if conn.execute("SELECT 1 FROM task WHERE id=?", (args.task,)).fetchone() is None:
+            sys.exit(f"add-attachment: ERROR — no task with id {args.task}")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS attachment (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id       INTEGER NOT NULL,
+                filename      TEXT    NOT NULL,
+                original_name TEXT,
+                created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (task_id) REFERENCES task (id)
+            )
+        """)
+        stored = _attachment_store().add_attachment(conn, args.task, str(source))
+        if stored is None:
+            sys.exit(f"add-attachment: ERROR — {source} could not be copied "
+                     "into the board's images folder")
+        print(f"OK: attachment {stored} added — task #{args.task}")
+    finally:
+        conn.close()
 
 
 def update_epic(args: argparse.Namespace) -> None:
@@ -1047,6 +1090,16 @@ def main() -> None:
                       help="link id from link-list. An issue link is removed from both "
                            "tickets at once.")
     plr.set_defaults(func=link_remove)
+
+    pat = sub.add_parser("add-attachment")
+    pat.add_argument("--task", type=int, required=True,
+                     help="the ticket the image belongs to")
+    pat.add_argument("--file", required=True,
+                     help="path of the image to attach; it is copied, and the "
+                          "original is left where it is")
+    pat.add_argument("--author", default="agent",
+                     help="who is attaching it, for the change log (your agent slug)")
+    pat.set_defaults(func=add_attachment)
 
     args = p.parse_args()
     args.func(args)

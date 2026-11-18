@@ -2795,10 +2795,12 @@ QListWidget {{
 }}
 /* A board column is a region of the canvas, not a container: the cards are the
    only raised surfaces on the view, so the well they sit in has no fill and no
-   border of its own. */
+   border of its own. One hairline across its top, under the column's name, is
+   the edge a card scrolls under. */
 QListWidget#columnCards {{
     background: transparent;
     border: none;
+    border-top: 1px solid {C['BORDER']};
     padding: 0px;
 }}
 QLabel#columnName {{

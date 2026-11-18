@@ -152,6 +152,7 @@ the skeleton back next time the record opens.
 | "This came from that review / that note / that page" | A link (`link-add --uri`) — a file inside the repository repository-relative (`src/tools/ticket_tools/README.md`), a file anywhere else by its absolute path |
 | "This relates to ticket #153" | A link (`link-add --to-task 153`) |
 | Durable technical detail (schema notes, a working pattern) | The file that owns it — a README or skill — then link to it |
+| A screenshot or image the user sent about this card | An attachment (`add-attachment --task N --file PATH`), on every card it informs |
 
 Use comments freely: they are human prose rather than a template, they are what
 the board renders under the Log, and the only rule on them is

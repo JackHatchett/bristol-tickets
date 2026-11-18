@@ -154,6 +154,11 @@ databases, mirroring the viewer's `ensure_schema_up_to_date()`.
 - **`set-stage --id N --stage backlog|active|archive`** moves a card between
   tabs, appending it to the bottom of the destination's order. It is the CLI
   equivalent of the viewer's Board "Bulk Change" and the Backlog "Activate".
+- **`add-attachment --task N --file PATH`** copies an image into the board's
+  images folder and records it on the card, through
+  `src/tools/bristol/attachment_store.py`, the module Bristol Tickets'
+  attachment bar calls. It imports no Qt, so a shell without PySide6 attaches
+  an image exactly as the viewer does. The original file is left where it is.
 - **`set-order --id N --position K`** moves a card within its own list — one
   active-board status column, or the whole backlog — with position 1 the top,
   renumbering contiguously afterwards. It is the only thing that reorders an
