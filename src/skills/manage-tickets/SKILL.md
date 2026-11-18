@@ -93,6 +93,15 @@ untriaged. The vocabulary and the storage are
 - **Leave `epic_id` NULL only where the user's own capture left it.** It reads
   as untriaged and the viewer flags it for the user to decide.
 
+## Titles
+
+- **Title a card the way a person would label it**: a short imperative of a
+  few words, such as "Build Copyeditor Agent" or "Fix Clipped Card Owner".
+  Detail goes in the acceptance criteria.
+- **Title an epic with its subject alone**, such as "Creative-Writing Agents".
+- **Write titles and descriptions in plain human words**: no metaphor, and no
+  thing doing what only a person does.
+
 ## Record types: Build vs Fix
 
 Every ticket ("issue" and "ticket" are synonyms) is exactly one record type,

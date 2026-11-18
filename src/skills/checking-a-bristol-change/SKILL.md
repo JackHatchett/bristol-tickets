@@ -30,6 +30,12 @@ check is when the thing changed is Bristol Tickets.
 - **Bring a value that departs from a token to the token, or change the page in
   the same commit.** A value the system has no token for is added to the page
   whose subject it is.
+- **Keep the design system true to the app in the commit that changes it.**
+  A change that adds a component or a variant built from existing tokens adds
+  it to the page that owns it.
+- **Confirm with the user in the session before building an ask that would
+  change a token or a foundation**: say which page and value change and what
+  else in the app would follow, and build once he agrees.
 - **Where the key is absent or its folder is not there, the styling contract in
   `src/tools/bristol/ui/README.md` is the reference.**
 
@@ -109,9 +115,11 @@ output, from a shell that has Qt.
 - **Look at a visible change yourself, on the user's running app**, through
   computer use: relaunch or refresh it, capture the screens the card names in
   each mode it names, and close the card on what the captures show.
-- **Never hand a change to the user to look at.** He reads no card he did not
-  write and does not check a session's changes; a card waiting on his look is a
-  card left open.
+- **Leave the routine look to the session, and never file a card for the user
+  to review.** He is not the tester of a session's changes.
+- **Show the user what he asks to see, in the session he asks**: captures of
+  the running app, a mock-up, or the change applied with the way back to it
+  stated. A card whose criteria include his look is worked with him in chat.
 - **An offscreen render is not the look.** It draws the wrong control set, fonts
   and pixel ratio, so a Qt target passing says the widgets build and nothing
   further.
@@ -132,8 +140,10 @@ output, from a shell that has Qt.
   → the staging location is declared so that no run has to choose one.
 - **An offscreen screenshot offered as the look of a change** → it is the wrong
   platform's controls, and the user is the one who says.
-- **A visible change handed to the user, or closed without a capture** → the
-  criterion the card states was never checked by the session.
+- **A visible change closed without a capture** → the criterion the card
+  states was never checked by the session.
+- **A card filed for the user to review** → the look is the session's, or it
+  is shown to him in chat when he asks.
 - **An archive left at the staging location** → an intermediate outlived its run.
 - **A visible change drawing a value no page of the design system gives** →
   §What a change is built to; the code and the page disagree.
