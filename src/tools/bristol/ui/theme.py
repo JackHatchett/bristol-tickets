@@ -164,7 +164,6 @@ LAYOUT = {
     "control_h": 34,       # every button, field and picker on a row: one height
     "toolbar_control_h": 28,  # a control in the top bar
     "header_icon": 16,        # an icon in the top bar
-    "header_divider_h": 16,   # the hairline between the top bar's groups of views
     "toolbar_box_w": 34,      # an icon button in the top bar
     "header_mark_h": 20,      # the app's mark beside its name in the top bar
     "traffic_lights_tall_w": 80,  # the traffic lights in the tall title bar, and room past them
@@ -203,7 +202,14 @@ LAYOUT = {
     "palette_caption_w": 210,    # what a colour row is called, at its longest
     "palette_swatch_w": 44,      # the block of colour a row opens the picker from
     "palette_hex_w": 110,        # its hex value, wide enough for #AARRGGBB
+    "settings_w": 880,           # the Settings modal, drawn over the window
+    "settings_h": 640,
+    "settings_nav_w": 200,       # its side nav, wide enough for every tab's name
 }
+
+# The darkening laid over the window behind a modal the app draws itself,
+# written #AARRGGBB so it carries its own alpha. The same in every theme.
+SCRIM = {"light": "#66000000", "dark": "#99000000"}
 
 # What a stored value is called on screen. The database keeps the value and a
 # reader sees the caption, so a vocabulary can be reworded without a migration —
@@ -1321,6 +1327,11 @@ def scheme_is_dark(name: str) -> bool:
     return any(dark == name for _light, dark in THEMES.values())
 
 
+def scrim() -> str:
+    """The SCRIM for the half of the theme currently drawn."""
+    return SCRIM["dark" if scheme_is_dark(current_scheme()) else "light"]
+
+
 def _hold_platform(app, scheme) -> None:
     """Hold the platform to ``scheme``, a ``Qt.ColorScheme``, or let it follow
     the OS where ``scheme`` is None.
@@ -1464,10 +1475,6 @@ QPushButton#viewTab:checked {{
 }}
 QPushButton#viewTab:focus {{
     border-color: {C['ACCENT']};
-}}
-QFrame#headerDivider {{
-    background-color: {ink_14};
-    border: none;
 }}
 /* The top bar's icon buttons — Search, Refresh, Settings — each its icon in a
    faint box; an open view's box takes the accent's edge. */
@@ -1829,6 +1836,31 @@ QLabel#dialogHeading {{
     font-weight: 600;
 }}
 QLabel#metaText {{ color: {C['INK_SOFT']}; }}
+/* The Settings modal: a dialog's canvas at the body's corner, over the scrim. */
+QFrame#settingsModal {{
+    background-color: {C['CANVAS']};
+    border-radius: {radius('xl')}px;
+}}
+/* A tab of its side nav: its name with no face, a hover fill under the
+   pointer, and the open tab chosen as a picker's item is. */
+QPushButton#settingsNav {{
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: {r_md}px;
+    min-height: {ctl}px;
+    max-height: {ctl}px;
+    padding: 0px {s_lg}px;
+    text-align: left;
+    color: {C['INK']};
+    font-weight: 400;
+}}
+QPushButton#settingsNav:hover {{ background-color: {C['HOVER_BG']}; }}
+QPushButton#settingsNav:checked {{
+    background-color: {C['SEL_BG']};
+    color: {C['ACCENT_DK']};
+    font-weight: 600;
+}}
+QPushButton#settingsNav:focus {{ border-color: {C['ACCENT']}; }}
 /* A link: accent text with no surface, underlined under the pointer and with
    focus. A link row, Clear All in the filter panel, a skill's source. */
 QPushButton#link {{

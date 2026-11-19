@@ -43,6 +43,7 @@ bristol/
 │   ├── growing_edit.py  GrowingTextEdit — the field every typing surface uses
 │   ├── setup_wizard.py  first-run setup: folders, board, config, pointer
 │   ├── settings_tab.py  SettingsTab — app and session choices, stored in config
+│   ├── settings_modal.py SettingsModal — Agents, Skills and the Settings sections over a scrim
 │   ├── skills_tab.py    SkillsTab — what a session can load, and importing one
 │   └── main_window.py   MainWindow — toolbar, tabs, filters, search, inspector
 ├── reports/             the analytic report a closing epic writes (own README)
@@ -66,8 +67,8 @@ in the UI contains a hex value or a pixel count of its own, so a new palette is 
 data change and a density change is one edit. `ui/README.md` is the contract an
 agent styles from: what each key means, which token governs which element, and
 how to answer an instruction given as intent. The scheme in force is
-`appearance.theme` and `appearance.mode` in the configuration, picked in the
-Settings tab.
+`appearance.theme` and `appearance.mode` in the configuration, picked in
+Settings' Appearance tab.
 
 ## How it finds the database (`app.py`)
 
@@ -137,33 +138,47 @@ of `src/tools`, so the mechanism-only rule is kept.
 
 ## Settings
 
-The **Settings** tab contains every choice this installation makes, read and
-written through `config_file.py` — the same file the wizard fills in, never a
-second store. A save round-trips the whole document, so a key an older build
-does not recognise survives untouched, and one Save commits the whole page.
+The **Settings** button at the top bar's right end, or **Settings…** in the
+application menu, opens one modal over the darkened window. Its side nav holds
+everything that configures this installation: **Agents** and **Skills**, the
+fleet's two pages, then the four Settings sections. A window a page opens,
+such as an agent's form, takes the modal's place and returns to the same tab
+when it closes. The modal closes on its ✕, on Escape, or on a click outside it.
 
-Two sections, split by which program reads the key. This app reads the board and
-appearance keys and acts on them itself; an agent session reads the session
-keys, and this app only writes them.
+Every Settings choice is read and written through `config_file.py`, the same
+file the wizard fills in, never a second store. Each control writes its own key
+the moment it is moved, and a key an older build does not recognise survives
+untouched.
 
-**Bristol Tickets**
+The sections are split by which program reads the key. This app reads the
+Appearance, Folders and Reports keys and acts on them itself; an agent session
+reads the Sessions keys, and this app only writes them.
 
-- **Ticket Destination** — `board.new_ticket_stage`, the To Do column or the
-  Backlog. It governs every card `add-task` creates without an explicit
-  `--stage`, whoever files it and whoever it is for.
-  `ticket_tools/ticket_write.py` reads the same key.
+**Appearance**
+
 - **Theme** — `appearance.theme`, applied live as it is picked so it can be
   compared against the board it themes. The stored value identifies a pair of
   palettes; the caption is what this product calls it.
 - **Light & Dark** — `appearance.mode`, which half of the theme is drawn:
   Light, Dark, or Follow System. A theme with no dark half offers Light alone
   and says why the other two are unclickable.
+- **Themes** — the window that adds, renames, edits and deletes themes.
 
-**Agent Sessions**
+**Folders**
+
+- **Notebook**, **Dashboards** and **Locations** — each opens the window that
+  repoints those folders, and carries the missing mark while anything in it is
+  not on disk.
+
+**Sessions**
 
 - **Agent** — `active_agent`, the agent a session takes its identity from. The
   picker offers the agents this installation configures, and moves only on a
-  deliberate choice.
+  deliberate choice. The top bar's Agent picker writes the same key.
+- **Ticket Destination** — `board.new_ticket_stage`, the To Do column or the
+  Backlog. It governs every card `add-task` creates without an explicit
+  `--stage`, whoever files it and whoever it is for.
+  `ticket_tools/ticket_write.py` reads the same key.
 - **Work Scope** — `session.work_whole_queue`, how far a session runs when told
   to continue: *Whole Queue* or *One Ticket*. Read by the agent when the scope
   decision is made.
@@ -171,6 +186,13 @@ keys, and this app only writes them.
   the session closes: *Commit for Me* (`commit`), *Give Me a Commit Block*
   (`block`) or *Leave Git Alone* (`off`). An older `true` is a block and
   `false` is off.
+
+**Reports**
+
+- **Standing Work** — a report of what the projects and upkeep cost over the
+  dates given, written into the notebook.
+- **Done Column** — Clear Done, which moves every Done card to the Archive and
+  writes one report covering them.
 
 ## Filtering the board
 

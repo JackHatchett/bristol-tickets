@@ -3,7 +3,8 @@
 This module is the ``MainWindow`` shell: one top bar, drawn in the Mac's title
 bar, carrying the views as a segmented control and Create at a fixed place at
 its right; the views that control switches between (Search, Backlog, Board,
-Archive, Agents, Skills, Settings); and the right-hand inspector panel.
+Archive); the Settings modal its Settings button opens over the window; and the
+right-hand inspector panel.
 
 The Kanban model puts a task's tab in ``task.stage`` (backlog | active |
 archive) and its manual order in ``task.sort_order``. The
@@ -18,6 +19,8 @@ pieces it composes live in sibling modules:
     detail_pane.py   DetailPane (the selected card, read and edited in place)
     dialogs.py       confirm(), choose(), notify() — every modal question
     setup_wizard.py  first-run setup, also reachable from File → Setup…
+    settings_modal.py SettingsModal (Agents, Skills and the Settings
+                     sections, over a scrim)
     settings_tab.py  SettingsTab (the next-session agent, board behaviour,
                      appearance — all stored in config.local.json)
     theme_manager.py ThemeManagerDialog (the themes on offer, edited)
@@ -43,8 +46,6 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
     QDialog,
-    QFrame,
-    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -70,6 +71,7 @@ from .results_table import ResultsTable, magnifier_icon
 from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
 from .agents_tab import AgentsTab
+from .settings_modal import SettingsModal
 from .settings_tab import SettingsTab
 from .settled_combo import SettledComboBox
 from .skills_tab import SkillsTab
@@ -132,15 +134,7 @@ class _HeaderBar(QWidget):
 
 # The views drawn as an icon at the top bar's right, and their icons from
 # ui/icons/. Every other view is its name at the bar's centre.
-ICON_VIEWS = {"Search": "search", "Settings": "settings"}
-
-# The named views that open a group of their own at the bar's centre, set apart
-# by a gap and a hairline: Backlog, Board and Archive are one board's future, present and
-# past; Agents and Skills are the fleet.
-VIEW_GROUP_STARTS = {"Agents"}
-
-# How far Create fades on a view with no cards to create.
-CREATE_FADED = 0.4
+ICON_VIEWS = {"Search": "search"}
 
 # How many filter chips stand in the filter row before the rest are counted.
 # Past this the row would push the board's own controls around, and the panel
@@ -212,6 +206,19 @@ class MainWindow(QMainWindow):
         self.global_create_btn.clicked.connect(self._open_global_create)
         self.global_create_btn.setIconSize(QSize(LAYOUT["header_icon"],
                                                  LAYOUT["header_icon"]))
+
+        # Settings is a modal over the window rather than a view; its button
+        # stands checked while the modal is open.
+        self.settings_btn = QPushButton()
+        self.settings_btn.setObjectName("toolbarToggle")
+        self.settings_btn.setAccessibleName("Settings")
+        self.settings_btn.setCheckable(True)
+        self.settings_btn.setFocusPolicy(Qt.TabFocus)
+        self.settings_btn.setIconSize(QSize(LAYOUT["header_icon"],
+                                            LAYOUT["header_icon"]))
+        # Toggled rather than clicked, as a view's button is: an assistive
+        # tool presses a checkable button by toggling it, which emits no click.
+        self.settings_btn.toggled.connect(self._settings_toggled)
 
         # The board's filter. One state narrows the board, the Backlog and
         # the Archive; the button opens the panel that sets it, and the chips
@@ -417,19 +424,17 @@ class MainWindow(QMainWindow):
         archive_layout.addWidget(self.archive_results)
         self._archive_tab_index = self._add_page(archive_widget, "Archive")
 
+        # Everything that configures Bristol: the fleet's two pages and the
+        # Settings sections, in one modal over the window.
         self.agents_tab = AgentsTab()
-        self._agents_tab_index = self._add_page(self.agents_tab, "Agents")
-
-
         self.skills_tab = SkillsTab(self.conn,
                                     on_ticket_filed=self._refresh_board)
-        self._skills_tab_index = self._add_page(self.skills_tab, "Skills")
-
-
         self.settings_tab = SettingsTab(
             on_appearance_changed=self._preview_appearance, conn=self.conn,
             on_board_changed=self._refresh_board)
-        self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
+        self.settings_modal = SettingsModal(
+            self, self.agents_tab, self.skills_tab, self.settings_tab,
+            on_closed=lambda: self.settings_btn.setChecked(False))
         # The two Agent pickers write one key, and each shows the other's
         # choice: Settings writes it first, then the top bar re-reads it.
         self.settings_tab.next_agent.picked.connect(
@@ -454,13 +459,6 @@ class MainWindow(QMainWindow):
         # configuration and written back as the user moves things.
         main_splitter.setStretchFactor(0, 1)
         main_splitter.setStretchFactor(1, 1)
-        # Which pages the detail pane belongs to, by index rather than by name,
-        # so reordering the tab row cannot leave this list behind.
-        self._card_page_indexes = {
-            self._search_tab_index, self._backlog_tab_index,
-            self._board_tab_index, self._archive_tab_index,
-        }
-
         self._pane_collapsed = False
         self._detail_width = int(
             config_file.get(config_file.DETAIL_WIDTH, LAYOUT["split_detail"])
@@ -702,8 +700,7 @@ class MainWindow(QMainWindow):
     def _build_header(self) -> QWidget:
         """The one top bar: the app's mark and name at its left where the
         system title is hidden, the views at its centre, and Refresh and Create
-        at its right. Every view shows it the same; a command a view has no
-        use for is faded in its place — see _sync_pane_to_page."""
+        at its right, then Settings. Every view shows it the same."""
         header = _HeaderBar()
         header.setObjectName("appHeader")
         # A QWidget subclass paints its stylesheet background only when asked.
@@ -745,10 +742,6 @@ class MainWindow(QMainWindow):
         self._tab_group = QButtonGroup(self)
         self._tab_group.setExclusive(True)
 
-        self._create_fade = QGraphicsOpacityEffect(self.global_create_btn)
-        self._create_fade.setOpacity(1.0)
-        self.global_create_btn.setGraphicsEffect(self._create_fade)
-
         # The views stand at the bar's centre whatever is either side of them:
         # the two sides are given the same width.
         left = QWidget()
@@ -765,9 +758,9 @@ class MainWindow(QMainWindow):
         right_row.setContentsMargins(0, 0, 0, 0)
         right_row.setSpacing(space("md"))
         right_row.addStretch(1)
-        # Search and Settings are views drawn as icons here, Search before the
-        # commands and Settings after them; _add_page seats them.
-        self._icon_slots = {"Search": QHBoxLayout(), "Settings": QHBoxLayout()}
+        # Search is a view drawn as an icon here, before the commands;
+        # _add_page seats it. Settings, which opens the modal, ends the bar.
+        self._icon_slots = {"Search": QHBoxLayout()}
         # The agent the next session starts as, chosen here without a trip
         # into Settings. The agent's name in the box says what it picks.
         self.agent_picker = SettledComboBox()
@@ -779,7 +772,7 @@ class MainWindow(QMainWindow):
         right_row.addLayout(self._icon_slots["Search"])
         right_row.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
         right_row.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
-        right_row.addLayout(self._icon_slots["Settings"])
+        right_row.addWidget(self.settings_btn, 0, Qt.AlignVCenter)
         for side in (left, right):
             side.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         bar.addWidget(left, 1)
@@ -811,15 +804,18 @@ class MainWindow(QMainWindow):
         self.settings_tab.reload_agents()
 
     def _tint_header(self) -> None:
-        """Draw the top bar's icons in the theme's colors: Refresh and the
-        icon views in the soft ink, an open icon view in the accent, and
-        Create's plus in the color drawn on the accent. The other views are
-        words alone."""
+        """Draw the top bar's icons in the theme's colors: Refresh, Settings
+        and the icon views in the soft ink, an open icon view and Settings
+        while its modal is open in the accent, and Create's plus in the color
+        drawn on the accent. The other views are words alone."""
         for button in getattr(self, "_tab_buttons", []):
             name = ICON_VIEWS.get(button.accessibleName())
             if name:
                 button.setIcon(icons.toggle_icon(name, C["INK_SOFT"],
                                                  C["ACCENT"]))
+        if hasattr(self, "settings_btn"):
+            self.settings_btn.setIcon(icons.toggle_icon(
+                "settings", C["INK_SOFT"], C["ACCENT"]))
         if hasattr(self, "refresh_btn"):
             self.refresh_btn.setIcon(icons.icon("refresh-cw", C["INK_SOFT"]))
             self.global_create_btn.setIcon(icons.icon("plus", C["ON_ACCENT"]))
@@ -828,8 +824,8 @@ class MainWindow(QMainWindow):
         """Add a view and its button in the top bar."""
         index = self.pages.addWidget(widget)
 
-        # Search and Settings are icons at the bar's right; every other view is
-        # its name at the centre.
+        # Search is an icon at the bar's right; every other view is its name
+        # at the centre.
         icon_view = name in ICON_VIEWS
         button = QPushButton("" if icon_view else name)
         button.setAccessibleName(name)
@@ -848,15 +844,6 @@ class MainWindow(QMainWindow):
         if icon_view:
             self._icon_slots[name].addWidget(button, 0, Qt.AlignVCenter)
         else:
-            if name in VIEW_GROUP_STARTS and self._tab_row.count():
-                # A short upright hairline in the gap, clear of the bar's top
-                # and bottom edges.
-                divider = QFrame()
-                divider.setObjectName("headerDivider")
-                divider.setFixedSize(1, LAYOUT["header_divider_h"])
-                self._tab_row.addSpacing(space("lg"))
-                self._tab_row.addWidget(divider, 0, Qt.AlignVCenter)
-                self._tab_row.addSpacing(space("lg"))
             self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
         return index
@@ -865,26 +852,24 @@ class MainWindow(QMainWindow):
         self.pages.setCurrentIndex(index)
         for position, button in enumerate(self._tab_buttons):
             button.setChecked(position == index)
-        self._sync_pane_to_page(index)
 
-    def _sync_pane_to_page(self, index: int) -> None:
-        """The detail pane belongs to the views that show cards.
-
-        It reads and edits the selected card, and Agents, Skills and Settings
-        have no cards to select, so it stands there saying to select one that
-        the page cannot offer. Hidden without touching the collapsed state or
-        the stored width, so leaving one of those pages restores the pane
-        exactly as the user left it.
-        """
-        if not hasattr(self, "detail_pane"):
+    def _open_settings(self, tab: str | None = None) -> None:
+        """Open the Settings modal over the window, on ``tab`` or the tab it
+        was last left on."""
+        if self.settings_btn.isChecked():
+            self.settings_modal.open_modal(tab)
             return
-        cards = index in self._card_page_indexes
-        self.detail_pane.setVisible(cards and not self._pane_collapsed)
-        self.pane_reveal.setVisible(cards and self._pane_collapsed)
-        # Create stays in its place on every view and is greyed where there
-        # are no cards to create.
-        self.global_create_btn.setEnabled(cards)
-        self._create_fade.setOpacity(1.0 if cards else CREATE_FADED)
+        if tab is not None:
+            self.settings_modal.show_tab(tab)
+        self.settings_btn.setChecked(True)
+
+    def _settings_toggled(self, checked: bool) -> None:
+        """The Settings button opens the modal checked and closes it
+        unchecked; the modal unchecks it whichever way it closes."""
+        if checked:
+            self.settings_modal.open_modal()
+        else:
+            self.settings_modal.close_modal()
 
     # ----- Menu bar ---------------------------------------------------------
 
@@ -918,8 +903,7 @@ class MainWindow(QMainWindow):
         # Filed in the application menu by their roles.
         self._action(file_menu, "About Bristol Tickets", self._show_about,
                      role=QAction.AboutRole)
-        self._action(file_menu, "Settings…",
-                     lambda: self._show_page(self._settings_tab_index),
+        self._action(file_menu, "Settings…", self._open_settings,
                      QKeySequence.Preferences, QAction.PreferencesRole)
         self._action(file_menu, "Quit Bristol Tickets",
                      QApplication.instance().quit if QApplication.instance()

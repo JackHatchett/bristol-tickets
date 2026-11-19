@@ -218,7 +218,7 @@ Two surfaces write a card, and each has its own job.
 - **A control that narrows the board is never a setting.** It changes what is on
   screen now and is gone at the next launch; a setting changes how the app
   behaves and is written to `config/config.local.json`. Which surface a control
-  belongs on follows from that: the Filter panel, or the Settings tab.
+  belongs on follows from that: the Filter panel, or Settings.
 - **A view tab is text on the canvas**: `HOVER_BG` under the pointer, and the
   selected one marked by weight and an `ACCENT` underline rather than a fill.
 - **A combo box carries a chevron drawn by `chevron_image()`**, cached under the

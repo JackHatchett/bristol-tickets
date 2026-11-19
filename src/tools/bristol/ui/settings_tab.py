@@ -1,5 +1,5 @@
-"""ui/settings_tab.py — the Settings tab: what Bristol Tickets does, and what an
-agent session does.
+"""ui/settings_tab.py — the Settings sections: what Bristol Tickets does, and
+what an agent session does.
 
 Every field here reads and writes ``config/config.local.json`` through
 ``config_file``, the same helper the setup wizard uses, so a choice has one
@@ -7,12 +7,12 @@ home. A key this build does not offer is left exactly as it was on save.
 
 The sections are split by which program reads the key. Bristol Tickets reads
 the Appearance, Folders and Reports keys and acts on them itself. An agent
-session reads the Agent Sessions keys, Ticket Destination among them; this app
-only writes them.
+session reads the Sessions keys, Ticket Destination among them; this app only
+writes them.
 
-Every section shares one form, so every label starts at the same left edge and
-every control at the same one — a section heading is a row that spans both
-columns rather than a form of its own.
+Each section is a form of its own, one page of a stack: the Settings modal
+shows one section at a time, named in its side nav (``SECTIONS``), and
+``show_section`` turns the stack to it.
 
 Theme and Light & Dark are two rows because they are two choices: the first
 names a theme, the second which half of it is drawn. A theme with no dark half
@@ -40,6 +40,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QSizePolicy,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -113,12 +114,19 @@ def _fit(button: QPushButton) -> QPushButton:
     return button
 
 
-def _heading(text: str) -> QLabel:
-    """A section heading, added as a row that spans the form's two columns."""
-    label = QLabel(text)
-    label.setObjectName("sectionHeader")
-    label.setContentsMargins(0, space("lg"), 0, 0)
-    return label
+# The sections, in the order the Settings modal's side nav lists them.
+SECTIONS = ["Appearance", "Folders", "Sessions", "Reports"]
+
+
+def _form() -> QFormLayout:
+    """One section's form: labels at one left edge and controls at another."""
+    form = QFormLayout()
+    form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+    form.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+    form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
+    form.setHorizontalSpacing(space("xl"))
+    form.setVerticalSpacing(space("lg"))
+    return form
 
 
 class SettingsTab(QWidget):
@@ -201,14 +209,8 @@ class SettingsTab(QWidget):
             "ends: commits them, gives you a commit block to paste, or leaves "
             "git alone.")
 
-        form = QFormLayout()
-        form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        form.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-        form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
-        form.setHorizontalSpacing(space("xl"))
-        form.setVerticalSpacing(space("lg"))
-
-        form.addRow(_heading("Appearance"))
+        forms = {name: _form() for name in SECTIONS}
+        form = forms["Appearance"]
         form.addRow(_label("Theme"), self.theme)
         form.addRow(_label("Light & Dark"), self.mode)
         # A button that opens a window is named for that window and stands in
@@ -271,30 +273,40 @@ class SettingsTab(QWidget):
         self.locations_btn = QPushButton("Locations")
         self.locations_btn.clicked.connect(
             lambda: self._open_folders(LocationsDialog))
-        form.addRow(_heading("Folders"))
         for button in (self.notebook_btn, self.dashboards_btn,
                        self.locations_btn):
-            form.addRow(_label(""), _fit(button))
+            forms["Folders"].addRow(_label(""), _fit(button))
 
-        form.addRow(_heading("Agent Sessions"))
+        form = forms["Sessions"]
         form.addRow(_label("Agent"), self.next_agent)
         form.addRow(_label("Ticket Destination"), self.new_ticket)
         form.addRow(_label("Work Scope"), self.work_scope)
         form.addRow(_label("Git on Session Close"), self.suggested_commit)
-        form.addRow(_heading("Reports"))
+        form = forms["Reports"]
         form.addRow(_label("Standing Work"), report_row)
         form.addRow(_label("Done Column"), clear_row)
 
+        # One page per section, each its form at the top of the page.
+        self.stack = QStackedWidget()
+        for name in SECTIONS:
+            page = QWidget()
+            page_layout = QVBoxLayout(page)
+            page_layout.setContentsMargins(0, 0, 0, 0)
+            page_layout.addLayout(forms[name])
+            page_layout.addStretch(1)
+            self.stack.addWidget(page)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(space("xl"))
-        layout.addLayout(form)
-        layout.addStretch(1)
+        layout.addWidget(self.stack)
 
         # Raised while reload() seats every control, so seating a stored value
         # is never mistaken for someone choosing it.
         self._loading = False
         self.reload()
+
+    def show_section(self, name: str) -> None:
+        """Turn the stack to one section, by its name in ``SECTIONS``."""
+        self.stack.setCurrentIndex(SECTIONS.index(name))
 
     def _open_folders(self, window) -> None:
         window(self).exec()

@@ -89,3 +89,25 @@ def tall_title_bar(widget) -> bool:
         return True
     except Exception:  # noqa: BLE001 — a plain title bar is never worth a crash
         return False
+
+
+def clear_backing(widget) -> bool:
+    """Make ``widget``'s window see-through where nothing is painted, so a
+    translucent paint shows the windows behind it. Returns whether it is."""
+    if sys.platform != "darwin":
+        return False
+    try:
+        view = ctypes.c_void_p(int(widget.winId()))
+        window = _send(view, "window")
+        if not window:
+            return False
+        _send(window, "setOpaque:", False,
+              restype=None, argtypes=(ctypes.c_bool,))
+        _send(window, "setBackgroundColor:",
+              _send(_class("NSColor"), "clearColor"),
+              restype=None, argtypes=(ctypes.c_void_p,))
+        _send(window, "setHasShadow:", False,
+              restype=None, argtypes=(ctypes.c_bool,))
+        return True
+    except Exception:  # noqa: BLE001 — an opaque scrim is never worth a crash
+        return False

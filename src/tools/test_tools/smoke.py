@@ -747,8 +747,8 @@ def check_bristol() -> list[str]:
         views_named = {b.accessibleName() for b in win._tab_buttons}
         centre = header.findChild(QWidget, "viewTabs")
         at_centre = {b.accessibleName() for b in centre.findChildren(QPushButton)}
-        if set(header_buttons) != views_named | {"Refresh", "Create"} \
-                or at_centre != views_named - {"Search", "Settings"}:
+        if set(header_buttons) != views_named | {"Refresh", "Create", "Settings"} \
+                or at_centre != views_named - {"Search"}:
             raise SmokeFailure(
                 f"the top bar should be the named views, then Search, Refresh, "
                 f"Create and Settings, got "
@@ -756,6 +756,11 @@ def check_bristol() -> list[str]:
         if any(b.parent() is None or not header.isAncestorOf(b)
                for b in win._tab_buttons):
             raise SmokeFailure("a view segment sits outside the top bar")
+        if views_named != {"Search", "Backlog", "Board", "Archive"}:
+            raise SmokeFailure(f"the top bar's views should be Search, Backlog, "
+                               f"Board and Archive, got {sorted(views_named)}")
+        if header.findChild(QWidget, "headerDivider") is not None:
+            raise SmokeFailure("a hairline still divides the top bar's views")
         # The top bar's Agent picker offers what Settings' Agent picker offers
         # and stands on the same agent.
         if not header.isAncestorOf(win.agent_picker):
@@ -768,7 +773,8 @@ def check_bristol() -> list[str]:
         if top_agents != settings_agents \
                 or win.agent_picker.currentData() != settings_picker.currentData():
             raise SmokeFailure("the top bar's Agent picker and Settings' disagree")
-        for b in win._tab_buttons + [win.refresh_btn, win.global_create_btn]:
+        for b in win._tab_buttons + [win.refresh_btn, win.global_create_btn,
+                                     win.settings_btn]:
             if b.text() and not b.icon().isNull():
                 raise SmokeFailure(f"{b.accessibleName()} carries an icon beside "
                                    f"its name")
@@ -804,13 +810,11 @@ def check_bristol() -> list[str]:
             if win.global_create_btn.isHidden() or win.refresh_btn.isHidden() \
                     or not header.isAncestorOf(win.global_create_btn):
                 raise SmokeFailure("Refresh or Create left the top bar on a view")
-            if win.global_create_btn.isEnabled() != \
-                    (page_index in win._card_page_indexes):
-                raise SmokeFailure(
-                    "Create should be greyed exactly on the views with no cards")
+            if not win.global_create_btn.isEnabled():
+                raise SmokeFailure("Create is greyed on a view of cards")
         win._show_page(win._board_tab_index)
-        ok.append("one top bar: the views as segments, then Create, "
-                  "faded on the views with no cards, and Refresh beside it; "
+        ok.append("one top bar: Search, Backlog, Board and Archive as "
+                  "segments with no divider, then Refresh, Create and Settings; "
                   "Filter on the last column's header line and no control on "
                   "any other; the filter row hidden while nothing is set")
 
@@ -2003,8 +2007,8 @@ def check_bristol() -> list[str]:
                 agent_win = MainWindow(mconn)
                 if hasattr(agent_win, "agent_combo"):
                     raise SmokeFailure("an agent control still stands in the header")
-                if agent_win._tab_buttons[-1].accessibleName() != "Settings":
-                    raise SmokeFailure("no Settings tab alongside the board tabs")
+                if agent_win.settings_btn.accessibleName() != "Settings":
+                    raise SmokeFailure("no Settings button in the top bar")
             finally:
                 config_file.path = _orig_path
             ok.append("Settings writes each choice as it is made, and a load is "
@@ -2309,10 +2313,13 @@ def check_bristol() -> list[str]:
                       "from a skill's own view")
 
             skills_win = MainWindow(mconn)
-            names = [b.accessibleName() for b in skills_win._tab_buttons]
-            if "Skills" not in names or names.index("Skills") > names.index("Settings"):
-                raise SmokeFailure("no Skills tab before Settings")
-            ok.append("the Skills tab stands in the header")
+            modal = skills_win.settings_modal
+            nav = list(modal.tabs)
+            if nav != ["Agents", "Skills", "Appearance", "Folders", "Sessions",
+                       "Reports"]:
+                raise SmokeFailure(f"the Settings modal's side nav reads {nav}")
+            ok.append("the Settings modal's side nav is Agents, Skills, "
+                      "Appearance, Folders, Sessions and Reports")
 
             # The Agents tab: where it sits, what it lists, and that its form
             # contains every property an agent has. The writes are the agent_tools
@@ -2325,13 +2332,6 @@ def check_bristol() -> list[str]:
             from ui.agents_tab import AgentDialog, _grant_option, folder_grant
             from ui.theme import LAYOUT as _LAYOUT
 
-            if "Agents" not in names:
-                raise SmokeFailure("no Agents tab in the header")
-            if not (names.index("Archive") < names.index("Agents")
-                    < names.index("Skills")):
-                raise SmokeFailure(
-                    f"Agents does not sit between Archive and Skills: {names}")
-
             agents_page = skills_win.agents_tab
             listed = [agents_page.list.item(i).data(_Qt.UserRole)
                       for i in range(agents_page.list.count())]
@@ -2339,25 +2339,61 @@ def check_bristol() -> list[str]:
             if listed != configured:
                 raise SmokeFailure(
                     f"the Agents tab lists {listed}, config has {configured}")
-            ok.append("the Agents tab stands between Archive and Skills and "
-                      "lists the configured agents")
+            ok.append("the Agents tab lists the configured agents")
 
-            # The detail pane reads and edits a card, and these three pages
-            # have none to select.
-            # isHidden rather than isVisible: the window is never shown here,
-            # so isVisible is False for every widget in it either way.
-            for name in ("Agents", "Skills", "Settings"):
-                skills_win._show_page(names.index(name))
-                if not skills_win.detail_pane.isHidden():
-                    raise SmokeFailure(f"the detail pane shows on {name}")
-            skills_win._show_page(names.index("Board"))
-            if skills_win.detail_pane.isHidden():
-                raise SmokeFailure("the detail pane did not come back on Board")
-            if skills_win._pane_collapsed:
-                raise SmokeFailure(
-                    "leaving a card page collapsed the pane rather than hiding it")
-            ok.append("the detail pane belongs to the card views and returns "
-                      "to the Board as it was left")
+            # Each tab opens its page under its name; a Settings section turns
+            # the Settings stack to that section. isHidden rather than
+            # isVisible: the window is never shown here.
+            from ui.settings_tab import SECTIONS as _SECTIONS
+            skills_win._open_settings("Agents")
+            if modal.isHidden() or not skills_win.settings_btn.isChecked():
+                raise SmokeFailure("Settings did not open its modal")
+            pages_for = {"Agents": skills_win.agents_tab,
+                         "Skills": skills_win.skills_tab}
+            for name in nav:
+                if not modal.tabs[name].isChecked():
+                    modal.tabs[name].toggle()
+                if modal.heading.text() != name:
+                    raise SmokeFailure(f"the {name} tab is headed "
+                                       f"{modal.heading.text()!r}")
+                if modal.pages.currentWidget() is not pages_for.get(
+                        name, skills_win.settings_tab):
+                    raise SmokeFailure(f"the {name} tab opened the wrong page")
+                if name in _SECTIONS and skills_win.settings_tab.stack \
+                        .currentIndex() != _SECTIONS.index(name):
+                    raise SmokeFailure(f"the {name} tab shows another section")
+                if sum(b.isChecked() for b in modal.tabs.values()) != 1:
+                    raise SmokeFailure("more than one Settings tab is open")
+            # An edit window opened from a page takes the panel's place, and
+            # the panel comes back on the same tab when it closes.
+            from PySide6.QtWidgets import QDialog as _QDialog
+            modal.tabs["Skills"].toggle()
+            editing = _QDialog(skills_win.skills_tab)
+            editing.show()
+            if not modal.panel.isHidden():
+                raise SmokeFailure("an edit window opened over the Settings "
+                                   "panel rather than in its place")
+            editing.reject()
+            if modal.panel.isHidden() or modal.current_tab() != "Skills":
+                raise SmokeFailure("closing an edit window did not return to "
+                                   "the Settings tab it was opened from")
+            modal.close_modal()
+            if not modal.isHidden() or skills_win.settings_btn.isChecked():
+                raise SmokeFailure("closing Settings left its modal or its "
+                                   "button standing")
+            # An assistive tool presses the Settings button by toggling it.
+            skills_win.settings_btn.toggle()
+            if modal.isHidden() or modal.current_tab() != "Skills":
+                raise SmokeFailure("toggling the Settings button, as an "
+                                   "accessibility press does, did not open "
+                                   "the modal on its last tab")
+            skills_win.settings_btn.toggle()
+            if not modal.isHidden():
+                raise SmokeFailure("unchecking the Settings button left its "
+                                   "modal open")
+            ok.append("each Settings tab opens its page under its name, an "
+                      "edit window takes the panel's place and returns to its "
+                      "tab, and closing clears the Settings button")
 
             if not agents_page._agents:
                 raise SmokeFailure(
