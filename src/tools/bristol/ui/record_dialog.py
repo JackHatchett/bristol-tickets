@@ -46,7 +46,7 @@ import finishing  # bristol-local: what done means for the board, one rule
 
 from .attachments import AttachmentBar
 from .segmented import SegmentedControl
-from .dialogs import confirm, notify
+from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar, remove_links_for_task
 from .settled_combo import fill_words
@@ -414,6 +414,7 @@ class UnifiedRecordDialog(QDialog):
         self.main_layout.addWidget(self._links_section)
         self.links = LinkBar(self.conn, allow_pending=True, author="user")
         self.links.header.setVisible(False)  # the section header above stands in
+        self.links.on_open_issue = self._open_linked_card
         self.main_layout.addWidget(self.links)
 
         # Log section — comments and mechanical field changes in one list,
@@ -604,6 +605,46 @@ class UnifiedRecordDialog(QDialog):
             event.accept()
         else:
             event.ignore()
+
+    # ----- following a link -----------------------------------
+
+    def _open_linked_card(self, other_id: int) -> None:
+        """Show the card a link points at in this window, in place of the one it
+        shows, asking first whether to save edits in flight."""
+        if self.mode != "task" or self.record_id is None:
+            return
+        if self._is_dirty():
+            answer = choose(
+                self, "Unsaved changes",
+                f"Save your changes to this card before opening #{other_id}?",
+                [("Don't Save", ORDINARY, "discard"),
+                 ("Cancel", ORDINARY, None),
+                 ("Save", PRIMARY, "save")],
+                default_index=2)
+            if answer is None:
+                return
+            if answer == "save":
+                self._save_tried = True
+                missing = self._missing_required()
+                if missing:
+                    self._refresh_required_state()
+                    missing[0].setFocus()
+                    return
+                self.save_data()
+        self._show_record(other_id)
+
+    def _show_record(self, record_id: int) -> None:
+        """Point the window at another saved card and read it in afresh."""
+        self.record_id = record_id
+        self._save_tried = False
+        self.log_post_input.setText("")
+        self._load_existing_data()
+        self._update_visible_fields()
+        self._refresh_required_state()
+        self.attachments.set_task(record_id)
+        self.links.set_task(record_id)
+        self._scroll.verticalScrollBar().setValue(0)
+        self._baseline_signature = self._field_signature()
 
     def _select_owner(self, value: str | None) -> None:
         """Point the Owner picker at ``value``. If a legacy record carries an

@@ -1378,6 +1378,47 @@ def check_bristol() -> list[str]:
         ok.append("Links: one directed edge, related/blocks types, uri links, "
                   "pending buffer")
 
+        # A link row is as tall as its text in a pane squeezed to its minimum:
+        # its button and its remove mark carry no minimum height of their own.
+        from PySide6.QtWidgets import QSizePolicy as _QSP
+        fa, fb = _seed_link_task("Follow from"), _seed_link_task("Follow to")
+        add_issue_link(lc, fa, fb)
+        lc.commit()
+        rows_bar = LinkBar(lc)
+        rows_bar.set_task(fa)
+        first_row = rows_bar._list_layout.itemAt(0).widget()
+        if first_row.sizePolicy().verticalPolicy() != _QSP.Fixed \
+                or rows_bar.minimumSizeHint().height() < first_row.sizeHint().height():
+            raise SmokeFailure("a link row can be squeezed below its own height")
+
+        # The record window follows a card link in place, and asks before it
+        # leaves edits behind.
+        import ui.record_dialog as _rd
+        follow = _rd.UnifiedRecordDialog(None, lc, mode="task", record_id=fa)
+        target, target_title = fb, "Follow to"
+        follow._open_linked_card(target)
+        if follow.record_id != target or follow.title_edit.text() != target_title \
+                or follow._is_dirty():
+            raise SmokeFailure("the record window did not show a linked card in place")
+        follow._show_record(fa)
+        follow.title_edit.setText("Follow from, renamed")
+        asked = []
+        _real_choose = _rd.choose
+        _rd.choose = lambda *a, **k: (asked.append(True), "save")[1]
+        try:
+            follow._open_linked_card(target)
+        finally:
+            _rd.choose = _real_choose
+        if not asked or follow.record_id != target:
+            raise SmokeFailure("the record window switched cards without asking "
+                               "about unsaved changes")
+        if lc.execute("SELECT title FROM task WHERE id=?", (fa,)).fetchone()[0] \
+                != "Follow from, renamed":
+            raise SmokeFailure("Save before following a link did not save the card")
+        follow.deleteLater()
+        ok.append("Links: a row keeps its height, and the record window follows a "
+                  "card link in place, saving first when asked")
+
         # A bare-path link is stored repository-relative for a file inside the
         # repository, so the row outlives the machine that wrote it. Opening one
         # therefore has to resolve it against the project root, and leave a path
