@@ -374,14 +374,20 @@ class SettingsTab(QWidget):
 
     def _theme_chosen(self) -> None:
         """Offer the modes the new theme can draw, re-theme, and keep the
-        choice."""
+        choice. A theme seated by a reload is not a choice, and draws nothing:
+        re-theming the app is the slowest thing it does."""
+        if self._loading:
+            return
         self._seat_modes()
         self._redraw()
         self._write(config_file.APPEARANCE_THEME,
                     self.theme.currentData(), "Theme")
 
     def _mode_chosen(self) -> None:
-        """Re-theme the running app, then keep the mode."""
+        """Re-theme the running app, then keep the mode. A mode seated by a
+        reload, or by a theme's choice, is not a choice of its own."""
+        if self._loading:
+            return
         self._redraw()
         self._write(config_file.APPEARANCE_MODE,
                     self.mode.currentData(), "Light & Dark")
@@ -519,6 +525,15 @@ class SettingsTab(QWidget):
         if active in slugs:
             self.next_agent.setCurrentIndex(self.next_agent.findData(active))
         self.next_agent.setEnabled(bool(slugs))
+
+    def reload_agents(self) -> None:
+        """Show the active agent the configuration currently says, and nothing
+        else, for a choice made in another Agent picker."""
+        self._loading = True
+        try:
+            self._load_agents()
+        finally:
+            self._loading = False
 
     def reload(self) -> None:
         """Show what the configuration currently says."""

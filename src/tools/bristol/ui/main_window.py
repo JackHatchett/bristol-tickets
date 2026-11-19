@@ -769,15 +769,12 @@ class MainWindow(QMainWindow):
         # commands and Settings after them; _add_page seats them.
         self._icon_slots = {"Search": QHBoxLayout(), "Settings": QHBoxLayout()}
         # The agent the next session starts as, chosen here without a trip
-        # into Settings: its name, then a picker in a rounded box.
-        agent_label = QLabel("Agent")
-        agent_label.setObjectName("toolbarLabel")
+        # into Settings. The agent's name in the box says what it picks.
         self.agent_picker = SettledComboBox()
         self.agent_picker.setObjectName("toolbarPicker")
         self.agent_picker.setAccessibleName("Agent")
         self.agent_picker.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         self.agent_picker.picked.connect(self._choose_agent)
-        right_row.addWidget(agent_label, 0, Qt.AlignVCenter)
         right_row.addWidget(self.agent_picker, 0, Qt.AlignVCenter)
         right_row.addLayout(self._icon_slots["Search"])
         right_row.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
@@ -811,7 +808,7 @@ class MainWindow(QMainWindow):
         except OSError as exc:
             notify(self, "Agent Not Saved", str(exc))
             return
-        self.settings_tab.reload()
+        self.settings_tab.reload_agents()
 
     def _tint_header(self) -> None:
         """Draw the top bar's icons in the theme's colors: Refresh and the

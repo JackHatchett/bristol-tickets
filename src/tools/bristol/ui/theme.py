@@ -1491,13 +1491,9 @@ QPushButton#toolbarToggle:checked {{
 QPushButton#toolbarButton:focus, QPushButton#toolbarToggle:focus {{
     border-color: {C['ACCENT']};
 }}
-/* The top bar's Agent picker: its name in the soft ink, then a picker in the
-   top bar's own box, an ink_06 face with an ink_14 edge, at the top bar's
-   height, its text the body text every picker carries. */
-QLabel#toolbarLabel {{
-    color: {C['INK_SOFT']};
-    font-size: {type_size('body')}pt;
-}}
+/* The top bar's Agent picker: a picker in the top bar's own box, an ink_06
+   face with an ink_14 edge, at the top bar's height, its text the body text
+   every picker carries. */
 QComboBox#toolbarPicker {{
     background-color: {ink_06};
     border: 1px solid {ink_14};

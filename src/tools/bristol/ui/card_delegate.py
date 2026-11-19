@@ -188,6 +188,11 @@ class CardDelegate(QStyledItemDelegate):
         has nothing there."""
         return self.GAP + self._footer_layout(data, content_w)[1]
 
+    # Qt asks a card's height many times over in one re-layout, and a restyle
+    # re-lays out every list, so a height is measured once per card, width,
+    # font and gutter and read back after that.
+    _HEIGHT_CACHE_MAX = 8000
+
     def sizeHint(self, option, index):
         data = index.data(CARD_ROLE) or {}
         widget = option.widget
@@ -195,6 +200,18 @@ class CardDelegate(QStyledItemDelegate):
             total_w = widget.viewport().width()
         else:
             total_w = option.rect.width() or 260
+        key = (total_w, self.show_checkbox, self._title_font().key(),
+               repr(sorted(data.items())))
+        cache = self.__dict__.setdefault("_heights", {})
+        height = cache.get(key)
+        if height is None:
+            if len(cache) >= self._HEIGHT_CACHE_MAX:
+                cache.clear()
+            height = cache[key] = self._measure_height(data, total_w)
+        return QSize(total_w, height)
+
+    def _measure_height(self, data: dict, total_w: int) -> int:
+        """A card's whole height, margins included, at the given width."""
         content_w = self._content_width(total_w)
 
         h = self.PAD
@@ -203,7 +220,7 @@ class CardDelegate(QStyledItemDelegate):
         if self._shows_description(data):
             h += space("sm") + self.DESC_H
         h += self._footer_height(data, content_w) + self.PAD
-        return QSize(total_w, h + 2 * self.MARGIN)
+        return h + 2 * self.MARGIN
 
     def _checkbox_rect(self, option) -> QRect:
         """The clickable checkbox square, vertically centred in the left gutter."""
