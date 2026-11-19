@@ -232,10 +232,9 @@ contains; nothing may read either dict expecting a particular theme to be in it.
 The pairing is mechanical, so a theme the user adds and a theme this build
 ships have schemes named the same way.
 
-**`THEME_CHOICES` is ordered alphabetically by caption.** A picker with two
-dozen names is read by scanning to the letter, so a theme seated anywhere else
-in the list is one nobody finds — and the collection is ordered by name for the
-same reason, which is what `order_collection()` does.
+**`THEME_CHOICES` is ordered alphabetically by caption.** A picker is read by
+scanning to the letter, and the collection is ordered by name for the same
+reason, which is what `order_collection()` does.
 
 **A borrowed scheme takes its source's own name and its source's own colours.**
 The grounds, the text and the signal colours are that scheme's; the fills, the
@@ -279,6 +278,10 @@ under ids that never change.
   different and `git status` never clean, and `payload.refresh()` replaces
   `src/` whenever a newer app opens an installation, so it would be undone by
   the next release without a word.
+- **A change stored against a theme a release stops shipping stays the
+  user's theme.** `resolve_collection()` keeps it as one he added, from the
+  halves the change stored; a half it did not store completes against the
+  reference palette, and a change of name alone has no palette to keep.
 - **A theme's id is stable and its name is not.** What a stored choice refers to is
   the id, so renaming a theme migrates nothing. `theme_id_for()` mints one.
 - **A palette built when the picker offered one Custom option is an ordinary
