@@ -1,6 +1,6 @@
 """ui/theme_manager.py — Manage Themes: the collection, edited in one window.
 
-Settings' Manage Themes button opens this. Every theme is listed down the left
+Settings' Themes button opens this. Every theme is listed down the left
 and the selected one's name and colours stand on the right, so adding a theme,
 renaming one, changing its colours and deleting it are four things in one place
 rather than four doors.

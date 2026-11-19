@@ -299,7 +299,7 @@ under ids that never change.
 
 ## Managing themes
 
-Settings' Manage Themes button opens `theme_manager.py`: every theme listed
+Settings' Themes button opens `theme_manager.py`: every theme listed
 down the left, and the selected one's name and colours on the right, in the
 rows `palette_form.py` draws.
 

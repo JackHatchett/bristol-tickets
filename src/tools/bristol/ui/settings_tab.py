@@ -5,11 +5,12 @@ Every field here reads and writes ``config/config.local.json`` through
 ``config_file``, the same helper the setup wizard uses, so a choice has one
 home. A key this build does not offer is left exactly as it was on save.
 
-The page is two sections, split by which program reads the key. Bristol Tickets
-reads the board and appearance keys and acts on them itself. An agent session
-reads the session keys; this app only writes them.
+The sections are split by which program reads the key. Bristol Tickets reads
+the Appearance, Folders and Reports keys and acts on them itself. An agent
+session reads the Agent Sessions keys, Ticket Destination among them; this app
+only writes them.
 
-Both sections share one form, so every label starts at the same left edge and
+Every section shares one form, so every label starts at the same left edge and
 every control at the same one — a section heading is a row that spans both
 columns rather than a form of its own.
 
@@ -21,8 +22,8 @@ hiding them — an option nobody can find is not an invitation to build one.
 The theme applies the moment it is picked, so it can be compared against the
 board it themes, and each control writes its own key as it is moved.
 
-Which themes the picker offers is a third thing, and it sits behind the Manage
-Themes button: the choice is made every session and the collection is touched
+Which themes the picker offers is a third thing, and it sits behind the Themes
+button: the choice is made every session and the collection is touched
 rarely, so the collection is what goes behind a door. What that window hands
 back is the difference from what this build ships, stored under one key.
 """
@@ -38,6 +39,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -105,6 +107,12 @@ def _label(text: str) -> QLabel:
     return label
 
 
+def _fit(button: QPushButton) -> QPushButton:
+    """A button as wide as its whole name, so no word of it is cut off."""
+    button.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+    return button
+
+
 def _heading(text: str) -> QLabel:
     """A section heading, added as a row that spans the form's two columns."""
     label = QLabel(text)
@@ -151,7 +159,7 @@ class SettingsTab(QWidget):
         self.theme.currentIndexChanged.connect(self._theme_chosen)
         self.theme.setToolTip("The pair of palettes the board is drawn from.")
 
-        self.manage = QPushButton("Manage Themes…")
+        self.manage = QPushButton("Themes")
         self.manage.setToolTip(
             "Add a theme, rename one, change any theme's colors, or delete "
             "the ones you do not want.")
@@ -200,11 +208,12 @@ class SettingsTab(QWidget):
         form.setHorizontalSpacing(space("xl"))
         form.setVerticalSpacing(space("lg"))
 
-        form.addRow(_heading("Bristol Tickets"))
-        form.addRow(_label("Ticket Destination"), self.new_ticket)
+        form.addRow(_heading("Appearance"))
         form.addRow(_label("Theme"), self.theme)
         form.addRow(_label("Light & Dark"), self.mode)
-        form.addRow(_label("Themes"), self.manage)
+        # A button that opens a window is named for that window and stands in
+        # the controls' column with no label beside it.
+        form.addRow(_label(""), _fit(self.manage))
         # Standing work is asked for rather than generated: a project epic
         # reports when it closes, and upkeep has no such moment, so the window
         # is the user's to name. The dates open on the last thirty days, so the
@@ -250,25 +259,26 @@ class SettingsTab(QWidget):
 
         # Where things are. Each button opens the window that repoints them,
         # and carries the missing mark while anything it contains is not on disk.
-        self.notebook_btn = QPushButton("Notebook…")
+        self.notebook_btn = QPushButton("Notebook")
         self.notebook_btn.clicked.connect(
             lambda: self._open_folders(NotebookDialog))
-        self.dashboards_btn = QPushButton("Dashboards…")
+        self.dashboards_btn = QPushButton("Dashboards")
         self.dashboards_btn.setToolTip(
             "The dashboards agents keep up for you. Which ones each agent may "
             "write is set in its profile on the Agents tab.")
         self.dashboards_btn.clicked.connect(
             lambda: self._open_folders(DashboardsDialog))
-        self.locations_btn = QPushButton("Locations…")
+        self.locations_btn = QPushButton("Locations")
         self.locations_btn.clicked.connect(
             lambda: self._open_folders(LocationsDialog))
         form.addRow(_heading("Folders"))
-        form.addRow(_label("Notebook"), self.notebook_btn)
-        form.addRow(_label("Dashboards"), self.dashboards_btn)
-        form.addRow(_label("Locations"), self.locations_btn)
+        for button in (self.notebook_btn, self.dashboards_btn,
+                       self.locations_btn):
+            form.addRow(_label(""), _fit(button))
 
         form.addRow(_heading("Agent Sessions"))
         form.addRow(_label("Agent"), self.next_agent)
+        form.addRow(_label("Ticket Destination"), self.new_ticket)
         form.addRow(_label("Work Scope"), self.work_scope)
         form.addRow(_label("Git on Session Close"), self.suggested_commit)
         form.addRow(_heading("Reports"))

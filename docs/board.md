@@ -271,7 +271,7 @@ half of it: pinned to light, pinned to dark, or following your system. A theme
 with no dark colours yet offers Light alone and says so on hover. The board
 redraws as you pick, and the choice is kept as you make it.
 
-**Manage Themes** — the themes on offer are yours to change. The window lists
+**Themes** — the themes on offer are yours to change. The window it opens lists
 every one down the left and puts the selected theme's name and colours on the
 right: click a swatch for the colour picker or type the hex, and the board
 follows each change so you judge a palette against the board it colours. Add

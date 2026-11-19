@@ -1923,8 +1923,8 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure("a Save button still stands on Settings")
                 # Where things are: one button opens the notebook and its
                 # folders, one every other location, and both windows build.
-                if tab.notebook_btn.text() != "Notebook…" or \
-                        tab.locations_btn.text() != "Locations…":
+                if tab.notebook_btn.text() != "Notebook" or \
+                        tab.locations_btn.text() != "Locations":
                     raise SmokeFailure("Settings does not offer Notebook and Locations")
                 from ui.folders import LocationsDialog, NotebookDialog
                 NotebookDialog(tab).close()
