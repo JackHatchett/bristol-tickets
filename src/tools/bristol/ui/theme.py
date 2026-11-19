@@ -207,9 +207,10 @@ LAYOUT = {
     "settings_nav_w": 200,       # its side nav, wide enough for every tab's name
 }
 
-# The darkening laid over the window behind a modal the app draws itself,
-# written #AARRGGBB so it carries its own alpha. The same in every theme.
-SCRIM = {"light": "#66000000", "dark": "#99000000"}
+# The tint laid over the window behind a modal the app draws itself, written
+# #AARRGGBB so it carries its own alpha. The same in every theme: it darkens a
+# light window and lightens a dark one, so the modal's canvas stands out.
+SCRIM = {"light": "#66000000", "dark": "#26FFFFFF"}
 
 # What a stored value is called on screen. The database keeps the value and a
 # reader sees the caption, so a vocabulary can be reworded without a migration —

@@ -139,7 +139,7 @@ of `src/tools`, so the mechanism-only rule is kept.
 ## Settings
 
 The **Settings** button at the top bar's right end, or **Settings…** in the
-application menu, opens one modal over the darkened window. Its side nav holds
+application menu, opens one modal over the window, tinted behind it. Its side nav holds
 everything that configures this installation: **Agents** and **Skills**, the
 fleet's two pages, then the four Settings sections. A window a page opens,
 such as an agent's form, takes the modal's place and returns to the same tab

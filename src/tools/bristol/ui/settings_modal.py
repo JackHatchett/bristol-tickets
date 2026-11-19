@@ -1,7 +1,7 @@
 """ui/settings_modal.py — Settings, drawn by the app over its own window.
 
 Everything that configures Bristol Tickets is one modal: a panel over a scrim
-that darkens the window, a side nav down its left, and the open tab's page to
+that tints the window, a side nav down its left, and the open tab's page to
 its right under the tab's name. The tabs are the fleet's two pages, Agents and
 Skills, then the Settings sections ``settings_tab.SECTIONS`` names.
 
