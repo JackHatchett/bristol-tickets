@@ -756,6 +756,18 @@ def check_bristol() -> list[str]:
         if any(b.parent() is None or not header.isAncestorOf(b)
                for b in win._tab_buttons):
             raise SmokeFailure("a view segment sits outside the top bar")
+        # The top bar's Agent picker offers what Settings' Agent picker offers
+        # and stands on the same agent.
+        if not header.isAncestorOf(win.agent_picker):
+            raise SmokeFailure("the Agent picker is not in the top bar")
+        top_agents = [win.agent_picker.itemData(i)
+                      for i in range(win.agent_picker.count())]
+        settings_picker = win.settings_tab.next_agent
+        settings_agents = [settings_picker.itemData(i)
+                           for i in range(settings_picker.count())]
+        if top_agents != settings_agents \
+                or win.agent_picker.currentData() != settings_picker.currentData():
+            raise SmokeFailure("the top bar's Agent picker and Settings' disagree")
         for b in win._tab_buttons + [win.refresh_btn, win.global_create_btn]:
             if b.text() and not b.icon().isNull():
                 raise SmokeFailure(f"{b.accessibleName()} carries an icon beside "

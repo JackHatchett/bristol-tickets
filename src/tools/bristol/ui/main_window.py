@@ -41,6 +41,7 @@ from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
+    QComboBox,
     QDialog,
     QFrame,
     QGraphicsOpacityEffect,
@@ -70,12 +71,14 @@ from .record_dialog import UnifiedRecordDialog
 from .schema_guard import ensure_schema_up_to_date
 from .agents_tab import AgentsTab
 from .settings_tab import SettingsTab
+from .settled_combo import SettledComboBox
 from .skills_tab import SkillsTab
 from .theme import (
     C,
     COLUMNS,
     LAYOUT,
     appearance_choice,
+    fill_agents,
     apply_scheme,
     build_style_sheet,
     live_scheme,
@@ -427,6 +430,11 @@ class MainWindow(QMainWindow):
             on_appearance_changed=self._preview_appearance, conn=self.conn,
             on_board_changed=self._refresh_board)
         self._settings_tab_index = self._add_page(self.settings_tab, "Settings")
+        # The two Agent pickers write one key, and each shows the other's
+        # choice: Settings writes it first, then the top bar re-reads it.
+        self.settings_tab.next_agent.picked.connect(
+            lambda _slug: self._load_agent_picker())
+        self._load_agent_picker()
         self._tint_header()
         # After every tab exists, since the View menu lists them.
         self._build_menu_bar()
@@ -760,6 +768,17 @@ class MainWindow(QMainWindow):
         # Search and Settings are views drawn as icons here, Search before the
         # commands and Settings after them; _add_page seats them.
         self._icon_slots = {"Search": QHBoxLayout(), "Settings": QHBoxLayout()}
+        # The agent the next session starts as, chosen here without a trip
+        # into Settings: its name, then a picker in a rounded box.
+        agent_label = QLabel("Agent")
+        agent_label.setObjectName("toolbarLabel")
+        self.agent_picker = SettledComboBox()
+        self.agent_picker.setObjectName("toolbarPicker")
+        self.agent_picker.setAccessibleName("Agent")
+        self.agent_picker.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.agent_picker.picked.connect(self._choose_agent)
+        right_row.addWidget(agent_label, 0, Qt.AlignVCenter)
+        right_row.addWidget(self.agent_picker, 0, Qt.AlignVCenter)
         right_row.addLayout(self._icon_slots["Search"])
         right_row.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
         right_row.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
@@ -770,6 +789,29 @@ class MainWindow(QMainWindow):
         bar.addWidget(views, 0, Qt.AlignVCenter)
         bar.addWidget(right, 1)
         return header
+
+    def _load_agent_picker(self) -> None:
+        """Offer the configured agents in the top bar, opened on the active one,
+        the same list Settings' Agent picker offers."""
+        slugs = config_file.agent_slugs()
+        active = config_file.get("active_agent")
+        if isinstance(active, str) and active and active not in slugs:
+            slugs = [active, *slugs]
+        self.agent_picker.clear()
+        fill_agents(self.agent_picker, slugs)
+        if active in slugs:
+            self.agent_picker.setCurrentIndex(self.agent_picker.findData(active))
+        self.agent_picker.setEnabled(bool(slugs))
+
+    def _choose_agent(self, slug: str) -> None:
+        """Write the chosen agent as active_agent, as Settings' picker does, and
+        bring that picker to the same choice."""
+        try:
+            config_file.update({"active_agent": slug})
+        except OSError as exc:
+            notify(self, "Agent Not Saved", str(exc))
+            return
+        self.settings_tab.reload()
 
     def _tint_header(self) -> None:
         """Draw the top bar's icons in the theme's colors: Refresh and the

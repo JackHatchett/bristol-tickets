@@ -1491,6 +1491,27 @@ QPushButton#toolbarToggle:checked {{
 QPushButton#toolbarButton:focus, QPushButton#toolbarToggle:focus {{
     border-color: {C['ACCENT']};
 }}
+/* The top bar's Agent picker: its name in the soft ink, then a picker in the
+   top bar's own box, an ink_06 face with an ink_14 edge, at the top bar's
+   height, its text the body text every picker carries. */
+QLabel#toolbarLabel {{
+    color: {C['INK_SOFT']};
+    font-size: {type_size('body')}pt;
+}}
+QComboBox#toolbarPicker {{
+    background-color: {ink_06};
+    border: 1px solid {ink_14};
+    border-radius: {r_md}px;
+    min-height: {tb_ctl}px;
+    max-height: {tb_ctl}px;
+    padding: 0px {s_md}px;
+    color: {C['INK']};
+    font-size: {type_size('body')}pt;
+    font-weight: 400;
+}}
+QComboBox#toolbarPicker:hover {{ background-color: {ink_14}; }}
+QComboBox#toolbarPicker:on {{ background-color: {ink_10}; }}
+QComboBox#toolbarPicker:focus {{ border-color: {C['ACCENT']}; }}
 /* The top bar's Create: the primary button at the top bar's height. Where a
    view has no cards it is faded by an opacity effect rather than turned grey,
    as the Mac dims a toolbar item it has no use for. */
