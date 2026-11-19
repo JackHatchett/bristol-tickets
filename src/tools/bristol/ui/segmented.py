@@ -10,7 +10,8 @@ corners round.
 from __future__ import annotations
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QButtonGroup, QHBoxLayout, QPushButton, QWidget
+from PySide6.QtWidgets import (QButtonGroup, QHBoxLayout, QPushButton,
+                               QSizePolicy, QWidget)
 
 
 class SegmentedControl(QWidget):
@@ -20,7 +21,7 @@ class SegmentedControl(QWidget):
     changed = Signal(str)
 
     def __init__(self, choices: list[tuple[str, str]], value: str | None = None,
-                 parent=None) -> None:
+                 parent=None, *, none_chosen: bool = False) -> None:
         super().__init__(parent)
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
@@ -39,13 +40,27 @@ class SegmentedControl(QWidget):
             self._group.addButton(button, index)
             self._values.append(choice)
             row.addWidget(button)
-        start = self._values.index(value) if value in self._values else 0
-        self._group.button(start).setChecked(True)
+        if value in self._values:
+            self._group.button(self._values.index(value)).setChecked(True)
+        elif not none_chosen:
+            self._group.button(0).setChecked(True)
         self._group.idToggled.connect(self._toggled)
+        self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
 
     def _toggled(self, index: int, checked: bool) -> None:
         if checked:
             self.changed.emit(self._values[index])
 
     def value(self) -> str:
-        return self._values[self._group.checkedId()]
+        """The chosen segment's value; empty while a control opened with none
+        chosen is still unchosen."""
+        index = self._group.checkedId()
+        return self._values[index] if index >= 0 else ""
+
+    def set_value(self, value: str) -> None:
+        if value in self._values:
+            self._group.button(self._values.index(value)).setChecked(True)
+
+    def button(self, value: str) -> QPushButton:
+        """The segment that chooses ``value``."""
+        return self._group.button(self._values.index(value))

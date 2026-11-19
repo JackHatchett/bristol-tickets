@@ -34,11 +34,12 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QListWidgetItem,
     QPushButton,
     QVBoxLayout,
 )
 
-from .dialogs import confirm, list_buttons
+from .dialogs import add_button, confirm, removable_item
 from .palette_form import PaletteForm, complete_palette
 from .settled_combo import fill_words
 from .theme import (
@@ -114,10 +115,9 @@ class ThemeManagerDialog(QDialog):
         self.list.setMinimumWidth(LAYOUT["theme_list_min_w"])
         self.list.currentRowChanged.connect(self._row_chosen)
 
-        self.add_button, self.delete_button, left_buttons = list_buttons(
-            self._add_clicked, self._delete_clicked,
-            "Add a theme, seeded from the one selected",
-            "Delete the selected theme")
+        self.add_button = add_button(
+            "Add Theme", self._add_clicked,
+            "Add a theme, seeded from the one selected")
         self.restore_button = QPushButton("Restore Shipped Themes")
         self.restore_button.setToolTip(
             "Put every theme this build ships back as it ships it. Themes you "
@@ -127,8 +127,12 @@ class ThemeManagerDialog(QDialog):
         left = QVBoxLayout()
         left.setSpacing(space("md"))
         left.addWidget(self.list, 1)
-        left.addLayout(left_buttons)
-        left.addWidget(self.restore_button)
+        buttons_row = QHBoxLayout()
+        buttons_row.setSpacing(space("md"))
+        buttons_row.addWidget(self.add_button)
+        buttons_row.addWidget(self.restore_button)
+        buttons_row.addStretch(1)
+        left.addLayout(buttons_row)
 
         self.name = QLineEdit()
         self.name.setToolTip(
@@ -439,6 +443,11 @@ class ThemeManagerDialog(QDialog):
         self.delete()
         self._preview()
 
+    def _delete_row(self, theme_id: str) -> None:
+        """The ✕ on a theme's row: that theme, selected, then asked about."""
+        self.select(theme_id)
+        self._delete_clicked()
+
     def _restore_clicked(self) -> None:
         if not confirm(self, "Restore shipped themes?",
                        "Every theme this build ships goes back to the colors "
@@ -479,8 +488,11 @@ class ThemeManagerDialog(QDialog):
         was, self._seating = self._seating, True
         try:
             self.list.clear()
-            for record in self._collection.values():
-                self.list.addItem(record["name"])
+            for theme_id, record in self._collection.items():
+                item = QListWidgetItem(record["name"])
+                self.list.addItem(item)
+                removable_item(self.list, item, "Delete this theme",
+                               lambda t=theme_id: self._delete_row(t))
             order = list(self._collection)
             if self._selected in order:
                 self.list.setCurrentRow(order.index(self._selected))

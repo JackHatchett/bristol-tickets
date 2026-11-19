@@ -41,7 +41,6 @@ from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
-    QCheckBox,
     QDialog,
     QFrame,
     QGraphicsOpacityEffect,
@@ -62,6 +61,7 @@ import config_file  # bristol-local: the one config.local.json reader/writer
 from . import icons, mac_window
 from .detail_pane import DetailPane
 from .dialogs import confirm, notify
+from .switch import Switch
 from .filter_menu import FilterMenu, FilterState, applied
 from .links import remove_links_for_task
 from .kanban_column import KanbanColumn
@@ -284,10 +284,11 @@ class MainWindow(QMainWindow):
         self.search_input.returnPressed.connect(self._execute_global_search)
         search_bar_layout.addWidget(self.search_input, 1)
 
-        self.hide_closed_checkbox = QCheckBox("Hide Closed Items")
-        self.hide_closed_checkbox.setChecked(True)
-        self.hide_closed_checkbox.stateChanged.connect(self._execute_global_search)
-        search_bar_layout.addWidget(self.hide_closed_checkbox)
+        self.hide_closed_switch = Switch("Hide Closed Items")
+        self.hide_closed_switch.setChecked(True)
+        self.hide_closed_switch.toggled.connect(
+            lambda _on: self._execute_global_search())
+        search_bar_layout.addWidget(self.hide_closed_switch)
         search_layout.addLayout(search_bar_layout)
 
         self.search_count = QLabel("")
@@ -1130,7 +1131,7 @@ class MainWindow(QMainWindow):
         self._search_settle.stop()
         found_rows = []
         term = f"%{self.search_input.text().strip()}%"
-        hide_closed = self.hide_closed_checkbox.isChecked()
+        hide_closed = self.hide_closed_switch.isChecked()
 
         # Search is ordered by TYPE (tasks, then epics) then alphabetically —
         # the stable, browsable ordering. "Hide Closed Items" hides finished

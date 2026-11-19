@@ -28,13 +28,11 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
-from .dialogs import confirm, notify
-from . import icons
+from .dialogs import RowList, add_button, confirm, notify
 from .theme import LAYOUT, space
 
 THUMB_MAX = 160  # longest edge of an inline thumbnail, in px
@@ -149,19 +147,12 @@ class AttachmentBar(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(space("sm"))
 
-        self.attach_btn = QPushButton("Attach Image")
-        self.attach_btn.setToolTip("Attach an image file to this issue")
-        self.attach_btn.clicked.connect(self._pick)
-        # Sized to its text, not stretched across the pane — vertical space on
-        # these forms is the scarce resource, and a full-width button spends
-        # horizontal space to buy nothing.
-        self.attach_btn.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        layout.addWidget(self.attach_btn, 0, Qt.AlignLeft)
+        self.rows = RowList()
+        layout.addWidget(self.rows)
 
-        self._list_layout = QVBoxLayout()
-        self._list_layout.setContentsMargins(0, 0, 0, 0)
-        self._list_layout.setSpacing(space("xs"))
-        layout.addLayout(self._list_layout)
+        self.attach_btn = add_button("Add Image", self._pick,
+                                     "Attach an image file to this card")
+        layout.addWidget(self.attach_btn, 0, Qt.AlignLeft)
 
     def set_task(self, task_id: int | None) -> None:
         self.task_id = task_id
@@ -180,15 +171,8 @@ class AttachmentBar(QWidget):
             notify(self, "Attach failed", "Could not attach that file.")
         self._refresh()
 
-    def _clear_list(self) -> None:
-        while self._list_layout.count():
-            item = self._list_layout.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.deleteLater()
-
     def _refresh(self) -> None:
-        self._clear_list()
+        self.rows.clear()
         for att_id, filename, original in list_attachments(self.conn, self.task_id):
             display = original or filename
             path = attachment_path(self.conn, filename)
@@ -220,25 +204,14 @@ class AttachmentBar(QWidget):
                 )
             col.addWidget(thumb, 0, Qt.AlignLeft)
 
-            row = QWidget()
-            rl = QHBoxLayout(row)
-            rl.setContentsMargins(0, 0, 0, 0)
-            rl.setSpacing(space("md"))
             name = QLabel(display)
             name.setToolTip(filename)
-            rl.addWidget(name, 1)
-            x = QPushButton()
-            x.setObjectName("quietIcon")
-            icons.tint(x, "x")
-            x.setFixedWidth(space("2xl"))
-            x.setToolTip("Remove attachment (moves the file to images/_trash)")
-            x.setAccessibleName("Remove attachment")
-            x.clicked.connect(
-                lambda _=False, a=att_id, d=display: self._confirm_remove(a, d))
-            rl.addWidget(x)
-            col.addWidget(row)
+            col.addWidget(name)
 
-            self._list_layout.addWidget(entry)
+            self.rows.add_row(
+                entry, "Remove attachment",
+                lambda a=att_id, d=display: self._confirm_remove(a, d),
+                align=Qt.AlignBottom)
 
     def _open_preview(self, attachment_id: int, path: Path, display: str) -> None:
         dlg = ImagePreviewDialog(path, display, self)

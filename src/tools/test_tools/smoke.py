@@ -1250,6 +1250,30 @@ def check_bristol() -> list[str]:
             if not isinstance(field, GrowingTextEdit):
                 raise SmokeFailure(f"the {name} field is not the shared growing field")
 
+        # Hide Closed Items is a switch, and turning it over searches again.
+        from ui.switch import Switch as _Switch
+        from ui.links import LINK_KINDS as _KINDS
+        if not isinstance(win.hide_closed_switch, _Switch):
+            raise SmokeFailure("Hide Closed Items is not a switch")
+        _searched = []
+        _real_search = win._execute_global_search
+        win._execute_global_search = lambda: _searched.append(True)
+        try:
+            win.hide_closed_switch.click()
+            if not _searched or win.hide_closed_switch.isChecked():
+                raise SmokeFailure("turning Hide Closed Items off did not search again")
+            win.hide_closed_switch.click()
+        finally:
+            win._execute_global_search = _real_search
+        if link_dlg.kind.value() != "issue" or link_dlg.uri_fields.isVisibleTo(link_dlg):
+            raise SmokeFailure("Add Link does not open on a ticket link alone")
+        link_dlg.kind.button(_KINDS[1][0]).click()
+        if not link_dlg.uri_fields.isVisibleTo(link_dlg) \
+                or link_dlg.issue_fields.isVisibleTo(link_dlg):
+            raise SmokeFailure("choosing An Address does not show only its fields")
+        ok.append("Hide Closed Items is a switch that searches again, and Add Link "
+                  "shows one kind's fields at a time")
+
         field = GrowingTextEdit(max_lines=4)
         field.setFixedWidth(180)
         field.show()
@@ -1386,7 +1410,7 @@ def check_bristol() -> list[str]:
         lc.commit()
         rows_bar = LinkBar(lc)
         rows_bar.set_task(fa)
-        first_row = rows_bar._list_layout.itemAt(0).widget()
+        first_row = rows_bar.rows.row(0)
         if first_row.sizePolicy().verticalPolicy() != _QSP.Fixed \
                 or rows_bar.minimumSizeHint().height() < first_row.sizeHint().height():
             raise SmokeFailure("a link row can be squeezed below its own height")
@@ -1653,10 +1677,13 @@ def check_bristol() -> list[str]:
                 wizard.instance_page.slug_edit.setText("tester")
                 if wizard.instance_page.instance_dir() != scratch_root / "data" / "tester":
                     raise SmokeFailure("the data folder did not follow the instance name")
-                if not wizard.agents_page.boxes:
+                offered = wizard.agents_page.agents
+                if not offered.count():
                     raise SmokeFailure("the agents page offers no agents")
-                for slug_name, box in wizard.agents_page.boxes.items():
-                    box.setChecked(slug_name in ("chief_of_staff", "librarian"))
+                for row in range(offered.count()):
+                    slug_name = offered.key(offered.item(row))
+                    offered.set_chosen(slug_name,
+                                       slug_name in ("chief_of_staff", "librarian"))
                 wizard.summary_page.initializePage()
                 if "tester" not in wizard.summary_page.body.text():
                     raise SmokeFailure("the summary does not name what will be written")
@@ -2149,10 +2176,11 @@ def check_bristol() -> list[str]:
                     raise SmokeFailure("a skill's view does not list its files")
                 if dlg.source_btn is None or coded_record["source_url"] not in dlg.source_btn.toolTip():
                     raise SmokeFailure("a downloaded skill's view has no link to its source")
-                if not dlg.boxes["chief_of_staff"].isChecked() or dlg.boxes["librarian"].isChecked():
-                    raise SmokeFailure("the tick boxes do not carry who has the skill")
-                dlg.boxes["librarian"].setChecked(True)
-                dlg.boxes["chief_of_staff"].setChecked(False)
+                if not dlg.holders.is_chosen("chief_of_staff") \
+                        or dlg.holders.is_chosen("librarian"):
+                    raise SmokeFailure("the toggle rows do not carry who has the skill")
+                dlg.holders.set_chosen("librarian", True)
+                dlg.holders.set_chosen("chief_of_staff", False)
                 if ("attach", "with-code", "--agent", "librarian") not in writes:
                     raise SmokeFailure("ticking an agent did not attach through the loader")
                 if ("detach", "with-code", "--agent", "chief_of_staff") not in writes:
@@ -2361,14 +2389,34 @@ def check_bristol() -> list[str]:
                 raise SmokeFailure("the notebook mode disagrees with the entry")
             if access.choices:
                 first = next(iter(access.choices))
-                access.choices[first]["write"].setChecked(True)
-                access.mode_buttons["read_all"].setChecked(True)
+                access.choices[first].button("write").setChecked(True)
+                access.mode_control.button("read_all").setChecked(True)
                 if not access.rows.isHidden():
                     raise SmokeFailure("Read All still shows the folder rows")
-                access.mode_buttons["per_folder"].setChecked(True)
+                access.mode_control.button("per_folder").setChecked(True)
                 if access.values()["folders"].get(first) != "write" \
                         or access.rows.isHidden():
                     raise SmokeFailure("a folder choice was lost going through Read All")
+            # Every choice on the form is a segmented control or a toggle row:
+            # no radio button and no checkbox is left in it.
+            from PySide6.QtWidgets import QCheckBox as _QCB, QRadioButton as _QRB
+            if filled.findChildren(_QRB) or filled.findChildren(_QCB):
+                raise SmokeFailure("the agent form still draws a radio button "
+                                   "or a checkbox")
+            if filled.skills.count():
+                turned = filled.skills.item(0)
+                was = turned.checkState()
+                from PySide6.QtCore import Qt as _QtK
+                from PySide6.QtTest import QTest as _QT
+                filled.skills.resize(400, 300)
+                filled.skills.show()
+                _QT.mouseClick(filled.skills.viewport(), _QtK.LeftButton,
+                               _QtK.NoModifier,
+                               filled.skills.visualItemRect(turned).center())
+                if turned.checkState() == was:
+                    raise SmokeFailure("a click on a skill's row does not turn it over")
+                turned.setCheckState(was)
+                filled.skills.hide()
             if filled.extra.isVisibleTo(filled) != bool(record["extra"]):
                 raise SmokeFailure(
                     "the Other Keys section shows for an agent with no such keys"
@@ -2535,25 +2583,36 @@ def check_bristol() -> list[str]:
                 asked.append(f"{title} {body}")
                 return said[0]
 
-            def cross(widget):
+            def cross(widget, name):
                 for button in widget.findChildren(_Button):
-                    if button.accessibleName() == "Remove this variable":
+                    if button.accessibleName() == name:
                         return button
-                raise SmokeFailure("a row on the agent form has no ✕")
+                raise SmokeFailure(f"a row on the agent form has no ✕ ({name})")
 
             _agents_tab.confirm = answered
-            guarded.data_paths.list.setCurrentRow(0)
-            if not guarded.data_paths.remove_btn.isEnabled():
-                raise SmokeFailure("selecting a folder does not enable its −")
+            # Every editable list on the form ends each row in its ✕, adds by
+            # one button saying what it adds, and has no + and − left.
+            for listed, label in ((guarded.data_paths, "Add Folder"),
+                                  (guarded.context_files, "Add File"),
+                                  (guarded.env, "Add Variable")):
+                if listed.add_btn.text() != label:
+                    raise SmokeFailure(
+                        f"a list's add button says {listed.add_btn.text()!r}, "
+                        f"not {label!r}")
+                if any(b.text() in ("+", "\u2212")
+                       for b in listed.findChildren(_Button)):
+                    raise SmokeFailure("an editable list still carries + and −")
+            first_folder = guarded.data_paths.list.itemWidget(
+                guarded.data_paths.list.item(0))
             try:
                 for caption, named, button, count in (
                         ("Folders",
                          folder_grant(guarded.data_paths.values()[0])["path"],
-                         guarded.data_paths.remove_btn,
+                         cross(first_folder, "Remove this folder"),
                          lambda: len(guarded.data_paths.values())),
                         ("Environment Variables",
                          guarded.env._rows[0][1].text().strip(),
-                         cross(guarded.env._rows[0][0]),
+                         cross(guarded.env._rows[0][0], "Remove this variable"),
                          lambda: len(guarded.env.values()))):
                     said[0] = False
                     before = count()
@@ -2575,8 +2634,9 @@ def check_bristol() -> list[str]:
                             f"{caption}: an accepted question left the row")
             finally:
                 _agents_tab.confirm = real_confirm
-            ok.append("the folder list's − and every variable's ✕ ask by name, "
-                      "and drop a row only on an accept")
+            ok.append("every editable list on the agent form adds by one named "
+                      "button, and each folder's and variable's ✕ asks by name "
+                      "and drops a row only on an accept")
 
         # ---- closed_at is the finish; the Archive orders by the archival ----
         # A card finished on one day and archived on another separates the two

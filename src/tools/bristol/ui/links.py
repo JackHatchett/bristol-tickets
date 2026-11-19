@@ -57,7 +57,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QRadioButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -65,9 +64,9 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local: the one config.local.json reader/writer
 
-from .dialogs import as_sheet, confirm, notify
+from .segmented import SegmentedControl
+from .dialogs import RowList, add_button, as_sheet, confirm, notify
 from .growing_edit import GrowingTextEdit
-from . import icons
 from .theme import LAYOUT, space
 
 MAX_LABEL_CHARS = 72  # where a long URI is shortened in a confirm message;
@@ -353,8 +352,11 @@ class _ElideButton(QPushButton):
 # Add-link modal
 # ---------------------------------------------------------------------------
 
+LINK_KINDS = [("issue", "Another Ticket"), ("uri", "An Address")]
+
+
 class AddLinkDialog(QDialog):
-    """A small modal with the two link kinds as mutually exclusive choices, so
+    """A small modal with the two link kinds as one segmented choice, so
     the entry fields cost one button on the screen that hosts them rather than
     two permanent rows. ``result_values()`` returns
     ``(kind, issue_id, uri, label, relation)`` after an accepted exec()."""
@@ -370,18 +372,20 @@ class AddLinkDialog(QDialog):
         heading.setVisible(as_sheet(self))
         v.addWidget(heading)
 
-        self.issue_radio = QRadioButton("Link to another ticket")
-        self.issue_radio.setChecked(True)
-        v.addWidget(self.issue_radio)
+        self.kind = SegmentedControl(LINK_KINDS, "issue")
+        self.kind.setAccessibleName("What to link to")
+        v.addWidget(self.kind, 0, Qt.AlignLeft)
+
+        self.issue_fields = QWidget()
+        issue_column = QVBoxLayout(self.issue_fields)
+        issue_column.setContentsMargins(0, 0, 0, 0)
         issue_row = QHBoxLayout()
-        issue_row.addSpacing(space("2xl"))
         issue_row.addWidget(QLabel("Ticket #"))
         self.issue_input = QLineEdit()
         self.issue_input.setPlaceholderText("153")
         issue_row.addWidget(self.issue_input, 1)
-        v.addLayout(issue_row)
+        issue_column.addLayout(issue_row)
         relation_row = QHBoxLayout()
-        relation_row.addSpacing(space("2xl"))
         relation_row.addWidget(QLabel("This ticket is"))
         # A dependency is a link with a direction, and the direction is the part
         # a user gets wrong, so the choices are phrased from this ticket's point
@@ -390,27 +394,27 @@ class AddLinkDialog(QDialog):
         for value in RELATIONS:
             self.relation_combo.addItem(RELATION_LABELS[value], value)
         relation_row.addWidget(self.relation_combo, 1)
-        v.addLayout(relation_row)
+        issue_column.addLayout(relation_row)
+        v.addWidget(self.issue_fields)
 
-        self.uri_radio = QRadioButton("Link to an address")
-        v.addWidget(self.uri_radio)
+        self.uri_fields = QWidget()
+        uri_column = QVBoxLayout(self.uri_fields)
+        uri_column.setContentsMargins(0, 0, 0, 0)
         uri_row = QHBoxLayout()
-        uri_row.addSpacing(space("2xl"))
         uri_row.addWidget(QLabel("Address"))
         self.uri_input = GrowingTextEdit(max_lines=4)
         self.uri_input.setPlaceholderText(
             "https://…   zotero://…   obsidian://…   or a file path"
         )
         uri_row.addWidget(self.uri_input, 1)
-        v.addLayout(uri_row)
+        uri_column.addLayout(uri_row)
         label_row = QHBoxLayout()
-        label_row.addSpacing(space("2xl"))
         label_row.addWidget(QLabel("Caption"))
         self.label_input = GrowingTextEdit(max_lines=3)
         self.label_input.setPlaceholderText("optional — shown instead of the address")
         label_row.addWidget(self.label_input, 1)
-        v.addLayout(label_row)
-
+        uri_column.addLayout(label_row)
+        v.addWidget(self.uri_fields)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self.add_button = buttons.button(QDialogButtonBox.Ok)
@@ -420,24 +424,21 @@ class AddLinkDialog(QDialog):
         buttons.rejected.connect(self.reject)
         v.addWidget(buttons)
 
-        self.issue_radio.toggled.connect(self._sync_enabled)
-        # Typing in one kind's field selects that kind, so the radio never
-        # silently contradicts where the text went.
-        self.issue_input.textEdited.connect(lambda _: self.issue_radio.setChecked(True))
-        self.uri_input.textChanged.connect(lambda: self.uri_radio.setChecked(True))
+        self.kind.changed.connect(lambda _value: self._sync_shown())
         self.uri_input.submitted.connect(self.accept)
         self.label_input.submitted.connect(self.accept)
-        self._sync_enabled()
+        self._sync_shown()
 
-    def _sync_enabled(self, *args) -> None:
-        is_issue = self.issue_radio.isChecked()
-        self.issue_input.setEnabled(is_issue)
-        self.relation_combo.setEnabled(is_issue)
-        self.uri_input.setEnabled(not is_issue)
-        self.label_input.setEnabled(not is_issue)
+    def _sync_shown(self) -> None:
+        """Only the chosen kind's fields are on the window."""
+        is_issue = self.kind.value() == "issue"
+        self.issue_fields.setVisible(is_issue)
+        self.uri_fields.setVisible(not is_issue)
+        (self.issue_input if is_issue else self.uri_input).setFocus()
+        self.adjustSize()
 
     def result_values(self) -> tuple[str, int | None, str, str, str]:
-        if self.issue_radio.isChecked():
+        if self.kind.value() == "issue":
             relation = self.relation_combo.currentData() or "related"
             raw = self.issue_input.text().strip().lstrip("#")
             try:
@@ -453,10 +454,10 @@ class AddLinkDialog(QDialog):
 # ---------------------------------------------------------------------------
 
 class LinkBar(QWidget):
-    """An 'Add link' button over one full-width row per link. Issue links render
-    as ``#153 — Title`` and select that ticket when clicked; URI links render as
-    their caption or address and open via the OS. Each row carries an ✕ that
-    confirms before deleting.
+    """One full-width row per link in one rounded list, and an Add Link button
+    under it. Issue links render as ``#153 — Title`` and select that ticket
+    when clicked; URI links render as their caption or address and open via
+    the OS. Each row ends in an ✕ that confirms before deleting.
 
     Call ``set_task(task_id)`` to point it at a saved ticket, or
     ``set_task(None)`` while a ticket is still being created — in that mode
@@ -488,19 +489,13 @@ class LinkBar(QWidget):
         self.header.setObjectName("sectionHeader")
         layout.addWidget(self.header)
 
-        self.add_btn = QPushButton("Add Link")
-        self.add_btn.setToolTip("Link this ticket to another ticket, or to an address")
-        self.add_btn.clicked.connect(self._prompt)
-        # Sized to its own text rather than stretched across the pane — a
-        # full-width button on a tall form wastes the vertical space the form
-        # is already short of.
-        self.add_btn.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        layout.addWidget(self.add_btn, 0, Qt.AlignLeft)
+        self.rows = RowList()
+        layout.addWidget(self.rows)
 
-        self._list_layout = QVBoxLayout()
-        self._list_layout.setContentsMargins(0, 0, 0, 0)
-        self._list_layout.setSpacing(space("xs"))
-        layout.addLayout(self._list_layout)
+        self.add_btn = add_button(
+            "Add Link", self._prompt,
+            "Link this ticket to another ticket, or to an address")
+        layout.addWidget(self.add_btn, 0, Qt.AlignLeft)
 
     # ----- host API ---------------------------------------------------------
 
@@ -586,22 +581,7 @@ class LinkBar(QWidget):
 
     # ----- rendering --------------------------------------------------------
 
-    def _clear_list(self) -> None:
-        while self._list_layout.count():
-            item = self._list_layout.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.deleteLater()
-
     def _row(self, text: str, tooltip: str, on_click, on_remove) -> QWidget:
-        row = QWidget()
-        # A row is as tall as its text, whatever the pane is short of: the
-        # link button and its ✕ carry no minimum height of their own, so a
-        # squeezed pane would otherwise flatten every row to a few pixels.
-        row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        rl = QHBoxLayout(row)
-        rl.setContentsMargins(0, 0, 0, 0)
-        rl.setSpacing(space("md"))
         if on_click is None:
             body = _ElideLabel(text)
             body.setObjectName("metaText")
@@ -612,19 +592,10 @@ class LinkBar(QWidget):
             body.setCursor(Qt.PointingHandCursor)
             body.clicked.connect(lambda _=False: on_click())
         body.setToolTip(tooltip)
-        rl.addWidget(body, 1)
-        x = QPushButton()
-        x.setObjectName("quietIcon")
-        icons.tint(x, "x")
-        x.setFixedWidth(space("2xl"))
-        x.setToolTip("Remove this link")
-        x.setAccessibleName("Remove this link")
-        x.clicked.connect(lambda _=False: on_remove())
-        rl.addWidget(x)
-        return row
+        return self.rows.add_row(body, "Remove this link", on_remove)
 
     def _refresh(self) -> None:
-        self._clear_list()
+        self.rows.clear()
 
         for link in list_links(self.conn, self.task_id):
             if link["kind"] == "issue":
@@ -634,24 +605,24 @@ class LinkBar(QWidget):
                 click = None
                 if callable(self.on_open_issue):
                     click = (lambda o=other: self.on_open_issue(o))
-                self._list_layout.addWidget(self._row(
+                self._row(
                     text, f"Ticket #{other}", click,
                     (lambda i=link["id"], d=f"#{other}": self._confirm_remove(i, d)),
-                ))
+                )
             else:
                 uri = link["uri"] or ""
                 text = link["label"] or uri
-                self._list_layout.addWidget(self._row(
+                self._row(
                     text, uri, (lambda u=uri: open_uri(u)),
                     (lambda i=link["id"], d=_elide(link["label"] or uri):
                      self._confirm_remove(i, d)),
-                ))
+                )
 
         for idx, (kind, other_id, uri, label, relation) in enumerate(self._pending):
             text = (f"{_ROW_PREFIX.get(relation, '')}#{other_id} (on save)"
                     if kind == "issue" else f"{label or uri} (on save)")
             desc = f"#{other_id}" if kind == "issue" else _elide(label or uri)
-            self._list_layout.addWidget(self._row(
+            self._row(
                 text, "Written when this ticket is saved", None,
                 (lambda i=idx, d=desc: self._confirm_remove_pending(i, d)),
-            ))
+            )

@@ -12,13 +12,18 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
+    QListWidget,
+    QListWidgetItem,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
+    QWidget,
 )
 
 from .theme import LAYOUT, space
@@ -46,26 +51,113 @@ def as_sheet(dialog: QDialog) -> bool:
     return True
 
 
-def list_buttons(on_add, on_remove, add_tip: str, remove_tip: str):
-    """The + and − pair that sits under an editable list, at its left edge.
-    Returns ``(add, remove, row)``; the caller places ``row`` under the list and
-    enables ``remove`` while a row is selected."""
-    add = QPushButton("+")
-    remove = QPushButton("\u2212")
-    for button, slot, tip in ((add, on_add, add_tip),
-                              (remove, on_remove, remove_tip)):
-        button.setObjectName("listEditBtn")
-        button.setAutoDefault(False)
+def add_button(label: str, on_add, tip: str = "") -> QPushButton:
+    """The one secondary button under an editable list, saying what it adds —
+    Add Folder, Add Link. Sized to its words and placed at the list's left
+    edge by the caller."""
+    button = QPushButton(label)
+    button.setAutoDefault(False)
+    if tip:
         button.setToolTip(tip)
-        button.setAccessibleName(tip)
-        button.clicked.connect(lambda _checked=False, f=slot: f())
-    row = QHBoxLayout()
-    row.setContentsMargins(0, 0, 0, 0)
-    row.setSpacing(0)
-    row.addWidget(add)
-    row.addWidget(remove)
-    row.addStretch(1)
-    return add, remove, row
+    button.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+    button.clicked.connect(lambda _checked=False: on_add())
+    return button
+
+
+def remove_icon(tip: str, on_remove) -> QPushButton:
+    """The Quiet Icon ✕ at the end of an editable list's row, which removes
+    that row."""
+    from . import icons
+
+    button = QPushButton()
+    button.setObjectName("quietIcon")
+    icons.tint(button, "x")
+    button.setFixedWidth(space("2xl"))
+    button.setToolTip(tip)
+    button.setAccessibleName(tip)
+    button.setAutoDefault(False)
+    button.clicked.connect(lambda _checked=False: on_remove())
+    return button
+
+
+def removable_item(view: QListWidget, item: QListWidgetItem, tip: str,
+                   on_remove, content: QWidget | None = None) -> QWidget:
+    """End a list item's row in its ✕. ``content`` is drawn before the ✕ where
+    the row is a widget; where it is ``None`` the list draws the item's text,
+    selection and hover as before, under a row that carries only the ✕."""
+    holder = QWidget()
+    holder.setObjectName("removableRow")
+    line = QHBoxLayout(holder)
+    line.setContentsMargins(space("sm"), 0, space("xs"), 0)
+    line.setSpacing(space("sm"))
+    if content is None:
+        line.addStretch(1)
+    else:
+        line.addWidget(content, 1)
+    line.addWidget(remove_icon(tip, on_remove), 0, Qt.AlignVCenter)
+    holder.ensurePolished()
+    # A row the list draws keeps the padding the style sheet gives its items,
+    # which an item with a size of its own no longer asks the style for.
+    padded = QSize(0, view.fontMetrics().height() + 2 * space("md"))
+    hint = item.sizeHint()
+    if not hint.isValid():
+        hint = padded if content is None else QSize(0, 0)
+    item.setSizeHint(hint.expandedTo(holder.sizeHint()).expandedTo(
+        padded if content is None else QSize(0, 0)))
+    view.setItemWidget(item, holder)
+    return holder
+
+
+class RowList(QFrame):
+    """An editable list whose rows are widgets: one rounded well with the edge
+    every list carries, each row ending in the ✕ that removes it. A list that
+    lists nothing is not drawn."""
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setObjectName("rowList")
+        # As tall as its rows, whatever its host is short of: a squeezed list
+        # would draw one row over the next.
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self._rows = QVBoxLayout(self)
+        self._rows.setContentsMargins(space("sm"), space("sm"), space("sm"),
+                                      space("sm"))
+        self._rows.setSpacing(space("xs"))
+        self.setVisible(False)
+
+    def add_row(self, content: QWidget, tip: str, on_remove,
+                align=Qt.AlignVCenter) -> QWidget:
+        row = QWidget()
+        # A row is as tall as its contents, whatever its host is short of.
+        row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        line = QHBoxLayout(row)
+        line.setContentsMargins(0, 0, 0, 0)
+        line.setSpacing(space("md"))
+        line.addWidget(content, 1)
+        line.addWidget(remove_icon(tip, on_remove), 0, align)
+        self._rows.addWidget(row)
+        self.setVisible(True)
+        return row
+
+    def remove_row(self, row: QWidget) -> None:
+        self._rows.removeWidget(row)
+        row.deleteLater()
+        self.setVisible(self.count() > 0)
+
+    def count(self) -> int:
+        return self._rows.count()
+
+    def row(self, index: int) -> QWidget | None:
+        item = self._rows.itemAt(index)
+        return item.widget() if item is not None else None
+
+    def clear(self) -> None:
+        while self._rows.count():
+            item = self._rows.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        self.setVisible(False)
 
 
 class Modal(QDialog):

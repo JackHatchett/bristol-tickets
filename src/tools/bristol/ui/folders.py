@@ -156,10 +156,8 @@ class NotebookDialog(QDialog):
 
         self.list = QListWidget()
         self.list.setObjectName("textList")
-        self.list.currentItemChanged.connect(lambda *_: self._sync())
-        self.add_btn, self.remove_btn, folder_actions = dialogs.list_buttons(
-            self._add, self._remove, "Attach a folder",
-            "Detach the selected folder")
+        self.list.setSelectionMode(QListWidget.NoSelection)
+        self.add_btn = dialogs.add_button("Attach Folder", self._add)
 
         close = QPushButton("Close")
         close.setObjectName("globalCreateBtn")
@@ -178,7 +176,7 @@ class NotebookDialog(QDialog):
         column.addSpacing(space("md"))
         column.addWidget(_caption("Attached Folders"))
         column.addWidget(self.list, 1)
-        column.addLayout(folder_actions)
+        column.addWidget(self.add_btn, 0, Qt.AlignLeft)
         column.addSpacing(space("lg"))
         column.addLayout(foot)
         self.reload()
@@ -197,11 +195,9 @@ class NotebookDialog(QDialog):
                                    else f"{f['folder']}   ·   {MISSING}")
             item.setData(Qt.UserRole, f["folder"])
             self.list.addItem(item)
-        self._sync()
-
-    def _sync(self) -> None:
-        self.add_btn.setEnabled(bool(self._state.get("root_exists")))
-        self.remove_btn.setEnabled(self.list.currentItem() is not None)
+            dialogs.removable_item(self.list, item, "Detach this folder",
+                                   lambda name=f["folder"]: self._remove(name))
+        self.add_btn.setEnabled(bool(state.get("root_exists")))
 
     def _say(self, code: int, out: str, err: str, title: str) -> bool:
         if code != 0:
@@ -230,11 +226,7 @@ class NotebookDialog(QDialog):
         if self._say(*run(NOTEBOOK_CLI, "attach", picked), "Not Attached"):
             self.reload()
 
-    def _remove(self) -> None:
-        item = self.list.currentItem()
-        if item is None:
-            return
-        folder = item.data(Qt.UserRole)
+    def _remove(self, folder: str) -> None:
         if not dialogs.confirm(
                 self, "Detach This Folder?",
                 f"{folder} leaves the notebook Bristol knows, and every agent's "
@@ -266,10 +258,8 @@ class DashboardsDialog(QDialog):
 
         self.list = QListWidget()
         self.list.setObjectName("textList")
-        self.list.currentItemChanged.connect(lambda *_: self._sync())
-        self.add_btn, self.remove_btn, actions = dialogs.list_buttons(
-            self._add, self._remove, "Add a dashboard",
-            "Remove the selected dashboard")
+        self.list.setSelectionMode(QListWidget.NoSelection)
+        self.add_btn = dialogs.add_button("Add Dashboard", self._add)
 
         close = QPushButton("Close")
         close.setObjectName("globalCreateBtn")
@@ -285,7 +275,7 @@ class DashboardsDialog(QDialog):
         column.addSpacing(space("sm"))
         column.addWidget(_caption("Known Dashboards"))
         column.addWidget(self.list, 1)
-        column.addLayout(actions)
+        column.addWidget(self.add_btn, 0, Qt.AlignLeft)
         column.addSpacing(space("lg"))
         column.addLayout(foot)
         self.reload()
@@ -298,10 +288,8 @@ class DashboardsDialog(QDialog):
             item.setData(Qt.UserRole, d["name"])
             item.setToolTip("\n".join(d.get("paths") or []))
             self.list.addItem(item)
-        self._sync()
-
-    def _sync(self) -> None:
-        self.remove_btn.setEnabled(self.list.currentItem() is not None)
+            dialogs.removable_item(self.list, item, "Remove this dashboard",
+                                   lambda name=d["name"]: self._remove(name))
 
     def _add(self) -> None:
         name, ok = QInputDialog.getText(self, "Add a Dashboard", "Name")
@@ -318,11 +306,7 @@ class DashboardsDialog(QDialog):
             return
         self.reload()
 
-    def _remove(self) -> None:
-        item = self.list.currentItem()
-        if item is None:
-            return
-        name = item.data(Qt.UserRole)
+    def _remove(self, name: str) -> None:
         if not dialogs.confirm(
                 self, "Remove This Dashboard?",
                 f"{name} leaves the list, and every agent's choice for it is "

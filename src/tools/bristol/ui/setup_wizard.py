@@ -41,14 +41,12 @@ from pathlib import Path
 from PySide6.QtCore import QRegularExpression, Qt
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtWidgets import (
-    QCheckBox,
     QDialog,
     QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QScrollArea,
     QVBoxLayout,
     QWidget,
     QWizard,
@@ -59,6 +57,8 @@ import config_file  # bristol-local; see module docstring
 import instance
 import payload
 
+from .switch import Switch
+from .toggle_list import ToggleList
 from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
 from .theme import LAYOUT, space, type_size
 
@@ -383,52 +383,35 @@ class AgentsPage(HeadedPage):
         )
 
         installed_only = QLabel(
-            "Checking a box installs that agent. It does not choose which one "
+            "Choosing an agent installs it. It does not choose which one "
             "you talk to: that is “The next session starts as” on the Settings "
             "tab, and you can change it whenever you like."
         )
         installed_only.setWordWrap(True)
 
-        self.boxes: dict[str, QCheckBox] = {}
-        holder = QWidget()
-        inner = QVBoxLayout(holder)
+        self.agents = ToggleList()
         for slug, description in _shipped_agents(root):
-            box = QCheckBox(slug)
-            box.setChecked(True)
-            box.stateChanged.connect(self.completeChanged)
-            self.boxes[slug] = box
-            inner.addWidget(box)
-            if description:
-                caption = QLabel(description)
-                caption.setWordWrap(True)
-                caption.setIndent(22)
-                inner.addWidget(caption)
-            if slug == REQUIRED_AGENT:
-                box.setEnabled(False)
-                required = QLabel(
+            required = slug == REQUIRED_AGENT
+            if required:
+                description = " ".join(part for part in (
+                    description,
                     "Always installed: it is the only agent allowed to change "
-                    "how any of them work."
-                )
-                required.setWordWrap(True)
-                required.setIndent(22)
-                inner.addWidget(required)
-            inner.addSpacing(6)
-        inner.addStretch(1)
+                    "how any of them work.") if part)
+            self.agents.add(slug, True, detail=description or "",
+                            locked=required)
+        self.agents.turned.connect(lambda *_: self.completeChanged.emit())
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(holder)
         layout = page_layout(self)
         layout.addWidget(installed_only)
         layout.addSpacing(8)
-        layout.addWidget(scroll)
+        layout.addWidget(self.agents, 1)
 
     def isComplete(self) -> bool:
-        return any(box.isChecked() for box in self.boxes.values())
+        return bool(self.agents.chosen_keys())
 
     def enabled(self) -> list[str]:
-        return [slug for slug, box in self.boxes.items()
-                if box.isChecked() or slug == REQUIRED_AGENT]
+        chosen = self.agents.chosen_keys()
+        return chosen if REQUIRED_AGENT in chosen else chosen + [REQUIRED_AGENT]
 
 
 class IntegrationsPage(HeadedPage):
@@ -468,9 +451,9 @@ class SummaryPage(HeadedPage):
         self.body.setWordWrap(True)
         self.body.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-        self.take_over = QCheckBox("Open this installation when Bristol Tickets starts")
+        self.take_over = Switch("Open this installation when Bristol Tickets starts")
         self.take_over.setChecked(True)
-        self.take_over.stateChanged.connect(self._render)
+        self.take_over.toggled.connect(lambda _on: self._render())
         self.pointer_note = QLabel()
         self.pointer_note.setWordWrap(True)
         self.pointer_note.setTextInteractionFlags(Qt.TextSelectableByMouse)

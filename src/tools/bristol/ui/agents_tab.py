@@ -38,8 +38,6 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
-    QButtonGroup,
-    QCheckBox,
     QComboBox,
     QDialog,
     QFileDialog,
@@ -52,7 +50,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPlainTextEdit,
     QPushButton,
-    QRadioButton,
     QScrollArea,
     QSplitter,
     QVBoxLayout,
@@ -61,7 +58,10 @@ from PySide6.QtWidgets import (
 
 import config_file  # bristol-local; see module docstring
 
-from .dialogs import as_sheet, confirm, list_buttons, notify
+from .segmented import SegmentedControl
+from .toggle_list import ToggleList
+from .dialogs import (RowList, add_button, as_sheet, confirm, notify,
+                      removable_item)
 from .growing_edit import GrowingTextEdit
 from .settled_combo import SettledComboBox, fill_words
 from .row_card import card_list
@@ -89,6 +89,7 @@ FIELD_NAMES = {"slug": "Name", "description": "Description",
 NOTEBOOK_MODES = [("per_folder", "Per Folder"), ("read_all", "Read All"),
                   ("write_all", "Write All")]
 FOLDER_ACCESS = [("read", "Read"), ("write", "Write"), ("hide", "Hide")]
+DASHBOARD_MODES = [("all", "All Dashboards"), ("chosen", "Chosen Dashboards")]
 
 
 class NotebookAccess(QWidget):
@@ -112,55 +113,39 @@ class NotebookAccess(QWidget):
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(space("sm"))
 
-        modes = QHBoxLayout()
-        modes.setSpacing(space("lg"))
-        self.mode_group = QButtonGroup(self)
-        self.mode_buttons: dict[str, QRadioButton] = {}
-        for value, label in NOTEBOOK_MODES:
-            button = QRadioButton(label)
-            button.setMinimumHeight(control_height())
-            button.setChecked(value == mode)
-            self.mode_group.addButton(button)
-            self.mode_buttons[value] = button
-            modes.addWidget(button)
-        modes.addStretch(1)
-        column.addLayout(modes)
+        self.mode_control = SegmentedControl(NOTEBOOK_MODES, mode)
+        column.addWidget(self.mode_control, 0, Qt.AlignLeft)
 
         self.rows = QWidget()
         grid = QGridLayout(self.rows)
-        grid.setContentsMargins(space("lg"), space("sm"), 0, 0)
+        grid.setContentsMargins(0, space("sm"), 0, 0)
         grid.setHorizontalSpacing(space("lg"))
-        grid.setVerticalSpacing(space("xs"))
-        self.choices: dict[str, dict[str, QRadioButton]] = {}
+        grid.setVerticalSpacing(space("sm"))
+        self.choices: dict[str, SegmentedControl] = {}
         for row, folder in enumerate(folders):
             name = QLabel(folder)
             name.setObjectName("metaText")
             grid.addWidget(name, row, 0)
-            group = QButtonGroup(self.rows)
-            buttons = {}
-            for col, (value, label) in enumerate(FOLDER_ACCESS, start=1):
-                button = QRadioButton(label)
-                button.setChecked(self._kept.get(folder, "hide") == value)
-                group.addButton(button)
-                buttons[value] = button
-                grid.addWidget(button, row, col)
-            self.choices[folder] = buttons
-        grid.setColumnStretch(len(FOLDER_ACCESS) + 1, 1)
+            control = SegmentedControl(FOLDER_ACCESS,
+                                       self._kept.get(folder, "hide"))
+            control.setAccessibleName(f"{folder}: Read, Write or Hide")
+            grid.addWidget(control, row, 1)
+            self.choices[folder] = control
+        grid.setColumnStretch(2, 1)
         column.addWidget(self.rows)
-        self.mode_group.buttonToggled.connect(lambda *_: self._sync())
+        self.mode_control.changed.connect(lambda _value: self._sync())
         self._sync()
 
     def _sync(self) -> None:
         self.rows.setVisible(self.mode() == "per_folder" and bool(self.choices))
 
     def mode(self) -> str:
-        return next((v for v, b in self.mode_buttons.items() if b.isChecked()),
-                    "per_folder")
+        return self.mode_control.value() or "per_folder"
 
     def values(self) -> dict:
         chosen = dict(self._kept)
-        for folder, buttons in self.choices.items():
-            chosen[folder] = next(v for v, b in buttons.items() if b.isChecked())
+        for folder, control in self.choices.items():
+            chosen[folder] = control.value()
         return {"mode": self.mode(), "folders": chosen}
 
     def changed_from(self, entry: dict) -> bool:
@@ -205,58 +190,37 @@ class DashboardAccess(QWidget):
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(space("sm"))
 
-        modes = QHBoxLayout()
-        modes.setSpacing(space("lg"))
-        self.mode_group = QButtonGroup(self)
-        self.all_button = QRadioButton("All Dashboards")
-        self.chosen_button = QRadioButton("Chosen Dashboards")
-        self.all_button.setChecked(write_all)
-        self.chosen_button.setChecked(not write_all)
-        for button in (self.all_button, self.chosen_button):
-            button.setMinimumHeight(control_height())
-            button.setEnabled(not locked)
-            self.mode_group.addButton(button)
-            modes.addWidget(button)
+        self.mode_control = SegmentedControl(
+            DASHBOARD_MODES, "all" if write_all else "chosen")
+        self.mode_control.setEnabled(not locked)
         if locked:
-            self.all_button.setToolTip(
+            self.mode_control.setToolTip(
                 "chief_of_staff keeps every dashboard, whatever this says.")
-        modes.addStretch(1)
-        column.addLayout(modes)
+        column.addWidget(self.mode_control, 0, Qt.AlignLeft)
 
-        self.list = QListWidget()
-        self.list.setObjectName("textList")
+        self.list = ToggleList()
         for name in dashboards:
-            item = QListWidgetItem(name)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Checked if name in self._kept else Qt.Unchecked)
-            self.list.addItem(item)
+            self.list.add(name, name in self._kept)
         if not dashboards:
-            item = QListWidgetItem("No dashboard is known yet. Add one in Settings.")
-            item.setFlags(Qt.NoItemFlags)
-            self.list.addItem(item)
+            self.list.add_note("No dashboard is known yet. Add one in Settings.")
         rows = max(1, self.list.count())
         self.list.setFixedHeight(min(rows, 6) * self.list.sizeHintForRow(0)
-                                 + 2 * self.list.frameWidth() + space("sm"))
+                                 + 2 * self.list.frameWidth() + 2 * space("sm"))
         self._names = list(dashboards)
         column.addWidget(self.list)
-        self.mode_group.buttonToggled.connect(lambda *_: self._sync())
+        self.mode_control.changed.connect(lambda _value: self._sync())
         self._sync()
 
     def _sync(self) -> None:
-        self.list.setVisible(self.chosen_button.isChecked())
-
-    @property
-    def write_all(self) -> QRadioButton:
-        return self.all_button
+        self.list.setVisible(self.mode_control.value() == "chosen")
 
     def _ticked(self) -> list[str]:
-        return [self.list.item(i).text() for i in range(self.list.count())
-                if self.list.item(i).text() in self._names
-                and self.list.item(i).checkState() == Qt.Checked]
+        return [n for n in self.list.chosen() if n in self._names]
 
     def values(self) -> dict:
         chosen = [n for n in self._kept if n not in self._names] + self._ticked()
-        return {"write_all": self.all_button.isChecked(), "dashboards": chosen}
+        return {"write_all": self.mode_control.value() == "all",
+                "dashboards": chosen}
 
     def changed_from(self, entry: dict) -> bool:
         """Whether saving would change what the entry says."""
@@ -344,21 +308,16 @@ class PathList(QWidget):
         # item for text a delegate draws, and a row here is a widget, which
         # such padding shrinks out of the item containing it.
         self.list.setObjectName("pathRows")
-        self.list.setSelectionMode(QListWidget.SingleSelection)
+        self.list.setSelectionMode(QListWidget.NoSelection)
         self.list.setMinimumHeight(LAYOUT["path_list_min_h"])
 
-        subject = "folder" if kind == "dir" else "file"
-        self.add_btn, self.remove_btn, row = list_buttons(
-            self._add, self._drop_selected, add_label.rstrip("…"),
-            f"Remove the selected {subject}")
-        self.list.itemSelectionChanged.connect(self._sync_remove)
-        self._sync_remove()
+        self.add_btn = add_button(add_label.rstrip("…"), self._add)
 
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
-        column.setSpacing(0)
+        column.setSpacing(space("sm"))
         column.addWidget(self.list)
-        column.addLayout(row)
+        column.addWidget(self.add_btn, 0, Qt.AlignLeft)
 
     def set_values(self, entries: list) -> None:
         self.list.clear()
@@ -389,8 +348,7 @@ class PathList(QWidget):
             combo.setCurrentIndex(
                 max(0, combo.findData(access)))
         line = QHBoxLayout(holder)
-        line.setContentsMargins(space("sm"), space("xs"), space("sm"),
-                                space("xs"))
+        line.setContentsMargins(0, space("xs"), 0, space("xs"))
         line.setSpacing(space("sm"))
         line.addWidget(label, 1)
         if combo is not None:
@@ -402,19 +360,12 @@ class PathList(QWidget):
         # height it is given rather than growing to what it contains.
         holder.ensurePolished()
         item = QListWidgetItem()
-        item.setSizeHint(holder.sizeHint().expandedTo(
-            QSize(0, LAYOUT["path_row_min_h"])))
+        item.setSizeHint(QSize(0, LAYOUT["path_row_min_h"]))
         self.list.addItem(item)
-        self.list.setItemWidget(item, holder)
+        subject = "folder" if self._kind == "dir" else "file"
+        removable_item(self.list, item, f"Remove this {subject}",
+                       lambda i=item: self._drop(i), content=holder)
         self._rows.append((item, declared, combo))
-
-    def _sync_remove(self) -> None:
-        self.remove_btn.setEnabled(bool(self.list.selectedItems()))
-
-    def _drop_selected(self) -> None:
-        selected = self.list.selectedItems()
-        if selected:
-            self._drop(selected[0])
 
     def _drop(self, item: QListWidgetItem) -> None:
         declared = next((d for i, d, _ in self._rows if i is item), "")
@@ -463,23 +414,15 @@ class EnvList(QWidget):
         self._run = run
         self._rows: list[tuple[QWidget, QLineEdit, QLineEdit]] = []
 
-        self.rows = QVBoxLayout()
-        self.rows.setContentsMargins(0, 0, 0, 0)
-        self.rows.setSpacing(space("sm"))
+        self.rows = RowList()
 
-        self.add_btn = QPushButton("Add Variable")
-        self.add_btn.setAutoDefault(False)
-        self.add_btn.clicked.connect(lambda: self._add("", ""))
+        self.add_btn = add_button("Add Variable", lambda: self._add("", ""))
 
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(space("sm"))
-        column.addLayout(self.rows)
-        bottom = QHBoxLayout()
-        bottom.setSpacing(space("md"))
-        bottom.addWidget(self.add_btn)
-        bottom.addStretch(1)
-        column.addLayout(bottom)
+        column.addWidget(self.rows)
+        column.addWidget(self.add_btn, 0, Qt.AlignLeft)
 
     def set_values(self, env: dict) -> None:
         while self._rows:
@@ -510,22 +453,17 @@ class EnvList(QWidget):
         choose.setAutoDefault(False)
         choose.setFixedSize(LAYOUT["env_choose_w"], control_height())
         choose.clicked.connect(lambda: self._pick_into(value_edit))
-        drop = QPushButton()
-        drop.setObjectName("quietIcon")
-        icons.tint(drop, "x")
-        drop.setToolTip("Remove this variable")
-        drop.setAccessibleName("Remove this variable")
-        drop.setAutoDefault(False)
-        drop.setFixedSize(LAYOUT["env_choose_w"], control_height())
-        drop.clicked.connect(lambda _=False: self._drop(holder))
-        row = QHBoxLayout(holder)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(space("sm"))
-        row.addWidget(name_edit)
-        row.addWidget(value_edit, 1)
-        row.addWidget(choose)
-        row.addWidget(drop)
-        self.rows.addWidget(holder)
+        line = QHBoxLayout(holder)
+        line.setContentsMargins(0, 0, 0, 0)
+        line.setSpacing(space("sm"))
+        line.addWidget(name_edit)
+        line.addWidget(value_edit, 1)
+        line.addWidget(choose)
+        cell: list[QWidget] = []
+        row = self.rows.add_row(holder, "Remove this variable",
+                                lambda: self._drop(cell[0]))
+        cell.append(row)
+        holder = row
         self._rows.append((holder, name_edit, value_edit))
         self._fit_names()
 
@@ -562,8 +500,7 @@ class EnvList(QWidget):
                 "Remove", destructive=True):
             return
         self._rows = [r for r in self._rows if r[0] is not holder]
-        self.rows.removeWidget(holder)
-        holder.deleteLater()
+        self.rows.remove_row(holder)
 
 
 class KeyFields(QWidget):
@@ -670,15 +607,11 @@ class AgentDialog(QDialog):
         self.env = EnvList(run)
         self.env.set_values(record["env"] if record else {})
 
-        self.skills = QListWidget()
-        self.skills.setObjectName("textList")
+        self.skills = ToggleList()
         self.skills.setMinimumHeight(LAYOUT["skill_list_min_h"])
         held = set(record["skills"]) if record else set()
         for name in list(every_skill) + sorted(held - set(every_skill)):
-            item = QListWidgetItem(name)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Checked if name in held else Qt.Unchecked)
-            self.skills.addItem(item)
+            self.skills.add(name, name in held)
 
         self.extra = KeyFields()
         self.extra.set_values(record["extra"] if record else {})

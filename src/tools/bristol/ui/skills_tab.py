@@ -30,10 +30,6 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QButtonGroup,
-    QCheckBox,
-    QFrame,
-    QRadioButton,
     QComboBox,
     QDialog,
     QHBoxLayout,
@@ -50,6 +46,8 @@ from PySide6.QtWidgets import (
 import config_file  # bristol-local; see module docstring
 
 from . import dialogs
+from .segmented import SegmentedControl
+from .toggle_list import ToggleList
 from .links import open_uri
 from .growing_edit import GrowingTextEdit
 from .row_card import card_list
@@ -89,11 +87,15 @@ def _leave_for(parent, url: str) -> None:
         open_uri(url)
 
 
+NEW_SKILL_ROUTES = [("request", "Request From Chief of Staff"),
+                    ("import", "Import From GitHub")]
+
+
 class NewSkillDialog(QDialog):
-    """The two ways a skill arrives, one above the other: a request to
-    chief_of_staff, and an import from GitHub. Choosing one opens its fields and
-    closes the other's; the one button at the foot does what the open choice
-    says.
+    """The two ways a skill arrives, as one segmented choice: a request to
+    chief_of_staff, and an import from GitHub. The window opens with neither
+    chosen; choosing one shows its fields, and the one button at the foot does
+    what the choice says.
 
     ``imported`` is set when an import landed and ``filed`` when a request
     became a card. A refused import keeps the window open with the reason in a
@@ -110,20 +112,16 @@ class NewSkillDialog(QDialog):
         self.setModal(True)
         self.setMinimumWidth(LAYOUT["dialog_min_w"])
 
-        self.request_choice = QRadioButton("Request From Chief of Staff")
-        self.import_choice = QRadioButton("Import From GitHub")
-        for choice in (self.request_choice, self.import_choice):
-            choice.setObjectName("choiceHeading")
-            choice.setCursor(Qt.PointingHandCursor)
-        group = QButtonGroup(self)
-        group.addButton(self.request_choice)
-        group.addButton(self.import_choice)
-        group.buttonToggled.connect(lambda *_: self._sync())
+        self.choice = SegmentedControl(NEW_SKILL_ROUTES, none_chosen=True)
+        self.choice.setAccessibleName("Request a skill or import one")
+        self.request_choice = self.choice.button("request")
+        self.import_choice = self.choice.button("import")
+        self.choice.changed.connect(lambda _value: self._sync())
 
         # The request: a short title and the request itself.
         self.request_fields = QWidget()
         rf = QVBoxLayout(self.request_fields)
-        rf.setContentsMargins(space("2xl"), 0, 0, 0)
+        rf.setContentsMargins(0, 0, 0, 0)
         rf.setSpacing(space("sm"))
         self.title = QLineEdit()
         self.title.textChanged.connect(self._sync)
@@ -139,7 +137,7 @@ class NewSkillDialog(QDialog):
         # The import: one address, and a live example under it.
         self.import_fields = QWidget()
         imf = QVBoxLayout(self.import_fields)
-        imf.setContentsMargins(space("2xl"), 0, 0, 0)
+        imf.setContentsMargins(0, 0, 0, 0)
         imf.setSpacing(space("sm"))
         self.address = QLineEdit()
         self.address.textChanged.connect(self._sync)
@@ -152,10 +150,6 @@ class NewSkillDialog(QDialog):
         imf.addWidget(self._caption("Skill Folder on GitHub"))
         imf.addWidget(self.address)
         imf.addWidget(self.example, 0, Qt.AlignLeft)
-
-        rule = QFrame()
-        rule.setObjectName("sectionRule")
-        rule.setFixedHeight(1)
 
         cancel = QPushButton("Cancel")
         cancel.setAutoDefault(False)
@@ -175,12 +169,8 @@ class NewSkillDialog(QDialog):
         column.setContentsMargins(space("xl"), space("xl"), space("xl"),
                                   space("xl"))
         column.setSpacing(space("md"))
-        column.addWidget(self.request_choice)
+        column.addWidget(self.choice, 0, Qt.AlignLeft)
         column.addWidget(self.request_fields)
-        column.addSpacing(space("sm"))
-        column.addWidget(rule)
-        column.addSpacing(space("sm"))
-        column.addWidget(self.import_choice)
         column.addWidget(self.import_fields)
         column.addSpacing(space("lg"))
         column.addLayout(row)
@@ -310,15 +300,13 @@ class SkillDialog(QDialog):
 
         column.addSpacing(space("md"))
         column.addWidget(self._section("Attached To"))
-        self.boxes: dict[str, QCheckBox] = {}
+        self.holders = ToggleList()
         held = set(record.get("holders", []))
         for slug in agents:
-            box = QCheckBox(agent_caption(slug))
-            box.setChecked(slug in held)
-            box.toggled.connect(
-                lambda on, name=slug: self._attachment(name, on))
-            self.boxes[slug] = box
-            column.addWidget(box)
+            self.holders.add(agent_caption(slug), slug in held, key=slug)
+        self.holders.fit_rows()
+        self.holders.turned.connect(self._attachment)
+        column.addWidget(self.holders)
 
         column.addSpacing(space("md"))
         column.addWidget(self._section("Files"))
@@ -380,18 +368,16 @@ class SkillDialog(QDialog):
         self.accept()
 
     def _attachment(self, slug: str, attached: bool) -> None:
-        """A tick is an attachment, written where the command line writes it."""
+        """A chosen row is an attachment, written where the command line
+        writes it."""
         command = "attach" if attached else "detach"
         code, out, err = self._run(command, self._record["name"],
                                    "--agent", slug)
         if code != 0:
             dialogs.notify(self, "Not Changed",
                            (err or out).strip() or "The loader refused.")
-            # The write did not land, so the box goes back to what is true.
-            box = self.boxes[slug]
-            box.blockSignals(True)
-            box.setChecked(not attached)
-            box.blockSignals(False)
+            # The write did not land, so the row goes back to what is true.
+            self.holders.set_chosen(slug, not attached, quietly=True)
 
     def _open_file(self, item) -> None:
         open_uri(str(Path(self._record["path"]) / item.text()))

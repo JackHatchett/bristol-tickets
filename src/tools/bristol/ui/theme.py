@@ -807,12 +807,15 @@ TEXT_PAIRS: list[tuple[str, str]] = [
 CONTRAST_MIN = 4.5
 
 # A mark that carries a state, over what it sits on: the accent as focus, a
-# checkbox's edge and a selected row's bar; an empty required field's edge; and
-# the edge of everything that can be clicked.
+# checkbox's edge, a selected row's bar, and a chosen toggle row's edge and
+# check on the list and on its own fill, and a switch's knob on its track; an
+# empty required field's edge; and the edge of everything that can be clicked.
 MARK_PAIRS: list[tuple[str, str]] = [
     ("ACCENT", "CANVAS"), ("ACCENT", "SURFACE"),
     ("MISSING", "SURFACE"),
     ("BTN_BORDER", "CANVAS"), ("BTN_BORDER", "SURFACE"), ("BTN_BORDER", "LIST_BG"),
+    ("ACCENT", "LIST_BG"), ("ACCENT", "SEL_BG"),
+    ("INK_SOFT", "BTN_BG"), ("ON_ACCENT", "ACCENT"),
 ]
 
 # The ratio a mark above has to reach. WCAG AA for non-text contrast.
@@ -1502,8 +1505,8 @@ QPushButton#toolbarCreate:hover {{
 }}
 /* A list is a well of rows a person clicks or ticks, so it carries the edge
    everything clickable carries: its fill alone sits too close to the window's
-   to be found. */
-QListWidget {{
+   to be found. An editable list whose rows are widgets is the same well. */
+QListWidget, QFrame#rowList {{
     background-color: {C['LIST_BG']};
     color: {C['INK']};
     border: 1px solid {C['BTN_BORDER']};
@@ -1746,21 +1749,6 @@ QComboBox QAbstractItemView::item:selected {{
 /* A growing text field takes slimmer vertical padding, so one line of it is
    one control tall (growing_edit.py fixes the height). */
 QTextEdit[growing="true"] {{ padding: {s_sm}px {s_md}px; }}
-/* A choice that opens a section of a window: a round mark beside a heading. */
-QRadioButton {{ color: {C['INK']}; background: transparent; spacing: {s_md}px; }}
-QRadioButton#choiceHeading {{ font-weight: 600; }}
-QRadioButton::indicator {{
-    width: {s_lg}px;
-    height: {s_lg}px;
-    border: 1px solid {C['ACCENT']};
-    border-radius: {s_lg // 2 + 1}px;
-    background-color: {C['SURFACE']};
-}}
-QRadioButton::indicator:hover {{ border-color: {C['ACCENT']}; }}
-QRadioButton::indicator:checked {{
-    background-color: {C['ACCENT']};
-    border-color: {C['ACCENT']};
-}}
 /* A picker reads as a picker: the drop-down carries a chevron of its own. */
 QComboBox::drop-down, QDateEdit::drop-down {{
     border: none;
@@ -1828,7 +1816,6 @@ QCheckBox {{
     spacing: {s_md}px;
     padding: {s_xs}px 0px;
 }}
-QRadioButton {{ spacing: {s_md}px; }}
 /* The checkbox is the scheme's own control: a surface with an accent
    hairline, an accent fill when checked — never the platform's indicator. */
 QCheckBox::indicator {{
@@ -1840,20 +1827,6 @@ QCheckBox::indicator {{
 }}
 QCheckBox::indicator:hover {{ border-color: {C['ACCENT']}; }}
 QCheckBox::indicator:checked {{
-    background-color: {C['ACCENT']};
-    border-color: {C['ACCENT']};
-    {check_rule}
-}}
-/* A tickable list row draws the same box a checkbox does, so an unticked one
-   reads on a dark list as well as a light one. */
-QListWidget::indicator {{
-    width: {s_lg}px;
-    height: {s_lg}px;
-    border: 1px solid {C['ACCENT']};
-    border-radius: {r_sm}px;
-    background-color: {C['SURFACE']};
-}}
-QListWidget::indicator:checked {{
     background-color: {C['ACCENT']};
     border-color: {C['ACCENT']};
     {check_rule}
@@ -1943,13 +1916,6 @@ QPushButton#deleteBtn:hover {{
 }}
 /* The + and − under an editable list: two square buttons joined at their
    shared edge. */
-QPushButton#listEditBtn {{
-    min-width: {ctl}px;
-    max-width: {ctl}px;
-    padding: 0px;
-    border-radius: 0px;
-    font-weight: 400;
-}}
 /* One height for every control that can share a row. Padding and border are
    zeroed vertically and the height is fixed outright, so a field, a picker, a
    date and a button beside each other line up to the pixel. */
