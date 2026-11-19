@@ -39,8 +39,8 @@ Usage:
         A task's owning agent is its --assignee if set, else whatever agent owns
         its --epic-id (see `epic.owner`); pass an epic that belongs to the right
         agent so `agent_status.py <slug>` picks it up. A ticket is a *build* (a
-        thing to build — its --description is a Story + Given/When/Then
-        acceptance criteria) or a *fix* (a broken thing — its --description is
+        thing to build — its --description is a Story, Given/When/Then
+        requirements and test criteria) or a *fix* (a broken thing — its --description is
         Expected/Observed). Follow the format in src/skills/manage-tickets/SKILL.md
         (§Record types); the viewer shows the same skeletons when you create in
         the GUI.
@@ -961,7 +961,7 @@ def main() -> None:
                           "that agent, reporter you.")
     pt.add_argument("--record-type", dest="record_type", default="build",
                      choices=["build", "fix"],
-                     help="'build' (a thing to build — Story + acceptance criteria) "
+                     help="'build' (a thing to build — Story + requirements + test criteria) "
                           "or 'fix' (a broken thing — Expected/Observed). Default build. "
                           "Write --description in that record type's format (see "
                           "src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix).")
@@ -976,7 +976,7 @@ def main() -> None:
     pct.add_argument("--title", default=None, help="replace the card's title")
     pct.add_argument("--description", default=None,
                       help="replace the card's description. Write it to the "
-                           "record type's skeleton — Story + Acceptance Criteria "
+                           "record type's skeleton — Story + Requirements + Test Criteria "
                            "for a build, Expected + Observed for a fix (see "
                            "src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix).")
     pct.add_argument("--estimate", default=None,

@@ -1,6 +1,6 @@
 ---
 name: reviewing-finished-work
-description: Reads a card whose author has finished the work against its own acceptance criteria, one at a time, and closes it or sends it back. Use when work another agent finished should be checked by someone who did not do it.
+description: Reads a card whose author has finished the work against its own requirements and test criteria, one at a time, and closes it or sends it back. Use when work another agent finished should be checked by someone who did not do it.
 license: MIT
 compatibility: Runs inside a Bristol repository; needs python3 to read and write the board.
 metadata:
@@ -12,7 +12,7 @@ metadata:
 # reviewing-finished-work
 
 Input: a card in `doing`, assigned to the reviewer, whose author has finished
-the work. Operation: its own acceptance criteria, one at a time, against what is
+the work. Operation: its own requirements and test criteria, one at a time, against what is
 actually on disk. Output: one comment on that card, and the card closed or
 returned to its author.
 
@@ -23,7 +23,7 @@ is why this is a pass someone else runs rather than a section of the work.
 
 ## What is reviewed
 
-- **The card's own acceptance criteria**, in the order they are numbered. They
+- **The card's own requirements and test criteria**, in the order they are written. They
   are the contract; nothing else is the standard, and a criterion the reviewer
   disagrees with is a finding about the card rather than about the work.
 - **What is on disk**, not what the closing comment says was done. A comment is

@@ -77,7 +77,7 @@ from .theme import (
 # Record-type description templates
 # ---------------------------------------------------------------------------
 # A ticket is one of two record types. A *Build* is a thing to build; its
-# description is a Story plus Given/When/Then acceptance criteria. A *Fix* is a
+# description is a Story, Given/When/Then requirements and test criteria. A *Fix* is a
 # broken thing; its description states the Expected behaviour and the Observed
 # divergence. These skeletons pre-populate the Description field so both the
 # user and the agents fill in the same shape every time. They are mad-libs:
@@ -88,8 +88,11 @@ BUILD_TEMPLATE = (
     "Story:\n"
     "As [the person served, by their role] I want [what should change] so that [why it matters].\n"
     "\n"
-    "Acceptance Criteria:\n"
+    "Requirements:\n"
     "1. Given [starting state], when [action], then [expected result].\n"
+    "\n"
+    "Test Criteria:\n"
+    "- [what is run or looked at], and [the result that would fail the card].\n"
 )
 
 FIX_TEMPLATE = (

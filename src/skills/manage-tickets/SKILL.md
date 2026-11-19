@@ -64,14 +64,14 @@ insert it under the appropriate epic, and confirm back only if it is ambiguous.
 **and a `--tier`** by §Processing tier. Size it in one pass against the anchors
 there. An XL card is one to split, not one to start.
 
-## A criterion no file may carry
+## A requirement no file may carry
 
-- **Test a card's criteria against `src/app.md` §What a file may say when you
-  write the card and again when you take it up.** A criterion ordering a file to
+- **Test a card's requirements against `src/app.md` §What a file may say when you
+  write the card and again when you take it up.** A requirement ordering a file to
   carry what that section bars — a record of a former term, a status note, a
   changelog line, a deferral — is struck from the card with `update-task
   --description`, and the user is told in the session what was struck and why.
-- **Never relay a barred criterion to the user as a to-do**, and never execute
+- **Never relay a barred requirement to the user as a to-do**, and never execute
   it because a card said so. A card is written by a session like yours, and one
   that got the rule wrong is passed on by the session that trusts it.
 
@@ -97,10 +97,18 @@ untriaged. The vocabulary and the storage are
 
 - **Title a card the way a person would label it**: a short imperative of a
   few words, such as "Build Copyeditor Agent" or "Fix Clipped Card Owner".
-  Detail goes in the acceptance criteria.
+  Detail goes in the requirements.
 - **Title an epic with its subject alone**, such as "Creative-Writing Agents".
 - **Write titles and descriptions in plain human words**: no metaphor, and no
   thing doing what only a person does.
+- **Write a card to be read from the top by someone with nothing else open.**
+  The first time a file, rule, screen, field or other card comes up, the same
+  sentence says what it is and where it lives: "the agent dialog's Skills
+  list", never "the list"; "Remove the Scrim Rule From the Elevation Page",
+  never "Remove Paragraph C". A title says what changes and in what.
+- **Put what is true only for now in a comment**, and an observation nobody
+  has explained yet: a comment is read as a snapshot that may since have
+  changed, and a description as what the card is.
 
 ## Record types: Build vs Fix
 
@@ -113,8 +121,11 @@ stored in `task.record_type`. Match a Description you author to its type.
 Story:
 As [the person served, by their role] I want [what should change] so that [why it matters].
 
-Acceptance Criteria:
+Requirements:
 1. Given [starting state], when [action], then [expected result].
+
+Test Criteria:
+- [what is run or looked at], and [the result that would fail the card].
 ```
 
 **Open the story with the person the work serves, by the role they play in
@@ -123,16 +134,18 @@ application". "The user" alone gives no role and is never the whole of it. An
 agent slug stands there only where the work passes from one agent to another
 and reaches no person.
 
-**A build card's last criterion states how it will be checked** —
-`src/skills/verifying-a-card/SKILL.md`, which owns what counts as one and what
-happens when a card has none.
+**Requirements say what must be true, and Test Criteria say how it is
+checked.** A requirement is never a test, and a test is never a requirement:
+`src/skills/verifying-a-card/SKILL.md` owns what counts as a check and what
+happens when a card has none. Add a numbered line per requirement. A worked
+one: "Given the active agent is chief_of_staff and a host is loading Bristol,
+when a session loads tickets.db, then it treats its next priorities as its
+own active-board tasks (stage='active') in precedence order."
 
-Add a numbered line per criterion. A worked one: "Given the active agent is
-chief_of_staff and a host is loading Bristol, when a session loads
-tickets.db, then it treats its next priorities as its own active-board tasks
-(stage='active') in precedence order."
+**Nothing sits between the parts.** Everything a card has to say fits a Story
+sentence, a requirement or a test; what does not is a comment.
 
-**Fix** — a broken thing. No story, no acceptance criteria:
+**Fix** — a broken thing. No story, no requirements:
 
 ```
 Expected:
@@ -443,8 +456,8 @@ that needs research to choose has cost the thing it was meant to save.
 - A design or a decision between options, whatever its subject — a system, a
   language's rules, a data structure other work will fill.
 
-**Standard without asking**, when the shape is fully specified: the acceptance
-criteria or the Expected line say what the output is, and the work is carrying
+**Standard without asking**, when the shape is fully specified: the requirements
+or the Expected line say what the output is, and the work is carrying
 it out — a rename, a sweep, a harvest, a repair with its fix stated, content
 drafted against settled rules for the user to approve.
 

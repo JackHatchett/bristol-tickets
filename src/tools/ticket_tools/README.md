@@ -344,7 +344,7 @@ the state, and deleting the file loses nothing. Never scan a payload to discover
 work.
 
 **Every ticket is a Build or a Fix** (`task.record_type`, default `build`). A
-*Build* is a thing to build, described as a Story plus acceptance criteria; a
+*Build* is a thing to build, described as a Story, Requirements and Test Criteria; a
 *Fix* is a broken thing, described as Expected and Observed. Set it with
 `add-task --record-type fix` or in the viewer's Create dialog. The skeletons and
 their precedence rules live in `src/skills/manage-tickets/SKILL.md`

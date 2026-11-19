@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS task (
     assignee    TEXT,
     reporter    TEXT,
     story_points INTEGER DEFAULT 0,
-    record_type TEXT NOT NULL DEFAULT 'build',     -- 'build' (Story + acceptance criteria) | 'fix' (Expected/Observed).
+    record_type TEXT NOT NULL DEFAULT 'build',     -- 'build' (Story + requirements + test criteria) | 'fix' (Expected/Observed).
     stage       TEXT NOT NULL DEFAULT 'backlog',   -- backlog | active | archive (which tab; orthogonal to status).
     sort_order  INTEGER NOT NULL DEFAULT 0,        -- manual drag-to-reorder position; lower = higher in its list.
     due_date    TEXT,                              -- optional ISO date an outside deadline falls on: a filing window, a renewal, a date someone else set. It orders nothing — board order is the queue.

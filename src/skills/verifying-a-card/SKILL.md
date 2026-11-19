@@ -21,12 +21,12 @@ before it may say it is finished.
 
 ## Where the verification lives
 
-- **On the card, as its last acceptance criterion**, in the Given/when/then
-  shape the rest of them take. A build card's criteria are already the contract;
-  the verification is the criterion that states the evidence.
+- **On the card, under Test Criteria**, below its Requirements. The
+  requirements say what must be true; a test criterion says what is run to show
+  it, and what result would fail it. A requirement is never a test.
 - **Never as a second card.** A check filed as its own card is a check that can
   be closed without the work, and work that can be closed without the check.
-- **Never in a comment alone.** A comment records what a run produced; the
+- **Never in a comment alone.** A comment records what a run produced; the test
   criterion is what says a run is owed.
 
 ## What a verification states
@@ -43,7 +43,7 @@ Two things, and a step stating only one is not a verification.
 
 - **The session that made the change runs the check**: a command it runs, a
   value it reads back from config, a changed passage it reads against each
-  criterion in turn.
+  requirement in turn.
 - **The user reviews only where he asked for it, or for anything sent or
   published in his name.** A change to how an application looks is the
   session's to look at, on his running app through computer use —
@@ -61,7 +61,7 @@ Two things, and a step stating only one is not a verification.
 ## When a card has none
 
 - **Say so, and write one before starting the work.** One `update-task --id N
-  --description …` adds the criterion. A check written after the work could not
+  --description …` adds the Test Criteria. A check written after the work could not
   have failed, so the moment to write it is before.
 - **Where adding it would change what the card is for**, ask the user rather
   than deciding the scope on the way past. A verification narrows a card, and
@@ -93,7 +93,7 @@ Two things, and a step stating only one is not a verification.
 
 ## Closing on it
 
-1. **Run what the criterion specifies.**
+1. **Run what the Test Criteria specify.**
 2. **Put what it produced in the closing comment** — the counts, the failures,
    the output that decided it — rather than the fact that it was run.
 3. **Where it failed, the card stays open** and the comment says what failed.
@@ -102,7 +102,7 @@ Two things, and a step stating only one is not a verification.
 
 ## Failure modes
 
-- **A criterion saying the work will be tested** → it specifies no run and no
+- **A test criterion saying the work will be tested** → it specifies no run and no
   failure; it is the story restated.
 - **A closing comment saying the checks pass** → the numbers are the evidence,
   and a reader who was not there has none without them.
@@ -115,6 +115,6 @@ Two things, and a step stating only one is not a verification.
 
 ## Audit
 
-**Whether any build card closed this session without a criterion specifying a run,
+**Whether any build card closed this session without a test criterion specifying a run,
 or with one whose run produced nothing in the comment.** Either is a card that
 says verified and means written.
