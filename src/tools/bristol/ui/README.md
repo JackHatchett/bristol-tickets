@@ -65,6 +65,12 @@ the height its option list scrolls past, and the minimum sizes of the wizard and
 the dialogs. Reach for it only when the thing being sized is a window or a pane,
 never for a gap.
 
+**A scroll bar keeps `SPACE["sm"]` from what it scrolls**, drawn by the bar
+as an empty strip on the content's side; a board column and a text view, whose
+content is already inset that far, take a bar with no strip. A rule that reaches
+a bar through its region, such as `QListWidget#columnCards QScrollBar`, matches
+because `scroll_bars.install()` styles each bar again once its region is shown.
+
 **Every control that can share a row is `control_height()` tall** — a button,
 a text field, a picker, a date. The stylesheet fixes the height and zeroes the
 vertical padding, so nothing on a row is a pixel off from its neighbour. A

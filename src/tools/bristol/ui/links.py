@@ -595,6 +595,10 @@ class LinkBar(QWidget):
 
     def _row(self, text: str, tooltip: str, on_click, on_remove) -> QWidget:
         row = QWidget()
+        # A row is as tall as its text, whatever the pane is short of: the
+        # link button and its ✕ carry no minimum height of their own, so a
+        # squeezed pane would otherwise flatten every row to a few pixels.
+        row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         rl = QHBoxLayout(row)
         rl.setContentsMargins(0, 0, 0, 0)
         rl.setSpacing(space("md"))

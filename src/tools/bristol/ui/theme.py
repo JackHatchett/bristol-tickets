@@ -944,6 +944,8 @@ def apply_scheme(app, theme: str | None, mode: str | None,
     if app is not None:
         from .popups import install as install_popups
         install_popups(app)
+        from .scroll_bars import install as install_scroll_bars
+        install_scroll_bars(app)
         if app.font().family() != TYPEFACE:
             install_typeface(app)
         style_application(app)
@@ -1597,14 +1599,26 @@ QPushButton#filterChip:hover {{
     color: {C['ACCENT_DK']};
 }}
 /* A scroll bar is chrome: a slim handle on an empty groove, so a column that
-   overflows does not gain a heavy black rail down its edge. */
+   overflows does not gain a heavy black rail down its edge. It keeps SPACE sm
+   from what it scrolls, drawn as an empty strip on the content's side. */
 QScrollBar:vertical {{
     background: transparent;
-    width: {s_lg}px;
-    margin: 0px;
+    width: {s_lg + s_sm}px;
+    margin: 0px 0px 0px {s_sm}px;
 }}
 QScrollBar:horizontal {{
     background: transparent;
+    height: {s_lg + s_sm}px;
+    margin: {s_sm}px 0px 0px 0px;
+}}
+/* Where the content is already inset from the viewport's edge by SPACE sm — a
+   board card by its margin, text by its document margin — that inset is the
+   gap, and the bar adds none. */
+QListWidget#columnCards QScrollBar:vertical, QTextEdit QScrollBar:vertical {{
+    width: {s_lg}px;
+    margin: 0px;
+}}
+QTextEdit QScrollBar:horizontal {{
     height: {s_lg}px;
     margin: 0px;
 }}
