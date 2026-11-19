@@ -66,7 +66,7 @@ from .growing_edit import GrowingTextEdit
 from .settled_combo import SettledComboBox, fill_words
 from .row_card import card_list
 from . import icons
-from .theme import CARD_ROLE, LAYOUT, agent_caption, space
+from .theme import CARD_ROLE, LAYOUT, agent_caption, control_height, space
 
 AGENTS_CLI = Path("src") / "tools" / "agent_tools" / "agents.py"
 CREATE_CLI = Path("src") / "tools" / "agent_tools" / "create_agent.py"
@@ -118,6 +118,7 @@ class NotebookAccess(QWidget):
         self.mode_buttons: dict[str, QRadioButton] = {}
         for value, label in NOTEBOOK_MODES:
             button = QRadioButton(label)
+            button.setMinimumHeight(control_height())
             button.setChecked(value == mode)
             self.mode_group.addButton(button)
             self.mode_buttons[value] = button
@@ -212,6 +213,7 @@ class DashboardAccess(QWidget):
         self.all_button.setChecked(write_all)
         self.chosen_button.setChecked(not write_all)
         for button in (self.all_button, self.chosen_button):
+            button.setMinimumHeight(control_height())
             button.setEnabled(not locked)
             self.mode_group.addButton(button)
             modes.addWidget(button)
@@ -222,7 +224,7 @@ class DashboardAccess(QWidget):
         column.addLayout(modes)
 
         self.list = QListWidget()
-        self.list.setObjectName("searchResults")
+        self.list.setObjectName("textList")
         for name in dashboards:
             item = QListWidgetItem(name)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
@@ -278,6 +280,19 @@ class DashboardAccess(QWidget):
 
 def _required(label: str) -> str:
     return f"{label} *"
+
+
+def align_form_labels(form: QFormLayout) -> None:
+    """Sit every label of ``form`` on the first line of its field: each label is
+    one control tall and centred in that height, at the top of its row, so it
+    reads level with a field, a picker, a row of radios or a list's first row
+    alike."""
+    for row in range(form.rowCount()):
+        item = form.itemAt(row, QFormLayout.LabelRole)
+        label = item.widget() if item is not None else None
+        if isinstance(label, QLabel):
+            label.setFixedHeight(control_height())
+            label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
 
 def _grant_option(grant: dict) -> str:
@@ -487,16 +502,21 @@ class EnvList(QWidget):
         name_edit.textChanged.connect(lambda _text: self._fit_names())
         value_edit = QLineEdit(value)
         value_edit.setPlaceholderText("Value")
-        choose = QPushButton("…")
+        choose = QPushButton()
+        choose.setObjectName("quietIcon")
+        icons.tint(choose, "folder")
+        choose.setToolTip("Choose a folder for this variable")
+        choose.setAccessibleName("Choose a folder for this variable")
         choose.setAutoDefault(False)
-        choose.setMaximumWidth(LAYOUT["env_choose_w"])
+        choose.setFixedSize(LAYOUT["env_choose_w"], control_height())
         choose.clicked.connect(lambda: self._pick_into(value_edit))
         drop = QPushButton()
+        drop.setObjectName("quietIcon")
         icons.tint(drop, "x")
         drop.setToolTip("Remove this variable")
         drop.setAccessibleName("Remove this variable")
         drop.setAutoDefault(False)
-        drop.setMaximumWidth(LAYOUT["env_choose_w"])
+        drop.setFixedSize(LAYOUT["env_choose_w"], control_height())
         drop.clicked.connect(lambda _=False: self._drop(holder))
         row = QHBoxLayout(holder)
         row.setContentsMargins(0, 0, 0, 0)
@@ -574,6 +594,7 @@ class KeyFields(QWidget):
             field.setMinimumHeight(LAYOUT["extra_min_h"])
             self._fields[key] = field
             self.form.addRow(key, field)
+        align_form_labels(self.form)
         self.setVisible(bool(extra))
 
     def values(self) -> dict:
@@ -650,7 +671,7 @@ class AgentDialog(QDialog):
         self.env.set_values(record["env"] if record else {})
 
         self.skills = QListWidget()
-        self.skills.setObjectName("searchResults")
+        self.skills.setObjectName("textList")
         self.skills.setMinimumHeight(LAYOUT["skill_list_min_h"])
         held = set(record["skills"]) if record else set()
         for name in list(every_skill) + sorted(held - set(every_skill)):
@@ -678,6 +699,7 @@ class AgentDialog(QDialog):
         form.addRow("Skills", self.skills)
         if record and record["extra"]:
             form.addRow("Other Keys", self.extra)
+        align_form_labels(form)
 
         page = QWidget()
         page.setLayout(form)

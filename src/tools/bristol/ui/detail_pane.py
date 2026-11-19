@@ -29,7 +29,6 @@ import sqlite3
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QFrame,
     QGridLayout,
@@ -49,7 +48,8 @@ import finishing  # bristol-local: what done means for the board, one rule
 from .attachments import AttachmentBar
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar, carried_summaries
-from .record_dialog import STAGES, section_widget
+from .record_dialog import LOG_FILTERS, STAGES, section_widget
+from .segmented import SegmentedControl
 from .settled_combo import fill_words
 from . import icons
 from .theme import (
@@ -237,15 +237,9 @@ class DetailPane(QWidget):
         self._log_header = section_widget("Log")
         self._body_layout.addWidget(self._log_header)
         filter_row = QHBoxLayout()
-        filter_row.setSpacing(space("lg"))
-        self.log_show_comments = QCheckBox("Comments")
-        self.log_show_comments.setChecked(True)
-        self.log_show_comments.toggled.connect(self._render_log)
-        self.log_show_changes = QCheckBox("Changes")
-        self.log_show_changes.setChecked(True)
-        self.log_show_changes.toggled.connect(self._render_log)
-        filter_row.addWidget(self.log_show_comments)
-        filter_row.addWidget(self.log_show_changes)
+        self.log_filter = SegmentedControl(LOG_FILTERS)
+        self.log_filter.changed.connect(lambda _value: self._render_log())
+        filter_row.addWidget(self.log_filter)
         filter_row.addStretch(1)
         self._body_layout.addLayout(filter_row)
         self.log_view = QTextEdit()
@@ -648,8 +642,8 @@ class DetailPane(QWidget):
             return
         entries = log_entries(
             self.conn, self.task_id,
-            comments=self.log_show_comments.isChecked(),
-            changes=self.log_show_changes.isChecked(),
+            comments=self.log_filter.value() in ("all", "comments"),
+            changes=self.log_filter.value() in ("all", "changes"),
         )
         if not entries:
             self.log_view.setPlainText("(Nothing to show.)")

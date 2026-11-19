@@ -96,11 +96,11 @@ class KanbanColumn(QWidget):
         header.setSpacing(space("md"))
 
         self.header_label = QLabel(display_name)
-        self.header_label.setObjectName("columnName")
+        self.header_label.setObjectName("regionTitle")
         header.addWidget(self.header_label)
 
         self.count_label = QLabel("")
-        self.count_label.setObjectName("columnCount")
+        self.count_label.setObjectName("metaText")
         header.addWidget(self.count_label)
         header.addStretch(1)
         root.addLayout(header)

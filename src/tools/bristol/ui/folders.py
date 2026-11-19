@@ -155,7 +155,7 @@ class NotebookDialog(QDialog):
         root_row.addWidget(change)
 
         self.list = QListWidget()
-        self.list.setObjectName("searchResults")
+        self.list.setObjectName("textList")
         self.list.currentItemChanged.connect(lambda *_: self._sync())
         self.add_btn, self.remove_btn, folder_actions = dialogs.list_buttons(
             self._add, self._remove, "Attach a folder",
@@ -265,7 +265,7 @@ class DashboardsDialog(QDialog):
         self.setMinimumHeight(LAYOUT["wizard_min_h"])
 
         self.list = QListWidget()
-        self.list.setObjectName("searchResults")
+        self.list.setObjectName("textList")
         self.list.currentItemChanged.connect(lambda *_: self._sync())
         self.add_btn, self.remove_btn, actions = dialogs.list_buttons(
             self._add, self._remove, "Add a dashboard",

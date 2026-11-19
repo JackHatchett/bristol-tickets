@@ -106,7 +106,7 @@ class ImagePreviewDialog(QDialog):
 
         buttons = QHBoxLayout()
         delete_btn = QPushButton("Delete Image")
-        delete_btn.setObjectName("attachRemoveBtn")
+        delete_btn.setObjectName("deleteBtn")
         delete_btn.clicked.connect(self._confirm_delete)
         buttons.addWidget(delete_btn)
         buttons.addStretch()
@@ -228,7 +228,7 @@ class AttachmentBar(QWidget):
             name.setToolTip(filename)
             rl.addWidget(name, 1)
             x = QPushButton()
-            x.setObjectName("attachRemoveBtn")
+            x.setObjectName("quietIcon")
             icons.tint(x, "x")
             x.setFixedWidth(space("2xl"))
             x.setToolTip("Remove attachment (moves the file to images/_trash)")

@@ -73,15 +73,18 @@ height as its minimum. A button drawn as text — a view tab, a link, a chip, an
 example under a field — is not a control on a row and is exempt by name in the
 stylesheet.
 
-**A button is one of four ranks, chosen by object name and never styled
-outside them.**
+**A control is one of the variants the design system's Bristol Controls page
+gives, chosen by object name and never styled outside them.** That page gives
+every variant's name and the color role of each of its parts; the buttons are:
 
-| Rank | Object name | For |
+| Variant | Object name | For |
 | --- | --- | --- |
-| Primary | `globalCreateBtn` | The one action a page or window exists for: Create, Import, Save. |
+| Primary | `globalCreateBtn`, `toolbarCreate` | The one action a page or window exists for: Create, Import, Save. |
 | Secondary | none | Every other action. |
-| Quiet | `linkRow`, `filterClear`, `exampleLink` | Text that acts: a link, a clear, an example that opens its page. |
-| Destructive | `deleteBtn` | An action that cannot be undone, and only inside the window of the thing it destroys. |
+| Danger | `deleteBtn` | An action that cannot be undone, and only inside the window of the thing it destroys. |
+| Quiet Icon | `quietIcon`, `paneToggle`, `paneReveal` | An icon beside what it acts on: a remove ✕, a folder picker, the pane's chevrons. |
+| Link | `link`, `exampleLink` | Words that act: a link row, Clear All, an example that opens its page. |
+| Segmented Control | `segment`, through `segmented.SegmentedControl` | One of two to five choices that filter one view. |
 
 **A list of things a person opens is a list of cards**, drawn by
 `row_card.RowCardDelegate` from `card_list()`: the board card's surface, a

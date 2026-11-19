@@ -81,6 +81,7 @@ from .theme import (
     live_scheme,
     set_scheme,
     space,
+    style_application,
     _fmt_dt,
     _utcnow,
 )
@@ -225,7 +226,7 @@ class MainWindow(QMainWindow):
         self.filter_menu = None
 
         self.filter_clear_btn = QPushButton("Clear")
-        self.filter_clear_btn.setObjectName("filterClear")
+        self.filter_clear_btn.setObjectName("link")
         self.filter_clear_btn.setCursor(Qt.PointingHandCursor)
         self.filter_clear_btn.setToolTip("Remove every filter.")
         self.filter_clear_btn.clicked.connect(self._clear_filters)
@@ -706,7 +707,7 @@ class MainWindow(QMainWindow):
         self._mark = QLabel()
         self._mark.setPixmap(icons.mark(LAYOUT["header_mark_h"]))
         title = QLabel("Bristol Tickets")
-        title.setObjectName("appTitle")
+        title.setObjectName("regionTitle")
         identity_row.addWidget(self._mark, 0, Qt.AlignVCenter)
         identity_row.addWidget(title, 0, Qt.AlignVCenter)
 
@@ -968,11 +969,10 @@ class MainWindow(QMainWindow):
         before the configuration says so."""
         app = QApplication.instance()
         set_scheme(live_scheme(app, theme, mode))
-        sheet = build_style_sheet()
         if app is not None:
-            app.setStyleSheet(sheet)
+            style_application(app)
         else:
-            self.setStyleSheet(sheet)
+            self.setStyleSheet(build_style_sheet())
         self._repaint_cards()
         if hasattr(self, "detail_pane"):
             self.detail_pane.refresh_theme()

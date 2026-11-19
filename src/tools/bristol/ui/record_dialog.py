@@ -25,7 +25,6 @@ from PySide6.QtCore import QDate, Qt
 from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QComboBox,
     QDateEdit,
     QDialog,
@@ -46,6 +45,7 @@ from PySide6.QtWidgets import (
 import finishing  # bristol-local: what done means for the board, one rule
 
 from .attachments import AttachmentBar
+from .segmented import SegmentedControl
 from .dialogs import confirm, notify
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar, remove_links_for_task
@@ -104,6 +104,9 @@ FIX_TEMPLATE = (
 )
 
 RECORD_TEMPLATES = {"build": BUILD_TEMPLATE, "fix": FIX_TEMPLATE}
+
+# What a record's Log shows: everything, only the comments, or only the changes.
+LOG_FILTERS = [("all", "All"), ("comments", "Comments"), ("changes", "Changes")]
 
 STAGES = ["backlog", "active", "archive"]
 
@@ -417,15 +420,9 @@ class UnifiedRecordDialog(QDialog):
         # newest first. Only meaningful when editing an existing task.
         self._log_section = section_widget("Log")
         self.log_filter_row = QHBoxLayout()
-        self.log_filter_row.setSpacing(space("lg"))
-        self.log_show_comments = QCheckBox("Comments")
-        self.log_show_comments.setChecked(True)
-        self.log_show_comments.toggled.connect(self._render_log)
-        self.log_show_changes = QCheckBox("Changes")
-        self.log_show_changes.setChecked(True)
-        self.log_show_changes.toggled.connect(self._render_log)
-        self.log_filter_row.addWidget(self.log_show_comments)
-        self.log_filter_row.addWidget(self.log_show_changes)
+        self.log_filter = SegmentedControl(LOG_FILTERS)
+        self.log_filter.changed.connect(lambda _value: self._render_log())
+        self.log_filter_row.addWidget(self.log_filter)
         self.log_filter_row.addStretch(1)
         self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
@@ -451,8 +448,8 @@ class UnifiedRecordDialog(QDialog):
         # Leftover vertical space collects below the last section, so hiding a
         # section (the Epic kind) never opens gaps between the ones that remain.
         self.main_layout.addStretch(1)
-        self._log_widgets = [self._log_section, self.log_show_comments,
-                             self.log_show_changes, self.log_view,
+        self._log_widgets = [self._log_section, self.log_filter,
+                             self.log_view,
                              self.log_post_input, self.log_post_btn,
                              self._attach_section, self.attachments]
 
@@ -772,8 +769,8 @@ class UnifiedRecordDialog(QDialog):
             return
         lines = log_lines(
             self.conn, self.record_id,
-            comments=self.log_show_comments.isChecked(),
-            changes=self.log_show_changes.isChecked(),
+            comments=self.log_filter.value() in ("all", "comments"),
+            changes=self.log_filter.value() in ("all", "changes"),
         )
         self.log_view.setPlainText("\n".join(lines) if lines else "(Nothing to show.)")
 

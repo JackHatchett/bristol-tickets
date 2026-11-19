@@ -64,7 +64,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPalette
 
 # ---------------------------------------------------------------------------
 # Board columns and the custom data role the card delegate paints from
@@ -314,6 +314,7 @@ def type_size(step: str) -> int:
 WARM_LIGHT = {
     "INK":          "#3d3325",  # primary text (warm near-black)
     "INK_SOFT":     "#675c49",  # secondary text (6.1:1 on CANVAS)
+    "INK_FAINT":    "#796e5d",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#faf6ef",  # app / dialog background
     "SURFACE":      "#fffdf9",  # card / input surface
     "BORDER":       "#e7dcc6",  # hairline borders
@@ -344,6 +345,7 @@ WARM_LIGHT = {
 WARM_DARK = {
     "INK":          "#f2e6d5",  # primary text (warm near-white)
     "INK_SOFT":     "#b89f7d",  # secondary text
+    "INK_FAINT":    "#988366",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#17120c",  # app / dialog background (deep warm)
     "SURFACE":      "#241c14",  # card / input surface (dark warm)
     "BORDER":       "#463724",  # hairline borders
@@ -376,6 +378,7 @@ WARM_DARK = {
 COOL_LIGHT = {
     "INK":          "#0f172a",  # primary text (near-black slate)
     "INK_SOFT":     "#5b6779",  # secondary text (4.9:1 on LIST_BG)
+    "INK_FAINT":    "#5e6a7c",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#f4f5f7",  # app / dialog background
     "SURFACE":      "#ffffff",  # card / input surface
     "BORDER":       "#e2e8f0",  # hairline borders
@@ -406,6 +409,7 @@ COOL_LIGHT = {
 COOL_DARK = {
     "INK":          "#e2e8f0",  # primary text (near-white slate)
     "INK_SOFT":     "#94a3b8",  # secondary text
+    "INK_FAINT":    "#7c899b",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#0f1216",  # app / dialog background
     "SURFACE":      "#1a1f26",  # card / input surface
     "BORDER":       "#2c333d",  # hairline borders
@@ -447,6 +451,7 @@ COOL_DARK = {
 GITHUB_LIGHT = {
     "INK":          "#1f2328",
     "INK_SOFT":     "#656d76",
+    "INK_FAINT":    "#656d76",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#f6f8fa",
     "SURFACE":      "#ffffff",
     "BORDER":       "#d0d7de",
@@ -477,6 +482,7 @@ GITHUB_LIGHT = {
 GITHUB_DARK = {
     "INK":          "#e6edf3",
     "INK_SOFT":     "#8b949e",
+    "INK_FAINT":    "#7d868f",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#0d1117",
     "SURFACE":      "#161b22",
     "BORDER":       "#30363d",
@@ -509,6 +515,7 @@ GITHUB_DARK = {
 NORD_LIGHT = {
     "INK":          "#2e3440",
     "INK_SOFT":     "#4c566a",
+    "INK_FAINT":    "#5e6779",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#eceff4",
     "SURFACE":      "#ffffff",
     "BORDER":       "#d8dee9",
@@ -539,6 +546,7 @@ NORD_LIGHT = {
 NORD_DARK = {
     "INK":          "#eceff4",
     "INK_SOFT":     "#c3cbd8",
+    "INK_FAINT":    "#a8b0bd",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#2e3440",
     "SURFACE":      "#3b4252",
     "BORDER":       "#434c5e",
@@ -571,6 +579,7 @@ NORD_DARK = {
 ROSE_PINE_LIGHT = {
     "INK":          "#575279",
     "INK_SOFT":     "#68657f",
+    "INK_FAINT":    "#68657f",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#faf4ed",
     "SURFACE":      "#fffaf3",
     "BORDER":       "#e3d9d1",
@@ -601,6 +610,7 @@ ROSE_PINE_LIGHT = {
 ROSE_PINE_DARK = {
     "INK":          "#e0def4",
     "INK_SOFT":     "#a5a1bd",
+    "INK_FAINT":    "#89859e",  # placeholder and example text, 4.5:1 or better
     "CANVAS":       "#191724",
     "SURFACE":      "#1f1d2e",
     "BORDER":       "#26233a",
@@ -729,7 +739,7 @@ LEGACY_CUSTOM_NAME = "Custom"
 # it groups. A key the reference scheme carries and no group names still gets a
 # field, under the last heading — ``palette_rows()`` is what places it.
 KEY_GROUPS: list[tuple[str, list[str]]] = [
-    ("Text", ["INK", "INK_SOFT"]),
+    ("Text", ["INK", "INK_SOFT", "INK_FAINT"]),
     ("Surfaces", ["CANVAS", "SURFACE", "LIST_BG", "BORDER"]),
     ("Accent", ["ACCENT", "ACCENT_DK", "ON_ACCENT"]),
     ("Cards", ["SEL_BG", "HOVER_BG"]),
@@ -745,6 +755,7 @@ KEY_GROUPS: list[tuple[str, list[str]]] = [
 KEY_CAPTIONS: dict[str, str] = {
     "INK": "Primary Text",
     "INK_SOFT": "Secondary Text",
+    "INK_FAINT": "Tertiary Text",
     "CANVAS": "Window Background",
     "SURFACE": "Card Surface",
     "LIST_BG": "Recessed List",
@@ -783,6 +794,7 @@ TEXT_PAIRS: list[tuple[str, str]] = [
     ("INK", "SEL_BG"), ("INK", "HOVER_BG"),
     ("INK", "BTN_BG"), ("INK", "BTN_HOVER"), ("INK", "BTN_PRESSED"),
     ("INK_SOFT", "CANVAS"), ("INK_SOFT", "SURFACE"), ("INK_SOFT", "LIST_BG"),
+    ("INK_FAINT", "CANVAS"), ("INK_FAINT", "SURFACE"), ("INK_FAINT", "LIST_BG"),
     ("ACCENT_DK", "CANVAS"), ("ACCENT_DK", "SURFACE"), ("ACCENT_DK", "SEL_BG"),
     ("ON_ACCENT", "ACCENT"), ("ON_ACCENT", "CREATE_HOVER"),
     ("DELETE_BG", "BTN_BG"), ("DELETE_HOVER", "BTN_HOVER"),
@@ -934,7 +946,19 @@ def apply_scheme(app, theme: str | None, mode: str | None,
         install_popups(app)
         if app.font().family() != TYPEFACE:
             install_typeface(app)
-        app.setStyleSheet(build_style_sheet())
+        style_application(app)
+
+
+def style_application(app) -> None:
+    """Draw ``app`` in the live palette: the style sheet, and the one colour a
+    style sheet cannot set, a field's placeholder text, which takes Tertiary
+    Text."""
+    palette = app.palette()
+    placeholder = QColor(C["INK_FAINT"])
+    for group in (QPalette.Active, QPalette.Inactive, QPalette.Disabled):
+        palette.setColor(group, QPalette.PlaceholderText, placeholder)
+    app.setPalette(palette)
+    app.setStyleSheet(build_style_sheet())
 
 
 # ---------------------------------------------------------------------------
@@ -1401,8 +1425,8 @@ QWidget#appHeader {{
     background-color: {C['CANVAS']};
     border-bottom: 1px solid {C['BORDER']};
 }}
-/* The app's name beside its mark. */
-QLabel#appTitle {{
+/* A region's name: the app's beside its mark, a board column's. */
+QLabel#regionTitle {{
     color: {C['INK']};
     font-size: {type_size('title')}pt;
     font-weight: 600;
@@ -1474,26 +1498,13 @@ QPushButton#toolbarCreate:hover {{
     background-color: {C['CREATE_HOVER']};
     border-color: {C['CREATE_HOVER']};
 }}
-QGroupBox {{
-    font-weight: 600;
-    border: none;
-    border-radius: {r_lg}px;
-    background-color: {C['SURFACE']};
-    margin-top: {s_xl}px;
-    padding: {s_lg}px;
-    color: {C['INK']};
-}}
-QGroupBox::title {{
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    left: {s_xl}px;
-    padding: 0 {s_md}px;
-    color: {C['ACCENT_DK']};
-}}
+/* A list is a well of rows a person clicks or ticks, so it carries the edge
+   everything clickable carries: its fill alone sits too close to the window's
+   to be found. */
 QListWidget {{
     background-color: {C['LIST_BG']};
     color: {C['INK']};
-    border: none;
+    border: 1px solid {C['BTN_BORDER']};
     border-radius: {r_lg}px;
     padding: {s_sm}px;
     outline: 0;
@@ -1508,12 +1519,6 @@ QListWidget#columnCards {{
     border-top: 1px solid {C['BORDER']};
     padding: 0px;
 }}
-QLabel#columnName {{
-    color: {C['INK']};
-    font-size: {type_size('title')}pt;
-    font-weight: 600;
-}}
-QLabel#columnCount {{ color: {C['INK_SOFT']}; }}
 /* The detail pane is a sidebar surface: the one raised region right of the
    splitter, separated from the board canvas by a hairline. */
 QWidget#detailPane {{
@@ -1526,21 +1531,6 @@ QScrollArea#detailScroll, QScrollArea#detailScroll > QWidget > QWidget {{
 }}
 /* The hairline under a section header in the detail pane. */
 QFrame#sectionRule {{ background-color: {C['BORDER']}; border: none; }}
-/* The pane's collapse control, and the strip that brings it back: both quiet
-   glyphs that only gain a surface on hover. */
-QPushButton#paneToggle, QPushButton#paneReveal {{
-    background: transparent;
-    border: none;
-    border-radius: {r_md}px;
-    padding: {s_xs}px {s_md}px;
-    color: {C['INK_SOFT']};
-    font-weight: 400;
-}}
-QPushButton#paneToggle:focus {{ background-color: {C['HOVER_BG']}; border: 1px solid {C['ACCENT']}; }}
-QPushButton#paneToggle:hover, QPushButton#paneReveal:hover {{
-    background-color: {C['HOVER_BG']};
-    color: {C['INK']};
-}}
 QPushButton#paneReveal {{
     border-left: 1px solid {C['BORDER']};
     border-radius: 0px;
@@ -1565,13 +1555,8 @@ QLabel#formCaption {{ color: {C['INK_SOFT']}; }}
    it takes the pointer fill a card does. */
 QFrame#filterMenu {{
     background-color: {C['SURFACE']};
-    border: none;
+    border: 1px solid {C['BTN_BORDER']};
     border-radius: {r_lg}px;
-}}
-QLabel#filterTitle {{
-    color: {C['INK']};
-    font-size: {type_size('section')}pt;
-    font-weight: 600;
 }}
 QLabel#facetHeading {{
     color: {C['INK_SOFT']};
@@ -1580,25 +1565,13 @@ QLabel#facetHeading {{
 }}
 QWidget#facetRow {{ border-radius: {r_md}px; }}
 QWidget#facetRow:hover {{ background-color: {C['HOVER_BG']}; }}
-QLabel#facetCount {{ color: {C['INK_SOFT']}; }}
 QScrollArea#filterScroll, QScrollArea#filterScroll > QWidget > QWidget,
 QScrollArea#paletteScroll, QScrollArea#paletteScroll > QWidget > QWidget,
 QScrollArea#recordScroll, QScrollArea#recordScroll > QWidget > QWidget {{
     background: transparent;
     border: none;
 }}
-/* A text action inside a panel or a control row: no surface of its own. */
-QPushButton#filterClear {{
-    background: transparent;
-    border: none;
-    padding: {s_xs}px {s_md}px;
-    color: {C['ACCENT_DK']};
-    font-weight: 400;
-}}
-QPushButton#filterClear:hover, QPushButton#filterClear:focus {{
-    text-decoration: underline;
-}}
-QPushButton#filterClear:disabled {{
+QPushButton#link:disabled {{
     color: {C['DISABLED_TX']};
     text-decoration: none;
 }}
@@ -1660,7 +1633,7 @@ QListWidget::item:selected {{ background: transparent; }}
    them with the palette's highlighted-text colour on a light fill —
    near-invisible. Give these lists a visible selected fill and the brightest
    accent the board uses for text. */
-QListWidget#searchResults::item, QListWidget#themeList::item {{
+QListWidget#textList::item {{
     padding: {s_md}px {s_lg}px;
     border-radius: {r_md}px;
     border-left: 3px solid transparent;
@@ -1668,13 +1641,12 @@ QListWidget#searchResults::item, QListWidget#themeList::item {{
 /* The selected row also carries an accent bar, because a scheme's hover and
    selection fills sit close enough that a hovered row would otherwise read as
    a second selection. */
-QListWidget#searchResults::item:selected, QListWidget#themeList::item:selected {{
+QListWidget#textList::item:selected {{
     background: {C['SEL_BG']};
     color: {C['ACCENT_DK']};
     border-left: 3px solid {C['ACCENT']};
 }}
-QListWidget#searchResults::item:hover:!selected,
-QListWidget#themeList::item:hover:!selected {{
+QListWidget#textList::item:hover:!selected {{
     background: {C['HOVER_BG']};
 }}
 /* The Search and Archive results: a table read as a list, with a header per
@@ -1683,7 +1655,7 @@ QTableWidget#resultsTable {{
     background-color: {C['LIST_BG']};
     alternate-background-color: {C['SURFACE']};
     color: {C['INK']};
-    border: none;
+    border: 1px solid {C['BTN_BORDER']};
     border-radius: {r_lg}px;
     outline: 0;
 }}
@@ -1738,7 +1710,7 @@ QComboBox {{ combobox-popup: 0; }}
 QComboBox QAbstractItemView {{
     background-color: {C['SURFACE']};
     color: {C['INK']};
-    border: 1px solid {C['BORDER']};
+    border: 1px solid {C['BTN_BORDER']};
     border-radius: {r_lg}px;
     padding: {s_sm}px;
     outline: 0;
@@ -1805,24 +1777,37 @@ QLabel#dialogHeading {{
     font-weight: 600;
 }}
 QLabel#metaText {{ color: {C['INK_SOFT']}; }}
-/* A link row is a quiet reference, not a headline: left-aligned accent text
-   at body scale and normal weight, underlined on hover so it is obviously
-   clickable — it must never out-weigh the section header above it. */
-QPushButton#linkRow {{
+/* A link: accent text with no surface, underlined under the pointer and with
+   focus. A link row, Clear All in the filter panel, a skill's source. */
+QPushButton#link {{
     background: transparent;
     border: none;
     padding: {s_xs}px 0px;
     text-align: left;
     color: {C['ACCENT_DK']};
-    font-size: {type_size('body')}pt;
     font-weight: 400;
 }}
-QPushButton#linkRow:hover, QPushButton#linkRow:focus {{ text-decoration: underline; }}
-/* The ✕ that removes a link or attachment: the ordinary button face, minus
-   the wide padding that would clip the mark inside its narrow fixed square. */
-QPushButton#attachRemoveBtn {{ padding: {s_xs}px 0px; }}
-/* A link row that is not clickable (a pending link on an unsaved ticket). */
-QLabel#linkRowText {{ color: {C['INK_SOFT']}; font-size: {type_size('body')}pt; }}
+QPushButton#link:hover, QPushButton#link:focus {{ text-decoration: underline; }}
+/* A quiet icon button: an icon with no face until the pointer is over it, for
+   an action that sits beside what it acts on — the ✕ that removes a link, an
+   attachment or a variable, the folder that picks one. The pane's collapse
+   control and the strip that brings it back are the same button. */
+QPushButton#quietIcon, QPushButton#paneToggle, QPushButton#paneReveal {{
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: {r_md}px;
+    padding: {s_xs}px;
+    color: {C['INK_SOFT']};
+    font-weight: 400;
+}}
+QPushButton#quietIcon:hover, QPushButton#paneToggle:hover,
+QPushButton#paneReveal:hover {{
+    background-color: {C['HOVER_BG']};
+    color: {C['INK']};
+}}
+QPushButton#quietIcon:focus, QPushButton#paneToggle:focus {{
+    border-color: {C['ACCENT']};
+}}
 QCheckBox {{
     color: {C['INK']};
     background: transparent;
@@ -1862,7 +1847,7 @@ QListWidget::indicator:checked {{
 QMenu {{
     background-color: {C['SURFACE']};
     color: {C['INK']};
-    border: 1px solid {C['BORDER']};
+    border: 1px solid {C['BTN_BORDER']};
     border-radius: {r_md}px;
     padding: {s_sm}px;
 }}
@@ -1908,6 +1893,27 @@ QPushButton#globalCreateBtn:disabled {{
     border: 1px solid {C['BORDER']};
     color: {C['DISABLED_TX']};
 }}
+/* A segmented control: its segments share the control face and join into one
+   control; the chosen one takes the selection fill and the accent text. */
+QPushButton#segment {{
+    border-radius: 0px;
+    padding: 0px {s_lg}px;
+}}
+QPushButton#segment[position="middle"], QPushButton#segment[position="last"] {{
+    border-left: none;
+}}
+QPushButton#segment[position="first"] {{
+    border-top-left-radius: {r_md}px;
+    border-bottom-left-radius: {r_md}px;
+}}
+QPushButton#segment[position="last"] {{
+    border-top-right-radius: {r_md}px;
+    border-bottom-right-radius: {r_md}px;
+}}
+QPushButton#segment:checked {{
+    background-color: {C['SEL_BG']};
+    color: {C['ACCENT_DK']};
+}}
 /* A button whose window contains something that is not on disk. */
 QPushButton[missing="true"] {{
     border: 1px solid {C['MISSING']};
@@ -1940,24 +1946,22 @@ QPushButton, QLineEdit, QComboBox, QAbstractSpinBox {{
     padding-bottom: 0px;
 }}
 /* Text-like buttons are not controls on a row: they keep their own height. */
-QPushButton#linkRow, QPushButton#filterClear,
-QPushButton#filterChip, QPushButton#paneToggle, QPushButton#paneReveal,
-QPushButton#attachRemoveBtn, QPushButton#exampleLink {{
+QPushButton#link, QPushButton#filterChip, QPushButton#paneToggle,
+QPushButton#paneReveal, QPushButton#quietIcon, QPushButton#exampleLink {{
     min-height: 0px;
     max-height: 9999px;
 }}
-QPushButton#linkRow, QPushButton#attachRemoveBtn {{ padding: {s_xs}px 0px; }}
-QPushButton#filterClear, QPushButton#paneToggle,
-QPushButton#paneReveal {{ padding: {s_xs}px {s_md}px; }}
+QPushButton#link, QPushButton#exampleLink {{ padding: {s_xs}px 0px; }}
+QPushButton#quietIcon {{ padding: {s_xs}px; }}
+QPushButton#paneToggle, QPushButton#paneReveal {{ padding: {s_xs}px {s_md}px; }}
 QPushButton#filterChip {{ padding: {s_sm}px {s_lg}px; }}
-/* An example under a field: faint, like a placeholder, and a link on hover
-   because it opens the page it shows. */
+/* An example under a field: Tertiary Text, as a placeholder is, and a link
+   on hover because it opens the page it shows. */
 QPushButton#exampleLink {{
     background: transparent;
     border: none;
-    padding: {s_xs}px 0px;
     text-align: left;
-    color: {C['INK_SOFT']};
+    color: {C['INK_FAINT']};
     font-weight: 400;
 }}
 QPushButton#exampleLink:hover, QPushButton#exampleLink:focus {{ color: {C['ACCENT_DK']}; text-decoration: underline; }}

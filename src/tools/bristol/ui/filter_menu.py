@@ -233,7 +233,7 @@ class _FacetRow(QWidget):
         self.box.toggled.connect(lambda _checked: on_toggle())
 
         self.count = QLabel("")
-        self.count.setObjectName("facetCount")
+        self.count.setObjectName("metaText")
         self.count.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.count.setMinimumWidth(space("2xl"))
 
@@ -280,9 +280,9 @@ class FilterMenu(QWidget):
         body.setSpacing(space("md"))
 
         title = QLabel("Filter")
-        title.setObjectName("filterTitle")
+        title.setObjectName("dialogHeading")
         self.clear_btn = QPushButton("Clear All")
-        self.clear_btn.setObjectName("filterClear")
+        self.clear_btn.setObjectName("link")
         self.clear_btn.setCursor(Qt.PointingHandCursor)
         self.clear_btn.clicked.connect(self._clear)
 

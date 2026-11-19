@@ -302,7 +302,7 @@ class SkillDialog(QDialog):
         self.source_btn = None
         if record.get("source_url"):
             self.source_btn = QPushButton("Source on GitHub")
-            self.source_btn.setObjectName("linkRow")
+            self.source_btn.setObjectName("link")
             self.source_btn.setToolTip(record["source_url"])
             self.source_btn.clicked.connect(
                 lambda: _leave_for(self, record["source_url"]))
@@ -323,7 +323,7 @@ class SkillDialog(QDialog):
         column.addSpacing(space("md"))
         column.addWidget(self._section("Files"))
         self.files = QListWidget()
-        self.files.setObjectName("searchResults")
+        self.files.setObjectName("textList")
         self.files.addItems(record.get("file_list", []))
         self.files.itemActivated.connect(self._open_file)
         self.files.setToolTip("Open a file in whatever application owns it.")

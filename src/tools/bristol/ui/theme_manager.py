@@ -110,7 +110,7 @@ class ThemeManagerDialog(QDialog):
 
 
         self.list = QListWidget()
-        self.list.setObjectName("themeList")
+        self.list.setObjectName("textList")
         self.list.setMinimumWidth(LAYOUT["theme_list_min_w"])
         self.list.currentRowChanged.connect(self._row_chosen)
 

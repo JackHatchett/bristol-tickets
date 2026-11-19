@@ -117,7 +117,7 @@ def check_bristol() -> list[str]:
 
     def _remove_button(widget):
         for button in widget.findChildren(_QPushButton):
-            if button.objectName() == "attachRemoveBtn":
+            if button.objectName() == "quietIcon":
                 return button
         raise SmokeFailure("the attachment row has no remove button")
 
