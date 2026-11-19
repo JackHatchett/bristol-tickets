@@ -98,7 +98,7 @@ python3 app.py
 
 ## Worked examples
 
-- **A tier pill is the wrong colour** → `ui/theme.py`, and
+- **A size pill is the wrong colour** → `ui/theme.py`, and
   `ui/card_delegate.py` where the pill is drawn.
 - **Add a field to the task form** → `ui/record_dialog.py`: add the widget, add
   it to `task_rows`, load it in `_load_existing_data`, save it in `save_data`.

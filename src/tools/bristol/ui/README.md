@@ -27,7 +27,6 @@ scheme carries every key below; `check_schemes()` lists any that does not.
 | `ACCENT` | The brand colour. Primary buttons, the selected tab, focus. |
 | `ACCENT_DK` | Accent text, at a contrast that reads on `SURFACE`. |
 | `ON_ACCENT` | Text and marks drawn on top of an `ACCENT` fill. |
-| `AMBER_BG` / `AMBER_TX` | The epic badge. |
 | `BUILD_BG` / `BUILD_TX` | The Build record-type pill. |
 | `FIX_BG` / `FIX_TX` | The Fix record-type pill. |
 | `SEL_BG` | The fill of a selected row or card. |
@@ -38,8 +37,7 @@ scheme carries every key below; `check_schemes()` lists any that does not.
 | `DELETE_BG` / `DELETE_HOVER` | A destructive button. |
 | `MISSING` | A required field that is empty. |
 | `DISABLED_BG` / `DISABLED_TX` | A control that cannot be clicked yet. |
-| `NEUTRAL_BG` / `NEUTRAL_TX` | A pill carrying a fact that ranks nothing: effort. |
-| `SHADOW` | The soft drop shadow that makes a card the raised surface on a flat canvas. Written `#AARRGGBB`, so it carries its own alpha. |
+| `NEUTRAL_BG` / `NEUTRAL_TX` | A pill carrying a fact that ranks nothing: a size, an epic, a due date. |
 
 A theme pairs a light scheme with a dark one, and a mode says which half is
 drawn: `appearance.theme` and `appearance.mode` in `config/config.local.json`
@@ -105,13 +103,13 @@ answer with a hex value or a pixel count.
 | More prominent, draw the eye | `ACCENT` fill with `ON_ACCENT` text; up one step on `TYPE`. |
 | Reads as a warning | `FIX_BG` / `FIX_TX` for a label, `MISSING` for a field, `DELETE_BG` for an action. |
 | Reads as settled or complete | `BUILD_BG` / `BUILD_TX`. |
-| Ranks nothing, just a fact | `NEUTRAL_BG` / `NEUTRAL_TX`. A tier and a size are read this way: neither sorts anything. |
+| Ranks nothing, just a fact | `NEUTRAL_BG` / `NEUTRAL_TX`. A size and an epic are read this way: neither sorts anything. |
 | Make it breathe | Up one step on `SPACE` for the gaps, unchanged for the pads. |
 | Tighter, denser | Down one step on `SPACE`. |
 | Softer, friendlier | Up one step on `RADIUS`. |
 | Crisper, more precise | Down one step on `RADIUS`; `BORDER` hairline instead of a fill. |
 | Recessed, in the background | `LIST_BG` on `CANVAS`. |
-| Raised, in front | `SURFACE` with a `SHADOW`; a `BORDER` hairline at most. |
+| Raised, in front | `SURFACE` with a 1 px `BTN_BORDER` edge where it can be clicked; no shadow. |
 
 **Where no key or token carries the intent, say so and stop.** A new key is a
 key every scheme has to gain, which is a change to `theme.py` and to this file.

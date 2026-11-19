@@ -2,9 +2,10 @@
 board: skills and agents.
 
 ``RowCardDelegate`` is the board's ``CardDelegate`` with a different footer.
-The card itself — its surface, shadow, corner, hover and selection fills, the
-title and the one muted line under it — is the board card's, so a skill and a
-ticket read as the same kind of object. The footer contains one line of meta text
+The card itself — its surface, edge, corner, hover and selection fills and the
+title — is the board card's, so a skill and a ticket read as the same kind of
+object. A row adds the one muted line under the title that a board card leaves
+out, and lets its name run to three lines. The footer contains one line of meta text
 on the left and neutral pills on the right, where a ticket's shows its id,
 owner and kind.
 
@@ -24,7 +25,7 @@ from PySide6.QtGui import QColor, QFont, QFontMetrics
 from PySide6.QtWidgets import QListWidget
 
 from .card_delegate import CardDelegate
-from .theme import C, CARD_ROLE, space, type_size
+from .theme import C, space, type_size
 
 
 class RowCardDelegate(CardDelegate):
@@ -33,6 +34,9 @@ class RowCardDelegate(CardDelegate):
     A row is only as tall as what it says: with no meta text its pills sit
     beside the name, and with neither it has no footer at all. Its pills read at
     body size, since on these lists they are what the row is scanned for."""
+
+    TITLE_LINES = 3
+    SHOW_DESCRIPTION = True
 
     def _small_font(self) -> QFont:
         font = QFont()
@@ -58,12 +62,8 @@ class RowCardDelegate(CardDelegate):
                     for p in self._pills(data))
         return max(40, content_w - taken)
 
-    def sizeHint(self, option, index):
-        size = super().sizeHint(option, index)
-        data = index.data(CARD_ROLE) or {}
-        if not self._has_footer(data):
-            size.setHeight(size.height() - self.GAP - self.FOOT_H)
-        return size
+    def _footer_height(self, data: dict, content_w: int) -> int:
+        return self.GAP + self.FOOT_H if self._has_footer(data) else 0
 
     def paint(self, painter, option, index):
         # Where the name starts, for pills drawn beside it.

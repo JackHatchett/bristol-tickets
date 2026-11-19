@@ -107,12 +107,14 @@ survive a restart. Double-click a card, or press **Create**, to open the
 dialog, which is where a record is created and where its title, description
 and record type are rewritten.
 
-A card leads with its title, followed by the first line of its description in a
-lighter face. Everything else sits in one footer row: the id and the owner on
-the left, then the tier, the size, the record type and the epic as soft-tinted
-pills. The tier and the size are drawn in the same quiet treatment as the rest —
-neither sorts anything, so neither is coloured like urgency. A card nobody has
-rated for a tier shows no tier pill.
+A card leads with its title, on up to two lines. Under it is the owner, and
+under that one row of pills: Build or Fix, then the size, a due date where there
+is one, and the epic, with the card's number in small type at the row's right
+end. The size and the epic are drawn in the same quiet grey — neither sorts
+anything, so neither is coloured like urgency. A long epic name is shortened
+with an ellipsis. A card with no epic carries one accent dot in its corner
+instead. The description and the tier are in the
+detail pane rather than on the card.
 
 | Field | What it contains |
 | --- | --- |

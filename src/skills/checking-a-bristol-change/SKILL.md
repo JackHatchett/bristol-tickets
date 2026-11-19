@@ -24,7 +24,7 @@ check is when the thing changed is Bristol Tickets.
   `markdown_notebook.design_system_dir` gives, read with
   `python3 src/tools/config_tools/read_config.py
   markdown_notebook.design_system_dir`, starting at its hub,
-  `bristol_design_system.md`. Its foundation pages give every color role, type
+  `_bristol_design_system.md`. Its foundation pages give every color role, type
   size, gap, corner, edge, shadow, icon size and contrast minimum by token, and
   its theme pages give each theme's values.
 - **Bring a value that departs from a token to the token, or change the page in

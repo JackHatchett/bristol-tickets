@@ -320,8 +320,6 @@ WARM_LIGHT = {
     "ACCENT":       "#c2410c",  # primary orange (4.8:1 on CANVAS, 5.2:1 under white)
     "ACCENT_DK":    "#9a3412",  # deeper orange — bright accent text
     "ON_ACCENT":    "#ffffff",  # text and marks drawn on an accent fill
-    "AMBER_BG":     "#fef3c7",  # epic pill background
-    "AMBER_TX":     "#7c3608",  # epic pill text (7.9:1 on its tint)
     "BUILD_BG":     "#e4eee6",  # Build record-type pill background (calm green)
     "BUILD_TX":     "#2e5a3d",  # Build record-type pill text (6.7:1 on its tint)
     "FIX_BG":       "#fbe2db",  # Fix record-type pill background (rust)
@@ -341,7 +339,6 @@ WARM_LIGHT = {
     "DISABLED_TX":  "#b3a389",  # unclickable button text
     "NEUTRAL_BG":   "#f0e7d6",  # a quiet pill: size, tier
     "NEUTRAL_TX":   "#574e3b",  # text on a NEUTRAL_BG pill (6.7:1 on its tint)
-    "SHADOW":       "#33241c10",  # the soft drop shadow under a card
 }
 
 WARM_DARK = {
@@ -353,8 +350,6 @@ WARM_DARK = {
     "ACCENT":       "#f97316",  # primary orange (brighter for dark)
     "ACCENT_DK":    "#fdba74",  # light orange — bright accent text on dark
     "ON_ACCENT":    "#201409",  # deep warm text on the bright accent (6.4:1)
-    "AMBER_BG":     "#3a2a10",  # epic pill background (dark amber)
-    "AMBER_TX":     "#fcd34d",  # epic pill text (bright amber)
     "BUILD_BG":     "#1e2a1e",  # Build record-type pill background (calm green)
     "BUILD_TX":     "#8fca9a",  # Build record-type pill text
     "FIX_BG":       "#3a1f18",  # Fix record-type pill background (rust)
@@ -374,7 +369,6 @@ WARM_DARK = {
     "DISABLED_TX":  "#6b5b45",  # unclickable button text
     "NEUTRAL_BG":   "#2f2618",  # a quiet pill: size, tier
     "NEUTRAL_TX":   "#c4ae8e",  # text on a NEUTRAL_BG pill
-    "SHADOW":       "#66000000",  # the soft drop shadow under a card
 }
 
 # The cool neutral alternate: grey canvas, white surfaces, a blue accent. Where
@@ -388,8 +382,6 @@ COOL_LIGHT = {
     "ACCENT":       "#2563eb",  # primary blue
     "ACCENT_DK":    "#1d4ed8",  # deeper blue — bright accent text
     "ON_ACCENT":    "#ffffff",  # text and marks drawn on an accent fill
-    "AMBER_BG":     "#e0e7ff",  # epic pill background (indigo tint)
-    "AMBER_TX":     "#3730a3",  # epic pill text
     "BUILD_BG":     "#dcfce7",  # Build record-type pill background (green)
     "BUILD_TX":     "#166534",  # Build record-type pill text (6.5:1 on its tint)
     "FIX_BG":       "#fee2e2",  # Fix record-type pill background (red)
@@ -409,7 +401,6 @@ COOL_LIGHT = {
     "DISABLED_TX":  "#94a3b8",  # unclickable button text
     "NEUTRAL_BG":   "#eef1f5",  # a quiet pill: size, tier
     "NEUTRAL_TX":   "#475569",  # text on a NEUTRAL_BG pill
-    "SHADOW":       "#2b0f172a",  # the soft drop shadow under a card
 }
 
 COOL_DARK = {
@@ -421,8 +412,6 @@ COOL_DARK = {
     "ACCENT":       "#3b82f6",  # primary blue (brighter for dark)
     "ACCENT_DK":    "#93c5fd",  # light blue — bright accent text on dark
     "ON_ACCENT":    "#0f1216",  # deep slate text on the bright accent (5.1:1)
-    "AMBER_BG":     "#1e1b4b",  # epic pill background (deep indigo)
-    "AMBER_TX":     "#a5b4fc",  # epic pill text
     "BUILD_BG":     "#14261a",  # Build record-type pill background (green)
     "BUILD_TX":     "#86efac",  # Build record-type pill text
     "FIX_BG":       "#2c1618",  # Fix record-type pill background (red)
@@ -442,7 +431,6 @@ COOL_DARK = {
     "DISABLED_TX":  "#5b6672",  # unclickable button text
     "NEUTRAL_BG":   "#242b34",  # a quiet pill: size, tier
     "NEUTRAL_TX":   "#b6c0cc",  # text on a NEUTRAL_BG pill
-    "SHADOW":       "#66000000",  # the soft drop shadow under a card
 }
 
 # ---------------------------------------------------------------------------
@@ -465,8 +453,6 @@ AYU_LIGHT = {
     "ACCENT":       "#ff9940",
     "ACCENT_DK":    "#a26229",
     "ON_ACCENT":    "#241509",
-    "AMBER_BG":     "#faebd5",
-    "AMBER_TX":     "#88622a",
     "BUILD_BG":     "#e2ecc5",
     "BUILD_TX":     "#516e00",
     "FIX_BG":       "#f9dddd",
@@ -486,7 +472,6 @@ AYU_LIGHT = {
     "DISABLED_TX":  "#c9cccf",
     "NEUTRAL_BG":   "#ecedee",
     "NEUTRAL_TX":   "#63686e",
-    "SHADOW":       "#2e333538",
 }
 
 AYU_DARK = {
@@ -498,8 +483,6 @@ AYU_DARK = {
     "ACCENT":       "#ffcc66",
     "ACCENT_DK":    "#ffcc66",
     "ON_ACCENT":    "#241d0e",
-    "AMBER_BG":     "#43403d",
-    "AMBER_TX":     "#ffd580",
     "BUILD_BG":     "#30413a",
     "BUILD_TX":     "#87d96c",
     "FIX_BG":       "#432f39",
@@ -519,7 +502,6 @@ AYU_DARK = {
     "DISABLED_TX":  "#575c68",
     "NEUTRAL_BG":   "#2f3440",
     "NEUTRAL_TX":   "#9ba1ac",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -533,8 +515,6 @@ BLUE_TOPAZ_LIGHT = {
     "ACCENT":       "#2873c2",
     "ACCENT_DK":    "#2770bc",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#e7ddc8",
-    "AMBER_TX":     "#7e5a10",
     "BUILD_BG":     "#cbdfd0",
     "BUILD_TX":     "#2d682e",
     "FIX_BG":       "#edd0d3",
@@ -554,7 +534,6 @@ BLUE_TOPAZ_LIGHT = {
     "DISABLED_TX":  "#aeb7c0",
     "NEUTRAL_BG":   "#dde2e6",
     "NEUTRAL_TX":   "#516270",
-    "SHADOW":       "#2e131a23",
 }
 
 BLUE_TOPAZ_DARK = {
@@ -566,8 +545,6 @@ BLUE_TOPAZ_DARK = {
     "ACCENT":       "#58a6f0",
     "ACCENT_DK":    "#58a6f0",
     "ON_ACCENT":    "#0c1722",
-    "AMBER_BG":     "#3c3c35",
-    "AMBER_TX":     "#e9c46a",
     "BUILD_BG":     "#2b3e39",
     "BUILD_TX":     "#7fce85",
     "FIX_BG":       "#3d3038",
@@ -587,7 +564,6 @@ BLUE_TOPAZ_DARK = {
     "DISABLED_TX":  "#566370",
     "NEUTRAL_BG":   "#2c353f",
     "NEUTRAL_TX":   "#9fb2c4",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -601,8 +577,6 @@ CATPPUCCIN_LIGHT = {
     "ACCENT":       "#1e66f5",
     "ACCENT_DK":    "#1c60e7",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#ebdbc5",
-    "AMBER_TX":     "#865410",
     "BUILD_BG":     "#c9dfc9",
     "BUILD_TX":     "#2a691d",
     "FIX_BG":       "#e9bfcc",
@@ -622,7 +596,6 @@ CATPPUCCIN_LIGHT = {
     "DISABLED_TX":  "#b4b6c3",
     "NEUTRAL_BG":   "#dddfe5",
     "NEUTRAL_TX":   "#5d6071",
-    "SHADOW":       "#2e2a2b3a",
 }
 
 CATPPUCCIN_DARK = {
@@ -634,8 +607,6 @@ CATPPUCCIN_DARK = {
     "ACCENT":       "#89b4fa",
     "ACCENT_DK":    "#89b4fa",
     "ON_ACCENT":    "#131923",
-    "AMBER_BG":     "#413d43",
-    "AMBER_TX":     "#f9e2af",
     "BUILD_BG":     "#343e40",
     "BUILD_TX":     "#a6e3a1",
     "FIX_BG":       "#402f42",
@@ -655,7 +626,6 @@ CATPPUCCIN_DARK = {
     "DISABLED_TX":  "#5b5e73",
     "NEUTRAL_BG":   "#303142",
     "NEUTRAL_TX":   "#a6adc8",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -669,8 +639,6 @@ DRACULA_LIGHT = {
     "ACCENT":       "#644ac9",
     "ACCENT_DK":    "#644ac9",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#e4dcbc",
-    "AMBER_TX":     "#6e5c10",
     "BUILD_BG":     "#cbddba",
     "BUILD_TX":     "#126b0a",
     "FIX_BG":       "#f4d1c1",
@@ -690,7 +658,6 @@ DRACULA_LIGHT = {
     "DISABLED_TX":  "#bdb8a3",
     "NEUTRAL_BG":   "#eae6d5",
     "NEUTRAL_TX":   "#696349",
-    "SHADOW":       "#2e111111",
 }
 
 DRACULA_DARK = {
@@ -702,8 +669,6 @@ DRACULA_DARK = {
     "ACCENT":       "#bd93f9",
     "ACCENT_DK":    "#bd93f9",
     "ON_ACCENT":    "#1a1523",
-    "AMBER_BG":     "#484b44",
-    "AMBER_TX":     "#f1fa8c",
     "BUILD_BG":     "#2e4b41",
     "BUILD_TX":     "#50fa7b",
     "FIX_BG":       "#4a313b",
@@ -723,7 +688,6 @@ DRACULA_DARK = {
     "DISABLED_TX":  "#61657b",
     "NEUTRAL_BG":   "#393b4a",
     "NEUTRAL_TX":   "#a7aed0",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -737,8 +701,6 @@ EVERFOREST_LIGHT = {
     "ACCENT":       "#2f7ca4",
     "ACCENT_DK":    "#2d749a",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#f6e3b1",
-    "AMBER_TX":     "#825d00",
     "BUILD_BG":     "#e4e3b1",
     "BUILD_TX":     "#596601",
     "FIX_BG":       "#fcd3c3",
@@ -758,7 +720,6 @@ EVERFOREST_LIGHT = {
     "DISABLED_TX":  "#c6c9b7",
     "NEUTRAL_BG":   "#ece8d5",
     "NEUTRAL_TX":   "#5d685c",
-    "SHADOW":       "#2e333a3f",
 }
 
 EVERFOREST_DARK = {
@@ -770,8 +731,6 @@ EVERFOREST_DARK = {
     "ACCENT":       "#7fbbb3",
     "ACCENT_DK":    "#7fbbb3",
     "ON_ACCENT":    "#121a19",
-    "AMBER_BG":     "#494b46",
-    "AMBER_TX":     "#dbbc7f",
     "BUILD_BG":     "#414b46",
     "BUILD_TX":     "#aac284",
     "FIX_BG":       "#4b4146",
@@ -791,7 +750,6 @@ EVERFOREST_DARK = {
     "DISABLED_TX":  "#5f6968",
     "NEUTRAL_BG":   "#3c4448",
     "NEUTRAL_TX":   "#acb4ae",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -805,8 +763,6 @@ GITHUB_LIGHT = {
     "ACCENT":       "#0969da",
     "ACCENT_DK":    "#0969da",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#e2d8c3",
-    "AMBER_TX":     "#7d5200",
     "BUILD_BG":     "#c6ddcf",
     "BUILD_TX":     "#146a2e",
     "FIX_BG":       "#edc9cd",
@@ -826,7 +782,6 @@ GITHUB_LIGHT = {
     "DISABLED_TX":  "#b5b9bf",
     "NEUTRAL_BG":   "#e2e5e8",
     "NEUTRAL_TX":   "#5c646c",
-    "SHADOW":       "#2e111316",
 }
 
 GITHUB_DARK = {
@@ -838,8 +793,6 @@ GITHUB_DARK = {
     "ACCENT":       "#58a6ff",
     "ACCENT_DK":    "#58a6ff",
     "ON_ACCENT":    "#0c1724",
-    "AMBER_BG":     "#2d2719",
-    "AMBER_TX":     "#d29922",
     "BUILD_BG":     "#152c20",
     "BUILD_TX":     "#3fb950",
     "FIX_BG":       "#331b1f",
@@ -859,7 +812,6 @@ GITHUB_DARK = {
     "DISABLED_TX":  "#464c54",
     "NEUTRAL_BG":   "#1d2229",
     "NEUTRAL_TX":   "#8b949e",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -873,8 +825,6 @@ GRUVBOX_LIGHT = {
     "ACCENT":       "#af3a03",
     "ACCENT_DK":    "#af3a03",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#ecd6a0",
-    "AMBER_TX":     "#7e5110",
     "BUILD_BG":     "#ded69e",
     "BUILD_TX":     "#5f5c0e",
     "FIX_BG":       "#e6bc9d",
@@ -894,7 +844,6 @@ GRUVBOX_LIGHT = {
     "DISABLED_TX":  "#b8ae93",
     "NEUTRAL_BG":   "#e6dcb7",
     "NEUTRAL_TX":   "#665c54",
-    "SHADOW":       "#2e211f1e",
 }
 
 GRUVBOX_DARK = {
@@ -906,8 +855,6 @@ GRUVBOX_DARK = {
     "ACCENT":       "#fe8019",
     "ACCENT_DK":    "#fe8019",
     "ON_ACCENT":    "#241204",
-    "AMBER_BG":     "#4a4029",
-    "AMBER_TX":     "#fabd2f",
     "BUILD_BG":     "#3f4028",
     "BUILD_TX":     "#b8bb26",
     "FIX_BG":       "#4a2d2a",
@@ -927,7 +874,6 @@ GRUVBOX_DARK = {
     "DISABLED_TX":  "#6b6458",
     "NEUTRAL_BG":   "#3b3936",
     "NEUTRAL_TX":   "#bdae93",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -941,8 +887,6 @@ HORIZON_LIGHT = {
     "ACCENT":       "#cc4068",
     "ACCENT_DK":    "#c03c62",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#f5dac3",
-    "AMBER_TX":     "#865420",
     "BUILD_BG":     "#cce4d5",
     "BUILD_TX":     "#106e4d",
     "FIX_BG":       "#fbc9cd",
@@ -962,7 +906,6 @@ HORIZON_LIGHT = {
     "DISABLED_TX":  "#bcb6c5",
     "NEUTRAL_BG":   "#e9dee0",
     "NEUTRAL_TX":   "#5d607f",
-    "SHADOW":       "#2e13141a",
 }
 
 HORIZON_DARK = {
@@ -974,8 +917,6 @@ HORIZON_DARK = {
     "ACCENT":       "#e95678",
     "ACCENT_DK":    "#eb6080",
     "ON_ACCENT":    "#210c11",
-    "AMBER_BG":     "#403638",
-    "AMBER_TX":     "#fab795",
     "BUILD_BG":     "#1e3b38",
     "BUILD_TX":     "#29d398",
     "FIX_BG":       "#3f232f",
@@ -995,7 +936,6 @@ HORIZON_DARK = {
     "DISABLED_TX":  "#555768",
     "NEUTRAL_BG":   "#2c2f39",
     "NEUTRAL_TX":   "#9a9db8",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1009,8 +949,6 @@ IA_WRITER_LIGHT = {
     "ACCENT":       "#197ab7",
     "ACCENT_DK":    "#1876b2",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#e9dec8",
-    "AMBER_TX":     "#7c5912",
     "BUILD_BG":     "#d1dfd0",
     "BUILD_TX":     "#336935",
     "FIX_BG":       "#eed0cc",
@@ -1030,7 +968,6 @@ IA_WRITER_LIGHT = {
     "DISABLED_TX":  "#babab7",
     "NEUTRAL_BG":   "#e7e7e4",
     "NEUTRAL_TX":   "#656560",
-    "SHADOW":       "#2e191919",
 }
 
 IA_WRITER_DARK = {
@@ -1042,8 +979,6 @@ IA_WRITER_DARK = {
     "ACCENT":       "#4ab3ee",
     "ACCENT_DK":    "#4ab3ee",
     "ON_ACCENT":    "#0a1921",
-    "AMBER_BG":     "#332c20",
-    "AMBER_TX":     "#dcb161",
     "BUILD_BG":     "#253027",
     "BUILD_TX":     "#86c98a",
     "FIX_BG":       "#362423",
@@ -1063,7 +998,6 @@ IA_WRITER_DARK = {
     "DISABLED_TX":  "#525250",
     "NEUTRAL_BG":   "#252525",
     "NEUTRAL_TX":   "#a0a09a",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1077,8 +1011,6 @@ KANAGAWA_LIGHT = {
     "ACCENT":       "#4d699b",
     "ACCENT_DK":    "#4b6696",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#d7d1a0",
-    "AMBER_TX":     "#5b562f",
     "BUILD_BG":     "#d5d6a4",
     "BUILD_TX":     "#4d5f36",
     "FIX_BG":       "#e9c6a5",
@@ -1098,7 +1030,6 @@ KANAGAWA_LIGHT = {
     "DISABLED_TX":  "#b8b393",
     "NEUTRAL_BG":   "#e0daaf",
     "NEUTRAL_TX":   "#5f5c50",
-    "SHADOW":       "#2e2e2e37",
 }
 
 KANAGAWA_DARK = {
@@ -1110,8 +1041,6 @@ KANAGAWA_DARK = {
     "ACCENT":       "#7e9cd8",
     "ACCENT_DK":    "#7e9cd8",
     "ON_ACCENT":    "#12161e",
-    "AMBER_BG":     "#3d3431",
-    "AMBER_TX":     "#dca561",
     "BUILD_BG":     "#323833",
     "BUILD_TX":     "#98bb6c",
     "FIX_BG":       "#3f2b34",
@@ -1131,7 +1060,6 @@ KANAGAWA_DARK = {
     "DISABLED_TX":  "#5d5a5a",
     "NEUTRAL_BG":   "#313036",
     "NEUTRAL_TX":   "#a8a396",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1145,8 +1073,6 @@ MATERIAL_LIGHT = {
     "ACCENT":       "#39adb5",
     "ACCENT_DK":    "#2a7c82",
     "ON_ACCENT":    "#081819",
-    "AMBER_BG":     "#f9e7ce",
-    "AMBER_TX":     "#8a5c1f",
     "BUILD_BG":     "#e3ebd7",
     "BUILD_TX":     "#566e35",
     "FIX_BG":       "#f5d0cf",
@@ -1166,7 +1092,6 @@ MATERIAL_LIGHT = {
     "DISABLED_TX":  "#b9c1c5",
     "NEUTRAL_BG":   "#e6e8ea",
     "NEUTRAL_TX":   "#58686e",
-    "SHADOW":       "#2e1e272b",
 }
 
 MATERIAL_DARK = {
@@ -1178,8 +1103,6 @@ MATERIAL_DARK = {
     "ACCENT":       "#80cbc4",
     "ACCENT_DK":    "#80cbc4",
     "ON_ACCENT":    "#121c1b",
-    "AMBER_BG":     "#453c2d",
-    "AMBER_TX":     "#ffcb6b",
     "BUILD_BG":     "#3b4132",
     "BUILD_TX":     "#c3e88d",
     "FIX_BG":       "#45292e",
@@ -1199,7 +1122,6 @@ MATERIAL_DARK = {
     "DISABLED_TX":  "#5e6365",
     "NEUTRAL_BG":   "#333435",
     "NEUTRAL_TX":   "#a8b3b8",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1213,8 +1135,6 @@ MINIMAL_LIGHT = {
     "ACCENT":       "#705dcf",
     "ACCENT_DK":    "#705dcf",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#e6dcc6",
-    "AMBER_TX":     "#7a5910",
     "BUILD_BG":     "#cee0cf",
     "BUILD_TX":     "#2d692f",
     "FIX_BG":       "#edd0cd",
@@ -1234,7 +1154,6 @@ MINIMAL_LIGHT = {
     "DISABLED_TX":  "#b9b9b9",
     "NEUTRAL_BG":   "#e4e4e4",
     "NEUTRAL_TX":   "#626262",
-    "SHADOW":       "#2e131313",
 }
 
 MINIMAL_DARK = {
@@ -1246,8 +1165,6 @@ MINIMAL_DARK = {
     "ACCENT":       "#a48cf2",
     "ACCENT_DK":    "#a48cf2",
     "ON_ACCENT":    "#171422",
-    "AMBER_BG":     "#3c3628",
-    "AMBER_TX":     "#d9b45e",
     "BUILD_BG":     "#2e392f",
     "BUILD_TX":     "#85c98a",
     "FIX_BG":       "#3f2d2b",
@@ -1267,7 +1184,6 @@ MINIMAL_DARK = {
     "DISABLED_TX":  "#585858",
     "NEUTRAL_BG":   "#2f2f2f",
     "NEUTRAL_TX":   "#a0a0a0",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1281,8 +1197,6 @@ MONOKAI_LIGHT = {
     "ACCENT":       "#187c94",
     "ACCENT_DK":    "#16748c",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#eed5b6",
-    "AMBER_TX":     "#864f0a",
     "BUILD_BG":     "#caddcb",
     "BUILD_TX":     "#186745",
     "FIX_BG":       "#efcacd",
@@ -1302,7 +1216,6 @@ MONOKAI_LIGHT = {
     "DISABLED_TX":  "#bcb3b0",
     "NEUTRAL_BG":   "#e5dcd6",
     "NEUTRAL_TX":   "#665d61",
-    "SHADOW":       "#2e181319",
 }
 
 MONOKAI_DARK = {
@@ -1314,8 +1227,6 @@ MONOKAI_DARK = {
     "ACCENT":       "#66d9ef",
     "ACCENT_DK":    "#66d9ef",
     "ON_ACCENT":    "#0e1e21",
-    "AMBER_BG":     "#46452f",
-    "AMBER_TX":     "#e6db74",
     "BUILD_BG":     "#3b4624",
     "BUILD_TX":     "#a6e22e",
     "FIX_BG":       "#49282f",
@@ -1335,7 +1246,6 @@ MONOKAI_DARK = {
     "DISABLED_TX":  "#626156",
     "NEUTRAL_BG":   "#383931",
     "NEUTRAL_TX":   "#a9a795",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1349,8 +1259,6 @@ NIGHT_OWL_LIGHT = {
     "ACCENT":       "#446fca",
     "ACCENT_DK":    "#446fca",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#f4e9c4",
-    "AMBER_TX":     "#7e6301",
     "BUILD_BG":     "#cde7e5",
     "BUILD_TX":     "#1d6d67",
     "FIX_BG":       "#f5d1d1",
@@ -1370,7 +1278,6 @@ NIGHT_OWL_LIGHT = {
     "DISABLED_TX":  "#bec1c9",
     "NEUTRAL_BG":   "#e8e9eb",
     "NEUTRAL_TX":   "#616674",
-    "SHADOW":       "#2e23232e",
 }
 
 NIGHT_OWL_DARK = {
@@ -1382,8 +1289,6 @@ NIGHT_OWL_DARK = {
     "ACCENT":       "#82aaff",
     "ACCENT_DK":    "#82aaff",
     "ON_ACCENT":    "#121824",
-    "AMBER_BG":     "#273237",
-    "AMBER_TX":     "#ecc48d",
     "BUILD_BG":     "#1d3631",
     "BUILD_TX":     "#addb67",
     "FIX_BG":       "#27202e",
@@ -1403,7 +1308,6 @@ NIGHT_OWL_DARK = {
     "DISABLED_TX":  "#435867",
     "NEUTRAL_BG":   "#142939",
     "NEUTRAL_TX":   "#93a8b5",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1417,8 +1321,6 @@ NORD_LIGHT = {
     "ACCENT":       "#55759d",
     "ACCENT_DK":    "#4e6b8f",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#e4ddcf",
-    "AMBER_TX":     "#745c2d",
     "BUILD_BG":     "#d4ddd6",
     "BUILD_TX":     "#4f6344",
     "FIX_BG":       "#e2d0d6",
@@ -1438,7 +1340,6 @@ NORD_LIGHT = {
     "DISABLED_TX":  "#a4aab6",
     "NEUTRAL_BG":   "#d6dae1",
     "NEUTRAL_TX":   "#4c566a",
-    "SHADOW":       "#2e191d23",
 }
 
 NORD_DARK = {
@@ -1450,8 +1351,6 @@ NORD_DARK = {
     "ACCENT":       "#88c0d0",
     "ACCENT_DK":    "#88c0d0",
     "ON_ACCENT":    "#131b1d",
-    "AMBER_BG":     "#4c4c4c",
-    "AMBER_TX":     "#ebcb8b",
     "BUILD_BG":     "#414a4c",
     "BUILD_TX":     "#a9c292",
     "FIX_BG":       "#453b47",
@@ -1471,7 +1370,6 @@ NORD_DARK = {
     "DISABLED_TX":  "#717884",
     "NEUTRAL_BG":   "#414854",
     "NEUTRAL_TX":   "#c3cbd8",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1485,8 +1383,6 @@ ONE_LIGHT = {
     "ACCENT":       "#3a6edd",
     "ACCENT_DK":    "#386bd6",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#ede0c3",
-    "AMBER_TX":     "#825901",
     "BUILD_BG":     "#d5e6d4",
     "BUILD_TX":     "#366c35",
     "FIX_BG":       "#f5d6d3",
@@ -1506,7 +1402,6 @@ ONE_LIGHT = {
     "DISABLED_TX":  "#b9babf",
     "NEUTRAL_BG":   "#e6e6e8",
     "NEUTRAL_TX":   "#60636d",
-    "SHADOW":       "#2e1f2024",
 }
 
 ONE_DARK = {
@@ -1518,8 +1413,6 @@ ONE_DARK = {
     "ACCENT":       "#61afef",
     "ACCENT_DK":    "#61afef",
     "ON_ACCENT":    "#0e1921",
-    "AMBER_BG":     "#46443f",
-    "AMBER_TX":     "#e5c07b",
     "BUILD_BG":     "#3a443f",
     "BUILD_TX":     "#98c379",
     "FIX_BG":       "#45363e",
@@ -1539,7 +1432,6 @@ ONE_DARK = {
     "DISABLED_TX":  "#555b67",
     "NEUTRAL_BG":   "#353a43",
     "NEUTRAL_TX":   "#9da6b4",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1553,8 +1445,6 @@ ROSE_PINE_LIGHT = {
     "ACCENT":       "#806c95",
     "ACCENT_DK":    "#78668d",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#f6e1c4",
-    "AMBER_TX":     "#885b20",
     "BUILD_BG":     "#ccd5d6",
     "BUILD_TX":     "#256077",
     "FIX_BG":       "#ebd4d4",
@@ -1574,7 +1464,6 @@ ROSE_PINE_LIGHT = {
     "DISABLED_TX":  "#c0bbc5",
     "NEUTRAL_BG":   "#e8e2e0",
     "NEUTRAL_TX":   "#625f77",
-    "SHADOW":       "#2e302d43",
 }
 
 ROSE_PINE_DARK = {
@@ -1586,8 +1475,6 @@ ROSE_PINE_DARK = {
     "ACCENT":       "#c4a7e7",
     "ACCENT_DK":    "#c4a7e7",
     "ON_ACCENT":    "#1b1720",
-    "AMBER_BG":     "#3c3231",
-    "AMBER_TX":     "#f6c177",
     "BUILD_BG":     "#2e3441",
     "BUILD_TX":     "#9ccfd8",
     "FIX_BG":       "#3b2536",
@@ -1607,7 +1494,6 @@ ROSE_PINE_DARK = {
     "DISABLED_TX":  "#585569",
     "NEUTRAL_BG":   "#2b2938",
     "NEUTRAL_TX":   "#a5a1bd",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1621,8 +1507,6 @@ SOFT_PAPER_LIGHT = {
     "ACCENT":       "#7d6b52",
     "ACCENT_DK":    "#75654e",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#dcd1b5",
-    "AMBER_TX":     "#6b551c",
     "BUILD_BG":     "#cfd1bd",
     "BUILD_TX":     "#475d38",
     "FIX_BG":       "#dfc5b9",
@@ -1642,7 +1526,6 @@ SOFT_PAPER_LIGHT = {
     "DISABLED_TX":  "#b5aea1",
     "NEUTRAL_BG":   "#ddd7ca",
     "NEUTRAL_TX":   "#62594e",
-    "SHADOW":       "#2e24201b",
 }
 
 SOFT_PAPER_DARK = {
@@ -1654,8 +1537,6 @@ SOFT_PAPER_DARK = {
     "ACCENT":       "#c2a878",
     "ACCENT_DK":    "#c2a878",
     "ON_ACCENT":    "#1b1811",
-    "AMBER_BG":     "#413a28",
-    "AMBER_TX":     "#dcc07a",
     "BUILD_BG":     "#393a2a",
     "BUILD_TX":     "#a8c08a",
     "FIX_BG":       "#423128",
@@ -1675,7 +1556,6 @@ SOFT_PAPER_DARK = {
     "DISABLED_TX":  "#645d50",
     "NEUTRAL_BG":   "#373228",
     "NEUTRAL_TX":   "#b3a894",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1689,8 +1569,6 @@ SOLARIZED_LIGHT = {
     "ACCENT":       "#2177b4",
     "ACCENT_DK":    "#2073af",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#eddeb1",
-    "AMBER_TX":     "#7a5c00",
     "BUILD_BG":     "#e3e2b1",
     "BUILD_TX":     "#596800",
     "FIX_BG":       "#f6cbbb",
@@ -1710,7 +1588,6 @@ SOLARIZED_LIGHT = {
     "DISABLED_TX":  "#b3b9b2",
     "NEUTRAL_BG":   "#e6e3d4",
     "NEUTRAL_TX":   "#50656b",
-    "SHADOW":       "#2e041e24",
 }
 
 SOLARIZED_DARK = {
@@ -1722,8 +1599,6 @@ SOLARIZED_DARK = {
     "ACCENT":       "#268bd2",
     "ACCENT_DK":    "#55a3da",
     "ON_ACCENT":    "#05131d",
-    "AMBER_BG":     "#1d3a2d",
-    "AMBER_TX":     "#c19c2b",
     "BUILD_BG":     "#153d2d",
     "BUILD_TX":     "#99ab2b",
     "FIX_BG":       "#232c35",
@@ -1743,7 +1618,6 @@ SOLARIZED_DARK = {
     "DISABLED_TX":  "#426066",
     "NEUTRAL_BG":   "#133a44",
     "NEUTRAL_TX":   "#96a4a4",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1757,8 +1631,6 @@ TOKYO_NIGHT_LIGHT = {
     "ACCENT":       "#2b71d4",
     "ACCENT_DK":    "#2662b6",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#cec8c2",
-    "AMBER_TX":     "#654d2c",
     "BUILD_BG":     "#c3cac1",
     "BUILD_TX":     "#44592c",
     "FIX_BG":       "#e5baca",
@@ -1778,7 +1650,6 @@ TOKYO_NIGHT_LIGHT = {
     "DISABLED_TX":  "#a4a9c4",
     "NEUTRAL_BG":   "#ced0dc",
     "NEUTRAL_TX":   "#4d5584",
-    "SHADOW":       "#2e1d2030",
 }
 
 TOKYO_NIGHT_DARK = {
@@ -1790,8 +1661,6 @@ TOKYO_NIGHT_DARK = {
     "ACCENT":       "#7aa2f7",
     "ACCENT_DK":    "#7aa2f7",
     "ON_ACCENT":    "#111723",
-    "AMBER_BG":     "#3a3331",
-    "AMBER_TX":     "#e0af68",
     "BUILD_BG":     "#2f3831",
     "BUILD_TX":     "#9ece6a",
     "FIX_BG":       "#3d2a37",
@@ -1811,7 +1680,6 @@ TOKYO_NIGHT_DARK = {
     "DISABLED_TX":  "#545972",
     "NEUTRAL_BG":   "#2b2d3c",
     "NEUTRAL_TX":   "#9aa5ce",
-    "SHADOW":       "#66000000",
 }
 
 
@@ -1825,8 +1693,6 @@ WIKIPEDIA_LIGHT = {
     "ACCENT":       "#3366cc",
     "ACCENT_DK":    "#3366cc",
     "ON_ACCENT":    "#ffffff",
-    "AMBER_BG":     "#e7d9c3",
-    "AMBER_TX":     "#874f00",
     "BUILD_BG":     "#c6e0db",
     "BUILD_TX":     "#106955",
     "FIX_BG":       "#f1cdce",
@@ -1846,7 +1712,6 @@ WIKIPEDIA_LIGHT = {
     "DISABLED_TX":  "#aeb1b3",
     "NEUTRAL_BG":   "#e1e3e4",
     "NEUTRAL_TX":   "#54595d",
-    "SHADOW":       "#2e121213",
 }
 
 WIKIPEDIA_DARK = {
@@ -1858,8 +1723,6 @@ WIKIPEDIA_DARK = {
     "ACCENT":       "#88a3e8",
     "ACCENT_DK":    "#88a3e8",
     "ON_ACCENT":    "#131720",
-    "AMBER_BG":     "#312b16",
-    "AMBER_TX":     "#dfa30b",
     "BUILD_BG":     "#162c2a",
     "BUILD_TX":     "#34ad86",
     "FIX_BG":       "#362424",
@@ -1879,7 +1742,6 @@ WIKIPEDIA_DARK = {
     "DISABLED_TX":  "#52575d",
     "NEUTRAL_BG":   "#23272c",
     "NEUTRAL_TX":   "#a2a9b1",
-    "SHADOW":       "#66000000",
 }
 
 # The registry. A name here is what config.local.json stores and what
@@ -2055,10 +1917,10 @@ LEGACY_CUSTOM_NAME = "Custom"
 # field, under the last heading — ``palette_rows()`` is what places it.
 KEY_GROUPS: list[tuple[str, list[str]]] = [
     ("Text", ["INK", "INK_SOFT"]),
-    ("Surfaces", ["CANVAS", "SURFACE", "LIST_BG", "BORDER", "SHADOW"]),
+    ("Surfaces", ["CANVAS", "SURFACE", "LIST_BG", "BORDER"]),
     ("Accent", ["ACCENT", "ACCENT_DK", "ON_ACCENT"]),
     ("Cards", ["SEL_BG", "HOVER_BG"]),
-    ("Badges", ["AMBER_BG", "AMBER_TX", "BUILD_BG", "BUILD_TX",
+    ("Badges", ["BUILD_BG", "BUILD_TX",
                 "FIX_BG", "FIX_TX", "NEUTRAL_BG", "NEUTRAL_TX"]),
     ("Buttons", ["BTN_BG", "BTN_BORDER", "BTN_HOVER", "BTN_PRESSED",
                  "CREATE_HOVER", "DELETE_BG", "DELETE_HOVER",
@@ -2074,14 +1936,11 @@ KEY_CAPTIONS: dict[str, str] = {
     "SURFACE": "Card Surface",
     "LIST_BG": "Recessed List",
     "BORDER": "Hairline Border",
-    "SHADOW": "Card Shadow",
     "ACCENT": "Accent",
     "ACCENT_DK": "Accent Text",
     "ON_ACCENT": "Text on Accent",
     "SEL_BG": "Selected Card",
     "HOVER_BG": "Hovered Card",
-    "AMBER_BG": "Epic Badge",
-    "AMBER_TX": "Epic Badge Text",
     "BUILD_BG": "Build Pill",
     "BUILD_TX": "Build Pill Text",
     "FIX_BG": "Fix Pill",
@@ -2113,7 +1972,7 @@ TEXT_PAIRS: list[tuple[str, str]] = [
     ("INK_SOFT", "CANVAS"), ("INK_SOFT", "SURFACE"), ("INK_SOFT", "LIST_BG"),
     ("ON_ACCENT", "ACCENT"), ("ON_ACCENT", "DELETE_BG"),
     ("ACCENT_DK", "SURFACE"), ("ACCENT_DK", "CANVAS"),
-    ("AMBER_TX", "AMBER_BG"), ("BUILD_TX", "BUILD_BG"), ("FIX_TX", "FIX_BG"),
+    ("BUILD_TX", "BUILD_BG"), ("FIX_TX", "FIX_BG"),
     ("NEUTRAL_TX", "NEUTRAL_BG"),
 ]
 
