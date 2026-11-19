@@ -114,7 +114,9 @@ output, from a shell that has Qt.
 
 - **Look at a visible change yourself, on the user's running app**, through
   computer use: relaunch or refresh it, capture the screens the card names in
-  each mode it names, and close the card on what the captures show.
+  every shipped theme, light and dark, and close the card on what the captures
+  show. A change to colors is checked in all of them, never a sample: a rule
+  that passes every ratio can still make a color stop reading as itself.
 - **Leave the routine look to the session, and never file a card for the user
   to review.** He is not the tester of a session's changes.
 - **Show the user what he asks to see, in the session he asks**: captures of
