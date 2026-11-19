@@ -139,7 +139,7 @@ VIEW_GROUP_STARTS = {"Agents"}
 # How far Create fades on a view with no cards to create.
 CREATE_FADED = 0.4
 
-# How many filter chips stand on the control row before the rest are counted.
+# How many filter chips stand in the filter row before the rest are counted.
 # Past this the row would push the board's own controls around, and the panel
 # is one click away.
 CHIPS_SHOWN = 4
@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
         left_container = QWidget()
         left_container.setObjectName("leftContainer")
         outer_layout = QVBoxLayout(left_container)
-        outer_layout.setContentsMargins(space("xl"), space("lg"),
+        outer_layout.setContentsMargins(space("lg"), space("lg"),
                                         space("lg"), space("lg"))
         outer_layout.setSpacing(space("lg"))
         main_splitter.addWidget(left_container)
@@ -212,8 +212,9 @@ class MainWindow(QMainWindow):
 
         # The board's filter. One state narrows the board, the Backlog and
         # the Archive; the button opens the panel that sets it, and the chips
-        # beside it say what is set without opening anything. The controls are
-        # built here and placed in the Board tab's control row below.
+        # say what is set without opening anything. The controls are
+        # built here and placed on the Board below: the button on the columns'
+        # header line, the chips in the filter row above the columns.
         self.filters = FilterState()
 
         self.filter_btn = QPushButton("Filter")
@@ -239,6 +240,10 @@ class MainWindow(QMainWindow):
         # collapsed detail pane back. The strip is outside the splitter so the
         # columns reflow into the whole reclaimed width while the pane is away.
         board_and_pane = QWidget()
+        # The body is one rounded surface under the top bar, inset from the
+        # window's sides and foot; every view and the detail pane sit on it.
+        board_and_pane.setObjectName("bodySurface")
+        board_and_pane.setAttribute(Qt.WA_StyledBackground, True)
         body_row = QHBoxLayout(board_and_pane)
         body_row.setContentsMargins(0, 0, 0, 0)
         body_row.setSpacing(0)
@@ -257,7 +262,12 @@ class MainWindow(QMainWindow):
 
         self._header_in_title_bar = self._merge_title_bar()
         shell_layout.addWidget(self._build_header())
-        shell_layout.addWidget(board_and_pane, 1)
+        body_inset = QHBoxLayout()
+        # The top bar's right end keeps the same inset, so Settings stands
+        # over the body's right edge.
+        body_inset.setContentsMargins(space("xl"), 0, space("xl"), space("xl"))
+        body_inset.addWidget(board_and_pane)
+        shell_layout.addLayout(body_inset, 1)
         outer_layout.addWidget(self.pages)
 
         search_widget = QWidget()
@@ -362,27 +372,30 @@ class MainWindow(QMainWindow):
         board_outer.setContentsMargins(0, 0, 0, 0)
         board_outer.setSpacing(space("lg"))
 
-        # One control row above the columns, containing what applies to the whole
-        # board and nothing beyond it. A single card in any column is created
-        # from the master Create button, not from a per-column control. What
-        # narrows the board reads left to right — the button, then what it is
-        # narrowed to. Sweeping the Done column is Settings' Clear Done, beside
-        # the reports it belongs with.
-        board_controls = QHBoxLayout()
-        board_controls.setSpacing(space("md"))
-        board_controls.addWidget(self.filter_btn)
-        board_controls.addLayout(self.chip_row)
-        board_controls.addWidget(self.filter_clear_btn)
-        board_controls.addStretch(1)
-        board_outer.addLayout(board_controls)
+        # What the board is narrowed to: one chip per filter and Clear, in a row
+        # above the columns that is shown only while a filter is set, so an
+        # unfiltered board starts at the columns' header lines. A single card
+        # is created from the master Create button, not from a per-column
+        # control; sweeping the Done column is Settings' Clear Done.
+        self.filter_row = QWidget()
+        filter_row_layout = QHBoxLayout(self.filter_row)
+        filter_row_layout.setContentsMargins(0, 0, 0, 0)
+        filter_row_layout.setSpacing(space("md"))
+        filter_row_layout.addLayout(self.chip_row)
+        filter_row_layout.addWidget(self.filter_clear_btn)
+        filter_row_layout.addStretch(1)
+        board_outer.addWidget(self.filter_row)
 
         board_columns = QHBoxLayout()
-        board_columns.setSpacing(space("xl"))
+        board_columns.setSpacing(space("lg"))
         self.columns = {}
         for key, name in COLUMNS:
             col = KanbanColumn(self, self.conn, key, name)
             self.columns[key] = col
             board_columns.addWidget(col)
+        # The Filter button applies to the whole board, and sits at the right
+        # end of the header line the columns share.
+        self.columns[COLUMNS[-1][0]].add_to_header(self.filter_btn)
         board_outer.addLayout(board_columns)
 
         self._board_tab_index = self._add_page(board_widget, "Board")
@@ -592,7 +605,7 @@ class MainWindow(QMainWindow):
         self.filter_menu.open_under(self.filter_btn)
 
     def _on_filters_changed(self) -> None:
-        """A filter moved: say so on the control row, and reload the views."""
+        """A filter moved: say so in the filter row, and reload the views."""
         self._sync_filter_row()
         self._refresh_board()
 
@@ -624,6 +637,7 @@ class MainWindow(QMainWindow):
         self.filter_btn.style().unpolish(self.filter_btn)
         self.filter_btn.style().polish(self.filter_btn)
         self.filter_clear_btn.setVisible(bool(count))
+        self.filter_row.setVisible(bool(count))
 
         notice = "" if not count else (
             f"Filtered · {count} — the Filter button on the Board sets it.")
@@ -691,11 +705,11 @@ class MainWindow(QMainWindow):
         if self._tall_title_bar:
             header.setFixedHeight(mac_window.TALL_TITLE_BAR)
             bar.setContentsMargins(LAYOUT["traffic_lights_tall_w"], 0,
-                                   LAYOUT["traffic_lights_inset"], 0)
+                                   space("xl"), 0)
         elif self._header_in_title_bar:
             header.setFixedHeight(LAYOUT["title_bar_h"])
             bar.setContentsMargins(LAYOUT["traffic_lights_w"], 0,
-                                   space("md"), 0)
+                                   space("xl"), 0)
         else:
             header.setFixedHeight(mac_window.TALL_TITLE_BAR)
             bar.setContentsMargins(space("xl"), 0, space("xl"), 0)

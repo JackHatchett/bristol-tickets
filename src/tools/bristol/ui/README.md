@@ -203,17 +203,17 @@ Two surfaces write a card, and each has its own job.
 
 ## What the board is made of
 
-- **The canvas is flat and the cards are the only raised surfaces.** A column is
-  a header — name and count, nothing else — over a stack with no fill and no
-  border; the well behind the cards is `CANVAS`, not a container.
+- **A column is one tinted container from its header line to its last card.**
+  The cards scroll out of sight under the header line inside it, and every
+  header line is one height, so the three names and counts read across one
+  line. The body below the top bar is one rounded surface the columns sit on.
 - **A control sits on the narrowest surface its effect reaches.** An action over
-  the Board's cards, whichever column it reads, goes on the control row above
-  the columns; one that reaches every tab goes in the header bar beside Create.
-  A column header carries no control, so the three names and counts read across
-  one line.
+  the Board's cards, whichever column it reads, goes at the right end of the
+  last column's header line; one that reaches every tab goes in the header bar
+  beside Create. No other column header carries a control.
 - **Everything that narrows the board is one panel behind the Filter button**,
-  and what it is narrowed to stands on the control row as a chip that removes
-  itself. A second control that hides cards is a second place to look for why a
+  and what it is narrowed to stands as a chip that removes itself, in a row above
+  the columns shown only while a filter is set. A second control that hides cards is a second place to look for why a
   card is missing.
 - **A control that narrows the board is never a setting.** It changes what is on
   screen now and is gone at the next launch; a setting changes how the app

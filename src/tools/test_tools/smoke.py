@@ -766,21 +766,27 @@ def check_bristol() -> list[str]:
             if not b.text() and b.toolTip():
                 raise SmokeFailure(f"{b.accessibleName()} carries hover text; "
                                    f"the top bar's icons explain themselves")
-        board_row = win.pages.widget(win._board_tab_index).layout().itemAt(0).layout()
-        board_buttons = [
-            board_row.itemAt(i).widget().text()
-            for i in range(board_row.count())
-            if isinstance(board_row.itemAt(i).widget(), QPushButton)]
+        filter_row = win.pages.widget(win._board_tab_index).layout().itemAt(0).widget()
+        if filter_row is not win.filter_row:
+            raise SmokeFailure("the board does not open on its filter row")
+        board_buttons = [b.text() for b in filter_row.findChildren(QPushButton)]
         if any("Done" in text for text in board_buttons):
             raise SmokeFailure(
                 f"the board offers a sweep button: {board_buttons}")
-        if board_buttons != ["Filter", "Clear"]:
+        if board_buttons != ["Clear"]:
             raise SmokeFailure(
-                f"the board's control row is Filter and its Clear, got "
+                f"an unfiltered board's filter row is its Clear alone, got "
                 f"{board_buttons}")
+        if not filter_row.isHidden():
+            raise SmokeFailure("an unfiltered board shows an empty filter row")
+        last_column = list(win.columns)[-1]
         for key, column in win.columns.items():
-            if column.findChildren(QPushButton):
-                raise SmokeFailure(f"the {key} column header carries a control")
+            controls = column.findChildren(QPushButton)
+            expected = [win.filter_btn] if key == last_column else []
+            if controls != expected:
+                raise SmokeFailure(
+                    f"the {key} column header should carry "
+                    f"{'Filter alone' if expected else 'no control'}")
         for page_index in range(win.pages.count()):
             win._show_page(page_index)
             if win.global_create_btn.isHidden() or win.refresh_btn.isHidden() \
@@ -792,9 +798,9 @@ def check_bristol() -> list[str]:
                     "Create should be greyed exactly on the views with no cards")
         win._show_page(win._board_tab_index)
         ok.append("one top bar: the views as segments, then Create, "
-                  "faded on the views with no cards, and Refresh beside it; the "
-                  "board's row narrows the board and nothing more; a column "
-                  "header contains no control")
+                  "faded on the views with no cards, and Refresh beside it; "
+                  "Filter on the last column's header line and no control on "
+                  "any other; the filter row hidden while nothing is set")
 
         # ---- What the board is showing ------------------------------------
         # One filter state narrows the board, the Backlog and the Archive and
@@ -836,7 +842,7 @@ def check_bristol() -> list[str]:
         if win.filter_btn.text() != "Filter · 1" \
                 or win.filter_btn.property("active") != "true":
             raise SmokeFailure("the Filter button does not carry what is set")
-        if win.filter_clear_btn.isHidden():
+        if win.filter_clear_btn.isHidden() or win.filter_row.isHidden():
             raise SmokeFailure("no Clear stands beside a filter that is set")
         if win.chip_row.count() != 1:
             raise SmokeFailure("a set filter is not on the control row as a chip")
@@ -870,6 +876,8 @@ def check_bristol() -> list[str]:
         win._clear_filters()
         if win.filters.any_set() or win.chip_row.count():
             raise SmokeFailure("Clear left a filter behind")
+        if not win.filter_row.isHidden():
+            raise SmokeFailure("the filter row stays after Clear")
         if win.filter_btn.text() != "Filter" \
                 or win.filter_btn.property("active") != "false":
             raise SmokeFailure("the Filter button still reads as set")

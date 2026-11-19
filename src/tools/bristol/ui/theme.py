@@ -168,7 +168,6 @@ LAYOUT = {
     "toolbar_box_w": 34,      # an icon button in the top bar
     "header_mark_h": 20,      # the app's mark beside its name in the top bar
     "traffic_lights_tall_w": 80,  # the traffic lights in the tall title bar, and room past them
-    "traffic_lights_inset": 11,   # the window's edge to the red light; the top bar's right end keeps the same
     "title_bar_h": 28,        # the Mac's title bar, which the top bar shares
     "traffic_lights_w": 80,   # the close, minimize and zoom buttons, and room past them
     "filter_field_max_w": 420,  # a Filter field, before its pickers
@@ -1418,17 +1417,24 @@ def build_style_sheet() -> str:
     s_xs, s_sm, s_md, s_lg, s_xl, s_2xl = (space("xs"), space("sm"), space("md"),
                                            space("lg"), space("xl"), space("2xl"))
     return f"""
-QMainWindow, QWidget#leftContainer, QDialog {{
+QMainWindow, QDialog {{
     background-color: {C['CANVAS']};
     color: {C['INK']};
 }}
-QSplitter::handle {{
-    background-color: {C['CANVAS']};
+/* The board side of the body and the splitter's gap take the body's surface. */
+QWidget#leftContainer, QSplitter::handle {{
+    background: transparent;
 }}
-/* The top bar: the window's own background, closed by one hairline. */
+/* The top bar: the window's own background; the body surface below it is what
+   ends it. */
 QWidget#appHeader {{
     background-color: {C['CANVAS']};
-    border-bottom: 1px solid {C['BORDER']};
+}}
+/* The body: one rounded surface under the top bar, containing every view and
+   the detail pane. */
+QWidget#bodySurface {{
+    background-color: {C['SURFACE']};
+    border-radius: {radius('xl')}px;
 }}
 /* A region's name: the app's beside its mark, a board column's. */
 QLabel#regionTitle {{
@@ -1514,21 +1520,36 @@ QListWidget, QFrame#rowList {{
     padding: {s_sm}px;
     outline: 0;
 }}
-/* A board column is a region of the canvas, not a container: the cards are the
-   only raised surfaces on the view, so the well they sit in has no fill and no
-   border of its own. One hairline across its top, under the column's name, is
-   the edge a card scrolls under. */
+/* A board column is a container: a faint ink tint from its header line to its
+   last card, with no edge, so the column reads as one stack and a card
+   scrolling up passes under the header inside it. The list in it is clear. */
+QFrame#boardColumn {{
+    background-color: {ink_06};
+    border: none;
+    border-radius: {r_lg}px;
+}}
 QListWidget#columnCards {{
     background: transparent;
     border: none;
-    border-top: 1px solid {C['BORDER']};
     padding: 0px;
+}}
+/* A column's name, a step above a card's title, and its count beside it. */
+QLabel#columnName {{
+    color: {C['INK']};
+    font-size: {type_size('section')}pt;
+    font-weight: 600;
+}}
+QLabel#columnCount {{
+    color: {C['INK_SOFT']};
+    font-size: {type_size('body')}pt;
 }}
 /* The detail pane is a sidebar surface: the one raised region right of the
    splitter, separated from the board canvas by a hairline. */
 QWidget#detailPane {{
     background-color: {C['SURFACE']};
     border-left: 1px solid {C['BORDER']};
+    border-top-right-radius: {radius('xl')}px;
+    border-bottom-right-radius: {radius('xl')}px;
 }}
 QScrollArea#detailScroll, QScrollArea#detailScroll > QWidget > QWidget {{
     background: transparent;
@@ -1580,6 +1601,13 @@ QPushButton#link:disabled {{
     color: {C['DISABLED_TX']};
     text-decoration: none;
 }}
+/* The Filter button sits on the columns' header line at the top bar's control
+   height, its word padded as a top-bar control is. */
+QPushButton#filterBtn {{
+    min-height: {tb_ctl}px;
+    max-height: {tb_ctl}px;
+    padding: 0px {s_md}px;
+}}
 /* The Filter button takes the accent while it is leaving something out, so a
    narrowed board never reads as an empty one. */
 QPushButton#filterBtn[active="true"] {{
@@ -1620,6 +1648,11 @@ QScrollBar:horizontal {{
 QListWidget#columnCards QScrollBar:vertical, QTextEdit QScrollBar:vertical {{
     width: {s_lg}px;
     margin: 0px;
+}}
+/* A column's bar runs level with its cards at rest, each end a card's margin in
+   from the edge where cards scroll out of sight. */
+QListWidget#columnCards QScrollBar:vertical {{
+    margin: {s_sm}px 0px {s_sm}px 0px;
 }}
 QTextEdit QScrollBar:horizontal {{
     height: {s_lg}px;

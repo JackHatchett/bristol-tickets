@@ -1,10 +1,11 @@
 """ui/kanban_column.py — one scrollable column of task cards.
 
-``KanbanColumn`` is a region of the canvas: a header carrying the column's name
-and its card count, over a stack of ``CardDelegate``-painted cards with no fill
-or border of its own. A header contains no controls, so every column's name and
-count sit on one line across the board. In the Kanban model it populates itself
-two ways:
+``KanbanColumn`` is one rounded, tinted container: a header line carrying the
+column's name and its card count, over a stack of ``CardDelegate``-painted cards
+that scroll under that line inside the container. Every header line is one
+height, so the names and counts sit level across the board; the board seats its
+Filter button at the right end of the last column's line (``add_to_header``).
+In the Kanban model it populates itself two ways:
 
 * BOARD columns (``status_key`` = todo|doing|done): the tasks whose
   ``stage='active'`` and whose ``status`` matches this column, in manual
@@ -33,6 +34,7 @@ from PySide6.QtCore import QEvent, Qt, QTimer
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -74,7 +76,7 @@ class _DndListWidget(QListWidget):
             self.scheduleDelayedItemsLayout()
 
 
-class KanbanColumn(QWidget):
+class KanbanColumn(QFrame):
     def __init__(self, parent, conn, status_key: str | None, display_name: str,
                  is_backlog: bool = False):
         super().__init__(parent)
@@ -83,27 +85,35 @@ class KanbanColumn(QWidget):
         self.is_backlog = is_backlog
         self._main_window_ref = parent
 
+        # The column is a container: its tint runs from the header line to the
+        # last card, so the column reads as one stack and a card scrolling up
+        # passes under the header inside it.
+        self.setObjectName("boardColumn")
+        self.setAttribute(Qt.WA_StyledBackground, True)
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(space("md"))
+        root.setContentsMargins(space("sm"), space("md"), space("sm"), 0)
+        root.setSpacing(space("sm"))
 
-        # The header is the column: its name and how many cards are in it. An
-        # action over a column's cards is a board control and lives in the row
-        # above the columns. The stack below has no fill and no border, so the
-        # cards are the only raised surfaces on the view.
-        header = QHBoxLayout()
-        header.setContentsMargins(space("sm"), 0, 0, 0)
-        header.setSpacing(space("md"))
+        # The header line: the column's name and how many cards are in it, at
+        # the top bar's control height whether or not a control sits on it.
+        header_line = QWidget()
+        header_line.setFixedHeight(LAYOUT["toolbar_control_h"])
+        # Its right end is the cards' right edge: past it is the gutter the
+        # scroll bar runs in, a card's margin and the bar's own width.
+        self._header = QHBoxLayout(header_line)
+        self._header.setContentsMargins(space("md"), 0,
+                                        space("sm") + space("lg"), 0)
+        self._header.setSpacing(space("md"))
 
         self.header_label = QLabel(display_name)
-        self.header_label.setObjectName("regionTitle")
-        header.addWidget(self.header_label)
+        self.header_label.setObjectName("columnName")
+        self._header.addWidget(self.header_label, 0, Qt.AlignVCenter)
 
         self.count_label = QLabel("")
-        self.count_label.setObjectName("metaText")
-        header.addWidget(self.count_label)
-        header.addStretch(1)
-        root.addLayout(header)
+        self.count_label.setObjectName("columnCount")
+        self._header.addWidget(self.count_label, 0, Qt.AlignVCenter)
+        self._header.addStretch(1)
+        root.addWidget(header_line)
 
         self.list_widget = _DndListWidget(self)
         self.list_widget.setObjectName("columnCards")
@@ -133,6 +143,10 @@ class KanbanColumn(QWidget):
         self.list_widget.itemClicked.connect(self._inspect_task)
         root.addWidget(self.list_widget)
         self.setMinimumWidth(LAYOUT["column_min_w"])
+
+    def add_to_header(self, widget: QWidget) -> None:
+        """Seat a control at the right end of this column's header line."""
+        self._header.addWidget(widget, 0, Qt.AlignVCenter)
 
     def _set_count(self) -> None:
         self.count_label.setText(str(self.list_widget.count()))

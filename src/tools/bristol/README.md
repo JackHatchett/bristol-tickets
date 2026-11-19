@@ -183,7 +183,8 @@ click applies it at once — there is nothing to confirm on the way out.
   side, and an agent inside an epic narrows to the overlap.
 - **A count is conditional on the other facets**, so a row reading 0 is a row
   worth not clicking.
-- **What is set stands on the control row** as a chip that removes itself, and
+- **What is set stands above the columns** as a chip that removes itself, in a
+  row shown only while a filter is set, and
   the button carries the same count, so a narrowed board never reads as an empty
   one.
 - **One state narrows the Board, the Backlog and the Archive.** Search takes no
