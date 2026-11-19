@@ -172,7 +172,7 @@ def check_bristol() -> list[str]:
         unreadable = theme.contrast_complaints(palette)
         if unreadable:
             raise SmokeFailure(f"shipped scheme {name!r} — " + "; ".join(unreadable))
-    ok.append("every shipped scheme clears the contrast floor on every text pair")
+    ok.append("every shipped scheme clears the contrast floor on every text pair and state mark")
 
     # Every key a palette defines gets a field, and every field a caption.
     placed = [key for _heading, keys in theme.palette_rows() for key in keys]
@@ -202,6 +202,11 @@ def check_bristol() -> list[str]:
         raise SmokeFailure("a failing pair is not named by contrast_complaints")
     if any("Unclickable" in line for line in theme.contrast_complaints(washed)):
         raise SmokeFailure("the deliberately grey pair is being checked")
+    faint = dict(theme.REFERENCE_PALETTE)
+    faint["BTN_BORDER"] = faint["CANVAS"]
+    if not any("Interactive Edge" in line and "under 3:1" in line
+               for line in theme.contrast_complaints(faint)):
+        raise SmokeFailure("an edge under 3:1 is not named by contrast_complaints")
     ok.append("the contrast reader names the pair that fails, by its caption")
 
     # The collection: what this build ships, plus the differences an

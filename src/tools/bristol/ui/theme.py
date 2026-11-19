@@ -328,7 +328,7 @@ WARM_LIGHT = {
     "HOVER_BG":     "#fffaf2",  # hovered card fill
     "LIST_BG":      "#fbf6ee",  # kanban list / scroll area background
     "BTN_BG":       "#fff4e8",  # normal button fill
-    "BTN_BORDER":   "#f7c99a",  # normal button border
+    "BTN_BORDER":   "#b18759",  # the edge of everything that can be clicked
     "BTN_HOVER":    "#ffe9d2",  # button hover fill
     "BTN_PRESSED":  "#ffddb8",  # button pressed fill
     "CREATE_HOVER": "#a83a0b",  # accent (Create) button hover fill
@@ -358,12 +358,12 @@ WARM_DARK = {
     "HOVER_BG":     "#2a2115",  # hovered card fill
     "LIST_BG":      "#1c160f",  # kanban list / scroll area background
     "BTN_BG":       "#33281b",  # normal button fill
-    "BTN_BORDER":   "#6b4f2e",  # normal button border
+    "BTN_BORDER":   "#806341",  # the edge of everything that can be clicked
     "BTN_HOVER":    "#40311f",  # button hover fill
     "BTN_PRESSED":  "#4a3826",  # button pressed fill
     "CREATE_HOVER": "#fb8b3d",  # accent (Create) button hover fill
-    "DELETE_BG":    "#e0563b",  # destructive button text
-    "DELETE_HOVER": "#ea6448",  # destructive button text on hover
+    "DELETE_BG":    "#ef6448",  # destructive button text
+    "DELETE_HOVER": "#f97255",  # destructive button text on hover
     "MISSING":      "#ff5449",  # required-but-empty field border (bright red)
     "DISABLED_BG":  "#241c14",  # unclickable button fill
     "DISABLED_TX":  "#6b5b45",  # unclickable button text
@@ -390,13 +390,13 @@ COOL_LIGHT = {
     "HOVER_BG":     "#f8fafc",  # hovered card fill
     "LIST_BG":      "#ebecf0",  # kanban list / scroll area background
     "BTN_BG":       "#ffffff",  # normal button fill
-    "BTN_BORDER":   "#cbd5e1",  # normal button border
+    "BTN_BORDER":   "#808994",  # the edge of everything that can be clicked
     "BTN_HOVER":    "#f1f5f9",  # button hover fill
     "BTN_PRESSED":  "#e2e8f0",  # button pressed fill
     "CREATE_HOVER": "#1d4ed8",  # accent (Create) button hover fill
     "DELETE_BG":    "#dc2626",  # destructive button text
     "DELETE_HOVER": "#b91c1c",  # destructive button text on hover
-    "MISSING":      "#dc2626",  # required-but-empty field border
+    "MISSING":      "#da2324",  # required-but-empty field border
     "DISABLED_BG":  "#f1f5f9",  # unclickable button fill
     "DISABLED_TX":  "#94a3b8",  # unclickable button text
     "NEUTRAL_BG":   "#eef1f5",  # a quiet pill: size, tier
@@ -420,11 +420,11 @@ COOL_DARK = {
     "HOVER_BG":     "#20262e",  # hovered card fill
     "LIST_BG":      "#14181d",  # kanban list / scroll area background
     "BTN_BG":       "#232a33",  # normal button fill
-    "BTN_BORDER":   "#39424e",  # normal button border
+    "BTN_BORDER":   "#606a77",  # the edge of everything that can be clicked
     "BTN_HOVER":    "#2b333d",  # button hover fill
     "BTN_PRESSED":  "#333c48",  # button pressed fill
     "CREATE_HOVER": "#60a5fa",  # accent (Create) button hover fill
-    "DELETE_BG":    "#ef4444",  # destructive button text
+    "DELETE_BG":    "#fe5350",  # destructive button text
     "DELETE_HOVER": "#f87171",  # destructive button text on hover
     "MISSING":      "#f87171",  # required-but-empty field border
     "DISABLED_BG":  "#1a1f26",  # unclickable button fill
@@ -439,9 +439,9 @@ COOL_DARK = {
 # Each is a palette rather than a mechanism: the grounds, the text and the
 # signal colours come from the scheme its name points at, and the fills, pills
 # and button states are that palette's own colours tinted onto its own ground.
-# Every one of them clears CONTRAST_MIN on every pair in TEXT_PAIRS, which is
-# what the accent and the secondary text are pinned to where a source palette
-# sits under it.
+# Every one of them clears CONTRAST_MIN on every pair in TEXT_PAIRS and MARK_MIN
+# on every mark in MARK_PAIRS, which is what the accent, the secondary text, the
+# warning reds and the edges are pinned to where a source palette sits under it.
 
 # Ayu
 AYU_LIGHT = {
@@ -450,8 +450,8 @@ AYU_LIGHT = {
     "CANVAS":       "#fcfcfc",
     "SURFACE":      "#ffffff",
     "BORDER":       "#e7e8e9",
-    "ACCENT":       "#ff9940",
-    "ACCENT_DK":    "#a26229",
+    "ACCENT":       "#dc7910",
+    "ACCENT_DK":    "#9e5e25",
     "ON_ACCENT":    "#241509",
     "BUILD_BG":     "#e2ecc5",
     "BUILD_TX":     "#516e00",
@@ -461,13 +461,13 @@ AYU_LIGHT = {
     "HOVER_BG":     "#f7f7f7",
     "LIST_BG":      "#f3f4f5",
     "BTN_BG":       "#fff8f2",
-    "BTN_BORDER":   "#f1c7a2",
+    "BTN_BORDER":   "#ad8562",
     "BTN_HOVER":    "#fff0e2",
     "BTN_PRESSED":  "#ffe7d1",
     "CREATE_HOVER": "#ffa95f",
-    "DELETE_BG":    "#f07171",
-    "DELETE_HOVER": "#f28282",
-    "MISSING":      "#f07171",
+    "DELETE_BG":    "#c44a4d",
+    "DELETE_HOVER": "#b64d50",
+    "MISSING":      "#c64b4e",
     "DISABLED_BG":  "#f1f1f2",
     "DISABLED_TX":  "#c9cccf",
     "NEUTRAL_BG":   "#ecedee",
@@ -495,8 +495,8 @@ AYU_DARK = {
     "BTN_HOVER":    "#41444e",
     "BTN_PRESSED":  "#4e5159",
     "CREATE_HOVER": "#ffd47e",
-    "DELETE_BG":    "#ff6666",
-    "DELETE_HOVER": "#ff7878",
+    "DELETE_BG":    "#ff7875",
+    "DELETE_HOVER": "#ff928f",
     "MISSING":      "#ff6666",
     "DISABLED_BG":  "#242936",
     "DISABLED_TX":  "#575c68",
@@ -513,7 +513,7 @@ BLUE_TOPAZ_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#d6dee6",
     "ACCENT":       "#2873c2",
-    "ACCENT_DK":    "#2770bc",
+    "ACCENT_DK":    "#1a65b1",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#cbdfd0",
     "BUILD_TX":     "#2d682e",
@@ -523,13 +523,13 @@ BLUE_TOPAZ_LIGHT = {
     "HOVER_BG":     "#f4f5f5",
     "LIST_BG":      "#e8edf2",
     "BTN_BG":       "#f0f5fb",
-    "BTN_BORDER":   "#8db1d7",
+    "BTN_BORDER":   "#698bb0",
     "BTN_HOVER":    "#dfeaf6",
     "BTN_PRESSED":  "#cbddf0",
     "CREATE_HOVER": "#2261a3",
-    "DELETE_BG":    "#c64949",
+    "DELETE_BG":    "#c24546",
     "DELETE_HOVER": "#ae4040",
-    "MISSING":      "#d94f4f",
+    "MISSING":      "#c83f41",
     "DISABLED_BG":  "#e3e7ec",
     "DISABLED_TX":  "#aeb7c0",
     "NEUTRAL_BG":   "#dde2e6",
@@ -543,7 +543,7 @@ BLUE_TOPAZ_DARK = {
     "SURFACE":      "#232c37",
     "BORDER":       "#33404e",
     "ACCENT":       "#58a6f0",
-    "ACCENT_DK":    "#58a6f0",
+    "ACCENT_DK":    "#5eacf7",
     "ON_ACCENT":    "#0c1722",
     "BUILD_BG":     "#2b3e39",
     "BUILD_TX":     "#7fce85",
@@ -553,12 +553,12 @@ BLUE_TOPAZ_DARK = {
     "HOVER_BG":     "#353f4a",
     "LIST_BG":      "#161c24",
     "BTN_BG":       "#353f4a",
-    "BTN_BORDER":   "#436b92",
+    "BTN_BORDER":   "#4f779f",
     "BTN_HOVER":    "#424c56",
     "BTN_PRESSED":  "#515a65",
     "CREATE_HOVER": "#73b4f2",
-    "DELETE_BG":    "#f0787d",
-    "DELETE_HOVER": "#f2888d",
+    "DELETE_BG":    "#fd8488",
+    "DELETE_HOVER": "#ffa0a3",
     "MISSING":      "#f0787d",
     "DISABLED_BG":  "#232c37",
     "DISABLED_TX":  "#566370",
@@ -575,7 +575,7 @@ CATPPUCCIN_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#dce0e8",
     "ACCENT":       "#1e66f5",
-    "ACCENT_DK":    "#1c60e7",
+    "ACCENT_DK":    "#1357de",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#c9dfc9",
     "BUILD_TX":     "#2a691d",
@@ -585,7 +585,7 @@ CATPPUCCIN_LIGHT = {
     "HOVER_BG":     "#f6f6f8",
     "LIST_BG":      "#e6e9ef",
     "BTN_BG":       "#eff4fe",
-    "BTN_BORDER":   "#8caded",
+    "BTN_BORDER":   "#6685c3",
     "BTN_HOVER":    "#dde8fe",
     "BTN_PRESSED":  "#c9dafd",
     "CREATE_HOVER": "#1956ce",
@@ -615,12 +615,12 @@ CATPPUCCIN_DARK = {
     "HOVER_BG":     "#414256",
     "LIST_BG":      "#181825",
     "BTN_BG":       "#414256",
-    "BTN_BORDER":   "#62759d",
+    "BTN_BORDER":   "#697ca4",
     "BTN_HOVER":    "#4c4e62",
     "BTN_PRESSED":  "#53566b",
     "CREATE_HOVER": "#9cc0fb",
-    "DELETE_BG":    "#f38ba8",
-    "DELETE_HOVER": "#f499b2",
+    "DELETE_BG":    "#f991ae",
+    "DELETE_HOVER": "#ffa8bf",
     "MISSING":      "#f38ba8",
     "DISABLED_BG":  "#313244",
     "DISABLED_TX":  "#5b5e73",
@@ -647,7 +647,7 @@ DRACULA_LIGHT = {
     "HOVER_BG":     "#f4f4f4",
     "LIST_BG":      "#f5f1e0",
     "BTN_BG":       "#f4f2fb",
-    "BTN_BORDER":   "#b1a3cc",
+    "BTN_BORDER":   "#9285ac",
     "BTN_HOVER":    "#e8e4f7",
     "BTN_PRESSED":  "#dad4f2",
     "CREATE_HOVER": "#543ea9",
@@ -667,7 +667,7 @@ DRACULA_DARK = {
     "SURFACE":      "#343746",
     "BORDER":       "#44475a",
     "ACCENT":       "#bd93f9",
-    "ACCENT_DK":    "#bd93f9",
+    "ACCENT_DK":    "#c7a1ff",
     "ON_ACCENT":    "#1a1523",
     "BUILD_BG":     "#2e4b41",
     "BUILD_TX":     "#50fa7b",
@@ -677,13 +677,13 @@ DRACULA_DARK = {
     "HOVER_BG":     "#484a57",
     "LIST_BG":      "#21222c",
     "BTN_BG":       "#484a57",
-    "BTN_BORDER":   "#77679d",
+    "BTN_BORDER":   "#8878af",
     "BTN_HOVER":    "#555863",
     "BTN_PRESSED":  "#656771",
     "CREATE_HOVER": "#c8a4fa",
-    "DELETE_BG":    "#ff5555",
-    "DELETE_HOVER": "#ff6969",
-    "MISSING":      "#ff5555",
+    "DELETE_BG":    "#ffa19a",
+    "DELETE_HOVER": "#ffbfba",
+    "MISSING":      "#ff756f",
     "DISABLED_BG":  "#343746",
     "DISABLED_TX":  "#61657b",
     "NEUTRAL_BG":   "#393b4a",
@@ -699,7 +699,7 @@ EVERFOREST_LIGHT = {
     "SURFACE":      "#fffbef",
     "BORDER":       "#e6e2cc",
     "ACCENT":       "#2f7ca4",
-    "ACCENT_DK":    "#2d749a",
+    "ACCENT_DK":    "#297096",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#e4e3b1",
     "BUILD_TX":     "#596601",
@@ -709,13 +709,13 @@ EVERFOREST_LIGHT = {
     "HOVER_BG":     "#f7f4e9",
     "LIST_BG":      "#f4f0d9",
     "BTN_BG":       "#f0f2ea",
-    "BTN_BORDER":   "#99b7bb",
+    "BTN_BORDER":   "#728f93",
     "BTN_HOVER":    "#e8ece4",
     "BTN_PRESSED":  "#eaecdd",
     "CREATE_HOVER": "#27688a",
-    "DELETE_BG":    "#c94644",
+    "DELETE_BG":    "#c3403f",
     "DELETE_HOVER": "#b13e3c",
-    "MISSING":      "#f85552",
+    "MISSING":      "#d53135",
     "DISABLED_BG":  "#f1ecd9",
     "DISABLED_TX":  "#c6c9b7",
     "NEUTRAL_BG":   "#ece8d5",
@@ -729,7 +729,7 @@ EVERFOREST_DARK = {
     "SURFACE":      "#343f44",
     "BORDER":       "#3d484d",
     "ACCENT":       "#7fbbb3",
-    "ACCENT_DK":    "#7fbbb3",
+    "ACCENT_DK":    "#8ecbc3",
     "ON_ACCENT":    "#121a19",
     "BUILD_BG":     "#414b46",
     "BUILD_TX":     "#aac284",
@@ -739,13 +739,13 @@ EVERFOREST_DARK = {
     "HOVER_BG":     "#444c4e",
     "LIST_BG":      "#272e33",
     "BTN_BG":       "#444c4e",
-    "BTN_BORDER":   "#597878",
+    "BTN_BORDER":   "#6d8d8c",
     "BTN_HOVER":    "#4c5353",
     "BTN_PRESSED":  "#4c5252",
     "CREATE_HOVER": "#93c6bf",
-    "DELETE_BG":    "#e67e80",
-    "DELETE_HOVER": "#e98d8f",
-    "MISSING":      "#e67e80",
+    "DELETE_BG":    "#ffa0a0",
+    "DELETE_HOVER": "#ffb0b0",
+    "MISSING":      "#f38a8b",
     "DISABLED_BG":  "#343f44",
     "DISABLED_TX":  "#5f6968",
     "NEUTRAL_BG":   "#3c4448",
@@ -761,7 +761,7 @@ GITHUB_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#d0d7de",
     "ACCENT":       "#0969da",
-    "ACCENT_DK":    "#0969da",
+    "ACCENT_DK":    "#0061cf",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#c6ddcf",
     "BUILD_TX":     "#146a2e",
@@ -771,7 +771,7 @@ GITHUB_LIGHT = {
     "HOVER_BG":     "#f4f4f4",
     "LIST_BG":      "#eef1f4",
     "BTN_BG":       "#eef4fc",
-    "BTN_BORDER":   "#7ca9dc",
+    "BTN_BORDER":   "#628ec0",
     "BTN_HOVER":    "#dae8f9",
     "BTN_PRESSED":  "#c4dbf6",
     "CREATE_HOVER": "#0858b7",
@@ -801,12 +801,12 @@ GITHUB_DARK = {
     "HOVER_BG":     "#2b3037",
     "LIST_BG":      "#010409",
     "BTN_BG":       "#2b3037",
-    "BTN_BORDER":   "#41658e",
+    "BTN_BORDER":   "#456992",
     "BTN_HOVER":    "#393f46",
     "BTN_PRESSED":  "#4a5056",
     "CREATE_HOVER": "#73b4ff",
-    "DELETE_BG":    "#f85149",
-    "DELETE_HOVER": "#f9665f",
+    "DELETE_BG":    "#ff6258",
+    "DELETE_HOVER": "#ff857c",
     "MISSING":      "#f85149",
     "DISABLED_BG":  "#161b22",
     "DISABLED_TX":  "#464c54",
@@ -823,7 +823,7 @@ GRUVBOX_LIGHT = {
     "SURFACE":      "#fffbe8",
     "BORDER":       "#e5d9ac",
     "ACCENT":       "#af3a03",
-    "ACCENT_DK":    "#af3a03",
+    "ACCENT_DK":    "#ac3800",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#ded69e",
     "BUILD_TX":     "#5f5c0e",
@@ -833,7 +833,7 @@ GRUVBOX_LIGHT = {
     "HOVER_BG":     "#f5f1df",
     "LIST_BG":      "#f2e5bc",
     "BTN_BG":       "#f9edd8",
-    "BTN_BORDER":   "#ce9665",
+    "BTN_BORDER":   "#ad7747",
     "BTN_HOVER":    "#f3dec6",
     "BTN_PRESSED":  "#eccdb1",
     "CREATE_HOVER": "#933103",
@@ -853,7 +853,7 @@ GRUVBOX_DARK = {
     "SURFACE":      "#32302f",
     "BORDER":       "#504945",
     "ACCENT":       "#fe8019",
-    "ACCENT_DK":    "#fe8019",
+    "ACCENT_DK":    "#ff8f43",
     "ON_ACCENT":    "#241204",
     "BUILD_BG":     "#3f4028",
     "BUILD_TX":     "#b8bb26",
@@ -863,13 +863,13 @@ GRUVBOX_DARK = {
     "HOVER_BG":     "#44413c",
     "LIST_BG":      "#1d2021",
     "BTN_BG":       "#44413c",
-    "BTN_BORDER":   "#996033",
+    "BTN_BORDER":   "#a66c3f",
     "BTN_HOVER":    "#514d45",
     "BTN_PRESSED":  "#605b50",
     "CREATE_HOVER": "#fe943e",
-    "DELETE_BG":    "#fb4934",
-    "DELETE_HOVER": "#fb5f4c",
-    "MISSING":      "#fb4934",
+    "DELETE_BG":    "#ff8d7a",
+    "DELETE_HOVER": "#ffa799",
+    "MISSING":      "#ff6550",
     "DISABLED_BG":  "#32302f",
     "DISABLED_TX":  "#6b6458",
     "NEUTRAL_BG":   "#3b3936",
@@ -885,7 +885,7 @@ HORIZON_LIGHT = {
     "SURFACE":      "#fff8f6",
     "BORDER":       "#f0d3c9",
     "ACCENT":       "#cc4068",
-    "ACCENT_DK":    "#c03c62",
+    "ACCENT_DK":    "#b32f58",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#cce4d5",
     "BUILD_TX":     "#106e4d",
@@ -895,13 +895,13 @@ HORIZON_LIGHT = {
     "HOVER_BG":     "#f4edec",
     "LIST_BG":      "#fadad1",
     "BTN_BG":       "#fbebec",
-    "BTN_BORDER":   "#e195a0",
+    "BTN_BORDER":   "#b36c77",
     "BTN_HOVER":    "#f7dce1",
     "BTN_PRESSED":  "#f3ccd4",
     "CREATE_HOVER": "#ab3657",
-    "DELETE_BG":    "#d2344f",
+    "DELETE_BG":    "#cc2d4a",
     "DELETE_HOVER": "#b92e46",
-    "MISSING":      "#f43e5c",
+    "MISSING":      "#d81a47",
     "DISABLED_BG":  "#efe3e4",
     "DISABLED_TX":  "#bcb6c5",
     "NEUTRAL_BG":   "#e9dee0",
@@ -915,7 +915,7 @@ HORIZON_DARK = {
     "SURFACE":      "#232530",
     "BORDER":       "#2e303e",
     "ACCENT":       "#e95678",
-    "ACCENT_DK":    "#eb6080",
+    "ACCENT_DK":    "#f96c8b",
     "ON_ACCENT":    "#210c11",
     "BUILD_BG":     "#1e3b38",
     "BUILD_TX":     "#29d398",
@@ -925,13 +925,13 @@ HORIZON_DARK = {
     "HOVER_BG":     "#353741",
     "LIST_BG":      "#16181e",
     "BTN_BG":       "#353741",
-    "BTN_BORDER":   "#7d4056",
+    "BTN_BORDER":   "#9c5c72",
     "BTN_HOVER":    "#41434d",
     "BTN_PRESSED":  "#50525a",
     "CREATE_HOVER": "#ed718e",
-    "DELETE_BG":    "#f43e5c",
-    "DELETE_HOVER": "#f55570",
-    "MISSING":      "#f43e5c",
+    "DELETE_BG":    "#ff737f",
+    "DELETE_HOVER": "#ff8f9a",
+    "MISSING":      "#fc4762",
     "DISABLED_BG":  "#232530",
     "DISABLED_TX":  "#555768",
     "NEUTRAL_BG":   "#2c2f39",
@@ -947,7 +947,7 @@ IA_WRITER_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#e2e2dc",
     "ACCENT":       "#197ab7",
-    "ACCENT_DK":    "#1876b2",
+    "ACCENT_DK":    "#056da8",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#d1dfd0",
     "BUILD_TX":     "#336935",
@@ -957,7 +957,7 @@ IA_WRITER_LIGHT = {
     "HOVER_BG":     "#f5f5f5",
     "LIST_BG":      "#f2f2ee",
     "BTN_BG":       "#eff6fa",
-    "BTN_BORDER":   "#8eb6cc",
+    "BTN_BORDER":   "#6a91a6",
     "BTN_HOVER":    "#dcebf4",
     "BTN_PRESSED":  "#c8dfee",
     "CREATE_HOVER": "#15669a",
@@ -987,7 +987,7 @@ IA_WRITER_DARK = {
     "HOVER_BG":     "#2f2f30",
     "LIST_BG":      "#0d0d0e",
     "BTN_BG":       "#2f2f30",
-    "BTN_BORDER":   "#39657f",
+    "BTN_BORDER":   "#406c86",
     "BTN_HOVER":    "#3c3c3d",
     "BTN_PRESSED":  "#4b4b4c",
     "CREATE_HOVER": "#67bff1",
@@ -1009,7 +1009,7 @@ KANAGAWA_LIGHT = {
     "SURFACE":      "#f9f4d8",
     "BORDER":       "#dcd5ac",
     "ACCENT":       "#4d699b",
-    "ACCENT_DK":    "#4b6696",
+    "ACCENT_DK":    "#445e8e",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#d5d6a4",
     "BUILD_TX":     "#4d5f36",
@@ -1019,13 +1019,13 @@ KANAGAWA_LIGHT = {
     "HOVER_BG":     "#f1ecd2",
     "LIST_BG":      "#e7dba0",
     "BTN_BG":       "#edead4",
-    "BTN_BORDER":   "#a0a8a5",
+    "BTN_BORDER":   "#767d7a",
     "BTN_HOVER":    "#dfdfcf",
     "BTN_PRESSED":  "#d0d3c9",
     "CREATE_HOVER": "#415882",
-    "DELETE_BG":    "#c84053",
-    "DELETE_HOVER": "#b03849",
-    "MISSING":      "#c84053",
+    "DELETE_BG":    "#be364b",
+    "DELETE_HOVER": "#af3748",
+    "MISSING":      "#bf374c",
     "DISABLED_BG":  "#e5dfb3",
     "DISABLED_TX":  "#b8b393",
     "NEUTRAL_BG":   "#e0daaf",
@@ -1039,7 +1039,7 @@ KANAGAWA_DARK = {
     "SURFACE":      "#2a2a37",
     "BORDER":       "#363646",
     "ACCENT":       "#7e9cd8",
-    "ACCENT_DK":    "#7e9cd8",
+    "ACCENT_DK":    "#86a4e1",
     "ON_ACCENT":    "#12161e",
     "BUILD_BG":     "#323833",
     "BUILD_TX":     "#98bb6c",
@@ -1049,13 +1049,13 @@ KANAGAWA_DARK = {
     "HOVER_BG":     "#3c3b44",
     "LIST_BG":      "#16161d",
     "BTN_BG":       "#3c3b44",
-    "BTN_BORDER":   "#546183",
+    "BTN_BORDER":   "#667396",
     "BTN_HOVER":    "#48474d",
     "BTN_PRESSED":  "#565558",
     "CREATE_HOVER": "#93acde",
-    "DELETE_BG":    "#e46876",
-    "DELETE_HOVER": "#e77a86",
-    "MISSING":      "#e46876",
+    "DELETE_BG":    "#fd7f8c",
+    "DELETE_HOVER": "#ff99a2",
+    "MISSING":      "#e66a77",
     "DISABLED_BG":  "#2a2a37",
     "DISABLED_TX":  "#5d5a5a",
     "NEUTRAL_BG":   "#313036",
@@ -1070,8 +1070,8 @@ MATERIAL_LIGHT = {
     "CANVAS":       "#fafafa",
     "SURFACE":      "#ffffff",
     "BORDER":       "#e0e0e0",
-    "ACCENT":       "#39adb5",
-    "ACCENT_DK":    "#2a7c82",
+    "ACCENT":       "#27a0a8",
+    "ACCENT_DK":    "#22757b",
     "ON_ACCENT":    "#081819",
     "BUILD_BG":     "#e3ebd7",
     "BUILD_TX":     "#566e35",
@@ -1081,13 +1081,13 @@ MATERIAL_LIGHT = {
     "HOVER_BG":     "#f5f6f6",
     "LIST_BG":      "#eeeeee",
     "BTN_BG":       "#f1f9fa",
-    "BTN_BORDER":   "#9acbce",
+    "BTN_BORDER":   "#629194",
     "BTN_HOVER":    "#e1f3f4",
     "BTN_PRESSED":  "#cfebed",
     "CREATE_HOVER": "#59bac1",
-    "DELETE_BG":    "#e84b47",
-    "DELETE_HOVER": "#eb615d",
-    "MISSING":      "#e53935",
+    "DELETE_BG":    "#d33636",
+    "DELETE_HOVER": "#c43c3d",
+    "MISSING":      "#db2e2c",
     "DISABLED_BG":  "#ecedee",
     "DISABLED_TX":  "#b9c1c5",
     "NEUTRAL_BG":   "#e6e8ea",
@@ -1111,12 +1111,12 @@ MATERIAL_DARK = {
     "HOVER_BG":     "#3e3f3f",
     "LIST_BG":      "#1b1b1b",
     "BTN_BG":       "#3e3f3f",
-    "BTN_BORDER":   "#577774",
+    "BTN_BORDER":   "#597976",
     "BTN_HOVER":    "#4b4e4e",
     "BTN_PRESSED":  "#5b5f5f",
     "CREATE_HOVER": "#94d3cd",
-    "DELETE_BG":    "#ff5370",
-    "DELETE_HOVER": "#ff6881",
+    "DELETE_BG":    "#ff8491",
+    "DELETE_HOVER": "#ffa5ae",
     "MISSING":      "#ff5370",
     "DISABLED_BG":  "#2a2a2a",
     "DISABLED_TX":  "#5e6365",
@@ -1133,7 +1133,7 @@ MINIMAL_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#e3e3e3",
     "ACCENT":       "#705dcf",
-    "ACCENT_DK":    "#705dcf",
+    "ACCENT_DK":    "#6753c4",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#cee0cf",
     "BUILD_TX":     "#2d692f",
@@ -1143,11 +1143,11 @@ MINIMAL_LIGHT = {
     "HOVER_BG":     "#f4f4f4",
     "LIST_BG":      "#f0f0f0",
     "BTN_BG":       "#f5f4fc",
-    "BTN_BORDER":   "#b3abdb",
+    "BTN_BORDER":   "#8d85b3",
     "BTN_HOVER":    "#eae7f8",
     "BTN_PRESSED":  "#ddd8f3",
     "CREATE_HOVER": "#5e4eae",
-    "DELETE_BG":    "#c8443a",
+    "DELETE_BG":    "#c64239",
     "DELETE_HOVER": "#b03c33",
     "MISSING":      "#c8443a",
     "DISABLED_BG":  "#e9e9e9",
@@ -1163,7 +1163,7 @@ MINIMAL_DARK = {
     "SURFACE":      "#262626",
     "BORDER":       "#363636",
     "ACCENT":       "#a48cf2",
-    "ACCENT_DK":    "#a48cf2",
+    "ACCENT_DK":    "#aa93f9",
     "ON_ACCENT":    "#171422",
     "BUILD_BG":     "#2e392f",
     "BUILD_TX":     "#85c98a",
@@ -1173,12 +1173,12 @@ MINIMAL_DARK = {
     "HOVER_BG":     "#383838",
     "LIST_BG":      "#171717",
     "BTN_BG":       "#383838",
-    "BTN_BORDER":   "#645a85",
+    "BTN_BORDER":   "#736995",
     "BTN_HOVER":    "#454545",
     "BTN_PRESSED":  "#535353",
     "CREATE_HOVER": "#b39ef4",
-    "DELETE_BG":    "#ef7a70",
-    "DELETE_HOVER": "#f18a81",
+    "DELETE_BG":    "#f47e74",
+    "DELETE_HOVER": "#fe958c",
     "MISSING":      "#ef7a70",
     "DISABLED_BG":  "#262626",
     "DISABLED_TX":  "#585858",
@@ -1195,7 +1195,7 @@ MONOKAI_LIGHT = {
     "SURFACE":      "#fdf7f1",
     "BORDER":       "#e2d6c8",
     "ACCENT":       "#187c94",
-    "ACCENT_DK":    "#16748c",
+    "ACCENT_DK":    "#036b83",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#caddcb",
     "BUILD_TX":     "#186745",
@@ -1205,13 +1205,13 @@ MONOKAI_LIGHT = {
     "HOVER_BG":     "#f3ece7",
     "LIST_BG":      "#efe4d8",
     "BTN_BG":       "#edeeea",
-    "BTN_BORDER":   "#8db0b2",
+    "BTN_BORDER":   "#67898b",
     "BTN_HOVER":    "#dbe5e3",
     "BTN_PRESSED":  "#c6d9db",
     "CREATE_HOVER": "#14687c",
-    "DELETE_BG":    "#c8456d",
-    "DELETE_HOVER": "#b03d60",
-    "MISSING":      "#ce4770",
+    "DELETE_BG":    "#be3b65",
+    "DELETE_HOVER": "#ae3b5f",
+    "MISSING":      "#c13b66",
     "DISABLED_BG":  "#ebe2db",
     "DISABLED_TX":  "#bcb3b0",
     "NEUTRAL_BG":   "#e5dcd6",
@@ -1239,9 +1239,9 @@ MONOKAI_DARK = {
     "BTN_HOVER":    "#53544e",
     "BTN_PRESSED":  "#63645e",
     "CREATE_HOVER": "#7edff2",
-    "DELETE_BG":    "#f9337a",
-    "DELETE_HOVER": "#fa4b8a",
-    "MISSING":      "#f92672",
+    "DELETE_BG":    "#ff92ab",
+    "DELETE_HOVER": "#ffb2c5",
+    "MISSING":      "#ff618a",
     "DISABLED_BG":  "#31322c",
     "DISABLED_TX":  "#626156",
     "NEUTRAL_BG":   "#383931",
@@ -1257,7 +1257,7 @@ NIGHT_OWL_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#e0e0e0",
     "ACCENT":       "#446fca",
-    "ACCENT_DK":    "#446fca",
+    "ACCENT_DK":    "#3a64be",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#cde7e5",
     "BUILD_TX":     "#1d6d67",
@@ -1267,13 +1267,13 @@ NIGHT_OWL_LIGHT = {
     "HOVER_BG":     "#f5f5f6",
     "LIST_BG":      "#f1f1f1",
     "BTN_BG":       "#f2f5fb",
-    "BTN_BORDER":   "#9eb1d7",
+    "BTN_BORDER":   "#798bb0",
     "BTN_HOVER":    "#e3e9f7",
     "BTN_PRESSED":  "#d2dcf2",
     "CREATE_HOVER": "#395daa",
-    "DELETE_BG":    "#d13937",
+    "DELETE_BG":    "#cf3736",
     "DELETE_HOVER": "#b83230",
-    "MISSING":      "#de3d3b",
+    "MISSING":      "#d83636",
     "DISABLED_BG":  "#edeef0",
     "DISABLED_TX":  "#bec1c9",
     "NEUTRAL_BG":   "#e8e9eb",
@@ -1297,13 +1297,13 @@ NIGHT_OWL_DARK = {
     "HOVER_BG":     "#1f3b53",
     "LIST_BG":      "#01111d",
     "BTN_BG":       "#1f3b53",
-    "BTN_BORDER":   "#476a9b",
+    "BTN_BORDER":   "#4e72a3",
     "BTN_HOVER":    "#2e485f",
     "BTN_PRESSED":  "#3e566c",
     "CREATE_HOVER": "#96b8ff",
-    "DELETE_BG":    "#ef5350",
-    "DELETE_HOVER": "#f16865",
-    "MISSING":      "#ef5350",
+    "DELETE_BG":    "#ff7871",
+    "DELETE_HOVER": "#ff958f",
+    "MISSING":      "#f45854",
     "DISABLED_BG":  "#0b2942",
     "DISABLED_TX":  "#435867",
     "NEUTRAL_BG":   "#142939",
@@ -1319,7 +1319,7 @@ NORD_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#d8dee9",
     "ACCENT":       "#55759d",
-    "ACCENT_DK":    "#4e6b8f",
+    "ACCENT_DK":    "#476487",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#d4ddd6",
     "BUILD_TX":     "#4f6344",
@@ -1329,13 +1329,13 @@ NORD_LIGHT = {
     "HOVER_BG":     "#f5f5f5",
     "LIST_BG":      "#e5e9f0",
     "BTN_BG":       "#f3f5f8",
-    "BTN_BORDER":   "#a1b2c9",
+    "BTN_BORDER":   "#77879d",
     "BTN_HOVER":    "#e6eaf0",
     "BTN_PRESSED":  "#d6dee7",
     "CREATE_HOVER": "#476284",
-    "DELETE_BG":    "#ae5861",
+    "DELETE_BG":    "#ac565f",
     "DELETE_HOVER": "#994d55",
-    "MISSING":      "#bf616a",
+    "MISSING":      "#ab4f59",
     "DISABLED_BG":  "#dce0e6",
     "DISABLED_TX":  "#a4aab6",
     "NEUTRAL_BG":   "#d6dae1",
@@ -1349,7 +1349,7 @@ NORD_DARK = {
     "SURFACE":      "#3b4252",
     "BORDER":       "#434c5e",
     "ACCENT":       "#88c0d0",
-    "ACCENT_DK":    "#88c0d0",
+    "ACCENT_DK":    "#93ccdc",
     "ON_ACCENT":    "#131b1d",
     "BUILD_BG":     "#414a4c",
     "BUILD_TX":     "#a9c292",
@@ -1359,13 +1359,13 @@ NORD_DARK = {
     "HOVER_BG":     "#4d5362",
     "LIST_BG":      "#292e39",
     "BTN_BG":       "#4d5362",
-    "BTN_BORDER":   "#607d8e",
+    "BTN_BORDER":   "#7391a2",
     "BTN_HOVER":    "#595f6e",
     "BTN_PRESSED":  "#626875",
     "CREATE_HOVER": "#9bcad8",
-    "DELETE_BG":    "#c36b72",
-    "DELETE_HOVER": "#ca7d83",
-    "MISSING":      "#bf616a",
+    "DELETE_BG":    "#ffb2b6",
+    "DELETE_HOVER": "#ffcdcf",
+    "MISSING":      "#f59199",
     "DISABLED_BG":  "#3b4252",
     "DISABLED_TX":  "#717884",
     "NEUTRAL_BG":   "#414854",
@@ -1381,7 +1381,7 @@ ONE_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#e5e5e6",
     "ACCENT":       "#3a6edd",
-    "ACCENT_DK":    "#386bd6",
+    "ACCENT_DK":    "#2f61cb",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#d5e6d4",
     "BUILD_TX":     "#366c35",
@@ -1391,13 +1391,13 @@ ONE_LIGHT = {
     "HOVER_BG":     "#f5f5f6",
     "LIST_BG":      "#f0f0f0",
     "BTN_BG":       "#f1f5fd",
-    "BTN_BORDER":   "#9db3e2",
+    "BTN_BORDER":   "#768ab7",
     "BTN_HOVER":    "#e1e9fa",
     "BTN_PRESSED":  "#d0dcf7",
     "CREATE_HOVER": "#315cba",
-    "DELETE_BG":    "#c44b3f",
+    "DELETE_BG":    "#c1483d",
     "DELETE_HOVER": "#ac4237",
-    "MISSING":      "#e45649",
+    "MISSING":      "#ce4237",
     "DISABLED_BG":  "#ececed",
     "DISABLED_TX":  "#b9babf",
     "NEUTRAL_BG":   "#e6e6e8",
@@ -1411,7 +1411,7 @@ ONE_DARK = {
     "SURFACE":      "#31353f",
     "BORDER":       "#3e4451",
     "ACCENT":       "#61afef",
-    "ACCENT_DK":    "#61afef",
+    "ACCENT_DK":    "#68b6f6",
     "ON_ACCENT":    "#0e1921",
     "BUILD_BG":     "#3a443f",
     "BUILD_TX":     "#98c379",
@@ -1421,13 +1421,13 @@ ONE_DARK = {
     "HOVER_BG":     "#3d424c",
     "LIST_BG":      "#21252b",
     "BTN_BG":       "#3d424c",
-    "BTN_BORDER":   "#4d7193",
+    "BTN_BORDER":   "#5d81a4",
     "BTN_HOVER":    "#3e424c",
     "BTN_PRESSED":  "#3f434d",
     "CREATE_HOVER": "#7abcf2",
-    "DELETE_BG":    "#e06c75",
-    "DELETE_HOVER": "#e47e86",
-    "MISSING":      "#e06c75",
+    "DELETE_BG":    "#ff8c93",
+    "DELETE_HOVER": "#f89097",
+    "MISSING":      "#ef7981",
     "DISABLED_BG":  "#31353f",
     "DISABLED_TX":  "#555b67",
     "NEUTRAL_BG":   "#353a43",
@@ -1443,7 +1443,7 @@ ROSE_PINE_LIGHT = {
     "SURFACE":      "#fffaf3",
     "BORDER":       "#e3d9d1",
     "ACCENT":       "#806c95",
-    "ACCENT_DK":    "#78668d",
+    "ACCENT_DK":    "#705e84",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#ccd5d6",
     "BUILD_TX":     "#256077",
@@ -1453,13 +1453,13 @@ ROSE_PINE_LIGHT = {
     "HOVER_BG":     "#f7f2ed",
     "LIST_BG":      "#f2e9e1",
     "BTN_BG":       "#f6f0ec",
-    "BTN_BORDER":   "#b9abb8",
+    "BTN_BORDER":   "#90838f",
     "BTN_HOVER":    "#ece5e5",
     "BTN_PRESSED":  "#e1d8dc",
     "CREATE_HOVER": "#6c5b7d",
-    "DELETE_BG":    "#aa5d72",
+    "DELETE_BG":    "#a3566b",
     "DELETE_HOVER": "#965264",
-    "MISSING":      "#b4637a",
+    "MISSING":      "#a7586f",
     "DISABLED_BG":  "#ede7e4",
     "DISABLED_TX":  "#c0bbc5",
     "NEUTRAL_BG":   "#e8e2e0",
@@ -1483,12 +1483,12 @@ ROSE_PINE_DARK = {
     "HOVER_BG":     "#323042",
     "LIST_BG":      "#16141f",
     "BTN_BG":       "#323042",
-    "BTN_BORDER":   "#685a83",
+    "BTN_BORDER":   "#71638c",
     "BTN_HOVER":    "#403e50",
     "BTN_PRESSED":  "#4f4d60",
     "CREATE_HOVER": "#cdb5eb",
-    "DELETE_BG":    "#eb6f92",
-    "DELETE_HOVER": "#ed809f",
+    "DELETE_BG":    "#ed7194",
+    "DELETE_HOVER": "#f88aa9",
     "MISSING":      "#eb6f92",
     "DISABLED_BG":  "#1f1d2e",
     "DISABLED_TX":  "#585569",
@@ -1505,7 +1505,7 @@ SOFT_PAPER_LIGHT = {
     "SURFACE":      "#f8f4ea",
     "BORDER":       "#d8cfbc",
     "ACCENT":       "#7d6b52",
-    "ACCENT_DK":    "#75654e",
+    "ACCENT_DK":    "#6c5c46",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#cfd1bd",
     "BUILD_TX":     "#475d38",
@@ -1515,7 +1515,7 @@ SOFT_PAPER_LIGHT = {
     "HOVER_BG":     "#efebe1",
     "LIST_BG":      "#e6dfd0",
     "BTN_BG":       "#efeadf",
-    "BTN_BORDER":   "#b2a58f",
+    "BTN_BORDER":   "#8a7e69",
     "BTN_HOVER":    "#e6dfd3",
     "BTN_PRESSED":  "#dad3c6",
     "CREATE_HOVER": "#695a45",
@@ -1545,12 +1545,12 @@ SOFT_PAPER_DARK = {
     "HOVER_BG":     "#403b31",
     "LIST_BG":      "#1d1a14",
     "BTN_BG":       "#403b31",
-    "BTN_BORDER":   "#75664a",
+    "BTN_BORDER":   "#807054",
     "BTN_HOVER":    "#4d483d",
     "BTN_PRESSED":  "#5c564b",
     "CREATE_HOVER": "#ccb68e",
-    "DELETE_BG":    "#e08b7f",
-    "DELETE_HOVER": "#e4998e",
+    "DELETE_BG":    "#e48f83",
+    "DELETE_HOVER": "#f0a498",
     "MISSING":      "#e08b7f",
     "DISABLED_BG":  "#2e2920",
     "DISABLED_TX":  "#645d50",
@@ -1567,7 +1567,7 @@ SOLARIZED_LIGHT = {
     "SURFACE":      "#fffcf2",
     "BORDER":       "#e6dfc8",
     "ACCENT":       "#2177b4",
-    "ACCENT_DK":    "#2073af",
+    "ACCENT_DK":    "#1169a5",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#e3e2b1",
     "BUILD_TX":     "#596800",
@@ -1577,13 +1577,13 @@ SOLARIZED_LIGHT = {
     "HOVER_BG":     "#f3f2e9",
     "LIST_BG":      "#f7f0dc",
     "BTN_BG":       "#eff3ee",
-    "BTN_BORDER":   "#93b3c0",
+    "BTN_BORDER":   "#708f9c",
     "BTN_HOVER":    "#dee8e9",
     "BTN_PRESSED":  "#cadce3",
     "CREATE_HOVER": "#1c6497",
-    "DELETE_BG":    "#dc322f",
+    "DELETE_BG":    "#d42928",
     "DELETE_HOVER": "#c22c29",
-    "MISSING":      "#dc322f",
+    "MISSING":      "#d72c2b",
     "DISABLED_BG":  "#ede8d8",
     "DISABLED_TX":  "#b3b9b2",
     "NEUTRAL_BG":   "#e6e3d4",
@@ -1597,7 +1597,7 @@ SOLARIZED_DARK = {
     "SURFACE":      "#073642",
     "BORDER":       "#12414e",
     "ACCENT":       "#268bd2",
-    "ACCENT_DK":    "#55a3da",
+    "ACCENT_DK":    "#5eace3",
     "ON_ACCENT":    "#05131d",
     "BUILD_BG":     "#153d2d",
     "BUILD_TX":     "#99ab2b",
@@ -1607,13 +1607,13 @@ SOLARIZED_DARK = {
     "HOVER_BG":     "#1e4851",
     "LIST_BG":      "#00252f",
     "BTN_BG":       "#1e4851",
-    "BTN_BORDER":   "#1a6085",
+    "BTN_BORDER":   "#3e80a7",
     "BTN_HOVER":    "#2e545b",
     "BTN_PRESSED":  "#416267",
     "CREATE_HOVER": "#499ed9",
-    "DELETE_BG":    "#e04a47",
-    "DELETE_HOVER": "#e4605d",
-    "MISSING":      "#dc322f",
+    "DELETE_BG":    "#ff8e85",
+    "DELETE_HOVER": "#ffa9a3",
+    "MISSING":      "#ff665b",
     "DISABLED_BG":  "#073642",
     "DISABLED_TX":  "#426066",
     "NEUTRAL_BG":   "#133a44",
@@ -1629,7 +1629,7 @@ TOKYO_NIGHT_LIGHT = {
     "SURFACE":      "#f0f0f5",
     "BORDER":       "#c4c8da",
     "ACCENT":       "#2b71d4",
-    "ACCENT_DK":    "#2662b6",
+    "ACCENT_DK":    "#1c58ac",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#c3cac1",
     "BUILD_TX":     "#44592c",
@@ -1639,13 +1639,13 @@ TOKYO_NIGHT_LIGHT = {
     "HOVER_BG":     "#e7e7ed",
     "LIST_BG":      "#d9dae0",
     "BTN_BG":       "#e2e7f3",
-    "BTN_BORDER":   "#84a3d7",
+    "BTN_BORDER":   "#5f7cae",
     "BTN_HOVER":    "#d2ddf0",
     "BTN_PRESSED":  "#c1d2ed",
     "CREATE_HOVER": "#245fb2",
-    "DELETE_BG":    "#d92659",
-    "DELETE_HOVER": "#bf214e",
-    "MISSING":      "#f52a65",
+    "DELETE_BG":    "#cc114f",
+    "DELETE_HOVER": "#bb1c4b",
+    "MISSING":      "#c9004c",
     "DISABLED_BG":  "#d4d5df",
     "DISABLED_TX":  "#a4a9c4",
     "NEUTRAL_BG":   "#ced0dc",
@@ -1669,12 +1669,12 @@ TOKYO_NIGHT_DARK = {
     "HOVER_BG":     "#34384e",
     "LIST_BG":      "#16161e",
     "BTN_BG":       "#34384e",
-    "BTN_BORDER":   "#4e6294",
+    "BTN_BORDER":   "#5c71a4",
     "BTN_HOVER":    "#3f445b",
     "BTN_PRESSED":  "#4b506a",
     "CREATE_HOVER": "#8fb1f8",
-    "DELETE_BG":    "#f7768e",
-    "DELETE_HOVER": "#f8869c",
+    "DELETE_BG":    "#fa7990",
+    "DELETE_HOVER": "#ff92a6",
     "MISSING":      "#f7768e",
     "DISABLED_BG":  "#24283b",
     "DISABLED_TX":  "#545972",
@@ -1691,7 +1691,7 @@ WIKIPEDIA_LIGHT = {
     "SURFACE":      "#ffffff",
     "BORDER":       "#c8ccd1",
     "ACCENT":       "#3366cc",
-    "ACCENT_DK":    "#3366cc",
+    "ACCENT_DK":    "#2e61c7",
     "ON_ACCENT":    "#ffffff",
     "BUILD_BG":     "#c6e0db",
     "BUILD_TX":     "#106955",
@@ -1701,11 +1701,11 @@ WIKIPEDIA_LIGHT = {
     "HOVER_BG":     "#f4f4f4",
     "LIST_BG":      "#eaecf0",
     "BTN_BG":       "#f1f4fb",
-    "BTN_BORDER":   "#89a1cf",
+    "BTN_BORDER":   "#7188b5",
     "BTN_HOVER":    "#e0e8f7",
     "BTN_PRESSED":  "#cedaf3",
     "CREATE_HOVER": "#2b56ab",
-    "DELETE_BG":    "#d73333",
+    "DELETE_BG":    "#d32f30",
     "DELETE_HOVER": "#bd2d2d",
     "MISSING":      "#d73333",
     "DISABLED_BG":  "#e8e9ea",
@@ -1731,12 +1731,12 @@ WIKIPEDIA_DARK = {
     "HOVER_BG":     "#3a3c40",
     "LIST_BG":      "#0b0e11",
     "BTN_BG":       "#3a3c40",
-    "BTN_BORDER":   "#606d8c",
+    "BTN_BORDER":   "#657291",
     "BTN_HOVER":    "#484a4e",
     "BTN_PRESSED":  "#585a5e",
     "CREATE_HOVER": "#9bb2ec",
-    "DELETE_BG":    "#fd7865",
-    "DELETE_HOVER": "#fd8877",
+    "DELETE_BG":    "#ff806d",
+    "DELETE_HOVER": "#ffa091",
     "MISSING":      "#fd7865",
     "DISABLED_BG":  "#27292d",
     "DISABLED_TX":  "#52575d",
@@ -1948,7 +1948,7 @@ KEY_CAPTIONS: dict[str, str] = {
     "NEUTRAL_BG": "Quiet Pill",
     "NEUTRAL_TX": "Quiet Pill Text",
     "BTN_BG": "Button",
-    "BTN_BORDER": "Button Border",
+    "BTN_BORDER": "Interactive Edge",
     "BTN_HOVER": "Button Hovered",
     "BTN_PRESSED": "Button Pressed",
     "CREATE_HOVER": "Primary Button Hovered",
@@ -1970,14 +1970,28 @@ TEXT_PAIRS: list[tuple[str, str]] = [
     ("INK", "SEL_BG"), ("INK", "HOVER_BG"),
     ("INK", "BTN_BG"), ("INK", "BTN_HOVER"), ("INK", "BTN_PRESSED"),
     ("INK_SOFT", "CANVAS"), ("INK_SOFT", "SURFACE"), ("INK_SOFT", "LIST_BG"),
-    ("ON_ACCENT", "ACCENT"), ("ON_ACCENT", "DELETE_BG"),
-    ("ACCENT_DK", "SURFACE"), ("ACCENT_DK", "CANVAS"),
+    ("ACCENT_DK", "CANVAS"), ("ACCENT_DK", "SURFACE"), ("ACCENT_DK", "SEL_BG"),
+    ("ON_ACCENT", "ACCENT"), ("ON_ACCENT", "CREATE_HOVER"),
+    ("DELETE_BG", "BTN_BG"), ("DELETE_HOVER", "BTN_HOVER"),
+    ("MISSING", "CANVAS"), ("MISSING", "SURFACE"),
     ("BUILD_TX", "BUILD_BG"), ("FIX_TX", "FIX_BG"),
     ("NEUTRAL_TX", "NEUTRAL_BG"),
 ]
 
 # The ratio a pair above has to reach. WCAG AA for body text.
 CONTRAST_MIN = 4.5
+
+# A mark that carries a state, over what it sits on: the accent as focus, a
+# checkbox's edge and a selected row's bar; an empty required field's edge; and
+# the edge of everything that can be clicked.
+MARK_PAIRS: list[tuple[str, str]] = [
+    ("ACCENT", "CANVAS"), ("ACCENT", "SURFACE"),
+    ("MISSING", "SURFACE"),
+    ("BTN_BORDER", "CANVAS"), ("BTN_BORDER", "SURFACE"), ("BTN_BORDER", "LIST_BG"),
+]
+
+# The ratio a mark above has to reach. WCAG AA for non-text contrast.
+MARK_MIN = 3.0
 
 # The single live palette every consumer reads from. Starts at the reference
 # scheme; the app calls set_scheme() at startup, on every OS colour-scheme
@@ -2385,23 +2399,26 @@ def readable_on(background: str) -> str:
 
 def contrast_complaints(palette: dict) -> list[str]:
     """Every pair in ``TEXT_PAIRS`` that ``palette`` puts under ``CONTRAST_MIN``,
-    as readable lines naming both sides and the ratio.
+    then every mark in ``MARK_PAIRS`` it puts under ``MARK_MIN``, as readable
+    lines naming both sides, the ratio and the minimum.
 
     Empty means every pair reads. A pair either side of which is missing or
     unparseable is skipped: an incomplete palette is ``check_schemes()``'s to
     name, and a field mid-edit is the form's.
     """
     complaints = []
-    for foreground, background in TEXT_PAIRS:
-        try:
-            ratio = contrast_ratio(palette[foreground], palette[background])
-        except (KeyError, ValueError):
-            continue
-        if ratio < CONTRAST_MIN:
-            complaints.append(
-                f"{key_caption(foreground)} on {key_caption(background)} "
-                f"reads at {ratio:.1f}:1, under {CONTRAST_MIN}:1"
-            )
+    for pairs, minimum, what in ((TEXT_PAIRS, CONTRAST_MIN, "reads"),
+                                 (MARK_PAIRS, MARK_MIN, "shows")):
+        for foreground, background in pairs:
+            try:
+                ratio = contrast_ratio(palette[foreground], palette[background])
+            except (KeyError, ValueError):
+                continue
+            if ratio < minimum:
+                complaints.append(
+                    f"{key_caption(foreground)} on {key_caption(background)} "
+                    f"{what} at {ratio:.1f}:1, under {minimum:g}:1"
+                )
     return complaints
 
 
@@ -2633,7 +2650,7 @@ QPushButton#toolbarCreate:hover {{
 }}
 QGroupBox {{
     font-weight: 600;
-    border: 1px solid {C['BORDER']};
+    border: none;
     border-radius: {r_lg}px;
     background-color: {C['SURFACE']};
     margin-top: {s_xl}px;
@@ -2650,7 +2667,7 @@ QGroupBox::title {{
 QListWidget {{
     background-color: {C['LIST_BG']};
     color: {C['INK']};
-    border: 1px solid {C['BORDER']};
+    border: none;
     border-radius: {r_lg}px;
     padding: {s_sm}px;
     outline: 0;
@@ -2705,7 +2722,7 @@ QPushButton#paneReveal {{
 /* A path the user may need to find on disk reads as a path. */
 QLabel#pathRow {{
     background-color: {C['LIST_BG']};
-    border: 1px solid {C['BORDER']};
+    border: 1px solid transparent;
     border-radius: {r_md}px;
     padding: {s_md}px {s_lg}px;
     color: {C['INK']};
@@ -2722,7 +2739,7 @@ QLabel#formCaption {{ color: {C['INK_SOFT']}; }}
    it takes the pointer fill a card does. */
 QFrame#filterMenu {{
     background-color: {C['SURFACE']};
-    border: 1px solid {C['BORDER']};
+    border: none;
     border-radius: {r_lg}px;
 }}
 QLabel#filterTitle {{
@@ -2840,7 +2857,7 @@ QTableWidget#resultsTable {{
     background-color: {C['LIST_BG']};
     alternate-background-color: {C['SURFACE']};
     color: {C['INK']};
-    border: 1px solid {C['BORDER']};
+    border: none;
     border-radius: {r_lg}px;
     outline: 0;
 }}
@@ -2859,7 +2876,7 @@ QHeaderView::section {{
 }}
 QComboBox, QLineEdit, QAbstractSpinBox, QTextEdit {{
     background-color: {C['SURFACE']};
-    border: 1px solid {C['BORDER']};
+    border: 1px solid {C['BTN_BORDER']};
     border-radius: {r_md}px;
     padding: {s_md}px {s_md}px;
     color: {C['INK']};

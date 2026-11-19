@@ -42,7 +42,6 @@ from .dialogs import confirm, list_buttons
 from .palette_form import PaletteForm, complete_palette
 from .settled_combo import fill_words
 from .theme import (
-    CONTRAST_MIN,
     DARK_MODE,
     LAYOUT,
     LIGHT_MODE,
@@ -576,8 +575,8 @@ class ThemeManagerDialog(QDialog):
             return
         failures = self.form.unreadable()
         if failures and not confirm(
-            self, "Some text will be hard to read",
-            f"This palette puts these under {CONTRAST_MIN}:1:\n\n"
+            self, "Some colors will be hard to see",
+            "This palette puts these under their minimum:\n\n"
             + "\n".join(f"• {line}" for line in failures)
             + "\n\nSave it anyway?",
             "Save Anyway",

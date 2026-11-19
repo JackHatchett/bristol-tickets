@@ -23,7 +23,7 @@ scheme carries every key below; `check_schemes()` lists any that does not.
 | `INK_SOFT` | Secondary text: metadata, captions, an inactive tab. |
 | `CANVAS` | The window and dialog background — the ground everything sits on. |
 | `SURFACE` | A raised thing: a card, an input, a menu, a panel. |
-| `BORDER` | A hairline separating two surfaces. |
+| `BORDER` | A divider between regions, and a menu's frame; never the edge of something that can be clicked. |
 | `ACCENT` | The brand colour. Primary buttons, the selected tab, focus. |
 | `ACCENT_DK` | Accent text, at a contrast that reads on `SURFACE`. |
 | `ON_ACCENT` | Text and marks drawn on top of an `ACCENT` fill. |
@@ -32,7 +32,8 @@ scheme carries every key below; `check_schemes()` lists any that does not.
 | `SEL_BG` | The fill of a selected row or card. |
 | `HOVER_BG` | The fill under the pointer, on a card or a view tab. |
 | `LIST_BG` | A scrolling list recessed from `CANVAS`, and a monospace path row. |
-| `BTN_BG` / `BTN_BORDER` / `BTN_HOVER` / `BTN_PRESSED` | An ordinary button, in its four states. |
+| `BTN_BG` / `BTN_HOVER` / `BTN_PRESSED` | An ordinary button's fill, at rest, hovered and pressed. |
+| `BTN_BORDER` | The 3:1 edge of everything that can be clicked: a button, a picker, a text field, a card. |
 | `CREATE_HOVER` | The primary button under the pointer. |
 | `DELETE_BG` / `DELETE_HOVER` | A destructive button. |
 | `MISSING` | A required field that is empty. |
@@ -311,10 +312,12 @@ rows `palette_form.py` draws.
 
 ## Contrast
 
-`TEXT_PAIRS` is every run of text and the surface it is read on;
+`TEXT_PAIRS` is every run of text and the surface it is read on, and
+`MARK_PAIRS` every mark that carries a state and the surface it sits on.
 `contrast_ratio()` reads a pair on the WCAG 1:1–21:1 scale and
-`contrast_complaints()` lists each one under `CONTRAST_MIN`, which is 4.5:1,
-AA for body text. Every shipped scheme clears every pair, and the smoke check
+`contrast_complaints()` lists each text pair under `CONTRAST_MIN`, which is
+4.5:1, AA for body text, and each mark under `MARK_MIN`, which is 3:1, AA for
+non-text contrast. Every shipped scheme clears every pair, and the smoke check
 asserts it.
 
 - **Name a failure; never refuse one.** A palette the user built is his to
