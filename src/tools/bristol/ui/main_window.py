@@ -306,7 +306,7 @@ class MainWindow(QMainWindow):
         search_layout.addLayout(search_bar_layout)
 
         self.search_count = QLabel("")
-        self.search_count.setObjectName("formCaption")
+        self.search_count.setObjectName("metaText")
         search_layout.addWidget(self.search_count)
 
         self.search_results = ResultsTable(["Type", "#", "Title", "Status", "Closed"], stretch=2)
@@ -322,7 +322,7 @@ class MainWindow(QMainWindow):
         # The board's filter narrows this list too, and the control that sets it
         # is on the Board. A view that is leaving cards out says so.
         self.backlog_filter_note = QLabel()
-        self.backlog_filter_note.setObjectName("formCaption")
+        self.backlog_filter_note.setObjectName("metaText")
         backlog_outer.addWidget(self.backlog_filter_note)
         self.backlog_column = KanbanColumn(
             self, self.conn, None, "Backlog (drag to reorder)", is_backlog=True
@@ -412,7 +412,7 @@ class MainWindow(QMainWindow):
         archive_widget = QWidget()
         archive_layout = QVBoxLayout(archive_widget)
         self.archive_filter_note = QLabel()
-        self.archive_filter_note.setObjectName("formCaption")
+        self.archive_filter_note.setObjectName("metaText")
         archive_layout.addWidget(self.archive_filter_note)
         self.archive_results = ResultsTable(["Type", "#", "Title", "Status", "Archived"], stretch=2)
         self.archive_results.picked.connect(self._update_inspector)
@@ -672,7 +672,7 @@ class MainWindow(QMainWindow):
             self.chip_row.addWidget(chip)
         if len(chips) > CHIPS_SHOWN:
             rest = QLabel(f"+{len(chips) - CHIPS_SHOWN}")
-            rest.setObjectName("formCaption")
+            rest.setObjectName("metaText")
             rest.setToolTip("Open Filter to see the rest.")
             self.chip_row.addWidget(rest)
 

@@ -215,7 +215,7 @@ class DetailPane(QWidget):
         # under Links because it is a reading of the `blocks` rows above it,
         # and it is read-only for the same reason: the text belongs to the
         # ticket that wrote it.
-        self._handoff_header = section_widget("Carried summaries")
+        self._handoff_header = section_widget("Carried Summaries")
         self._body_layout.addWidget(self._handoff_header)
         self.handoff_view = QTextEdit()
         self.handoff_view.setReadOnly(True)
