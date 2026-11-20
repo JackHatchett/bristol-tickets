@@ -12,9 +12,9 @@ The design system's Bristol Controls page gives the Switch.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import QAbstractButton, QSizePolicy
+from PySide6.QtCore import QEvent, QPoint, QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QEnterEvent, QPainter, QPaintEvent, QPen
+from PySide6.QtWidgets import QAbstractButton, QSizePolicy, QWidget
 
 from .theme import LAYOUT, C, control_height, space
 
@@ -26,7 +26,7 @@ KNOB_INSET = LAYOUT["switch_knob_inset"]
 class Switch(QAbstractButton):
     """A checkable button drawn as a switch; ``toggled`` carries its state."""
 
-    def __init__(self, text: str = "", parent=None) -> None:
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setText(text)
         self.setCheckable(True)
@@ -43,10 +43,10 @@ class Switch(QAbstractButton):
     def minimumSizeHint(self) -> QSize:
         return self.sizeHint()
 
-    def hitButton(self, pos) -> bool:
+    def hitButton(self, pos: QPoint) -> bool:
         return self.rect().contains(pos)
 
-    def paintEvent(self, _event) -> None:
+    def paintEvent(self, _event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         on = self.isChecked()
@@ -90,10 +90,10 @@ class Switch(QAbstractButton):
             )
         painter.end()
 
-    def enterEvent(self, event) -> None:
+    def enterEvent(self, event: QEnterEvent) -> None:
         self.update()
         super().enterEvent(event)
 
-    def leaveEvent(self, event) -> None:
+    def leaveEvent(self, event: QEvent) -> None:
         self.update()
         super().leaveEvent(event)

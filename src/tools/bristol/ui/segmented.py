@@ -25,7 +25,7 @@ class SegmentedControl(QWidget):
         self,
         choices: list[tuple[str, str]],
         value: str | None = None,
-        parent=None,
+        parent: QWidget | None = None,
         *,
         none_chosen: bool = False,
     ) -> None:

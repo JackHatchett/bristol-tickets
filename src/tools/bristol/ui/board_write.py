@@ -12,10 +12,14 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Callable
 
+from PySide6.QtWidgets import QWidget
+
 from .dialogs import notify
 
 
-def write(conn: sqlite3.Connection, parent, what: str, work: Callable[[], object]) -> bool:
+def write(
+    conn: sqlite3.Connection, parent: QWidget | None, what: str, work: Callable[[], object]
+) -> bool:
     """Run ``work`` and commit it. On a database error, roll back, say in a
     notice that ``what`` was not saved and why, and return False."""
     try:

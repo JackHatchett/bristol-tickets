@@ -8,8 +8,11 @@ This one moves when its list is open and a row is chosen, and at no other time.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QComboBox
+from PySide6.QtGui import QKeyEvent, QWheelEvent
+from PySide6.QtWidgets import QComboBox, QWidget
 
 # Keys a closed combo would otherwise step through its list with.
 _STEPPING_KEYS = (
@@ -22,7 +25,9 @@ _STEPPING_KEYS = (
 )
 
 
-def fill_words(combo: QComboBox, choices, *, hint: str | None = None) -> QComboBox:
+def fill_words(
+    combo: QComboBox, choices: Iterable[tuple[object, str]], *, hint: str | None = None
+) -> QComboBox:
     """Load a picker from (stored value, caption) pairs and size it to the widest.
 
     The value stays in the item's data and the caption is all a reader sees, so
@@ -49,7 +54,7 @@ class SettledComboBox(QComboBox):
 
     picked = Signal(str)
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.activated.connect(self._on_activated)
 
@@ -59,11 +64,11 @@ class SettledComboBox(QComboBox):
         if text:
             self.picked.emit(text)
 
-    def wheelEvent(self, event) -> None:
+    def wheelEvent(self, event: QWheelEvent) -> None:
         """Let the gesture through to whatever scrolls behind this."""
         event.ignore()
 
-    def keyPressEvent(self, event) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() in _STEPPING_KEYS and not self.view().isVisible():
             event.ignore()
             return

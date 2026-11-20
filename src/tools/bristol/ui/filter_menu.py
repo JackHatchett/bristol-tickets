@@ -28,9 +28,10 @@ worse tool than an unfiltered one.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Callable
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFontMetrics
+from PySide6.QtGui import QFontMetrics, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QFrame,
@@ -47,6 +48,9 @@ from .theme import LAYOUT, agent_caption, space
 # The two facets. Each is a key in the state and a section in the panel.
 ASSIGNEE = "assignee"
 EPIC = "epic"
+
+# One option: an assignee's slug, an epic's id, or None for the no-epic option.
+Facet = str | int | None
 
 # The epic statuses that keep an epic out of the panel. A finished epic is
 # reactivated from the Search tab, not filtered for here.
@@ -80,8 +84,8 @@ class FilterState:
     """
 
     def __init__(self) -> None:
-        self.assignees: set[str] = set()
-        self.epics: set = set()  # epic ids; None is the no-epic option
+        self.assignees: set[Facet] = set()
+        self.epics: set[Facet] = set()  # epic ids; None is the no-epic option
 
     # ----- what is set ------------------------------------------------------
 
@@ -92,7 +96,7 @@ class FilterState:
     def any_set(self) -> bool:
         return bool(self.assignees or self.epics)
 
-    def holds(self, kind: str, value) -> bool:
+    def holds(self, kind: str, value: Facet) -> bool:
         return value in (self.assignees if kind == ASSIGNEE else self.epics)
 
     def sole_epic(self) -> int | None:
@@ -109,11 +113,11 @@ class FilterState:
 
     # ----- changing it ------------------------------------------------------
 
-    def toggle(self, kind: str, value) -> None:
+    def toggle(self, kind: str, value: Facet) -> None:
         chosen = self.assignees if kind == ASSIGNEE else self.epics
         chosen.symmetric_difference_update({value})
 
-    def discard(self, kind: str, value) -> None:
+    def discard(self, kind: str, value: Facet) -> None:
         (self.assignees if kind == ASSIGNEE else self.epics).discard(value)
 
     def clear(self) -> None:
@@ -127,7 +131,7 @@ class FilterState:
         clauses: list[str] = []
         params: list = []
         if self.assignees:
-            names = sorted(self.assignees)
+            names = sorted(self.assignees, key=str)
             marks = ", ".join("?" * len(names))
             clauses.append(f"COALESCE({alias}.assignee, 'user') IN ({marks})")
             params.extend(names)
@@ -150,7 +154,7 @@ class FilterState:
 # ---------------------------------------------------------------------------
 
 
-def _rows(conn: sqlite3.Connection, query: str, params=()) -> list:
+def _rows(conn: sqlite3.Connection, query: str, params: tuple | list = ()) -> list:
     try:
         return conn.execute(query, params).fetchall()
     except sqlite3.OperationalError:
@@ -193,7 +197,7 @@ def epic_options(conn: sqlite3.Connection, state: FilterState) -> list[tuple]:
     return options
 
 
-def option_count(conn: sqlite3.Connection, state: FilterState, kind: str, value) -> int:
+def option_count(conn: sqlite3.Connection, state: FilterState, kind: str, value: Facet) -> int:
     """How many board cards this one option matches, under the other sections."""
     probe = FilterState()
     probe.assignees = {value} if kind == ASSIGNEE else set(state.assignees)
@@ -226,7 +230,7 @@ def applied(conn: sqlite3.Connection, state: FilterState) -> list[tuple]:
 class _FacetRow(QWidget):
     """One option: a box, its name, and its count — the whole row a click."""
 
-    def __init__(self, label: str, checked: bool, on_toggle) -> None:
+    def __init__(self, label: str, checked: bool, on_toggle: Callable[[], object]) -> None:
         super().__init__()
         self.setObjectName("facetRow")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -257,7 +261,7 @@ class _FacetRow(QWidget):
     def set_count(self, found: int) -> None:
         self.count.setText(str(found))
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """A click anywhere on the row is a click on its box."""
         self.box.toggle()
 
@@ -267,11 +271,13 @@ class FilterMenu(QWidget):
 
     changed = Signal()
 
-    def __init__(self, parent, conn: sqlite3.Connection, state: FilterState) -> None:
+    def __init__(
+        self, parent: QWidget | None, conn: sqlite3.Connection, state: FilterState
+    ) -> None:
         super().__init__(parent, Qt.WindowType.Popup)
         self.conn = conn
         self.state = state
-        self._rows: list[tuple[str, object, _FacetRow]] = []
+        self._rows: list[tuple[str, Facet, _FacetRow]] = []
 
         # The popup is a transparent frame containing one panel, so the panel's
         # rounded corners are drawn against nothing rather than against the
@@ -333,7 +339,7 @@ class FilterMenu(QWidget):
         self.move(left, top)
         self.show()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key.Key_Escape:
             self.close()
             return
@@ -383,7 +389,7 @@ class FilterMenu(QWidget):
             row.set_count(option_count(self.conn, self.state, kind, value))
         self.clear_btn.setEnabled(self.state.any_set())
 
-    def _toggled(self, kind: str, value) -> None:
+    def _toggled(self, kind: str, value: Facet) -> None:
         self.state.toggle(kind, value)
         self.refresh()
         self.changed.emit()

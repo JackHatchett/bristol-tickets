@@ -43,8 +43,10 @@ reason.
 from __future__ import annotations
 
 import re
+from collections.abc import Container
 
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
 
 from .palettes import (
     COOL_DARK,
@@ -313,7 +315,7 @@ def resolve_scheme(theme: str | None, mode: str | None, dark: bool) -> str:
     return light
 
 
-def appearance_choice(theme, mode, legacy) -> tuple[str, str]:
+def appearance_choice(theme: object, mode: object, legacy: object) -> tuple[str, str]:
     """The theme and mode in force, from the three values config can contain.
 
     The two current keys win where they name a theme the collection holds.
@@ -403,7 +405,7 @@ def _baseline(legacy_custom: dict | None = None) -> dict[str, dict]:
     return collection
 
 
-def _stored_record(raw, fallback_name: str) -> dict | None:
+def _stored_record(raw: object, fallback_name: str) -> dict | None:
     """One stored theme as a record, or None where it is not one."""
     if not isinstance(raw, dict):
         return None
@@ -559,7 +561,7 @@ def theme_choices(collection: dict[str, dict]) -> list[tuple[str, str]]:
     return [(theme_id, record["name"]) for theme_id, record in collection.items()]
 
 
-def theme_id_for(name: str, taken) -> str:
+def theme_id_for(name: str, taken: Container[str]) -> str:
     """A stable id for a theme just named, unused among ``taken``.
 
     The name changes afterwards and this does not: what the configuration
@@ -693,7 +695,7 @@ def check_schemes() -> list[str]:
     return complaints
 
 
-def is_dark_scheme(app) -> bool:
+def is_dark_scheme(app: QApplication) -> bool:
     """True when the OS colour scheme is Dark, and False wherever that cannot
     be read."""
     try:
@@ -718,7 +720,7 @@ def scrim() -> str:
     return SCRIM["dark" if scheme_is_dark(current_scheme()) else "light"]
 
 
-def _hold_platform(app, scheme) -> None:
+def _hold_platform(app: QApplication, scheme: Qt.ColorScheme | None) -> None:
     """Hold the platform to ``scheme``, a ``Qt.ColorScheme``, or let it follow
     the OS where ``scheme`` is None.
 
@@ -740,7 +742,7 @@ def _hold_platform(app, scheme) -> None:
         _held_scheme = previous
 
 
-def live_scheme(app, theme: str | None, mode: str | None) -> str:
+def live_scheme(app: QApplication | None, theme: str | None, mode: str | None) -> str:
     """The scheme a theme and a mode mean now, with the platform held to its
     light or dark.
 

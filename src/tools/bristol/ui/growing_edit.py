@@ -8,8 +8,8 @@ its ceiling, so everything typed stays reachable without leaving the field.
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFontMetrics
-from PySide6.QtWidgets import QSizePolicy, QTextEdit
+from PySide6.QtGui import QFontMetrics, QKeyEvent, QResizeEvent
+from PySide6.QtWidgets import QSizePolicy, QTextEdit, QWidget
 
 from .theme import control_height, space
 
@@ -30,7 +30,7 @@ class GrowingTextEdit(QTextEdit):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         *,
         min_lines: int = 1,
         max_lines: int = 6,
@@ -76,11 +76,11 @@ class GrowingTextEdit(QTextEdit):
             height = max(height, control_height())
         self.setFixedHeight(height)
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
         self._fit()
 
-    def keyPressEvent(self, event) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         plain_return = (
             event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
             and not event.modifiers() & Qt.KeyboardModifier.ShiftModifier

@@ -21,8 +21,10 @@ they answer a question the page put and the page is what they are about.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtGui import QColor, QKeySequence, QPainter, QShortcut
+from PySide6.QtGui import QColor, QKeySequence, QMouseEvent, QPainter, QPaintEvent, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -54,7 +56,7 @@ class _DialogWatch(QObject):
         self._modal = modal
         self._open: set[int] = set()
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         kind = event.type()
         if kind in (QEvent.Type.Show, QEvent.Type.Hide) and self._takes_place(obj):
             if kind == QEvent.Type.Show:
@@ -64,7 +66,7 @@ class _DialogWatch(QObject):
             self._modal.panel.setVisible(not self._open)
         return False
 
-    def _takes_place(self, obj) -> bool:
+    def _takes_place(self, obj: QObject) -> bool:
         """A window opened from a page of the panel, other than a question the
         page asks over it."""
         if not isinstance(obj, QDialog) or isinstance(obj, (Modal, QFileDialog)):
@@ -86,7 +88,7 @@ class SettingsModal(QWidget):
         agents: QWidget,
         skills: QWidget,
         settings: SettingsTab,
-        on_closed=None,
+        on_closed: Callable[[], object] | None = None,
     ) -> None:
         super().__init__(
             window,
@@ -227,7 +229,7 @@ class SettingsModal(QWidget):
             (self.width() - width) // 2, (self.height() - height) // 2, width, height
         )
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if (
             obj is self._window
             and event.type() in (QEvent.Type.Resize, QEvent.Type.Move)
@@ -236,11 +238,11 @@ class SettingsModal(QWidget):
             self._fit()
         return False
 
-    def paintEvent(self, event) -> None:
+    def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(scrim()))
 
-    def mousePressEvent(self, event) -> None:
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """A click on the scrim, outside the panel, closes the modal."""
         if self.panel.isVisible() and not self.panel.geometry().contains(
             event.position().toPoint()

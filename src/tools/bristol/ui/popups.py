@@ -17,7 +17,7 @@ before or after it is covered, and installing twice changes nothing.
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtWidgets import QComboBox, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QWidget
 
 from .theme import space
 
@@ -25,7 +25,7 @@ _CONTAINER = "QComboBoxPrivateContainer"
 
 
 class _PopupStyler(QObject):
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         kind = event.type()
         if (
             kind == QEvent.Type.Polish
@@ -56,7 +56,7 @@ class _PopupStyler(QObject):
 _styler: _PopupStyler | None = None
 
 
-def install(app) -> None:
+def install(app: QApplication) -> None:
     """Style every picker's open list in ``app``, once."""
     global _styler
     if app is None or _styler is not None:

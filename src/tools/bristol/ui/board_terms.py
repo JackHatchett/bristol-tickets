@@ -9,7 +9,13 @@ check-state test the board's lists use. Every vocabulary follows
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import Qt
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QComboBox
 
 # ---------------------------------------------------------------------------
 # Board columns and the custom data role the card delegate paints from
@@ -97,13 +103,13 @@ def fleet_agents() -> list[str]:
     return ["user", *slugs] if slugs else list(FLEET_AGENTS)
 
 
-def fill_agents(combo, slugs) -> None:
+def fill_agents(combo: QComboBox, slugs: Iterable[str]) -> None:
     """Load a picker with agents: the caption shown, the slug as item data."""
     for slug in slugs:
         combo.addItem(agent_caption(slug), slug)
 
 
-def select_agent(combo, slug: str | None) -> None:
+def select_agent(combo: QComboBox, slug: str | None) -> None:
     """Seat a picker on an agent, adding it where a legacy record carries one
     the list does not, so editing never silently rewrites who owns a card."""
     slug = (slug or "user").strip() or "user"
@@ -193,12 +199,14 @@ BLOCK_REASON_HINT = (
 )
 
 
-def _is_checked(state) -> bool:
+def _is_checked(state: object) -> bool:
     """True when a Qt.CheckStateRole value is checked, whether it arrives as a
     Qt.CheckState enum or as the raw int 2."""
     if state is None:
         return False
     val = getattr(state, "value", state)
+    if not isinstance(val, int | str):
+        return bool(state == Qt.CheckState.Checked)
     try:
         return int(val) == 2  # Qt.Checked == 2
     except (TypeError, ValueError):

@@ -25,11 +25,12 @@ from __future__ import annotations
 
 import html
 import sqlite3
+from collections.abc import Callable
 from typing import cast
 
 import finishing  # bristol-local: what done means for the board, one rule
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QFont, QFontMetrics
+from PySide6.QtGui import QFont, QFontMetrics, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -95,7 +96,11 @@ class DetailPane(QWidget):
     is used, and the host decides what that does to the splitter."""
 
     def __init__(
-        self, conn: sqlite3.Connection, parent=None, on_changed=None, on_collapse=None
+        self,
+        conn: sqlite3.Connection,
+        parent: QWidget | None = None,
+        on_changed: Callable[[], None] | None = None,
+        on_collapse: Callable[[], None] | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("detailPane")
@@ -350,7 +355,7 @@ class DetailPane(QWidget):
         for column in range(4):
             grid.setColumnStretch(column, 1 if column % 2 and column < 2 * columns else 0)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
         self._reflow_controls()
         if self.task_id is not None or self.epic_id is not None:
@@ -531,7 +536,7 @@ class DetailPane(QWidget):
 
     # ----- writes: one field at a time, down the shared path ----------------
 
-    def _write_field(self, field: str, value) -> None:
+    def _write_field(self, field: str, value: object) -> None:
         """One column, one UPDATE, on the connection whose triggers write the
         change log — the same recording a dialog save or a board drag gets."""
         if self._loading or self.task_id is None:
@@ -603,22 +608,22 @@ class DetailPane(QWidget):
             return
         self._after_write()
 
-    def _write_epic(self, *args) -> None:
+    def _write_epic(self, *args: object) -> None:
         if self._loading or self.task_id is None:
             return
         self._write_field("epic_id", self.epic_combo.currentData())
 
-    def _write_size(self, *args) -> None:
+    def _write_size(self, *args: object) -> None:
         if self._loading or self.task_id is None:
             return
         self._write_field("estimate", self.size_combo.currentData() or None)
 
-    def _write_block_reason(self, *args) -> None:
+    def _write_block_reason(self, *args: object) -> None:
         if self._loading or self.task_id is None:
             return
         self._write_field("block_reason", self.block_combo.currentData())
 
-    def _write_tier(self, *args) -> None:
+    def _write_tier(self, *args: object) -> None:
         if self._loading or self.task_id is None:
             return
         self._write_field("tier", self.tier_combo.currentData())
@@ -640,7 +645,7 @@ class DetailPane(QWidget):
 
     # ----- carried summaries ------------------------------------------------
 
-    def _render_handoffs(self, *args) -> None:
+    def _render_handoffs(self, *args: object) -> None:
         """Show what each finished blocker said as it closed, oldest first.
 
         Read live from the `blocks` rows and those tickets' own logs, so the
@@ -674,7 +679,7 @@ class DetailPane(QWidget):
 
     # ----- the log timeline -------------------------------------------------
 
-    def _render_log(self, *args) -> None:
+    def _render_log(self, *args: object) -> None:
         if self.task_id is None:
             self.log_view.setPlainText("(Select an issue to see its log.)")
             return

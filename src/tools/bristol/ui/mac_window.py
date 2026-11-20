@@ -16,8 +16,12 @@ from __future__ import annotations
 import ctypes
 import ctypes.util
 import sys
+from typing import TYPE_CHECKING, Any
 
 from .tokens import LAYOUT
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
 
 # The height AppKit gives a compact unified title bar with a toolbar, in points.
 TALL_TITLE_BAR = LAYOUT["tall_title_bar_h"]
@@ -29,10 +33,10 @@ _TOOLBAR_STYLE_UNIFIED = 4
 _TITLE_HIDDEN = 1
 _FULL_SIZE_CONTENT = 1 << 15
 
-_objc = None
+_objc: ctypes.CDLL | None = None
 
 
-def _runtime():
+def _runtime() -> ctypes.CDLL:
     global _objc
     if _objc is None:
         _objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("objc") or "objc")
@@ -44,10 +48,16 @@ def _runtime():
     return _objc
 
 
-def _send(receiver, selector: str, *args, restype=ctypes.c_void_p, argtypes=()):
+def _send(
+    receiver: object,
+    selector: str,
+    *args: object,
+    restype: Any = ctypes.c_void_p,
+    argtypes: tuple = (),
+) -> Any:
     """One Objective-C message, with its signature spelled out: on Apple
     silicon a message's arguments are passed as the signature says, never as
-    varargs."""
+    varargs. What it returns is whatever ``restype`` converts the reply to."""
     objc = _runtime()
     address = ctypes.cast(objc.objc_msgSend, ctypes.c_void_p).value
     if address is None:
@@ -57,11 +67,11 @@ def _send(receiver, selector: str, *args, restype=ctypes.c_void_p, argtypes=()):
     return function(receiver, objc.sel_registerName(selector.encode()), *args)
 
 
-def _class(name: str):
+def _class(name: str) -> int | None:
     return _runtime().objc_getClass(name.encode())
 
 
-def tall_title_bar(widget) -> bool:
+def tall_title_bar(widget: QWidget) -> bool:
     """Give ``widget``'s window the tall unified title bar, its title hidden and
     its content running under the bar. Returns whether it now has one."""
     if sys.platform != "darwin":
@@ -109,7 +119,7 @@ def tall_title_bar(widget) -> bool:
         return False
 
 
-def clear_backing(widget) -> bool:
+def clear_backing(widget: QWidget) -> bool:
     """Make ``widget``'s window see-through where nothing is painted, so a
     translucent paint shows the windows behind it. Returns whether it is."""
     if sys.platform != "darwin":

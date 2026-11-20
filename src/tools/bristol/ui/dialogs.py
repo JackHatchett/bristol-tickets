@@ -11,6 +11,7 @@ The styling contract these draw against is ``ui/README.md``.
 from __future__ import annotations
 
 import sys
+from collections.abc import Callable
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
@@ -51,7 +52,7 @@ def as_sheet(dialog: QDialog) -> bool:
     return True
 
 
-def add_button(label: str, on_add, tip: str = "") -> QPushButton:
+def add_button(label: str, on_add: Callable[[], object], tip: str = "") -> QPushButton:
     """The one secondary button under an editable list, saying what it adds —
     Add Folder, Add Link. Sized to its words and placed at the list's left
     edge by the caller."""
@@ -64,7 +65,7 @@ def add_button(label: str, on_add, tip: str = "") -> QPushButton:
     return button
 
 
-def remove_icon(tip: str, on_remove) -> QPushButton:
+def remove_icon(tip: str, on_remove: Callable[[], object]) -> QPushButton:
     """The Quiet Icon ✕ at the end of an editable list's row, which removes
     that row."""
     from . import icons
@@ -81,7 +82,11 @@ def remove_icon(tip: str, on_remove) -> QPushButton:
 
 
 def removable_item(
-    view: QListWidget, item: QListWidgetItem, tip: str, on_remove, content: QWidget | None = None
+    view: QListWidget,
+    item: QListWidgetItem,
+    tip: str,
+    on_remove: Callable[[], object],
+    content: QWidget | None = None,
 ) -> QWidget:
     """End a list item's row in its ✕. ``content`` is drawn before the ✕ where
     the row is a widget; where it is ``None`` the list draws the item's text,
@@ -115,7 +120,7 @@ class RowList(QFrame):
     every list carries, each row ending in the ✕ that removes it. A list that
     lists nothing is not drawn."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("rowList")
         # As tall as its rows, whatever its host is short of: a squeezed list
@@ -127,7 +132,11 @@ class RowList(QFrame):
         self.setVisible(False)
 
     def add_row(
-        self, content: QWidget, tip: str, on_remove, align=Qt.AlignmentFlag.AlignVCenter
+        self,
+        content: QWidget,
+        tip: str,
+        on_remove: Callable[[], object],
+        align: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignVCenter,
     ) -> QWidget:
         row = QWidget()
         # A row is as tall as its contents, whatever its host is short of.
@@ -173,7 +182,7 @@ class Modal(QDialog):
 
     def __init__(
         self,
-        parent,
+        parent: QWidget | None,
         title: str,
         body: str,
         buttons: list[tuple[str, str, object]],
@@ -227,7 +236,7 @@ class Modal(QDialog):
 
 
 def confirm(
-    parent,
+    parent: QWidget | None,
     title: str,
     body: str,
     accept_label: str,
@@ -257,8 +266,12 @@ def confirm(
 
 
 def choose(
-    parent, title: str, body: str, options: list[tuple[str, str, object]], default_index: int = 0
-):
+    parent: QWidget | None,
+    title: str,
+    body: str,
+    options: list[tuple[str, str, object]],
+    default_index: int = 0,
+) -> object:
     """Ask a question whose answers are not yes and no. Returns the result of
     the option chosen, and of ``default_index`` when the window is closed."""
     dialog = Modal(parent, title, body, options, default_index)
@@ -266,6 +279,6 @@ def choose(
     return dialog.choice()
 
 
-def notify(parent, title: str, body: str, close_label: str = "OK") -> None:
+def notify(parent: QWidget | None, title: str, body: str, close_label: str = "OK") -> None:
     """State something the user cannot answer, with one way out."""
     Modal(parent, title, body, [(close_label, PRIMARY, None)]).exec()

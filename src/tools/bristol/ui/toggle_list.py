@@ -13,13 +13,25 @@ system's Bristol Controls page gives the Toggle Row.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtCore import (
+    QAbstractItemModel,
+    QEvent,
+    QModelIndex,
+    QPersistentModelIndex,
+    QRect,
+    QRectF,
+    QSize,
+    Qt,
+    Signal,
+)
+from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPainter, QPen
 from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QStyle,
     QStyledItemDelegate,
+    QStyleOptionViewItem,
+    QWidget,
 )
 
 from . import icons
@@ -28,7 +40,7 @@ from .theme import C, radius, space
 CHECK_SIZE = 14
 
 
-def _chosen(index) -> bool:
+def _chosen(index: QModelIndex | QPersistentModelIndex) -> bool:
     state = index.data(Qt.ItemDataRole.CheckStateRole)
     return state in (Qt.CheckState.Checked, Qt.CheckState.Checked, 2)
 
@@ -44,11 +56,13 @@ class _ToggleRowDelegate(QStyledItemDelegate):
         super().__init__(view)
         self._view = view
 
-    def _text_width(self, option) -> int:
+    def _text_width(self, option: QStyleOptionViewItem) -> int:
         width = option.rect.width() or self._view.viewport().width()
         return max(1, width - 2 * space("lg") - CHECK_SIZE - space("md"))
 
-    def _detail_rect(self, option, index, width: int) -> QRect:
+    def _detail_rect(
+        self, option: QStyleOptionViewItem, index: QModelIndex | QPersistentModelIndex, width: int
+    ) -> QRect:
         detail = index.data(DETAIL_ROLE)
         if not detail:
             return QRect()
@@ -56,13 +70,20 @@ class _ToggleRowDelegate(QStyledItemDelegate):
             QRect(0, 0, width, 10_000), Qt.TextFlag.TextWordWrap, str(detail)
         )
 
-    def sizeHint(self, option, index) -> QSize:
+    def sizeHint(
+        self, option: QStyleOptionViewItem, index: QModelIndex | QPersistentModelIndex
+    ) -> QSize:
         line = option.fontMetrics.height()
         detail = self._detail_rect(option, index, self._text_width(option))
         extra = detail.height() + space("xs") if detail.height() else 0
         return QSize(option.rect.width(), line + extra + 2 * space("md"))
 
-    def paint(self, painter: QPainter, option, index) -> None:
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         chosen = _chosen(index)
@@ -116,22 +137,29 @@ class _ToggleRowDelegate(QStyledItemDelegate):
             painter.drawPixmap(QRectF(x, y, CHECK_SIZE, CHECK_SIZE), mark, QRectF(mark.rect()))
         painter.restore()
 
-    def editorEvent(self, event, model, option, index) -> bool:
+    def editorEvent(
+        self,
+        event: QEvent,
+        model: QAbstractItemModel,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> bool:
         if not (
             index.flags() & Qt.ItemFlag.ItemIsEnabled
             and index.flags() & Qt.ItemFlag.ItemIsUserCheckable
         ):
             return False
-        if (
-            event.type() == QEvent.Type.MouseButtonRelease
-            and event.button() == Qt.MouseButton.LeftButton
-            and option.rect.contains(event.position().toPoint())
-        ):
-            self._turn(model, index)
-            return True
-        if event.type() in (QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonDblClick):
-            return event.button() == Qt.MouseButton.LeftButton
-        if event.type() == QEvent.Type.KeyPress and event.key() in (
+        if isinstance(event, QMouseEvent):
+            if (
+                event.type() == QEvent.Type.MouseButtonRelease
+                and event.button() == Qt.MouseButton.LeftButton
+                and option.rect.contains(event.position().toPoint())
+            ):
+                self._turn(model, index)
+                return True
+            if event.type() in (QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonDblClick):
+                return event.button() == Qt.MouseButton.LeftButton
+        if isinstance(event, QKeyEvent) and event.key() in (
             Qt.Key.Key_Space,
             Qt.Key.Key_Select,
         ):
@@ -140,7 +168,7 @@ class _ToggleRowDelegate(QStyledItemDelegate):
         return False
 
     @staticmethod
-    def _turn(model, index) -> None:
+    def _turn(model: QAbstractItemModel, index: QModelIndex | QPersistentModelIndex) -> None:
         model.setData(
             index,
             Qt.CheckState.Unchecked if _chosen(index) else Qt.CheckState.Checked,
@@ -156,7 +184,7 @@ class ToggleList(QListWidget):
 
     turned = Signal(str, bool)
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("toggleList")
         self.setSelectionMode(QListWidget.SelectionMode.NoSelection)

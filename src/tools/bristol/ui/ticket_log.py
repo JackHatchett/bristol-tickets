@@ -8,6 +8,7 @@ module reads both and renders their timestamps; it builds no widget.
 
 from __future__ import annotations
 
+import sqlite3
 from datetime import datetime, timezone
 
 
@@ -21,7 +22,9 @@ def _today() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
 
-def log_lines(conn, task_id: int, comments: bool = True, changes: bool = True) -> list[str]:
+def log_lines(
+    conn: sqlite3.Connection, task_id: int, comments: bool = True, changes: bool = True
+) -> list[str]:
     """One ticket's log as display lines, newest first.
 
     Two kinds share the list: `issue_log` comments, written by a person or an
@@ -65,7 +68,9 @@ def log_lines(conn, task_id: int, comments: bool = True, changes: bool = True) -
     return [line for _, _, _, line in entries]
 
 
-def log_entries(conn, task_id: int, comments: bool = True, changes: bool = True) -> list[dict]:
+def log_entries(
+    conn: sqlite3.Connection, task_id: int, comments: bool = True, changes: bool = True
+) -> list[dict]:
     """One ticket's log as structured entries, newest first — what the detail
     pane's timeline renders from. Same two sources and the same merge order as
     ``log_lines``; each entry is a dict:

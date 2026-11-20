@@ -40,9 +40,24 @@ selects the card (inspector) nor starts a drag (reorder).
 
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPen
-from PySide6.QtWidgets import QStyle, QStyledItemDelegate
+from PySide6.QtCore import (
+    QAbstractItemModel,
+    QEvent,
+    QModelIndex,
+    QPersistentModelIndex,
+    QRect,
+    QRectF,
+    QSize,
+    Qt,
+)
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QIcon, QMouseEvent, QPainter, QPen
+from PySide6.QtWidgets import (
+    QAbstractScrollArea,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+    QWidget,
+)
 
 from .theme import (
     CARD_ROLE,
@@ -67,7 +82,7 @@ class CardDelegate(QStyledItemDelegate):
     TITLE_LINES = 2
     SHOW_DESCRIPTION = False
 
-    def __init__(self, parent=None, show_checkbox: bool = False):
+    def __init__(self, parent: QWidget | None = None, show_checkbox: bool = False) -> None:
         super().__init__(parent)
         self.show_checkbox = show_checkbox
 
@@ -195,11 +210,14 @@ class CardDelegate(QStyledItemDelegate):
     # font and gutter and read back after that.
     _HEIGHT_CACHE_MAX = 8000
 
-    def sizeHint(self, option, index):
+    def sizeHint(
+        self, option: QStyleOptionViewItem, index: QModelIndex | QPersistentModelIndex
+    ) -> QSize:
         data = index.data(CARD_ROLE) or {}
         widget = option.widget
-        if widget is not None and widget.viewport() is not None:
-            total_w = widget.viewport().width()
+        viewport = widget.viewport() if isinstance(widget, QAbstractScrollArea) else None
+        if viewport is not None:
+            total_w = viewport.width()
         else:
             total_w = option.rect.width() or 260
         key = (total_w, self.show_checkbox, self._title_font().key(), repr(sorted(data.items())))
@@ -222,7 +240,7 @@ class CardDelegate(QStyledItemDelegate):
         h += self._footer_height(data, content_w) + self.PAD
         return h + 2 * self.MARGIN
 
-    def _checkbox_rect(self, option) -> QRect:
+    def _checkbox_rect(self, option: QStyleOptionViewItem) -> QRect:
         """The clickable checkbox square, vertically centred in the left gutter."""
         r = option.rect
         x = r.left() + (self.CHECK_W - self.CHECK_BOX) // 2 + space("xs")
@@ -232,7 +250,17 @@ class CardDelegate(QStyledItemDelegate):
     def _pill_width(self, text: str, font: QFont) -> int:
         return QFontMetrics(font).horizontalAdvance(text) + space("lg") * 2
 
-    def _draw_pill(self, painter, x, y, text, bg, fg, font, width=None):
+    def _draw_pill(
+        self,
+        painter: QPainter,
+        x: float,
+        y: float,
+        text: str,
+        bg: str,
+        fg: str,
+        font: QFont,
+        width: float | None = None,
+    ) -> float:
         w = self._pill_width(text, font) if width is None else width
         h = self.PILL_H
         rect = QRectF(x, y, w, h)
@@ -285,7 +313,7 @@ class CardDelegate(QStyledItemDelegate):
             pills.append((epic_name, C["NEUTRAL_BG"], C["NEUTRAL_TX"]))
         return pills
 
-    def _footer_layout(self, data: dict, cw: int):
+    def _footer_layout(self, data: dict, cw: int) -> tuple[list, int]:
         """Where everything under the title goes, relative to its top-left, and
         how tall it is. Returns ``(ops, height)``; each op is
         ``("owner"|"id", rect, text)`` or ``("pill", rect, (text, bg, fg))``.
@@ -336,12 +364,19 @@ class CardDelegate(QStyledItemDelegate):
             ops.append(("id", QRectF(cw - id_w, y, id_w, row_h), id_text))
         return ops, y + row_h
 
-    def editorEvent(self, event, model, option, index):
+    def editorEvent(
+        self,
+        event: QEvent,
+        model: QAbstractItemModel,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> bool:
         """Toggle the bulk-select checkbox on a click inside its square, and
         consume that click so it doesn't also select the card or begin a drag.
         All other events fall through to the default handling."""
         if (
             self.show_checkbox
+            and isinstance(event, QMouseEvent)
             and event.type() in (QEvent.Type.MouseButtonRelease, QEvent.Type.MouseButtonDblClick)
             and self._checkbox_rect(option).contains(event.position().toPoint())
         ):
@@ -355,7 +390,12 @@ class CardDelegate(QStyledItemDelegate):
             return True
         return super().editorEvent(event, model, option, index)
 
-    def paint(self, painter, option, index):
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
         data = index.data(CARD_ROLE) or {}
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
@@ -433,7 +473,7 @@ class CardDelegate(QStyledItemDelegate):
         self._draw_footer(painter, data, cx, y, cw)
         painter.restore()
 
-    def _draw_footer(self, painter, data, cx, y, cw) -> None:
+    def _draw_footer(self, painter: QPainter, data: dict, cx: float, y: float, cw: float) -> None:
         """The owner and the number on one line, the pills flowing under it."""
         ops, _ = self._footer_layout(data, int(cw))
         sfont = self._small_font()
@@ -457,7 +497,12 @@ class CardDelegate(QStyledItemDelegate):
                     rect, int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter), payload
                 )
 
-    def _paint_checkbox(self, painter, option, index) -> None:
+    def _paint_checkbox(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
         """Draw the bulk-select checkbox in the left gutter as the Bristol
         Checkbox: a SPACE lg square at RADIUS sm with a 1 px ACCENT edge,
         SURFACE inside, or ACCENT bearing Lucide's check in ON_ACCENT when

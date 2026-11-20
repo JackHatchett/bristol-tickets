@@ -20,10 +20,12 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from types import ModuleType
+from typing import cast
 
 import finishing  # bristol-local: what done means for the board, one rule
 from PySide6.QtCore import QDate, Qt
-from PySide6.QtGui import QFont, QFontMetrics
+from PySide6.QtGui import QCloseEvent, QFont, QFontMetrics, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -146,7 +148,7 @@ def _epic_kind(stored: str | None) -> str:
 NO_DUE_DATE = QDate(1970, 1, 1)
 
 
-def _captioned(caption: QLabel, widget, stretch: bool = False) -> QWidget:
+def _captioned(caption: QLabel, widget: QWidget, stretch: bool = False) -> QWidget:
     """A formCaption above its control — the field treatment the detail pane
     established. ``stretch`` lets a full-width field take its whole row."""
     box = QWidget()
@@ -176,14 +178,14 @@ def _is_boilerplate(text: str | None) -> bool:
 class UnifiedRecordDialog(QDialog):
     def __init__(
         self,
-        parent,
-        conn,
-        mode="task",
+        parent: QWidget | None,
+        conn: sqlite3.Connection,
+        mode: str = "task",
         record_id: int | None = None,
         initial_status: str | None = None,
         epic_id: int | None = None,
         initial_stage: str | None = None,
-    ):
+    ) -> None:
         super().__init__(parent)
         self.conn = conn
         self.mode = mode
@@ -523,7 +525,7 @@ class UnifiedRecordDialog(QDialog):
         # as clean.
         self._baseline_signature = self._field_signature()
 
-    def showEvent(self, event):
+    def showEvent(self, event: QShowEvent) -> None:
         """Open tall enough to show the whole ticket, capped at the screen."""
         super().showEvent(event)
         body = self._scroll.widget()
@@ -579,7 +581,7 @@ class UnifiedRecordDialog(QDialog):
     def _is_dirty(self) -> bool:
         return self._field_signature() != getattr(self, "_baseline_signature", None)
 
-    def _epic_closure(self):
+    def _epic_closure(self) -> ModuleType | None:
         """The epic-closure module, or None where this bundle does not carry it.
         A board that cannot reach it still edits epics; what it loses is the
         closure, the same way a stripped bundle loses the report."""
@@ -604,7 +606,7 @@ class UnifiedRecordDialog(QDialog):
             destructive=True,
         )
 
-    def accept(self):
+    def accept(self) -> None:
         """Refuse a save with a required field empty rather than close, since
         closing is what would discard the user's typing, and from here on mark
         every empty required field."""
@@ -616,12 +618,12 @@ class UnifiedRecordDialog(QDialog):
             return
         super().accept()
 
-    def reject(self):
+    def reject(self) -> None:
         """Cancel button / Esc: guard unsaved edits before discarding."""
         if self._confirm_discard():
             super().reject()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Window-close (the title-bar X): same guard as Cancel."""
         if self._confirm_discard():
             event.accept()
@@ -681,7 +683,7 @@ class UnifiedRecordDialog(QDialog):
     def _current_record_type(self) -> str:
         return self.recordtype_combo.currentData() or "build"
 
-    def _apply_template_if_boilerplate(self, *args) -> None:
+    def _apply_template_if_boilerplate(self, *args: object) -> None:
         """Fill the Description with the current record type's template, but only
         when the field is still boilerplate. User input supersedes the template
         except when blank. No-op unless the entity is a Task/Issue."""
@@ -691,7 +693,7 @@ class UnifiedRecordDialog(QDialog):
             self.desc_edit.setPlainText(RECORD_TEMPLATES[self._current_record_type()])
         self._sync_desc_font()
 
-    def _sync_desc_font(self, *args) -> None:
+    def _sync_desc_font(self, *args: object) -> None:
         """Monospace is reserved for the mad-lib skeletons and their bracketed
         blanks; prose renders in the body face. The switch follows the text: a
         Description that still IS a template lines its blanks up in monospace,
@@ -721,7 +723,7 @@ class UnifiedRecordDialog(QDialog):
         return missing
 
     @staticmethod
-    def _set_missing(widget, missing: bool) -> None:
+    def _set_missing(widget: QWidget, missing: bool) -> None:
         """Flip the dynamic ``fieldMissing`` property and force a restyle, so
         the field's border follows the property."""
         if widget.property("fieldMissing") == missing:
@@ -730,7 +732,7 @@ class UnifiedRecordDialog(QDialog):
         widget.style().unpolish(widget)
         widget.style().polish(widget)
 
-    def _refresh_required_state(self, *args) -> None:
+    def _refresh_required_state(self, *args: object) -> None:
         """Mark every empty required field red once a save has been tried with
         one empty, and never before. Called on construction, on every keystroke
         in a required field and on each refused save."""
@@ -738,7 +740,7 @@ class UnifiedRecordDialog(QDialog):
         self._set_missing(self.title_edit, self.title_edit in shown)
         self._set_missing(self.title_label, self.title_edit in shown)
 
-    def _update_visible_fields(self):
+    def _update_visible_fields(self) -> None:
         is_task = self.type_combo.currentText() == "Task / Issue"
         is_epic = not is_task
 
@@ -766,7 +768,7 @@ class UnifiedRecordDialog(QDialog):
         # does.
         self._refresh_required_state()
 
-    def _load_existing_data(self):
+    def _load_existing_data(self) -> None:
         try:
             if self.mode == "task":
                 row = self.conn.execute(
@@ -835,7 +837,7 @@ class UnifiedRecordDialog(QDialog):
         except sqlite3.OperationalError:
             pass
 
-    def _render_log(self, _checked=None):
+    def _render_log(self, _checked: bool | None = None) -> None:
         if self.record_id is None:
             return
         lines = log_lines(
@@ -846,7 +848,7 @@ class UnifiedRecordDialog(QDialog):
         )
         self.log_view.setPlainText("\n".join(lines) if lines else "(Nothing to show.)")
 
-    def _post_log_entry(self):
+    def _post_log_entry(self) -> None:
         if self.record_id is None:
             return
         body = self.log_post_input.text().strip()
@@ -866,7 +868,7 @@ class UnifiedRecordDialog(QDialog):
         self.log_post_input.clear()
         self._render_log()
 
-    def _handle_delete(self):
+    def _handle_delete(self) -> None:
         if confirm(
             self,
             f"Delete this {self.mode}",
@@ -914,7 +916,7 @@ class UnifiedRecordDialog(QDialog):
             ).fetchone()
         return int(row[0]) + 1
 
-    def save_data(self, fallback_epic=None):
+    def save_data(self, fallback_epic: int | None = None) -> None:
         title = self.title_edit.text().strip()
         desc = self.desc_edit.toPlainText().strip()
         if not title:
@@ -983,10 +985,11 @@ class UnifiedRecordDialog(QDialog):
                     ),
                 )
                 # The ticket now has an id, so links entered during creation can
-                # finally be written against it.
-                self.links.flush_pending(cur.lastrowid)
+                # finally be written against it. An INSERT always gives its row one.
+                new_id = cast(int, cur.lastrowid)
+                self.links.flush_pending(new_id)
                 if status == "done":
-                    finishing.finish(self.conn, cur.lastrowid)
+                    finishing.finish(self.conn, new_id)
             else:
                 # Re-seat at the bottom of the destination list only if the task
                 # actually changed tab or column; otherwise keep its position.

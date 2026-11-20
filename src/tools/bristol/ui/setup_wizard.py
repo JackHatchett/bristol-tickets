@@ -35,6 +35,7 @@ import getpass
 import json
 import re
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import cast
@@ -559,7 +560,7 @@ class SummaryPage(HeadedPage):
 
 
 class SetupWizard(QWizard):
-    def __init__(self, root: Path, parent=None) -> None:
+    def __init__(self, root: Path, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.root = root
         self.db_path: Path | None = None
@@ -664,7 +665,7 @@ class SetupWizard(QWizard):
 # ---------------------------------------------------------------------------
 
 
-def _substitute(value, mapping: list[tuple[str, str]]):
+def _substitute(value: object, mapping: list[tuple[str, str]]) -> object:
     """Every placeholder in the example config, replaced throughout."""
     if isinstance(value, str):
         for token, replacement in mapping:
@@ -777,7 +778,7 @@ class SetupStepError(Exception):
 
 
 @contextmanager
-def _step(step: str, remedy: str):
+def _step(step: str, remedy: str) -> Iterator[None]:
     """Run one setup step, naming it if it fails."""
     try:
         yield
@@ -885,7 +886,7 @@ class PlacementDialog(QDialog):
     stands rather than overwritten.
     """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Bristol Tickets — Setup")
         self.setModal(True)
@@ -957,7 +958,7 @@ class PlacementDialog(QDialog):
         self.accept()
 
 
-def place_project(parent=None) -> tuple[Path | None, bool]:
+def place_project(parent: QWidget | None = None) -> tuple[Path | None, bool]:
     """The project folder for this run, and whether this run placed it.
 
     Either the folder around this file, or the one the user picks for a payload
@@ -978,7 +979,7 @@ def place_project(parent=None) -> tuple[Path | None, bool]:
 class ConnectDialog(QDialog):
     """Where the installation went, and how to point an agent at it."""
 
-    def __init__(self, root: Path, parent=None) -> None:
+    def __init__(self, root: Path, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Bristol Tickets — Setup")
         self.setModal(True)
@@ -1035,7 +1036,7 @@ class ConnectDialog(QDialog):
         self.copied.setText("Copied.")
 
 
-def run_setup(parent=None) -> Path | None:
+def run_setup(parent: QWidget | None = None) -> Path | None:
     """Show the wizard. Returns the provisioned board, or None if cancelled."""
     root, placed = place_project(parent)
     if root is None:

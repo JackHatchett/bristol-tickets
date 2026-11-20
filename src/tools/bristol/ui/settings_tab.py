@@ -30,6 +30,8 @@ back is the difference from what this build ships, stored under one key.
 
 from __future__ import annotations
 
+import sqlite3
+from collections.abc import Callable
 from typing import cast
 
 import config_file  # bristol-local; see module docstring
@@ -38,6 +40,7 @@ from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (
     QComboBox,
     QDateEdit,
+    QDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -133,7 +136,11 @@ def _form() -> QFormLayout:
 
 class SettingsTab(QWidget):
     def __init__(
-        self, parent=None, on_appearance_changed=None, conn=None, on_board_changed=None
+        self,
+        parent: QWidget | None = None,
+        on_appearance_changed: Callable[[str, str], object] | None = None,
+        conn: sqlite3.Connection | None = None,
+        on_board_changed: Callable[[], object] | None = None,
     ) -> None:
         super().__init__(parent)
 
@@ -318,7 +325,7 @@ class SettingsTab(QWidget):
         """Turn the stack to one section, by its name in ``SECTIONS``."""
         self.stack.setCurrentIndex(SECTIONS.index(name))
 
-    def _open_folders(self, window) -> None:
+    def _open_folders(self, window: Callable[[QWidget], QDialog]) -> None:
         window(self).exec()
         self._mark_missing()
 
@@ -523,7 +530,7 @@ class SettingsTab(QWidget):
             config_file.get(config_file.APPEARANCE_SCHEME),
         )
 
-    def _seat(self, combo: QComboBox, value) -> None:
+    def _seat(self, combo: QComboBox, value: object) -> None:
         """Put a picker on a value without it reading as a choice made."""
         was = self._loading
         self._loading = True
@@ -533,7 +540,7 @@ class SettingsTab(QWidget):
         finally:
             self._loading = was
 
-    def _write(self, key: str, value, caption: str) -> None:
+    def _write(self, key: str, value: object, caption: str) -> None:
         """Persist one choice at the moment it is made.
 
         A page of pickers behind a Save button asks the user to remember a second

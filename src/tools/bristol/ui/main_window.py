@@ -38,11 +38,20 @@ from __future__ import annotations
 
 import sqlite3
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import config_file  # bristol-local: the one config.local.json reader/writer
 from PySide6.QtCore import QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QDesktopServices, QGuiApplication, QIcon, QKeySequence
+from PySide6.QtGui import (
+    QAction,
+    QCloseEvent,
+    QDesktopServices,
+    QGuiApplication,
+    QIcon,
+    QKeySequence,
+    QMouseEvent,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -52,6 +61,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMenu,
     QPushButton,
     QSizePolicy,
     QSplitter,
@@ -65,7 +75,7 @@ from .agents_tab import AgentsTab
 from .board_write import write
 from .detail_pane import DetailPane
 from .dialogs import confirm, notify
-from .filter_menu import FilterMenu, FilterState, applied
+from .filter_menu import Facet, FilterMenu, FilterState, applied
 from .kanban_column import KanbanColumn
 from .links import remove_links_for_task
 from .record_dialog import UnifiedRecordDialog
@@ -120,14 +130,14 @@ class _HeaderBar(QWidget):
     the window when dragged and zoom it when double-clicked, as a title bar's
     do."""
 
-    def mousePressEvent(self, event) -> None:
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         handle = self.window().windowHandle()
         if event.button() == Qt.MouseButton.LeftButton and handle is not None:
             handle.startSystemMove()
             return
         super().mousePressEvent(event)
 
-    def mouseDoubleClickEvent(self, event) -> None:
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         window = self.window()
         window.showNormal() if window.isMaximized() else window.showMaximized()
 
@@ -515,7 +525,7 @@ class MainWindow(QMainWindow):
             return "archive"
         return "active"
 
-    def _sync_backlog_bar(self, *args) -> None:
+    def _sync_backlog_bar(self, *args: object) -> None:
         """Show the selection-dependent backlog actions only when editing AND
         ≥1 card is checked; "Select all" shows whenever editing as the entry
         point. In read mode only the Edit button shows."""
@@ -571,7 +581,7 @@ class MainWindow(QMainWindow):
         if save:
             self._save_pane_geometry()
 
-    def _on_splitter_moved(self, *args) -> None:
+    def _on_splitter_moved(self, *args: object) -> None:
         if not self._geometry_ready or self._pane_collapsed:
             return
         self._splitter_save_timer.start()
@@ -598,7 +608,7 @@ class MainWindow(QMainWindow):
         """A field changed from the pane: the board reflects it immediately."""
         self._refresh_board()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Leave nothing behind: a splitter save still waiting on its debounce,
         so a drag made just before quitting survives the restart."""
         if self._splitter_save_timer.isActive():
@@ -625,7 +635,7 @@ class MainWindow(QMainWindow):
         self._sync_menu()
         self._on_filters_changed()
 
-    def _remove_filter(self, kind: str, value) -> None:
+    def _remove_filter(self, kind: str, value: Facet) -> None:
         """The one filter a chip stands for, removed where it is read."""
         self.filters.discard(kind, value)
         self._sync_menu()
@@ -873,7 +883,12 @@ class MainWindow(QMainWindow):
     # ----- Menu bar ---------------------------------------------------------
 
     def _action(
-        self, menu, text: str, slot, shortcut=None, role=QAction.MenuRole.NoRole
+        self,
+        menu: QMenu,
+        text: str,
+        slot: Callable[[], object],
+        shortcut: str | QKeySequence.StandardKey | None = None,
+        role: QAction.MenuRole = QAction.MenuRole.NoRole,
     ) -> QAction:
         """One menu item. Every item states its role, because Qt otherwise
         moves an item whose title merely resembles About, Settings or Quit
@@ -1019,6 +1034,7 @@ class MainWindow(QMainWindow):
         system' and a pinned scheme come down the same path.
         """
         app = QApplication.instance()
+        app = app if isinstance(app, QApplication) else None
         theme, mode = self._stored_appearance()
         # Applied app-wide so child dialogs and message boxes inherit; fall back
         # to the window itself if there's somehow no application object. The
@@ -1047,6 +1063,7 @@ class MainWindow(QMainWindow):
         before the configuration says so."""
         self._previewed = (theme, mode)
         app = QApplication.instance()
+        app = app if isinstance(app, QApplication) else None
         set_scheme(live_scheme(app, theme, mode))
         if app is not None:
             style_application(app)
@@ -1082,7 +1099,7 @@ class MainWindow(QMainWindow):
         icons.retint()
         self._tint_header()
 
-    def _on_color_scheme_changed(self, *args) -> None:
+    def _on_color_scheme_changed(self, *args: object) -> None:
         """OS switched between light and dark. It reaches the app only while the
         mode is Follow System; a pinned mode resolves the same either way.
 
@@ -1211,7 +1228,7 @@ class MainWindow(QMainWindow):
             dlg.save_data()
             self._refresh_board()
 
-    def _open_global_create(self):
+    def _open_global_create(self) -> None:
         # A new task's default Stage follows the tab Create was pressed on
         # (_stage_for_current_tab). The user can still change Stage in the
         # dialog.
@@ -1228,14 +1245,14 @@ class MainWindow(QMainWindow):
             dlg.save_data(fallback_epic=epic_id)
             self._refresh_board()
 
-    def _update_inspector(self, record_id: int, mode: str):
+    def _update_inspector(self, record_id: int, mode: str) -> None:
         """Point the detail pane at whatever a view selected."""
         if mode == "epic":
             self.detail_pane.show_epic(record_id)
         else:
             self.detail_pane.show_task(record_id)
 
-    def _execute_global_search(self):
+    def _execute_global_search(self) -> None:
         self._search_settle.stop()
         found_rows = []
         term = f"%{self.search_input.text().strip()}%"
@@ -1308,7 +1325,7 @@ class MainWindow(QMainWindow):
         self._data_version = version
         self._refresh_board()
 
-    def _refresh_board(self):
+    def _refresh_board(self) -> None:
         """Reload every view from the database, through the board's filter.
 
         Search is reloaded too and takes no filter: it is the one view whose

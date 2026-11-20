@@ -51,7 +51,7 @@ from pathlib import Path
 
 import config_file  # bristol-local: the one config.local.json reader/writer
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QDesktopServices, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -338,12 +338,12 @@ class _ElideLabel(QLabel):
     """A one-line row that elides its text at the width it is given, so a long
     reference ends in an ellipsis at the pane edge instead of clipping."""
 
-    def __init__(self, text: str, parent=None) -> None:
+    def __init__(self, text: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._full = text
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
         self.setText(
             self.fontMetrics().elidedText(self._full, Qt.TextElideMode.ElideRight, self.width())
@@ -354,12 +354,12 @@ class _ElideButton(QPushButton):
     """The clickable counterpart of ``_ElideLabel``: same elision, same width
     contract, styled as a link row."""
 
-    def __init__(self, text: str, parent=None) -> None:
+    def __init__(self, text: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._full = text
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
         self.setText(
             self.fontMetrics().elidedText(self._full, Qt.TextElideMode.ElideRight, self.width())
@@ -379,7 +379,7 @@ class AddLinkDialog(QDialog):
     two permanent rows. ``result_values()`` returns
     ``(kind, issue_id, uri, label, relation)`` after an accepted exec()."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Add Link")
         self.setMinimumWidth(LAYOUT["small_dialog_min_w"])
@@ -496,7 +496,7 @@ class LinkBar(QWidget):
     def __init__(
         self,
         conn: sqlite3.Connection,
-        parent=None,
+        parent: QWidget | None = None,
         allow_pending: bool = False,
         author: str = "user",
     ) -> None:
@@ -611,7 +611,13 @@ class LinkBar(QWidget):
 
     # ----- rendering --------------------------------------------------------
 
-    def _row(self, text: str, tooltip: str, on_click, on_remove) -> QWidget:
+    def _row(
+        self,
+        text: str,
+        tooltip: str,
+        on_click: Callable[[], object] | None,
+        on_remove: Callable[[], object],
+    ) -> QWidget:
         if on_click is None:
             body = _ElideLabel(text)
             body.setObjectName("metaText")

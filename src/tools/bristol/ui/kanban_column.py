@@ -25,15 +25,18 @@ Sprints are gone, so there is no active-sprint filtering and no archive column
 here (the Archive tab is a plain chronological list built in main_window).
 
 The parent (MainWindow) is expected to expose ``_refresh_board`` and
-``_update_inspector``; both are called defensively via ``hasattr``.
+``_update_inspector``; each is looked up with ``getattr`` and called only
+where present.
 """
 
 from __future__ import annotations
 
-from typing import cast
+import sqlite3
+from typing import TYPE_CHECKING, cast
 
 import finishing  # bristol-local: what done means for the board, one rule
 from PySide6.QtCore import QEvent, Qt, QTimer
+from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -52,6 +55,9 @@ from .card_delegate import CardDelegate
 from .record_dialog import UnifiedRecordDialog
 from .theme import CARD_ROLE, LAYOUT, _is_checked, _today, _utcnow, space
 
+if TYPE_CHECKING:
+    from .filter_menu import FilterState
+
 
 class _DndListWidget(QListWidget):
     """A QListWidget that routes drops back to its owning KanbanColumn so the
@@ -60,11 +66,11 @@ class _DndListWidget(QListWidget):
     cross-column move (rewrite status, append to the bottom). Without this an
     inter-list drag would only rearrange cards visually and be lost on refresh."""
 
-    def __init__(self, column: KanbanColumn):
+    def __init__(self, column: KanbanColumn) -> None:
         super().__init__()
         self._column = column
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         self._column._handle_drop(event)
 
     # A card's height is measured in the theme's fonts. A change of theme or
@@ -72,7 +78,7 @@ class _DndListWidget(QListWidget):
     # cards are laid out again here as they are on a resize.
     _RELAYOUT_ON = (QEvent.Type.StyleChange, QEvent.Type.FontChange, QEvent.Type.PaletteChange)
 
-    def changeEvent(self, event):
+    def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() in self._RELAYOUT_ON:
             self.scheduleDelayedItemsLayout()
@@ -80,8 +86,13 @@ class _DndListWidget(QListWidget):
 
 class KanbanColumn(QFrame):
     def __init__(
-        self, parent, conn, status_key: str | None, display_name: str, is_backlog: bool = False
-    ):
+        self,
+        parent: QWidget | None,
+        conn: sqlite3.Connection,
+        status_key: str | None,
+        display_name: str,
+        is_backlog: bool = False,
+    ) -> None:
         super().__init__(parent)
         self.conn = conn
         self.status_key = status_key
@@ -162,7 +173,7 @@ class KanbanColumn(QFrame):
         "LEFT JOIN epic e ON t.epic_id = e.id "
     )
 
-    def load_board_tasks(self, filters):
+    def load_board_tasks(self, filters: FilterState) -> None:
         """BOARD column: stage='active' tasks in this status column, manual order,
         narrowed by the board's filter."""
         self.list_widget.clear()
@@ -172,7 +183,7 @@ class KanbanColumn(QFrame):
         query += " ORDER BY t.sort_order ASC, t.id ASC"
         self._fill(self.conn.execute(query, tuple(params)).fetchall())
 
-    def load_backlog_tasks(self, filters):
+    def load_backlog_tasks(self, filters: FilterState) -> None:
         """BACKLOG column: every stage='backlog' task as one manual list,
         narrowed by the board's filter."""
         self.list_widget.clear()
@@ -181,7 +192,7 @@ class KanbanColumn(QFrame):
         query += " ORDER BY t.sort_order ASC, t.id ASC"
         self._fill(self.conn.execute(query, tuple(params)).fetchall())
 
-    def _fill(self, rows) -> None:
+    def _fill(self, rows: list) -> None:
         """Replace the cards with ``rows``, keeping where the list was scrolled
         to, which cards were selected and which were ticked. A reload is then
         the same view brought up to date, rather than a reset of it."""
@@ -204,18 +215,18 @@ class KanbanColumn(QFrame):
 
     def _add_item(
         self,
-        task_id,
-        title,
-        tier,
-        epic_name,
-        epic_id,
-        _status,
-        owner,
-        estimate,
-        record_type,
-        description,
-        due_date=None,
-    ):
+        task_id: int,
+        title: str | None,
+        tier: str | None,
+        epic_name: str | None,
+        epic_id: int | None,
+        _status: str,
+        owner: str | None,
+        estimate: str | None,
+        record_type: str | None,
+        description: str | None,
+        due_date: str | None = None,
+    ) -> None:
         item = QListWidgetItem()
         item.setData(Qt.ItemDataRole.UserRole, task_id)
         item.setData(
@@ -245,7 +256,7 @@ class KanbanColumn(QFrame):
             "standing workstream for a card that is the whole of its own "
             "subject."
             if epic_id is None
-            else title
+            else title or ""
         )
         self.list_widget.addItem(item)
 
@@ -295,7 +306,7 @@ class KanbanColumn(QFrame):
             for i in range(self.list_widget.count())
         ]
 
-    def _drop_row(self, event) -> int:
+    def _drop_row(self, event: QDropEvent) -> int:
         """The insertion row implied by the drop point, accounting for whether
         the indicator sits above or below the item under the cursor."""
         pos = event.position().toPoint()
@@ -310,7 +321,7 @@ class KanbanColumn(QFrame):
             row += 1
         return row
 
-    def _handle_drop(self, event):
+    def _handle_drop(self, event: QDropEvent) -> None:
         source = event.source()
         dragged = []
         sel = getattr(source, "selectedItems", None)
@@ -334,10 +345,11 @@ class KanbanColumn(QFrame):
         else:
             self._accept_external(dragged)
         event.acceptProposedAction()
-        if hasattr(self._main_window_ref, "_refresh_board"):
-            QTimer.singleShot(0, self._main_window_ref._refresh_board)
+        refresh = getattr(self._main_window_ref, "_refresh_board", None)
+        if refresh is not None:
+            QTimer.singleShot(0, refresh)
 
-    def _reorder_within(self, dragged: list[int], drop_row: int):
+    def _reorder_within(self, dragged: list[int], drop_row: int) -> None:
         """Persist a within-column reorder: rebuild this column's id order with
         the dragged cards moved to the drop position, then rewrite sort_order to
         that sequence (0..n-1)."""
@@ -361,7 +373,7 @@ class KanbanColumn(QFrame):
 
         write(self.conn, self, "The new order of this column", reorder)
 
-    def _accept_external(self, dragged: list[int]):
+    def _accept_external(self, dragged: list[int]) -> None:
         """A cross-column drop onto a BOARD column: set each card's status to
         this column and append it to the bottom of this column's order. (Backlog
         does not accept external drops — status_key is None there.)"""
@@ -394,17 +406,19 @@ class KanbanColumn(QFrame):
 
     # ----- click / edit ----------------------------------------------------
 
-    def _edit_task_modal(self, item: QListWidgetItem):
+    def _edit_task_modal(self, item: QListWidgetItem) -> None:
         task_id = item.data(Qt.ItemDataRole.UserRole)
         if task_id is None:
             return
         dlg = UnifiedRecordDialog(self, self.conn, mode="task", record_id=task_id)
         if dlg.exec() == QDialog.DialogCode.Accepted:
             dlg.save_data()
-            if hasattr(self._main_window_ref, "_refresh_board"):
-                self._main_window_ref._refresh_board()
+            refresh = getattr(self._main_window_ref, "_refresh_board", None)
+            if refresh is not None:
+                refresh()
 
-    def _inspect_task(self, item: QListWidgetItem):
+    def _inspect_task(self, item: QListWidgetItem) -> None:
         task_id = item.data(Qt.ItemDataRole.UserRole)
-        if task_id and hasattr(self._main_window_ref, "_update_inspector"):
-            self._main_window_ref._update_inspector(task_id, "task")
+        inspect = getattr(self._main_window_ref, "_update_inspector", None)
+        if task_id and inspect is not None:
+            inspect(task_id, "task")

@@ -24,8 +24,10 @@ dismisses, and a success is the skill's window opening.
 from __future__ import annotations
 
 import json
+import sqlite3
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import config_file  # bristol-local; see module docstring
@@ -79,7 +81,7 @@ def _title(record: dict) -> str:
     return record.get("title") or record["name"]
 
 
-def _leave_for(parent, url: str) -> None:
+def _leave_for(parent: QWidget | None, url: str) -> None:
     """Open a web address, once the user has agreed to leave the app for it."""
     if dialogs.confirm(parent, "Open in Your Browser?", url, "Open"):
         open_uri(url)
@@ -99,7 +101,12 @@ class NewSkillDialog(QDialog):
     dialog over it.
     """
 
-    def __init__(self, parent, run, file_request) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None,
+        run: Callable[..., tuple[int, str, str]],
+        file_request: Callable[[str, str], str],
+    ) -> None:
         super().__init__(parent)
         self._run = run
         self._file_request = file_request
@@ -239,7 +246,14 @@ class SkillDialog(QDialog):
     edit them.
     """
 
-    def __init__(self, parent, record: dict, agents: list[str], body: str, run) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None,
+        record: dict,
+        agents: list[str],
+        body: str,
+        run: Callable[..., tuple[int, str, str]],
+    ) -> None:
         super().__init__(parent)
         self._record = record
         self._run = run
@@ -379,12 +393,17 @@ class SkillDialog(QDialog):
             # The write did not land, so the row goes back to what is true.
             self.holders.set_chosen(slug, not attached, quietly=True)
 
-    def _open_file(self, item) -> None:
+    def _open_file(self, item: QListWidgetItem) -> None:
         open_uri(str(Path(self._record["path"]) / item.text()))
 
 
 class SkillsTab(QWidget):
-    def __init__(self, conn, parent=None, on_ticket_filed=None) -> None:
+    def __init__(
+        self,
+        conn: sqlite3.Connection | None,
+        parent: QWidget | None = None,
+        on_ticket_filed: Callable[[], object] | None = None,
+    ) -> None:
         super().__init__(parent)
         self.conn = conn
         # Called once a request has become a card, so the board shows it.

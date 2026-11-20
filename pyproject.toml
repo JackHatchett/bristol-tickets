@@ -14,11 +14,20 @@ line-length = 100
 src = ["src"]
 
 [tool.ruff.lint]
-# Pyflakes, pycodestyle, import order, pyupgrade, bugbear and pep8-naming.
-select = ["E", "F", "W", "I", "UP", "B", "N", "RUF100"]
+# Pyflakes, pycodestyle, import order, pyupgrade, bugbear, pep8-naming, and
+# flake8-annotations, which the per-file ignores below hold to the app's ui/.
+select = ["E", "F", "W", "I", "UP", "B", "N", "ANN", "RUF100"]
 # E501: the formatter wraps code at the line length; a line it leaves longer is
 # a string, a SQL statement or a URL, kept whole so it can be searched for.
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Bristol Coding Standards has every parameter and return annotated in the
+# app's ui/ package; the rest of src is outside that rule.
+"!src/tools/bristol/ui/**" = ["ANN"]
+# An Objective-C message's reply is whatever ctypes converts it to by the
+# restype the call passes, so _send's restype and return are Any.
+"src/tools/bristol/ui/mac_window.py" = ["ANN401"]
 
 [tool.ruff.lint.pep8-naming]
 # A Qt override keeps the name Qt calls it by. The card delegate's geometry is

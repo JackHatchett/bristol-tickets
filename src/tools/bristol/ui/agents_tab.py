@@ -32,6 +32,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 import config_file  # bristol-local; see module docstring
@@ -74,6 +75,9 @@ from .segmented import SegmentedControl
 from .settled_combo import SettledComboBox, fill_words
 from .theme import CARD_ROLE, LAYOUT, agent_caption, control_height, space
 from .toggle_list import ToggleList
+
+# A page's tool runner: a script and its arguments in, (code, stdout, stderr) out.
+Run = Callable[..., tuple[int, str, str]]
 
 AGENTS_CLI = Path("src") / "tools" / "agent_tools" / "agents.py"
 CREATE_CLI = Path("src") / "tools" / "agent_tools" / "create_agent.py"
@@ -281,7 +285,7 @@ def _grant_option(grant: dict) -> str:
 ACCESS_CHOICES = [("write", "Read & write"), ("read", "Read only")]
 
 
-def folder_grant(entry) -> dict:
+def folder_grant(entry: object) -> dict:
     """One `key_data_paths` entry as a declared folder and the access it carries.
 
     An entry written before access was recorded is a bare string, and it reads
@@ -313,7 +317,13 @@ class PathList(QWidget):
     """
 
     def __init__(
-        self, run, kind: str, add_label: str, parent=None, *, access: bool = False
+        self,
+        run: Run,
+        kind: str,
+        add_label: str,
+        parent: QWidget | None = None,
+        *,
+        access: bool = False,
     ) -> None:
         super().__init__(parent)
         self._run = run
@@ -461,7 +471,7 @@ class EnvList(QWidget):
     stored on its config entry rather than set in a shell profile.
     """
 
-    def __init__(self, run, parent=None) -> None:
+    def __init__(self, run: Run, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._run = run
         self._rows: list[tuple[QWidget, QLineEdit, QLineEdit]] = []
@@ -574,7 +584,7 @@ class KeyFields(QWidget):
     An agent with no such keys gets no section at all.
     """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._fields: dict[str, QPlainTextEdit] = {}
         self.form = QFormLayout(self)
@@ -613,7 +623,14 @@ class KeyFields(QWidget):
 class AgentDialog(QDialog):
     """One agent, whole. A blank one creates; a filled one edits."""
 
-    def __init__(self, parent, record, run, taken, every_skill) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None,
+        record: dict | None,
+        run: Run,
+        taken: set[str],
+        every_skill: list[str],
+    ) -> None:
         super().__init__(parent)
         self._record = record
         self._run = run
@@ -756,7 +773,7 @@ class AgentDialog(QDialog):
             self._start_from_skeleton()
 
     @staticmethod
-    def _attached(run) -> list[str]:
+    def _attached(run: Run) -> list[str]:
         """The folders attached in Settings, read fresh."""
         code, out, _ = run(NOTEBOOK_CLI, "show", "--json")
         try:
@@ -765,7 +782,7 @@ class AgentDialog(QDialog):
             return []
 
     @staticmethod
-    def _known_dashboards(run) -> list[str]:
+    def _known_dashboards(run: Run) -> list[str]:
         """The dashboards known in Settings, read fresh."""
         code, out, _ = run(DASHBOARDS_CLI, "show", "--json")
         try:
@@ -873,7 +890,7 @@ class AgentDialog(QDialog):
             charter_file.write_text(values["charter"], encoding="utf-8")
             extra_file = Path(tmp) / "extra.json"
             extra_file.write_text(json.dumps(extra), encoding="utf-8")
-            if self.creating:
+            if self._record is None:
                 code, out, err = self._run(CREATE_CLI, *self._create_args(values, charter_file))
                 if code == 0 and self.dashboards.changed_from({}):
                     code, more, err = self._run(
@@ -934,8 +951,11 @@ class AgentDialog(QDialog):
     def _edit_args(
         self, values: dict, extra: dict, charter_file: Path, extra_file: Path
     ) -> list[str]:
-        """Only what actually changed, so an untouched field is never written."""
+        """Only what actually changed, so an untouched field is never written.
+        An agent being created has no stored record to change."""
         was = self._record
+        if was is None:
+            raise ValueError("an agent being created has no stored record to change")
         args = [values["slug"]]
         if values["description"] != was["description"]:
             args += ["--description", values["description"]]
@@ -978,7 +998,7 @@ class ImportAgentDialog(QDialog):
     the agent is written until it is pressed —
     ``src/skills/importing-an-agent/SKILL.md``."""
 
-    def __init__(self, parent, slug: str, report: str) -> None:
+    def __init__(self, parent: QWidget | None, slug: str, report: str) -> None:
         super().__init__(parent)
         self.setWindowTitle("Import Agent")
         self.setModal(True)
@@ -1015,7 +1035,11 @@ class ImportAgentDialog(QDialog):
 
 
 class AgentsTab(QWidget):
-    def __init__(self, parent=None, on_agents_changed=None) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        on_agents_changed: Callable[[], None] | None = None,
+    ) -> None:
         super().__init__(parent)
         # Called when this page writes, so anything reading the agent list can
         # catch up. Absent in a bare construction (the smoke check).
@@ -1050,14 +1074,14 @@ class AgentsTab(QWidget):
 
     # ----- the readers ------------------------------------------------------
 
-    def _cli(self, script: Path):
+    def _cli(self, script: Path) -> Path | None:
         root = config_file.project_root()
         if root is None:
             return None
         found = root / script
         return found if found.is_file() else None
 
-    def _run(self, script: Path, *args: str):
+    def _run(self, script: Path, *args: str) -> tuple[int, str, str]:
         """One tool command. Returns (code, stdout, stderr).
 
         A missing tool is reported in the same shape as a failing one, so every
@@ -1114,7 +1138,7 @@ class AgentsTab(QWidget):
             )
             self.list.addItem(item)
 
-    def _selected(self):
+    def _selected(self) -> dict | None:
         item = self.list.currentItem()
         if item is None:
             return None
@@ -1191,7 +1215,7 @@ class AgentsTab(QWidget):
         if record is not None:
             self._show(record)
 
-    def _show(self, record) -> None:
+    def _show(self, record: dict | None) -> None:
         dialog = AgentDialog(
             self, record, self._run, {a["slug"] for a in self._agents}, self._skills
         )

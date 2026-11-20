@@ -13,11 +13,16 @@ element is the styling contract in ``ui/README.md``.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PySide6.QtGui import QColor, QPalette
+from PySide6.QtWidgets import QApplication
 
 from .themes import C, live_scheme, register_collection, set_scheme
 from .tokens import LAYOUT, control_height, radius, space, type_size
+
+if TYPE_CHECKING:
+    from PySide6.QtGui import QFont
 
 # The app's one typeface, Inter, under the SIL Open Font License; its files and
 # the licence ship in ui/fonts/. Bundled so the text looks the same on every Mac,
@@ -26,7 +31,7 @@ TYPEFACE = "Inter"
 FONT_DIR = Path(__file__).resolve().parent / "fonts"
 
 
-def install_typeface(app) -> bool:
+def install_typeface(app: QApplication) -> bool:
     """Register the bundled typeface and make it the application's font, at
     ``TYPE["body"]``. Returns whether the typeface took; the size is set either
     way.
@@ -52,7 +57,7 @@ def install_typeface(app) -> bool:
 
 
 def apply_scheme(
-    app,
+    app: QApplication | None,
     theme: str | None,
     mode: str | None,
     stored: dict | None = None,
@@ -82,7 +87,7 @@ def apply_scheme(
         style_application(app)
 
 
-def style_application(app) -> None:
+def style_application(app: QApplication) -> None:
     """Draw ``app`` in the live palette: the style sheet, and the one colour a
     style sheet cannot set, a field's placeholder text, which takes Tertiary
     Text."""
@@ -773,7 +778,7 @@ QPushButton#exampleLink:hover, QPushButton#exampleLink:focus {{ color: {C["ACCEN
 """
 
 
-def _mono_font(point_size: int | None = None):
+def _mono_font(point_size: int | None = None) -> QFont:
     """A monospace font so mad-lib templates and their fill-in blanks line up in
     the Description editor. Menlo, with a Monospace style hint behind it."""
     from PySide6.QtGui import QFont

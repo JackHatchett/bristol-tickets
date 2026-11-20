@@ -20,6 +20,7 @@ from pathlib import Path
 
 import config_file  # bristol-local
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
@@ -103,7 +104,7 @@ class PathLabel(QLabel):
     not fit cut from the middle, so both the place it starts and the name it
     ends in stay readable. The whole path is the tooltip."""
 
-    def __init__(self, path: str = "", parent=None) -> None:
+    def __init__(self, path: str = "", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("pathRow")
         self._path = ""
@@ -116,7 +117,7 @@ class PathLabel(QLabel):
         self.setToolTip(full or path or "")
         self._fit()
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
         self._fit()
 
@@ -141,7 +142,7 @@ class NotebookDialog(QDialog):
     """The notebook folder, with Change, and the folders attached to it, with
     Add and Remove. The notebook itself can be changed and never removed."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Notebook")
         self.setModal(True)
@@ -256,7 +257,7 @@ class DashboardsDialog(QDialog):
     """The dashboards Bristol knows about, with Add and Remove. Which of them
     each agent may write is chosen in that agent's profile, from this list."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Dashboards")
         self.setModal(True)
@@ -331,7 +332,7 @@ class LocationsDialog(QDialog):
     """Every other folder and file the configuration points at, grouped by
     where it is set, each with Change and a mark where it is not on disk."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Locations")
         self.setModal(True)

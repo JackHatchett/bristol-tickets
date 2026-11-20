@@ -14,6 +14,8 @@ between that and a palette that works.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -59,7 +61,7 @@ def is_colour(text: str) -> bool:
 class ColourRow:
     """One key's caption, swatch and hex field, and the value they share."""
 
-    def __init__(self, key: str, value: str, on_change) -> None:
+    def __init__(self, key: str, value: str, on_change: Callable[[], object]) -> None:
         self.key = key
         self._on_change = on_change
 
@@ -147,7 +149,11 @@ class PaletteForm(QWidget):
     """
 
     def __init__(
-        self, palette: dict | None = None, on_change=None, parent=None, dark: bool = False
+        self,
+        palette: dict | None = None,
+        on_change: Callable[[], object] | None = None,
+        parent: QWidget | None = None,
+        dark: bool = False,
     ) -> None:
         super().__init__(parent)
         self._on_change = on_change

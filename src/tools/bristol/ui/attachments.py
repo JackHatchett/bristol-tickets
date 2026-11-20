@@ -20,7 +20,7 @@ import sqlite3
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QMouseEvent, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
@@ -59,13 +59,13 @@ class _ClickableThumb(QLabel):
 
     clicked = Signal()
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("attachThumb")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    def mouseReleaseEvent(self, event) -> None:
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(
             event.position().toPoint()
         ):
@@ -78,7 +78,7 @@ class ImagePreviewDialog(QDialog):
     Close and Delete actions. ``exec()`` returns ``QDialog.Accepted`` only when
     the user deleted the image, so the caller knows to refresh."""
 
-    def __init__(self, image_path: Path, display_name: str, parent=None) -> None:
+    def __init__(self, image_path: Path, display_name: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(display_name or "Image preview")
         self.setMinimumSize(LAYOUT["preview_min_w"], LAYOUT["preview_min_h"])
@@ -141,7 +141,7 @@ class AttachmentBar(QWidget):
     task (or None to disable/clear). Attachments only apply to an existing
     (saved) task, mirroring the Issue Log poster."""
 
-    def __init__(self, conn: sqlite3.Connection, parent=None) -> None:
+    def __init__(self, conn: sqlite3.Connection, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.conn = conn
         self.task_id: int | None = None

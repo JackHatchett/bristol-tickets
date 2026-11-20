@@ -25,6 +25,7 @@ draws a half-lit board the first time the OS goes dark.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import cast
 
 from PySide6.QtCore import Qt
@@ -40,6 +41,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 
 from .dialogs import add_button, confirm, removable_item
@@ -85,7 +87,11 @@ class ThemeManagerDialog(QDialog):
     """
 
     def __init__(
-        self, collection: dict[str, dict], current: str, parent=None, on_preview=None
+        self,
+        collection: dict[str, dict],
+        current: str,
+        parent: QWidget | None = None,
+        on_preview: Callable[[str, dict[str, dict], str], object] | None = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Manage Themes")

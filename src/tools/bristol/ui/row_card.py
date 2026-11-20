@@ -20,9 +20,9 @@ Payload, under ``CARD_ROLE``:
 
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics
-from PySide6.QtWidgets import QListWidget
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QRectF, Qt
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter
+from PySide6.QtWidgets import QListWidget, QStyleOptionViewItem
 
 from .card_delegate import CardDelegate
 from .theme import C, space, type_size
@@ -64,12 +64,17 @@ class RowCardDelegate(CardDelegate):
     def _footer_height(self, data: dict, content_w: int) -> int:
         return self.GAP + self.FOOT_H if self._has_footer(data) else 0
 
-    def paint(self, painter, option, index):
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
         # Where the name starts, for pills drawn beside it.
         self._title_top = option.rect.top() + self.MARGIN + self.PAD
         super().paint(painter, option, index)
 
-    def _draw_footer(self, painter, data, cx, y, cw) -> None:
+    def _draw_footer(self, painter: QPainter, data: dict, cx: float, y: float, cw: float) -> None:
         if self._inline(data):
             font = self._small_font()
             x = cx + cw

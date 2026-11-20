@@ -15,11 +15,11 @@ before or after it is covered, and installing twice changes nothing.
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QObject
-from PySide6.QtWidgets import QAbstractScrollArea
+from PySide6.QtWidgets import QAbstractScrollArea, QApplication
 
 
 class _ScrollBarStyler(QObject):
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Polish and isinstance(obj, QAbstractScrollArea):
             for bar in (obj.verticalScrollBar(), obj.horizontalScrollBar()):
                 bar.style().unpolish(bar)
@@ -30,7 +30,7 @@ class _ScrollBarStyler(QObject):
 _styler: _ScrollBarStyler | None = None
 
 
-def install(app) -> None:
+def install(app: QApplication) -> None:
     """Style every scroll bar in ``app`` by the region it scrolls, once."""
     global _styler
     if app is None or _styler is not None:

@@ -8,13 +8,16 @@ whatever format it is drawn in.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from collections.abc import Iterable, Sequence
+
+from PySide6.QtCore import Qt, Signal, SignalInstance
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
     QTableWidget,
     QTableWidgetItem,
+    QWidget,
 )
 
 SORT_ROLE = Qt.ItemDataRole.UserRole + 7
@@ -24,7 +27,7 @@ RECORD_ROLE = Qt.ItemDataRole.UserRole
 class _Cell(QTableWidgetItem):
     """A cell that sorts by its key rather than by the text it shows."""
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: QTableWidgetItem) -> bool:
         mine, theirs = self.data(SORT_ROLE), other.data(SORT_ROLE)
         if mine is None or theirs is None or type(mine) is not type(theirs):
             return str(self.text()).lower() < str(other.text()).lower()
@@ -38,7 +41,7 @@ class ResultsTable(QTableWidget):
     picked = Signal(int, str)  # a single click: inspect it
     opened = Signal(int, str)  # a double click: edit it
 
-    def __init__(self, headers: list[str], stretch: int, parent=None) -> None:
+    def __init__(self, headers: list[str], stretch: int, parent: QWidget | None = None) -> None:
         super().__init__(0, len(headers), parent)
         self.setObjectName("resultsTable")
         self.setHorizontalHeaderLabels(headers)
@@ -66,8 +69,10 @@ class ResultsTable(QTableWidget):
         self.cellClicked.connect(lambda row, _c: self._emit(self.picked, row))
         self.cellDoubleClicked.connect(lambda row, _c: self._emit(self.opened, row))
 
-    def set_rows(self, rows) -> None:
-        """Replace every row, keeping the column the user last sorted by."""
+    def set_rows(self, rows: Iterable[tuple[Sequence[object], object]]) -> None:
+        """Replace every row, keeping the column the user last sorted by. Each
+        row is its cells and its record; a cell is its text, or ``(text, key)``
+        where it sorts by something other than its text."""
         header = self.horizontalHeader()
         sorted_by = header.sortIndicatorSection()
         order = header.sortIndicatorOrder()
@@ -94,7 +99,7 @@ class ResultsTable(QTableWidget):
         cells = (self.item(row, c) for c in range(self.columnCount()))
         return "   ".join(cell.text() for cell in cells if cell is not None)
 
-    def _emit(self, signal, row: int) -> None:
+    def _emit(self, signal: SignalInstance, row: int) -> None:
         item = self.item(row, 0)
         record = item.data(RECORD_ROLE) if item is not None else None
         if record:
