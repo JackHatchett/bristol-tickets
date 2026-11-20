@@ -7,13 +7,29 @@ from app.py and does no path/schema logic of its own.
 
 import sqlite3
 from datetime import datetime, timezone
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QComboBox,
-    QLabel, QListWidget, QListWidgetItem, QPushButton, QTextEdit,
-    QSplitter, QMessageBox, QGroupBox, QFormLayout, QTabWidget, QLineEdit,
-    QScrollArea, QTextBrowser
+    QComboBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSplitter,
+    QTabWidget,
+    QTextBrowser,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
+
 
 class TestControlWindow(QMainWindow):
     def __init__(self, conn: sqlite3.Connection):
@@ -53,7 +69,7 @@ class TestControlWindow(QMainWindow):
         context_layout.addWidget(self.run_picker, 1)
         main_layout.addLayout(context_layout)
 
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(splitter, 1)
 
         script_group = QGroupBox("Active Test Run Checklist (Script Rows)")
@@ -65,7 +81,7 @@ class TestControlWindow(QMainWindow):
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setFrameShape(QScrollArea.NoFrame)
+        scroll_area.setFrameShape(QScrollArea.Shape.NoFrame)
 
         eval_frame = QWidget()
         eval_layout = QVBoxLayout(eval_frame)
@@ -75,11 +91,15 @@ class TestControlWindow(QMainWindow):
         detail_layout = QVBoxLayout(detail_box)
         self.ui_detail_browser = QTextBrowser()
         self.ui_detail_browser.setMinimumHeight(180)
-        self.ui_detail_browser.setHtml("<p style='color: gray;'>Select a test item from the list to view its specification context.</p>")
+        self.ui_detail_browser.setHtml(
+            "<p style='color: gray;'>Select a test item from the list to view its specification context.</p>"
+        )
         detail_layout.addWidget(self.ui_detail_browser)
         eval_layout.addWidget(detail_box)
 
-        step_box = QGroupBox("Action Steps Breakdown (Double-Click Step to Toggle Pass/Fail Status)")
+        step_box = QGroupBox(
+            "Action Steps Breakdown (Double-Click Step to Toggle Pass/Fail Status)"
+        )
         step_box_layout = QVBoxLayout(step_box)
         self.list_steps = QListWidget()
         self.list_steps.setMinimumHeight(150)
@@ -91,17 +111,23 @@ class TestControlWindow(QMainWindow):
         notes_layout = QVBoxLayout(notes_box)
         self.ui_notes = QTextEdit()
         self.ui_notes.setMinimumHeight(100)
-        self.ui_notes.setPlaceholderText("Enter logs, console outputs, or edge cases encountered...")
+        self.ui_notes.setPlaceholderText(
+            "Enter logs, console outputs, or edge cases encountered..."
+        )
         notes_layout.addWidget(self.ui_notes)
         eval_layout.addWidget(notes_box)
 
         btn_layout = QHBoxLayout()
         self.btn_mark_pass = QPushButton("Mark Entire Script Row Passed")
-        self.btn_mark_pass.setStyleSheet("background-color: #2e7d32; color: white; font-weight: bold; padding: 8px;")
+        self.btn_mark_pass.setStyleSheet(
+            "background-color: #2e7d32; color: white; font-weight: bold; padding: 8px;"
+        )
         self.btn_mark_pass.clicked.connect(lambda: self._apply_status_change("passed"))
 
         self.btn_mark_fail = QPushButton("Mark Entire Script Row Failed")
-        self.btn_mark_fail.setStyleSheet("background-color: #c62828; color: white; font-weight: bold; padding: 8px;")
+        self.btn_mark_fail.setStyleSheet(
+            "background-color: #c62828; color: white; font-weight: bold; padding: 8px;"
+        )
         self.btn_mark_fail.clicked.connect(lambda: self._apply_status_change("failed"))
 
         btn_layout.addWidget(self.btn_mark_pass)
@@ -148,7 +174,9 @@ class TestControlWindow(QMainWindow):
         form_layout.addRow("New Session Name:", self.new_run_name_input)
 
         self.btn_create_run = QPushButton("Generate New Cloned Test Session")
-        self.btn_create_run.setStyleSheet("background-color: #2e7d32; color: white; font-weight: bold; padding: 6px;")
+        self.btn_create_run.setStyleSheet(
+            "background-color: #2e7d32; color: white; font-weight: bold; padding: 6px;"
+        )
         self.btn_create_run.clicked.connect(self._generate_new_cloned_session)
         form_layout.addRow(self.btn_create_run)
 
@@ -195,7 +223,9 @@ class TestControlWindow(QMainWindow):
         form_layout.addRow("Step Expected Outcome:", self.edit_step_expected)
 
         self.btn_save_case = QPushButton("Commit to Master Templates")
-        self.btn_save_case.setStyleSheet("background-color: #1976d2; color: white; font-weight: bold; padding: 6px;")
+        self.btn_save_case.setStyleSheet(
+            "background-color: #1976d2; color: white; font-weight: bold; padding: 6px;"
+        )
         self.btn_save_case.clicked.connect(self._save_blueprint_template)
         form_layout.addRow(self.btn_save_case)
 
@@ -213,7 +243,9 @@ class TestControlWindow(QMainWindow):
         self.analytics_layout.addRow("Total Logged Clone Sessions:", self.lbl_total_runs)
 
         self.lbl_total_items = QLabel("-")
-        self.analytics_layout.addRow("Total Checklist Script Rows across Sessions:", self.lbl_total_items)
+        self.analytics_layout.addRow(
+            "Total Checklist Script Rows across Sessions:", self.lbl_total_items
+        )
 
         self.lbl_passed_count = QLabel("-")
         self.analytics_layout.addRow("Total Globally Passed Script Rows:", self.lbl_passed_count)
@@ -222,7 +254,9 @@ class TestControlWindow(QMainWindow):
         self.analytics_layout.addRow("Total Globally Failed Defect Rows:", self.lbl_failed_count)
 
         self.lbl_completion_rate = QLabel("-")
-        self.analytics_layout.addRow("Overall Completion Ingestion Velocity:", self.lbl_completion_rate)
+        self.analytics_layout.addRow(
+            "Overall Completion Ingestion Velocity:", self.lbl_completion_rate
+        )
 
         layout.addWidget(box)
 
@@ -257,7 +291,7 @@ class TestControlWindow(QMainWindow):
         cursor.execute("SELECT id, section, title FROM control_case ORDER BY section, id")
         for c_id, sec, title in cursor.fetchall():
             item = QListWidgetItem(f"[{sec}] {title}")
-            item.setData(Qt.UserRole, c_id)
+            item.setData(Qt.ItemDataRole.UserRole, c_id)
             self.editor_case_list.addItem(item)
 
     def _populate_manager_run_list(self):
@@ -266,7 +300,7 @@ class TestControlWindow(QMainWindow):
         cursor.execute("SELECT id, name, created_at FROM control_run ORDER BY id DESC")
         for r_id, name, created_at in cursor.fetchall():
             item = QListWidgetItem(f"{name} (Created: {created_at})")
-            item.setData(Qt.UserRole, r_id)
+            item.setData(Qt.ItemDataRole.UserRole, r_id)
             self.mgr_run_list.addItem(item)
 
     def _calculate_analytics(self):
@@ -313,16 +347,18 @@ class TestControlWindow(QMainWindow):
         cursor.execute(query, (self.current_run_id,))
         for item_id, section, title, status in cursor.fetchall():
             badge = "⚫ UNTESTED"
-            if status == "passed": badge = "🟢 PASS"
-            elif status == "failed": badge = "❌ FAIL"
+            if status == "passed":
+                badge = "🟢 PASS"
+            elif status == "failed":
+                badge = "❌ FAIL"
 
             display_text = f"{badge}  |  ({section}) {title}"
             list_item = QListWidgetItem(display_text)
-            list_item.setData(Qt.UserRole, item_id)
+            list_item.setData(Qt.ItemDataRole.UserRole, item_id)
             self.list_run_items.addItem(list_item)
 
     def _handle_item_click(self, item: QListWidgetItem):
-        self.selected_item_id = item.data(Qt.UserRole)
+        self.selected_item_id = item.data(Qt.ItemDataRole.UserRole)
         cursor = self.conn.cursor()
         query = """
             SELECT tc.title, tc.section, tc.preconditions, ri.notes
@@ -338,7 +374,7 @@ class TestControlWindow(QMainWindow):
             html_content = f"""
             <b style='font-size: 14px;'>Test Case Title:</b><br/>{title}<br/><br/>
             <b>App Section (Workbook Tab):</b> {section}<br/><br/>
-            <b>Preconditions Requirements:</b><br/>{preconds if preconds else 'None specified.'}
+            <b>Preconditions Requirements:</b><br/>{preconds if preconds else "None specified."}
             """
             self.ui_detail_browser.setHtml(html_content)
             self.ui_notes.setPlainText(notes if notes else "")
@@ -359,47 +395,61 @@ class TestControlWindow(QMainWindow):
         cursor.execute(query, (self.selected_item_id,))
         for rsi_id, num, inst, expr, status in cursor.fetchall():
             badge = "⚫ UNTESTED"
-            if status == 'passed': badge = "🟢 PASS"
-            elif status == 'failed': badge = "❌ FAIL"
+            if status == "passed":
+                badge = "🟢 PASS"
+            elif status == "failed":
+                badge = "❌ FAIL"
 
             lbl = f"Step {num}: {inst}  → Expected: {expr}  [{badge}]"
             step_item = QListWidgetItem(lbl)
-            step_item.setData(Qt.UserRole, rsi_id)
-            if status == 'passed':
-                step_item.setForeground(Qt.darkGreen)
-            elif status == 'failed':
-                step_item.setForeground(Qt.red)
+            step_item.setData(Qt.ItemDataRole.UserRole, rsi_id)
+            if status == "passed":
+                step_item.setForeground(Qt.GlobalColor.darkGreen)
+            elif status == "failed":
+                step_item.setForeground(Qt.GlobalColor.red)
             self.list_steps.addItem(step_item)
 
     def _toggle_step_status(self, item: QListWidgetItem):
-        rsi_id = item.data(Qt.UserRole)
+        rsi_id = item.data(Qt.ItemDataRole.UserRole)
         cursor = self.conn.cursor()
         cursor.execute("SELECT status FROM control_run_step_item WHERE id = ?", (rsi_id,))
         curr = cursor.fetchone()[0]
 
-        nxt = 'passed' if curr == 'untested' else ('failed' if curr == 'passed' else 'untested')
+        nxt = "passed" if curr == "untested" else ("failed" if curr == "passed" else "untested")
         cursor.execute("UPDATE control_run_step_item SET status = ? WHERE id = ?", (nxt, rsi_id))
         self.conn.commit()
         self._refresh_step_list()
 
     def _apply_status_change(self, target_status: str):
         if not self.selected_item_id:
-            QMessageBox.warning(self, "Selection Required", "Please select a script row target before updating status.")
+            QMessageBox.warning(
+                self,
+                "Selection Required",
+                "Please select a script row target before updating status.",
+            )
             return
         notes_text = self.ui_notes.toPlainText().strip()
         cursor = self.conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE control_run_item
             SET status = ?, notes = ?, last_updated_at = ?
             WHERE id = ?
-        """, (target_status, notes_text, datetime.now(timezone.utc).isoformat(), self.selected_item_id))
+        """,
+            (
+                target_status,
+                notes_text,
+                datetime.now(timezone.utc).isoformat(),
+                self.selected_item_id,
+            ),
+        )
         self.conn.commit()
         self._render_matrix_data()
         self._reset_metadata_form()
         self._calculate_analytics()
 
     def _handle_mgr_run_click(self, item: QListWidgetItem):
-        run_id = item.data(Qt.UserRole)
+        run_id = item.data(Qt.ItemDataRole.UserRole)
         cursor = self.conn.cursor()
         cursor.execute("SELECT name FROM control_run WHERE id = ?", (run_id,))
         res = cursor.fetchone()
@@ -409,9 +459,11 @@ class TestControlWindow(QMainWindow):
     def _rename_cloned_session(self):
         selected_item = self.mgr_run_list.currentItem()
         if not selected_item:
-            QMessageBox.warning(self, "Selection Required", "Select a cloned session from the left list to rename.")
+            QMessageBox.warning(
+                self, "Selection Required", "Select a cloned session from the left list to rename."
+            )
             return
-        run_id = selected_item.data(Qt.UserRole)
+        run_id = selected_item.data(Qt.ItemDataRole.UserRole)
         new_name = self.edit_run_name.text().strip()
         if not new_name:
             return
@@ -425,10 +477,15 @@ class TestControlWindow(QMainWindow):
         selected_item = self.mgr_run_list.currentItem()
         if not selected_item:
             return
-        run_id = selected_item.data(Qt.UserRole)
+        run_id = selected_item.data(Qt.ItemDataRole.UserRole)
 
-        confirm = QMessageBox.question(self, "Confirm Erasure", "Permanently purge this active execution session run ledger?", QMessageBox.Yes | QMessageBox.No)
-        if confirm == QMessageBox.Yes:
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Erasure",
+            "Permanently purge this active execution session run ledger?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if confirm == QMessageBox.StandardButton.Yes:
             cursor = self.conn.cursor()
             cursor.execute("DELETE FROM control_run WHERE id = ?", (run_id,))
             self.conn.commit()
@@ -444,34 +501,52 @@ class TestControlWindow(QMainWindow):
         cursor.execute("SELECT id FROM control_case")
         cases = cursor.fetchall()
         if not cases:
-            QMessageBox.warning(self, "Empty Database Matrix", "No blueprints exist to copy. Create templates first.")
+            QMessageBox.warning(
+                self,
+                "Empty Database Matrix",
+                "No blueprints exist to copy. Create templates first.",
+            )
             return
 
         cursor.execute("INSERT INTO control_run (name) VALUES (?)", (run_name,))
         new_run_id = cursor.lastrowid
 
         for (case_id,) in cases:
-            cursor.execute("INSERT INTO control_run_item (run_id, case_id, status) VALUES (?, ?, 'untested')", (new_run_id, case_id))
+            cursor.execute(
+                "INSERT INTO control_run_item (run_id, case_id, status) VALUES (?, ?, 'untested')",
+                (new_run_id, case_id),
+            )
             run_item_id = cursor.lastrowid
 
             cursor.execute("SELECT id FROM control_case_step WHERE case_id = ?", (case_id,))
             for (step_id,) in cursor.fetchall():
-                cursor.execute("INSERT INTO control_run_step_item (run_item_id, step_id, status) VALUES (?, ?, 'untested')", (run_item_id, step_id))
+                cursor.execute(
+                    "INSERT INTO control_run_step_item (run_item_id, step_id, status) VALUES (?, ?, 'untested')",
+                    (run_item_id, step_id),
+                )
 
         self.conn.commit()
         self.new_run_name_input.clear()
         self._refresh_all_contexts()
-        QMessageBox.information(self, "Session Created", f"Successfully cloned master templates into new session: '{run_name}'")
+        QMessageBox.information(
+            self,
+            "Session Created",
+            f"Successfully cloned master templates into new session: '{run_name}'",
+        )
 
     def _handle_editor_case_click(self, item: QListWidgetItem):
-        self.editor_selected_case_id = item.data(Qt.UserRole)
+        self.editor_selected_case_id = item.data(Qt.ItemDataRole.UserRole)
         cursor = self.conn.cursor()
-        cursor.execute("SELECT suite_id, section, title, preconditions FROM control_case WHERE id = ?", (self.editor_selected_case_id,))
+        cursor.execute(
+            "SELECT suite_id, section, title, preconditions FROM control_case WHERE id = ?",
+            (self.editor_selected_case_id,),
+        )
         res = cursor.fetchone()
         if res:
             suite_id, section, title, preconds = res
             idx = self.edit_suite_picker.findData(suite_id)
-            if idx >= 0: self.edit_suite_picker.setCurrentIndex(idx)
+            if idx >= 0:
+                self.edit_suite_picker.setCurrentIndex(idx)
             self.edit_section.setText(section)
             self.edit_title.setText(title)
             self.edit_preconditions.setPlainText(preconds if preconds else "")
@@ -490,20 +565,29 @@ class TestControlWindow(QMainWindow):
 
         cursor = self.conn.cursor()
         if self.editor_selected_case_id:
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE control_case SET suite_id = ?, section = ?, title = ?, preconditions = ? WHERE id = ?
-            """, (suite_id, section, title, preconds, self.editor_selected_case_id))
+            """,
+                (suite_id, section, title, preconds, self.editor_selected_case_id),
+            )
             case_id = self.editor_selected_case_id
         else:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO control_case (suite_id, section, title, preconditions) VALUES (?, ?, ?, ?)
-            """, (suite_id, section, title, preconds))
+            """,
+                (suite_id, section, title, preconds),
+            )
             case_id = cursor.lastrowid
 
         if step_inst and step_expr:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO control_case_step (case_id, step_number, instruction, expected_result) VALUES (?, 1, ?, ?)
-            """, (case_id, step_inst, step_expr))
+            """,
+                (case_id, step_inst, step_expr),
+            )
 
         self.conn.commit()
         self._refresh_all_contexts()
@@ -511,7 +595,9 @@ class TestControlWindow(QMainWindow):
 
     def _delete_current_blueprint(self):
         if not self.editor_selected_case_id:
-            QMessageBox.warning(self, "Selection Required", "Select a template case file context to delete.")
+            QMessageBox.warning(
+                self, "Selection Required", "Select a template case file context to delete."
+            )
             return
         cursor = self.conn.cursor()
         cursor.execute("DELETE FROM control_case WHERE id = ?", (self.editor_selected_case_id,))
@@ -521,6 +607,8 @@ class TestControlWindow(QMainWindow):
 
     def _reset_metadata_form(self):
         self.selected_item_id = None
-        self.ui_detail_browser.setHtml("<p style='color: gray;'>Select a test item from the list to view its specification context.</p>")
+        self.ui_detail_browser.setHtml(
+            "<p style='color: gray;'>Select a test item from the list to view its specification context.</p>"
+        )
         self.ui_notes.clear()
         self.list_steps.clear()

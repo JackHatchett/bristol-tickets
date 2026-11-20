@@ -25,8 +25,8 @@ class ClearResult:
     """What the sweep did, in a form a front end can act on."""
 
     def __init__(self, archived=(), report=None):
-        self.archived = list(archived)   # cards moved to the Archive
-        self.report = report             # the reports package's own result
+        self.archived = list(archived)  # cards moved to the Archive
+        self.report = report  # the reports package's own result
 
     def __str__(self):
         said = f"archived {len(self.archived)} card(s)"
@@ -37,9 +37,13 @@ class ClearResult:
 
 def done_cards(conn: sqlite3.Connection) -> list[int]:
     """The cards in the Done column: on the board, and finished."""
-    return [row[0] for row in conn.execute(
-        "SELECT id FROM task WHERE COALESCE(stage,'active')='active' "
-        "AND status='done' ORDER BY id")]
+    return [
+        row[0]
+        for row in conn.execute(
+            "SELECT id FROM task WHERE COALESCE(stage,'active')='active' "
+            "AND status='done' ORDER BY id"
+        )
+    ]
 
 
 def clear_done(conn: sqlite3.Connection, now=None, out_dir=None) -> ClearResult:
@@ -53,9 +57,9 @@ def clear_done(conn: sqlite3.Connection, now=None, out_dir=None) -> ClearResult:
         return ClearResult()
 
     marks = ",".join("?" * len(ids))
-    start = conn.execute(
-        f"SELECT MIN(created_at) FROM task WHERE id IN ({marks})", ids
-    ).fetchone()[0]
+    start = conn.execute(f"SELECT MIN(created_at) FROM task WHERE id IN ({marks})", ids).fetchone()[
+        0
+    ]
     now = now or datetime.now(timezone.utc).isoformat()
 
     archived = _archive(conn, ids)
@@ -67,6 +71,7 @@ def clear_done(conn: sqlite3.Connection, now=None, out_dir=None) -> ClearResult:
         # A stripped bundle may not carry the reports package at all.
         return ClearResult(archived=archived)
 
-    report = generate_report_safe(conn, archived, now=now, out_dir=out_dir,
-                                  period_start=start, period_end=now)
+    report = generate_report_safe(
+        conn, archived, now=now, out_dir=out_dir, period_start=start, period_end=now
+    )
     return ClearResult(archived=archived, report=report)

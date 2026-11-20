@@ -16,11 +16,11 @@ stays two commands rather than one with a flag, because which agent a session is
 running as is an identity rather than an option.
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import status_common as sc  # noqa: E402
+import status_common as sc
 
 ME = "chief_of_staff"
 
@@ -38,13 +38,14 @@ def main() -> None:
     print(f"ACTIVE BOARD (stage=active): {len(board)} task(s)\n")
 
     mine_all = [r for r in board if sc.owned_by(r, ME)]
-    mine_q = sc.queue_sort([r for r in board
-                            if sc.owned_by(r, ME) and r["status"] in sc.STATUS_RANK])
-    others_q = sc.queue_sort([r for r in board
-                              if not sc.owned_by(r, ME) and r["status"] in sc.STATUS_RANK])
+    mine_q = sc.queue_sort(
+        [r for r in board if sc.owned_by(r, ME) and r["status"] in sc.STATUS_RANK]
+    )
+    others_q = sc.queue_sort(
+        [r for r in board if not sc.owned_by(r, ME) and r["status"] in sc.STATUS_RANK]
+    )
 
-    sc.print_queue(conn, board, mine_q, ME,
-                   label="YOUR NEXT ACTION", show_owner=True)
+    sc.print_queue(conn, board, mine_q, ME, label="YOUR NEXT ACTION", show_owner=True)
 
     # Fleet-wide, unlike every other section: a card any agent left waiting on
     # the user is the user's to clear whoever owns it.

@@ -37,19 +37,20 @@ agent's access gives the whole notebook write. An agent without the grant
 reports what the dry run would change.
 """
 
+import argparse
+import hashlib
 import re
 import sys
-import hashlib
-import argparse
 import unicodedata
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
-import data_paths  # noqa: E402
-import read_config  # noqa: E402
+import data_paths
+import read_config
 
 # ── Config ───────────────────────────────────────────────────────────────────────
+
 
 def _notebook_path(key: str) -> Path:
     """Resolve a markdown_notebook.<key> folder from config.
@@ -61,40 +62,39 @@ def _notebook_path(key: str) -> Path:
     """
     declared = read_config.get(f"markdown_notebook.{key}", None)
     if not declared:
-        raise SystemExit(
-            f"normalize_recipes: config has no markdown_notebook.{key}."
-        )
+        raise SystemExit(f"normalize_recipes: config has no markdown_notebook.{key}.")
     return data_paths.resolve(declared)
+
 
 RECIPES_DIR = _notebook_path("recipes_dir")
 NOTEBOOK_DIR = _notebook_path("notes_dir")
-QUARANTINE  = RECIPES_DIR / "_quarantine"
-AUDIT_LOG   = RECIPES_DIR / "recipe_audit_log.md"
+QUARANTINE = RECIPES_DIR / "_quarantine"
+AUDIT_LOG = RECIPES_DIR / "recipe_audit_log.md"
 
 VALID_SOURCES = {"personal", "family", "friend", "internet", "unknown", "onenote", "apple-notes"}
 
 UNIT_MAP = {
     r"\btablespoons?\b": "tbsp",
-    r"\bteaspoons?\b":   "tsp",
-    r"\bcups?\b":        "cup",
-    r"\bounces?\b":      "oz",
-    r"\bpounds?\b":      "lb",
-    r"\bgrams?\b":       "g",
-    r"\bkilograms?\b":   "kg",
+    r"\bteaspoons?\b": "tsp",
+    r"\bcups?\b": "cup",
+    r"\bounces?\b": "oz",
+    r"\bpounds?\b": "lb",
+    r"\bgrams?\b": "g",
+    r"\bkilograms?\b": "kg",
     r"\bmilliliters?\b": "ml",
-    r"\bliters?\b":      "l",
-    r"\bpinches?\b":     "pinch",
-    r"\bdashes?\b":      "dash",
+    r"\bliters?\b": "l",
+    r"\bpinches?\b": "pinch",
+    r"\bdashes?\b": "dash",
     # plurals already caught above; add British variants
-    r"\btbsps?\b":       "tbsp",
-    r"\btsps?\b":        "tsp",
-    r"\bfl\s*oz\b":      "oz",
+    r"\btbsps?\b": "tbsp",
+    r"\btsps?\b": "tsp",
+    r"\bfl\s*oz\b": "oz",
 }
 
 REQUIRED_SECTIONS = ["## Ingredients", "## Instructions"]
 
 # Fields the export pipeline writes that we carry forward
-PIPELINE_FIELDS   = {"title", "source", "notebook", "section", "tags", "created", "updated"}
+PIPELINE_FIELDS = {"title", "source", "notebook", "section", "tags", "created", "updated"}
 
 # Fields required by the recipe standard
 RECIPE_META_FIELDS = ["servings", "prep_time", "cook_time", "total_time", "tags", "source"]
@@ -107,9 +107,17 @@ STRIP_FIELDS = {"reorg_category", "notebook", "section", "title"}
 # Frontmatter key order — matches 02_templates/template_recipe.md, with the
 # 'source' field the library also carries slotted next to source_url.
 FRONTMATTER_ORDER = [
-    "aliases", "tags", "created", "status",
-    "servings", "prep_time", "cook_time", "total_time",
-    "source", "source_url", "rating",
+    "aliases",
+    "tags",
+    "created",
+    "status",
+    "servings",
+    "prep_time",
+    "cook_time",
+    "total_time",
+    "source",
+    "source_url",
+    "rating",
 ]
 
 # Keywords that suggest a file in the Recipes folder is NOT a recipe
@@ -126,7 +134,7 @@ NON_RECIPE_SIGNALS = [
     r"^Untitled Note",
     r"Augury",
     r"It's going to rain",
-    r"Pages \(On \d",     # export artifact filenames
+    r"Pages \(On \d",  # export artifact filenames
     r"TheMovement",
     r"not enough butter",
     r"Spa at Taj",
@@ -134,6 +142,7 @@ NON_RECIPE_SIGNALS = [
 ]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def to_slug(title: str) -> str:
     """Convert a recipe title to the library's snake_case filename slug.
@@ -145,7 +154,7 @@ def to_slug(title: str) -> str:
     s = "".join(c for c in s if not unicodedata.combining(c))
     s = s.lower().strip()
     s = re.sub(r"['‘’ʼ]", "", s)  # drop apostrophes
-    s = re.sub(r"[^a-z0-9]+", "_", s)            # everything else is a separator
+    s = re.sub(r"[^a-z0-9]+", "_", s)  # everything else is a separator
     s = re.sub(r"_+", "_", s)
     return s.strip("_")
 
@@ -164,7 +173,7 @@ def parse_frontmatter(text: str):
         return {}, text
 
     yaml_block = text[3:end].strip()
-    body = text[end + 4:].lstrip("\n")
+    body = text[end + 4 :].lstrip("\n")
 
     meta = {}
     current_key = None
@@ -182,7 +191,7 @@ def parse_frontmatter(text: str):
             continue
 
         # New key
-        m = re.match(r'^(\w+):\s*(.*)', line)
+        m = re.match(r"^(\w+):\s*(.*)", line)
         if m:
             if current_list is not None and current_key:
                 meta[current_key] = current_list
@@ -198,18 +207,23 @@ def parse_frontmatter(text: str):
                 meta[current_key] = current_list
             elif val.startswith("[") and val.endswith("]"):
                 # Inline YAML list: [a, b, c]
-                items = [i.strip().strip('"\'') for i in val[1:-1].split(",") if i.strip()]
+                items = [i.strip().strip("\"'") for i in val[1:-1].split(",") if i.strip()]
                 meta[current_key] = items
                 current_key = None
             else:
-                val = val.strip('"\'')
+                val = val.strip("\"'")
                 meta[current_key] = val
                 current_key = None
 
     # A bare key that collected no '  - ' items was an empty field, not a list.
     # 'aliases: []' came through the inline branch and stays a real empty list.
     for key, val in list(meta.items()):
-        if isinstance(val, list) and not val and f"{key}:" in yaml_block and f"{key}: []" not in yaml_block:
+        if (
+            isinstance(val, list)
+            and not val
+            and f"{key}:" in yaml_block
+            and f"{key}: []" not in yaml_block
+        ):
             meta[key] = None
 
     return meta, body
@@ -250,8 +264,12 @@ def _write_meta_field(lines, key, val):
 def _yaml_item(item: str) -> str:
     """A list item as YAML reads it back unchanged: quoted where a colon, a
     hash or a leading indicator character would otherwise change its meaning."""
-    if (": " in item or " #" in item or item.endswith(":")
-            or (item[:1] and item[:1] in "!&*?|>'\"%@`[]{},#-")):
+    if (
+        ": " in item
+        or " #" in item
+        or item.endswith(":")
+        or (item[:1] and item[:1] in "!&*?|>'\"%@`[]{},#-")
+    ):
         return '"' + item.replace("\\", "\\\\").replace('"', '\\"') + '"'
     return item
 
@@ -270,7 +288,7 @@ def space_headings(body: str) -> str:
     """One blank line above and below every heading, none doubled."""
     lines = body.splitlines()
     out = []
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         if re.match(r"^#{1,6}\s", line):
             while out and out[-1].strip() == "":
                 out.pop()
@@ -307,7 +325,9 @@ def strip_export_trash(text: str) -> str:
     # Remove lines that are just horizontal rules
     text = re.sub(r"^\s*[-*_]{3,}\s*$", "", text, flags=re.MULTILINE)
     # Remove exported metadata lines like "Created:", "Modified:", UUIDs
-    text = re.sub(r"^(Created|Modified|Updated|UUID|ID):\s*.+$", "", text, flags=re.MULTILINE | re.IGNORECASE)
+    text = re.sub(
+        r"^(Created|Modified|Updated|UUID|ID):\s*.+$", "", text, flags=re.MULTILINE | re.IGNORECASE
+    )
     # Remove bare URL lines (export artifacts)
     text = re.sub(r"^\(https?://[^\)]+\)\s*$", "", text, flags=re.MULTILINE)
     # Collapse trailing whitespace on lines
@@ -335,7 +355,9 @@ def is_likely_not_recipe(path: Path, body: str, meta: dict | None = None) -> boo
     food_words = re.search(
         r"\b(cup|tbsp|tsp|oz|lb|g|ml|ingredient|cook|bake|roast|fry|grill|simmer|boil|"
         r"stir|whisk|chop|slice|serve|heat|oven|degrees|mix|add|pour|dough|sauce)\b",
-        body, re.IGNORECASE)
+        body,
+        re.IGNORECASE,
+    )
     if not food_words and len(body.strip()) < 200:
         return True
     return False
@@ -357,7 +379,9 @@ def extract_servings_from_body(body: str) -> tuple[int | None, str]:
             n = int(m.group(1))
             # Remove the "Serves N" line from body
             cleaned = re.sub(r"^Serves\s+\d+.*\n?", "", body, flags=re.MULTILINE | re.IGNORECASE)
-            cleaned = re.sub(r"^Makes\s+\d+\s+serving.*\n?", "", cleaned, flags=re.MULTILINE | re.IGNORECASE)
+            cleaned = re.sub(
+                r"^Makes\s+\d+\s+serving.*\n?", "", cleaned, flags=re.MULTILINE | re.IGNORECASE
+            )
             return n, cleaned
         except (ValueError, IndexError):
             pass
@@ -423,7 +447,7 @@ def normalize_steps_to_instructions(body: str) -> tuple[str, list]:
     def fix_instructions(m):
         heading = m.group(1)
         content = m.group(2)
-        lines = [l for l in content.splitlines() if l.strip()]  # drop blanks first
+        lines = [line for line in content.splitlines() if line.strip()]  # drop blanks first
         new_lines = []
         step_num = 1
         changed = False
@@ -519,7 +543,7 @@ def ensure_tags_list(tags) -> list:
         return []
     if isinstance(tags, str):
         # Might be a comma-separated string
-        tags = [t.strip().strip('"\'') for t in tags.split(",")]
+        tags = [t.strip().strip("\"'") for t in tags.split(",")]
     return [t.lower() for t in tags if t]
 
 
@@ -531,6 +555,7 @@ def normalize_source(source) -> str:
 
 
 # ── Per-file normalization ────────────────────────────────────────────────────
+
 
 def normalize_file(path: Path, dry_run: bool = True, allow_rename: bool = False) -> dict:
     """
@@ -606,8 +631,9 @@ def normalize_file(path: Path, dry_run: bool = True, allow_rename: bool = False)
         m = re.search(r"\((serves|makes|yields)\s+([^)]+)\)", recipe_title, re.IGNORECASE)
         if m:
             yield_text = m.group(2).strip()
-            meta["servings"] = (int(yield_text) if yield_text.isdigit()
-                                else f"{m.group(1).lower()} {yield_text}")
+            meta["servings"] = (
+                int(yield_text) if yield_text.isdigit() else f"{m.group(1).lower()} {yield_text}"
+            )
             report["changes"].append(f"extracted servings from title: {meta['servings']}")
 
     servings_from_body, body = extract_servings_from_body(body)
@@ -655,13 +681,17 @@ def normalize_file(path: Path, dry_run: bool = True, allow_rename: bool = False)
     # Compute total_time if both prep and cook are known and total is missing
     if meta.get("total_time") is None:
         if meta.get("prep_time") and meta.get("cook_time"):
+
             def extract_minutes(s):
                 if s is None:
                     return 0
                 hours = re.search(r"(\d+)\s*hour", s, re.IGNORECASE)
-                mins  = re.search(r"(\d+)\s*minute", s, re.IGNORECASE)
-                total = (int(hours.group(1)) * 60 if hours else 0) + (int(mins.group(1)) if mins else 0)
+                mins = re.search(r"(\d+)\s*minute", s, re.IGNORECASE)
+                total = (int(hours.group(1)) * 60 if hours else 0) + (
+                    int(mins.group(1)) if mins else 0
+                )
                 return total
+
             total_mins = extract_minutes(meta["prep_time"]) + extract_minutes(meta["cook_time"])
             if total_mins > 0:
                 if total_mins >= 60:
@@ -686,7 +716,9 @@ def normalize_file(path: Path, dry_run: bool = True, allow_rename: bool = False)
     # source
     normalized_source = normalize_source(meta.get("source"))
     if normalized_source != meta.get("source"):
-        report["changes"].append(f"normalized source: '{meta.get('source')}' → '{normalized_source}'")
+        report["changes"].append(
+            f"normalized source: '{meta.get('source')}' → '{normalized_source}'"
+        )
     meta["source"] = normalized_source
 
     # rating — the user's own score. Kept as it stands; added blank where
@@ -780,6 +812,7 @@ def normalize_file(path: Path, dry_run: bool = True, allow_rename: bool = False)
 
 # ── Wikilink rewriting ───────────────────────────────────────────────────────
 
+
 def rewrite_wikilinks(root: Path, renames: dict, dry_run: bool = True) -> list[str]:
     """Repoint [[old]] / [[old|Alias]] / ![[old]] at the new note name.
 
@@ -812,55 +845,60 @@ def rewrite_wikilinks(root: Path, renames: dict, dry_run: bool = True) -> list[s
 
 # ── Audit log ────────────────────────────────────────────────────────────────
 
+
 def write_audit_log(reports: list[dict], dry_run: bool):
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     mode = "DRY RUN" if dry_run else "LIVE"
 
     lines = [
-        f"# Recipe Audit Log",
-        f"",
+        "# Recipe Audit Log",
+        "",
         f"Generated: {now} | Mode: {mode}",
-        f"",
-        f"---",
-        f"",
+        "",
+        "---",
+        "",
     ]
 
-    total        = len(reports)
-    clean        = sum(1 for r in reports if not r["changes"] and not r["flags"] and r.get("ok", True))
-    changed      = sum(1 for r in reports if r["changes"])
-    flagged      = sum(1 for r in reports if r["flags"])
+    total = len(reports)
+    clean = sum(1 for r in reports if not r["changes"] and not r["flags"] and r.get("ok", True))
+    changed = sum(1 for r in reports if r["changes"])
+    flagged = sum(1 for r in reports if r["flags"])
     needs_review = sum(1 for r in reports if not r.get("ok", True))
-    quarantine   = sum(1 for r in reports if r.get("quarantine"))
+    quarantine = sum(1 for r in reports if r.get("quarantine"))
 
     lines += [
-        f"## Summary",
-        f"",
+        "## Summary",
+        "",
         f"- Total files scanned: {total}",
         f"- Already clean: {clean}",
         f"- Auto-repaired: {changed}",
         f"- Flagged for review: {flagged}",
         f"- Non-recipe files to quarantine: {quarantine}",
         f"- Needs manual fix (missing required sections): {needs_review - quarantine}",
-        f"",
-        f"---",
-        f"",
-        f"## Per-File Results",
-        f"",
+        "",
+        "---",
+        "",
+        "## Per-File Results",
+        "",
     ]
 
     for r in sorted(reports, key=lambda x: (not x["flags"], x["original_path"])):
-        orig   = Path(r["original_path"]).name
-        status = "⚠️ NEEDS REVIEW" if not r["ok"] else ("✅ OK" if not r["changes"] and not r["flags"] else "🔧 REPAIRED")
+        orig = Path(r["original_path"]).name
+        status = (
+            "⚠️ NEEDS REVIEW"
+            if not r["ok"]
+            else ("✅ OK" if not r["changes"] and not r["flags"] else "🔧 REPAIRED")
+        )
         lines.append(f"### {orig}")
         lines.append(f"Status: {status}")
         if r.get("new_path") and r["new_path"] != r["original_path"]:
             lines.append(f"Renamed to: `{Path(r['new_path']).name}`")
         if r["changes"]:
-            lines.append(f"Changes:")
+            lines.append("Changes:")
             for c in r["changes"]:
                 lines.append(f"  - {c}")
         if r["flags"]:
-            lines.append(f"Flags (manual action needed):")
+            lines.append("Flags (manual action needed):")
             for f in r["flags"]:
                 lines.append(f"  - ⚠️ {f}")
         lines.append("")
@@ -876,26 +914,36 @@ def write_audit_log(reports: list[dict], dry_run: bool):
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(description="Normalize recipe markdown files.")
-    parser.add_argument("--write", action="store_true",
-                        help="Actually write changes (default is dry-run)")
-    parser.add_argument("--dir", type=Path, default=RECIPES_DIR,
-                        help=f"Recipes directory (default: {RECIPES_DIR})")
-    parser.add_argument("--rename", action="store_true",
-                        help="Also rename files to recipe_<snake_case>.md and rewrite "
-                             "[[wikilinks]] across the notebook to match "
-                             "(default: report the mismatch only)")
-    parser.add_argument("--notebook", type=Path, default=NOTEBOOK_DIR,
-                        help="Notebook root scanned for wikilinks when --rename is used")
+    parser.add_argument(
+        "--write", action="store_true", help="Actually write changes (default is dry-run)"
+    )
+    parser.add_argument(
+        "--dir", type=Path, default=RECIPES_DIR, help=f"Recipes directory (default: {RECIPES_DIR})"
+    )
+    parser.add_argument(
+        "--rename",
+        action="store_true",
+        help="Also rename files to recipe_<snake_case>.md and rewrite "
+        "[[wikilinks]] across the notebook to match "
+        "(default: report the mismatch only)",
+    )
+    parser.add_argument(
+        "--notebook",
+        type=Path,
+        default=NOTEBOOK_DIR,
+        help="Notebook root scanned for wikilinks when --rename is used",
+    )
     args = parser.parse_args()
 
     recipes_dir = args.dir
     dry_run = not args.write
 
     if dry_run:
-        print(f"DRY RUN — no files will be modified.")
-        print(f"Run with --write to commit changes.")
+        print("DRY RUN — no files will be modified.")
+        print("Run with --write to commit changes.")
         print(f"Directory: {recipes_dir}")
         print()
 
@@ -909,10 +957,12 @@ def main():
     # _recipe_box.md). A hub is not a recipe: it has no ingredients, must keep
     # its name because everything links TO it, and must not be given recipe
     # frontmatter.
-    skipped = [f.name for f in md_files
-               if f.name == "recipe_audit_log.md" or f.name.startswith("_")]
-    md_files = [f for f in md_files
-                if f.name != "recipe_audit_log.md" and not f.name.startswith("_")]
+    skipped = [
+        f.name for f in md_files if f.name == "recipe_audit_log.md" or f.name.startswith("_")
+    ]
+    md_files = [
+        f for f in md_files if f.name != "recipe_audit_log.md" and not f.name.startswith("_")
+    ]
 
     if skipped:
         print(f"Skipping {len(skipped)} non-recipe file(s): {', '.join(skipped)}")
@@ -935,25 +985,25 @@ def main():
             print(status)
         except Exception as e:
             print(f"❌ ERROR: {e}")
-            reports.append({
-                "original_path": str(path),
-                "new_path": str(path),
-                "changes": [],
-                "flags": [f"SCRIPT ERROR: {e}"],
-                "ok": False,
-            })
+            reports.append(
+                {
+                    "original_path": str(path),
+                    "new_path": str(path),
+                    "changes": [],
+                    "flags": [f"SCRIPT ERROR: {e}"],
+                    "ok": False,
+                }
+            )
 
     print()
 
     # Renames and their wikilinks move together, or the hub breaks.
     if args.rename:
-        renames = {r["renamed_from"]: r["renamed_to"]
-                   for r in reports if r.get("renamed_from")}
+        renames = {r["renamed_from"]: r["renamed_to"] for r in reports if r.get("renamed_from")}
         if renames:
             touched = rewrite_wikilinks(args.notebook, renames, dry_run=dry_run)
             verb = "would repoint" if dry_run else "repointed"
-            print(f"Wikilinks: {verb} {len(renames)} note name(s) "
-                  f"across {len(touched)} file(s).")
+            print(f"Wikilinks: {verb} {len(renames)} note name(s) across {len(touched)} file(s).")
             for name in touched:
                 print(f"  - {name}")
             print()

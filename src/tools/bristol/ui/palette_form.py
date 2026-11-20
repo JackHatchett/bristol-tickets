@@ -28,13 +28,13 @@ from PySide6.QtWidgets import (
 )
 
 from .theme import (
-    C,
     LAYOUT,
     REFERENCE_DARK_PALETTE,
     REFERENCE_PALETTE,
-    palette_rows,
+    C,
     contrast_complaints,
     key_caption,
+    palette_rows,
     radius,
     space,
 )
@@ -70,13 +70,13 @@ class ColourRow:
         # than a styling choice and is the one colour here not read from `C`.
         self.swatch = QPushButton()
         self.swatch.setFixedWidth(LAYOUT["palette_swatch_w"])
-        self.swatch.setCursor(Qt.PointingHandCursor)
+        self.swatch.setCursor(Qt.CursorShape.PointingHandCursor)
         self.swatch.setToolTip("Pick this color")
         self.swatch.clicked.connect(self._pick)
 
         self.hex = QLineEdit(value)
         self.hex.setFixedWidth(LAYOUT["palette_hex_w"])
-        self.hex.setAlignment(Qt.AlignCenter)
+        self.hex.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.hex.setToolTip("The color as hex — type it, or use the swatch.")
         self.hex.textChanged.connect(self._typed)
 
@@ -102,18 +102,20 @@ class ColourRow:
         The one key written ``#AARRGGBB`` carries its own alpha, so its picker
         offers the alpha slider and its value comes back in the same spelling.
         """
-        current = QColor(self.value()) if self.valid() else QColor(Qt.white)
+        current = QColor(self.value()) if self.valid() else QColor(Qt.GlobalColor.white)
         title = f"{key_caption(self.key)} color"
         with_alpha = len(self.value().lstrip("#")) == 8
         if with_alpha:
-            chosen = QColorDialog.getColor(current, self.swatch, title,
-                                           QColorDialog.ShowAlphaChannel)
+            chosen = QColorDialog.getColor(
+                current, self.swatch, title, QColorDialog.ColorDialogOption.ShowAlphaChannel
+            )
         else:
             chosen = QColorDialog.getColor(current, self.swatch, title)
         if not chosen.isValid():
             return
-        self.set_value(chosen.name(
-            QColor.HexArgb if with_alpha else QColor.HexRgb))
+        self.set_value(
+            chosen.name(QColor.NameFormat.HexArgb if with_alpha else QColor.NameFormat.HexRgb)
+        )
 
     def _typed(self, text: str) -> None:
         ok = is_colour(text)
@@ -144,8 +146,9 @@ class PaletteForm(QWidget):
     someone editing one.
     """
 
-    def __init__(self, palette: dict | None = None, on_change=None,
-                 parent=None, dark: bool = False) -> None:
+    def __init__(
+        self, palette: dict | None = None, on_change=None, parent=None, dark: bool = False
+    ) -> None:
         super().__init__(parent)
         self._on_change = on_change
         self._seating = True
@@ -195,8 +198,7 @@ class PaletteForm(QWidget):
     def palette(self) -> dict[str, str]:
         """Every row that contains a colour. A row that does not is left out
         rather than stored empty."""
-        return {key: row.value() for key, row in self.rows.items()
-                if row.valid()}
+        return {key: row.value() for key, row in self.rows.items() if row.valid()}
 
     def set_palette(self, palette: dict | None, dark: bool = False) -> None:
         """Show ``palette``, without any of it reading as an edit. ``dark`` is
@@ -213,8 +215,7 @@ class PaletteForm(QWidget):
 
     def broken(self) -> list[str]:
         """The caption of every field that is not a colour."""
-        return sorted(key_caption(key) for key, row in self.rows.items()
-                      if not row.valid())
+        return sorted(key_caption(key) for key, row in self.rows.items() if not row.valid())
 
     def unreadable(self) -> list[str]:
         """Every pair of text and surface this palette puts under the readable
@@ -228,8 +229,7 @@ class PaletteForm(QWidget):
         lines = []
         broken = self.broken()
         if broken:
-            lines.append(f"Not a hex color: {', '.join(broken)}. "
-                         "A color is #RRGGBB.")
+            lines.append(f"Not a hex color: {', '.join(broken)}. A color is #RRGGBB.")
         lines.extend(self.unreadable())
         return lines
 

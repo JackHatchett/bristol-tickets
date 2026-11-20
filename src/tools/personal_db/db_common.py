@@ -42,10 +42,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(
-    0, str(Path(__file__).resolve().parents[1] / "config_tools")
-)
-import data_paths  # noqa: E402  (the shared declared-path resolver)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
+import data_paths
 
 DEFAULT_DB_FILENAME = "personal.db"
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
@@ -87,8 +85,7 @@ def snapshot_base() -> Path:
     Default: data/<instance>/system/logs (a sibling tree of the personal root),
     so snapshots sit with the rest of the system's generated logs rather than
     inside the DB's own folder. Each domain writes to <base>/<its subdir>/."""
-    env = (os.environ.get("PERSONAL_SNAPSHOT_BASE")
-           or _configured("PERSONAL_SNAPSHOT_BASE"))
+    env = os.environ.get("PERSONAL_SNAPSHOT_BASE") or _configured("PERSONAL_SNAPSHOT_BASE")
     if env:
         return data_paths.resolve(env)
     return resolve_root().parent / "system" / "logs"
@@ -105,7 +102,9 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
         data_paths.ensure_db(p, SCHEMA_PATH)
     conn = sqlite3.connect(str(p), timeout=10)
     conn.execute("PRAGMA busy_timeout=5000")
-    conn.execute("PRAGMA journal_mode=MEMORY")  # avoid the on-disk journal (ticket_tools/README.md §Invariants)
+    conn.execute(
+        "PRAGMA journal_mode=MEMORY"
+    )  # avoid the on-disk journal (ticket_tools/README.md §Invariants)
     conn.execute("PRAGMA foreign_keys=ON")
     conn.row_factory = sqlite3.Row
     return conn
@@ -122,8 +121,7 @@ def _add_missing_columns(conn: sqlite3.Connection, sql: str) -> list[str]:
     ref = sqlite3.connect(":memory:")
     try:
         ref.executescript(sql)
-        tables = [r[0] for r in ref.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'")]
+        tables = [r[0] for r in ref.execute("SELECT name FROM sqlite_master WHERE type='table'")]
         added = []
         for t in tables:
             have = {r[1] for r in conn.execute(f"PRAGMA table_info({t})")}
@@ -152,7 +150,7 @@ def apply_schema(conn: sqlite3.Connection) -> list[str]:
     return added
 
 
-class with_writeback:
+class with_writeback:  # noqa: N801 (read as a function: with with_writeback(path) as conn)
     """Context manager: copy the live DB to /tmp, yield a connection to the
     copy, and on clean exit copy it back over the original. Belt-and-braces for
     writes over a mounted-folder bridge where an in-place write once failed.

@@ -34,8 +34,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import config_file  # bristol-local; see module docstring
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -56,17 +56,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-import config_file  # bristol-local; see module docstring
-
-from .segmented import SegmentedControl
-from .toggle_list import ToggleList
-from .dialogs import (RowList, add_button, as_sheet, confirm, notify,
-                      removable_item)
-from .growing_edit import GrowingTextEdit
-from .settled_combo import SettledComboBox, fill_words
-from .row_card import card_list
 from . import icons
+from .dialogs import RowList, add_button, as_sheet, confirm, notify, removable_item
+from .growing_edit import GrowingTextEdit
+from .row_card import card_list
+from .segmented import SegmentedControl
+from .settled_combo import SettledComboBox, fill_words
 from .theme import CARD_ROLE, LAYOUT, agent_caption, control_height, space
+from .toggle_list import ToggleList
 
 AGENTS_CLI = Path("src") / "tools" / "agent_tools" / "agents.py"
 CREATE_CLI = Path("src") / "tools" / "agent_tools" / "create_agent.py"
@@ -82,12 +79,14 @@ ALWAYS_ALL_DASHBOARDS = "chief_of_staff"
 # What an agent cannot be without. The form marks each one and refuses a save
 # while one is empty.
 REQUIRED = ["slug", "description", "charter"]
-FIELD_NAMES = {"slug": "Name", "description": "Description",
-               "charter": "Charter"}
+FIELD_NAMES = {"slug": "Name", "description": "Description", "charter": "Charter"}
 
 # What an agent may do in the notebook — src/tools/config_tools/notebook.py.
-NOTEBOOK_MODES = [("per_folder", "Per Folder"), ("read_all", "Read All"),
-                  ("write_all", "Write All")]
+NOTEBOOK_MODES = [
+    ("per_folder", "Per Folder"),
+    ("read_all", "Read All"),
+    ("write_all", "Write All"),
+]
 FOLDER_ACCESS = [("read", "Read"), ("write", "Write"), ("hide", "Hide")]
 DASHBOARD_MODES = [("all", "All Dashboards"), ("chosen", "Chosen Dashboards")]
 
@@ -104,8 +103,7 @@ class NotebookAccess(QWidget):
     def __init__(self, entry: dict, folders: list[str]) -> None:
         super().__init__()
         entry = entry if isinstance(entry, dict) else {}
-        mode = entry.get("mode") if entry.get("mode") in dict(NOTEBOOK_MODES) \
-            else "per_folder"
+        mode = entry.get("mode") if entry.get("mode") in dict(NOTEBOOK_MODES) else "per_folder"
         self._kept = dict(entry.get("folders") or {}) if "mode" in entry else {}
         self._legacy = "mode" not in entry and bool(entry)
 
@@ -114,7 +112,7 @@ class NotebookAccess(QWidget):
         column.setSpacing(space("sm"))
 
         self.mode_control = SegmentedControl(NOTEBOOK_MODES, mode)
-        column.addWidget(self.mode_control, 0, Qt.AlignLeft)
+        column.addWidget(self.mode_control, 0, Qt.AlignmentFlag.AlignLeft)
 
         self.rows = QWidget()
         grid = QGridLayout(self.rows)
@@ -126,8 +124,7 @@ class NotebookAccess(QWidget):
             name = QLabel(folder)
             name.setObjectName("metaText")
             grid.addWidget(name, row, 0)
-            control = SegmentedControl(FOLDER_ACCESS,
-                                       self._kept.get(folder, "hide"))
+            control = SegmentedControl(FOLDER_ACCESS, self._kept.get(folder, "hide"))
             control.setAccessibleName(f"{folder}: Read, Write or Hide")
             grid.addWidget(control, row, 1)
             self.choices[folder] = control
@@ -153,8 +150,10 @@ class NotebookAccess(QWidget):
         if self._legacy:
             return True
         entry = entry if isinstance(entry, dict) else {}
-        before = {"mode": entry.get("mode", "per_folder"),
-                  "folders": dict(entry.get("folders") or {})}
+        before = {
+            "mode": entry.get("mode", "per_folder"),
+            "folders": dict(entry.get("folders") or {}),
+        }
         now = self.values()
         for folder in self.choices:
             before["folders"].setdefault(folder, "hide")
@@ -190,13 +189,13 @@ class DashboardAccess(QWidget):
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(space("sm"))
 
-        self.mode_control = SegmentedControl(
-            DASHBOARD_MODES, "all" if write_all else "chosen")
+        self.mode_control = SegmentedControl(DASHBOARD_MODES, "all" if write_all else "chosen")
         self.mode_control.setEnabled(not locked)
         if locked:
             self.mode_control.setToolTip(
-                "chief_of_staff keeps every dashboard, whatever this says.")
-        column.addWidget(self.mode_control, 0, Qt.AlignLeft)
+                "chief_of_staff keeps every dashboard, whatever this says."
+            )
+        column.addWidget(self.mode_control, 0, Qt.AlignmentFlag.AlignLeft)
 
         self.list = ToggleList()
         for name in dashboards:
@@ -204,8 +203,11 @@ class DashboardAccess(QWidget):
         if not dashboards:
             self.list.add_note("No dashboard is known yet. Add one in Settings.")
         rows = max(1, self.list.count())
-        self.list.setFixedHeight(min(rows, 6) * self.list.sizeHintForRow(0)
-                                 + 2 * self.list.frameWidth() + 2 * space("sm"))
+        self.list.setFixedHeight(
+            min(rows, 6) * self.list.sizeHintForRow(0)
+            + 2 * self.list.frameWidth()
+            + 2 * space("sm")
+        )
         self._names = list(dashboards)
         column.addWidget(self.list)
         self.mode_control.changed.connect(lambda _value: self._sync())
@@ -219,17 +221,19 @@ class DashboardAccess(QWidget):
 
     def values(self) -> dict:
         chosen = [n for n in self._kept if n not in self._names] + self._ticked()
-        return {"write_all": self.mode_control.value() == "all",
-                "dashboards": chosen}
+        return {"write_all": self.mode_control.value() == "all", "dashboards": chosen}
 
     def changed_from(self, entry: dict) -> bool:
         """Whether saving would change what the entry says."""
         entry = entry if isinstance(entry, dict) else {}
-        before = {"write_all": entry.get("write_all") is not False,
-                  "dashboards": [n for n in entry.get("dashboards") or []]}
+        before = {
+            "write_all": entry.get("write_all") is not False,
+            "dashboards": [n for n in entry.get("dashboards") or []],
+        }
         now = self.values()
-        return (now["write_all"] != before["write_all"]
-                or sorted(now["dashboards"]) != sorted(before["dashboards"]))
+        return now["write_all"] != before["write_all"] or sorted(now["dashboards"]) != sorted(
+            before["dashboards"]
+        )
 
     def args(self) -> list[str]:
         values = self.values()
@@ -252,11 +256,11 @@ def align_form_labels(form: QFormLayout) -> None:
     reads level with a field, a picker, a row of radios or a list's first row
     alike."""
     for row in range(form.rowCount()):
-        item = form.itemAt(row, QFormLayout.LabelRole)
+        item = form.itemAt(row, QFormLayout.ItemRole.LabelRole)
         label = item.widget() if item is not None else None
         if isinstance(label, QLabel):
             label.setFixedHeight(control_height())
-            label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
 
 def _grant_option(grant: dict) -> str:
@@ -280,8 +284,7 @@ def folder_grant(entry) -> dict:
     else:
         declared, access = str(entry), None
     known = [value for value, _ in ACCESS_CHOICES]
-    return {"path": declared,
-            "access": access if access in known else known[0]}
+    return {"path": declared, "access": access if access in known else known[0]}
 
 
 class PathList(QWidget):
@@ -295,8 +298,9 @@ class PathList(QWidget):
     carries none: a context file is read.
     """
 
-    def __init__(self, run, kind: str, add_label: str, parent=None, *,
-                 access: bool = False) -> None:
+    def __init__(
+        self, run, kind: str, add_label: str, parent=None, *, access: bool = False
+    ) -> None:
         super().__init__(parent)
         self._run = run
         self._kind = kind
@@ -308,7 +312,7 @@ class PathList(QWidget):
         # item for text a delegate draws, and a row here is a widget, which
         # such padding shrinks out of the item containing it.
         self.list.setObjectName("pathRows")
-        self.list.setSelectionMode(QListWidget.NoSelection)
+        self.list.setSelectionMode(QListWidget.SelectionMode.NoSelection)
         self.list.setMinimumHeight(LAYOUT["path_list_min_h"])
 
         self.add_btn = add_button(add_label.rstrip("…"), self._add)
@@ -317,7 +321,7 @@ class PathList(QWidget):
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(space("sm"))
         column.addWidget(self.list)
-        column.addWidget(self.add_btn, 0, Qt.AlignLeft)
+        column.addWidget(self.add_btn, 0, Qt.AlignmentFlag.AlignLeft)
 
     def set_values(self, entries: list) -> None:
         self.list.clear()
@@ -330,8 +334,7 @@ class PathList(QWidget):
         out = []
         for _, declared, combo in self._rows:
             if self._access:
-                out.append({"path": declared,
-                            "access": combo.currentData()})
+                out.append({"path": declared, "access": combo.currentData()})
             else:
                 out.append(declared)
         return out
@@ -345,8 +348,7 @@ class PathList(QWidget):
         combo = None
         if self._access:
             combo = fill_words(SettledComboBox(), ACCESS_CHOICES)
-            combo.setCurrentIndex(
-                max(0, combo.findData(access)))
+            combo.setCurrentIndex(max(0, combo.findData(access)))
         line = QHBoxLayout(holder)
         line.setContentsMargins(0, space("xs"), 0, space("xs"))
         line.setSpacing(space("sm"))
@@ -363,17 +365,21 @@ class PathList(QWidget):
         item.setSizeHint(QSize(0, LAYOUT["path_row_min_h"]))
         self.list.addItem(item)
         subject = "folder" if self._kind == "dir" else "file"
-        removable_item(self.list, item, f"Remove this {subject}",
-                       lambda i=item: self._drop(i), content=holder)
+        removable_item(
+            self.list, item, f"Remove this {subject}", lambda i=item: self._drop(i), content=holder
+        )
         self._rows.append((item, declared, combo))
 
     def _drop(self, item: QListWidgetItem) -> None:
         declared = next((d for i, d, _ in self._rows if i is item), "")
         subject = "folder" if self._kind == "dir" else "file"
-        if not confirm(self, f"Remove this {subject}?",
-                       f"{declared} goes off this agent's list. "
-                       f"Nothing on disk is touched.",
-                       "Remove", destructive=True):
+        if not confirm(
+            self,
+            f"Remove this {subject}?",
+            f"{declared} goes off this agent's list. Nothing on disk is touched.",
+            "Remove",
+            destructive=True,
+        ):
             return
         self._rows = [r for r in self._rows if r[0] is not item]
         self.list.takeItem(self.list.row(item))
@@ -387,11 +393,9 @@ class PathList(QWidget):
 
     def _add(self) -> None:
         if self._kind == "dir":
-            picked = QFileDialog.getExistingDirectory(
-                self, "Choose a folder", self._start_in())
+            picked = QFileDialog.getExistingDirectory(self, "Choose a folder", self._start_in())
         else:
-            picked, _ = QFileDialog.getOpenFileName(
-                self, "Choose a file", self._start_in())
+            picked, _ = QFileDialog.getOpenFileName(self, "Choose a file", self._start_in())
         if not picked:
             return
         code, out, _ = self._run(PATHS_CLI, "--declare", picked)
@@ -422,7 +426,7 @@ class EnvList(QWidget):
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(space("sm"))
         column.addWidget(self.rows)
-        column.addWidget(self.add_btn, 0, Qt.AlignLeft)
+        column.addWidget(self.add_btn, 0, Qt.AlignmentFlag.AlignLeft)
 
     def set_values(self, env: dict) -> None:
         while self._rows:
@@ -460,8 +464,7 @@ class EnvList(QWidget):
         line.addWidget(value_edit, 1)
         line.addWidget(choose)
         cell: list[QWidget] = []
-        row = self.rows.add_row(holder, "Remove this variable",
-                                lambda: self._drop(cell[0]))
+        row = self.rows.add_row(holder, "Remove this variable", lambda: self._drop(cell[0]))
         cell.append(row)
         holder = row
         self._rows.append((holder, name_edit, value_edit))
@@ -474,11 +477,14 @@ class EnvList(QWidget):
             return
         sample = self._rows[0][1]
         metrics = sample.fontMetrics()
-        longest = max(metrics.horizontalAdvance(name.text() or name.placeholderText())
-                      for _holder, name, _value in self._rows)
+        longest = max(
+            metrics.horizontalAdvance(name.text() or name.placeholderText())
+            for _holder, name, _value in self._rows
+        )
         margins = sample.textMargins()
-        width = max(LAYOUT["env_name_w"],
-                    longest + margins.left() + margins.right() + 4 * space("md"))
+        width = max(
+            LAYOUT["env_name_w"], longest + margins.left() + margins.right() + 4 * space("md")
+        )
         for _holder, name, _value in self._rows:
             name.setFixedWidth(width)
 
@@ -486,18 +492,25 @@ class EnvList(QWidget):
         """A value that names a folder is picked; one that does not is typed."""
         root = config_file.project_root()
         picked = QFileDialog.getExistingDirectory(
-            self, "Choose a folder", field.text() or (str(root) if root else ""))
+            self, "Choose a folder", field.text() or (str(root) if root else "")
+        )
         if picked:
             field.setText(picked)
 
     def _drop(self, holder: QWidget, ask: bool = True) -> None:
-        named = next((n.text().strip() for h, n, _ in self._rows
-                      if h is holder), "")
-        if ask and named and not confirm(
-                self, "Remove this variable?",
+        named = next((n.text().strip() for h, n, _ in self._rows if h is holder), "")
+        if (
+            ask
+            and named
+            and not confirm(
+                self,
+                "Remove this variable?",
                 f"{named} goes off this agent's list. The tools that read it "
                 f"run without it afterwards.",
-                "Remove", destructive=True):
+                "Remove",
+                destructive=True,
+            )
+        ):
             return
         self._rows = [r for r in self._rows if r[0] is not holder]
         self.rows.remove_row(holder)
@@ -519,8 +532,8 @@ class KeyFields(QWidget):
         self.form = QFormLayout(self)
         self.form.setContentsMargins(0, 0, 0, 0)
         self.form.setSpacing(space("md"))
-        self.form.setLabelAlignment(Qt.AlignRight | Qt.AlignTop)
-        self.form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        self.form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
     def set_values(self, extra: dict) -> None:
         while self.form.rowCount():
@@ -562,8 +575,7 @@ class AgentDialog(QDialog):
         # been written.
         self.status = ""
 
-        self.setWindowTitle(agent_caption(record["slug"]) if record
-                            else "New Agent")
+        self.setWindowTitle(agent_caption(record["slug"]) if record else "New Agent")
         self.setModal(True)
         self.setMinimumWidth(LAYOUT["agent_dialog_min_w"])
         self.setMinimumHeight(LAYOUT["agent_dialog_min_h"])
@@ -571,8 +583,7 @@ class AgentDialog(QDialog):
 
         self.slug = QLineEdit(record["slug"] if record else "")
         self.slug.setEnabled(self.creating)
-        self.description = GrowingTextEdit(min_lines=2, max_lines=4,
-                                           newline_on_return=True)
+        self.description = GrowingTextEdit(min_lines=2, max_lines=4, newline_on_return=True)
         self.description.setText(record["description"] if record else "")
 
         self.identity = QLineEdit(record["identity"] if record else "")
@@ -589,20 +600,22 @@ class AgentDialog(QDialog):
         identity_layout.addWidget(self.identity_btn)
 
         self.charter = QPlainTextEdit(record["charter"] if record else "")
-        self.charter.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.charter.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
         self.data_paths = PathList(run, "dir", "Add Folder…", access=True)
         self.data_paths.set_values(record["key_data_paths"] if record else [])
         self.context_files = PathList(run, "file", "Add File…")
-        self.context_files.set_values(
-            record["key_context_files"] if record else [])
+        self.context_files.set_values(record["key_context_files"] if record else [])
 
         self.notebook = NotebookAccess(
-            record["notebook_access"] if record else {}, self._attached(run))
+            record["notebook_access"] if record else {}, self._attached(run)
+        )
 
         self.dashboards = DashboardAccess(
             record.get("dashboard_access", {}) if record else {},
-            self._known_dashboards(run), record["slug"] if record else "")
+            self._known_dashboards(run),
+            record["slug"] if record else "",
+        )
 
         self.env = EnvList(run)
         self.env.set_values(record["env"] if record else {})
@@ -619,8 +632,8 @@ class AgentDialog(QDialog):
         form = QFormLayout()
         form.setSpacing(space("lg"))
         form.setHorizontalSpacing(space("lg"))
-        form.setLabelAlignment(Qt.AlignRight | Qt.AlignTop)
-        form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
         form.addRow(_required("Name"), self.slug)
         form.addRow(_required("Description"), self.description)
         form.addRow("Charter File", identity_row)
@@ -636,11 +649,11 @@ class AgentDialog(QDialog):
 
         page = QWidget()
         page.setLayout(form)
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QScrollArea.NoFrame)
-        self.scroll.setWidget(page)
-        self.scroll.setMinimumWidth(LAYOUT["agent_fields_min_w"])
+        self.fields_scroll = QScrollArea()
+        self.fields_scroll.setWidgetResizable(True)
+        self.fields_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.fields_scroll.setWidget(page)
+        self.fields_scroll.setMinimumWidth(LAYOUT["agent_fields_min_w"])
 
         charter_label = QLabel(_required("Charter"))
         charter_label.setObjectName("sectionHeader")
@@ -653,9 +666,9 @@ class AgentDialog(QDialog):
         charter_pane.setLayout(charter_side)
         charter_pane.setMinimumWidth(LAYOUT["charter_min_w"])
 
-        split = QSplitter(Qt.Horizontal)
+        split = QSplitter(Qt.Orientation.Horizontal)
         split.setHandleWidth(space("lg"))
-        split.addWidget(self.scroll)
+        split.addWidget(self.fields_scroll)
         split.addWidget(charter_pane)
         split.setStretchFactor(0, 3)
         split.setStretchFactor(1, 4)
@@ -679,8 +692,7 @@ class AgentDialog(QDialog):
         row.addWidget(self.save_btn)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("lg"))
         column.addWidget(heading)
         column.addWidget(split, 1)
@@ -694,8 +706,7 @@ class AgentDialog(QDialog):
         """The folders attached in Settings, read fresh."""
         code, out, _ = run(NOTEBOOK_CLI, "show", "--json")
         try:
-            return [f["folder"] for f in json.loads(out)["folders"]] \
-                if code == 0 else []
+            return [f["folder"] for f in json.loads(out)["folders"]] if code == 0 else []
         except (json.JSONDecodeError, KeyError, TypeError):
             return []
 
@@ -712,12 +723,12 @@ class AgentDialog(QDialog):
         root = config_file.project_root()
         start = str(root / "src" / "agent_identities") if root else ""
         picked, _ = QFileDialog.getSaveFileName(
-            self, "Where the charter lives", start, "Markdown (*.md)")
+            self, "Where the charter lives", start, "Markdown (*.md)"
+        )
         if not picked:
             return
         code, out, _ = self._run(PATHS_CLI, "--declare", picked)
-        self.identity.setText(out.strip() if code == 0 and out.strip()
-                              else picked)
+        self.identity.setText(out.strip() if code == 0 and out.strip() else picked)
 
     def _open_at_a_readable_size(self) -> None:
         """Open on most of the screen, not on the minimum.
@@ -730,10 +741,9 @@ class AgentDialog(QDialog):
             return
         room = screen.availableGeometry()
         self.resize(
-            max(LAYOUT["agent_dialog_min_w"],
-                min(int(room.width() * 0.78), room.width() - 80)),
-            max(LAYOUT["agent_dialog_min_h"],
-                min(int(room.height() * 0.88), room.height() - 80)))
+            max(LAYOUT["agent_dialog_min_w"], min(int(room.width() * 0.78), room.width() - 80)),
+            max(LAYOUT["agent_dialog_min_h"], min(int(room.height() * 0.88), room.height() - 80)),
+        )
 
     def _start_from_skeleton(self) -> None:
         """A new charter opens on the shape the template gives, not on nothing."""
@@ -759,7 +769,7 @@ class AgentDialog(QDialog):
         checked = []
         for i in range(self.skills.count()):
             item = self.skills.item(i)
-            if item.checkState() == Qt.Checked:
+            if item.checkState() == Qt.CheckState.Checked:
                 checked.append(item.text())
         return {
             "slug": self.slug.text().strip(),
@@ -809,16 +819,17 @@ class AgentDialog(QDialog):
             extra_file = Path(tmp) / "extra.json"
             extra_file.write_text(json.dumps(extra), encoding="utf-8")
             if self.creating:
-                code, out, err = self._run(
-                    CREATE_CLI, *self._create_args(values, charter_file))
+                code, out, err = self._run(CREATE_CLI, *self._create_args(values, charter_file))
                 if code == 0 and self.dashboards.changed_from({}):
                     code, more, err = self._run(
-                        AGENTS_CLI, "edit", values["slug"], *self.dashboards.args())
+                        AGENTS_CLI, "edit", values["slug"], *self.dashboards.args()
+                    )
                     out += more
             else:
                 args = self._edit_args(values, extra, charter_file, extra_file)
-                code, out, err = ((0, "", "") if len(args) == 1
-                                  else self._run(AGENTS_CLI, "edit", *args))
+                code, out, err = (
+                    (0, "", "") if len(args) == 1 else self._run(AGENTS_CLI, "edit", *args)
+                )
             if code != 0:
                 self._refuse((err or out).strip() or "The write did not land.")
                 return
@@ -844,10 +855,15 @@ class AgentDialog(QDialog):
     @staticmethod
     def _create_args(values: dict, charter_file: Path) -> list[str]:
         notebook = values["notebook_access"]
-        args = [values["slug"],
-                "--description", values["description"],
-                "--charter-file", str(charter_file),
-                "--notebook-mode", notebook["mode"]]
+        args = [
+            values["slug"],
+            "--description",
+            values["description"],
+            "--charter-file",
+            str(charter_file),
+            "--notebook-mode",
+            notebook["mode"],
+        ]
         for folder, access in notebook["folders"].items():
             args += ["--notebook-folder", f"{folder}={access}"]
         for grant in values["key_data_paths"]:
@@ -858,8 +874,9 @@ class AgentDialog(QDialog):
             args += ["--env", f"{name}={value}"]
         return args
 
-    def _edit_args(self, values: dict, extra: dict, charter_file: Path,
-                   extra_file: Path) -> list[str]:
+    def _edit_args(
+        self, values: dict, extra: dict, charter_file: Path, extra_file: Path
+    ) -> list[str]:
         """Only what actually changed, so an untouched field is never written."""
         was = self._record
         args = [values["slug"]]
@@ -928,8 +945,7 @@ class ImportAgentDialog(QDialog):
         row.addWidget(self.accept_btn)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("lg"))
         column.addWidget(heading)
         column.addWidget(self.report, 1)
@@ -962,7 +978,6 @@ class AgentsTab(QWidget):
         top.addWidget(self.import_btn)
         top.addWidget(self.new_btn)
 
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(space("lg"))
@@ -991,7 +1006,10 @@ class AgentsTab(QWidget):
             return 1, "", f"This build cannot find {script.as_posix()}."
         done = subprocess.run(
             [sys.executable, str(found), *args],
-            capture_output=True, text=True, cwd=str(found.parents[3]))
+            capture_output=True,
+            text=True,
+            cwd=str(found.parents[3]),
+        )
         return done.returncode, done.stdout, done.stderr
 
     def reload(self) -> None:
@@ -1010,8 +1028,9 @@ class AgentsTab(QWidget):
             self._agents = []
         code, out, _ = self._run(SKILLS_CLI, "list", "--json")
         try:
-            self._skills = ([s["name"] for s in json.loads(out).get("skills", [])]
-                            if code == 0 else [])
+            self._skills = (
+                [s["name"] for s in json.loads(out).get("skills", [])] if code == 0 else []
+            )
         except (json.JSONDecodeError, TypeError, KeyError):
             self._skills = []
         self._fill_list()
@@ -1021,20 +1040,23 @@ class AgentsTab(QWidget):
         active = config_file.get("active_agent", "")
         for agent in self._agents:
             item = QListWidgetItem()
-            item.setData(Qt.UserRole, agent["slug"])
-            item.setData(CARD_ROLE, {
-                "title": agent_caption(agent["slug"]),
-                "description": agent["description"],
-                "meta": "",
-                "pills": ["Active"] if agent["slug"] == active else [],
-            })
+            item.setData(Qt.ItemDataRole.UserRole, agent["slug"])
+            item.setData(
+                CARD_ROLE,
+                {
+                    "title": agent_caption(agent["slug"]),
+                    "description": agent["description"],
+                    "meta": "",
+                    "pills": ["Active"] if agent["slug"] == active else [],
+                },
+            )
             self.list.addItem(item)
 
     def _selected(self):
         item = self.list.currentItem()
         if item is None:
             return None
-        slug = item.data(Qt.UserRole)
+        slug = item.data(Qt.ItemDataRole.UserRole)
         return next((a for a in self._agents if a["slug"] == slug), None)
 
     # ----- the two ways in --------------------------------------------------
@@ -1053,8 +1075,8 @@ class AgentsTab(QWidget):
         """Adopt an agent from its file: read it, show what it asks for, and
         write it only on Accept."""
         chosen, _ = QFileDialog.getOpenFileName(
-            self, "Import Agent", self._addons_folder(),
-            "Agent files (*.agent.json);;All files (*)")
+            self, "Import Agent", self._addons_folder(), "Agent files (*.agent.json);;All files (*)"
+        )
         if not chosen:
             return
         try:
@@ -1073,8 +1095,11 @@ class AgentsTab(QWidget):
             self.import_btn.setText("Import Agent")
             self.import_btn.setEnabled(True)
         if code != 0:
-            notify(self, "Not Imported", err.strip() or out.strip()
-                   or "The agent file could not be read.")
+            notify(
+                self,
+                "Not Imported",
+                err.strip() or out.strip() or "The agent file could not be read.",
+            )
             return
         # The skills it fetched are installed whatever is decided next, so the
         # Skills tab shows them either way.
@@ -1082,7 +1107,7 @@ class AgentsTab(QWidget):
         # is the Accept button, so the report stops before it.
         report = out.split("\nEach fetched skill is loadable now")[0]
         dialog = ImportAgentDialog(self, slug, report.strip())
-        accepted = dialog.exec() == QDialog.Accepted
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
         if accepted:
             code, out, err = self._run(IMPORT_CLI, chosen, "--accept")
             if code != 0:
@@ -1105,8 +1130,9 @@ class AgentsTab(QWidget):
             self._show(record)
 
     def _show(self, record) -> None:
-        dialog = AgentDialog(self, record, self._run,
-                             {a["slug"] for a in self._agents}, self._skills)
+        dialog = AgentDialog(
+            self, record, self._run, {a["slug"] for a in self._agents}, self._skills
+        )
         dialog.exec()
         self.list.clearSelection()
         if dialog.status:

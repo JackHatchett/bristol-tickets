@@ -20,6 +20,6 @@ thing is callable from the Qt button, an agent session, or the future Python
 head through the same `generate_report`.
 """
 
-from .generate import generate_report  # noqa: F401
+from .generate import generate_report
 
 __all__ = ["generate_report"]

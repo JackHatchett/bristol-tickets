@@ -176,9 +176,7 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (task_id) REFERENCES task (id)
         );
     """)
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_task_event_task ON task_event (task_id, at)"
-    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_task_event_task ON task_event (task_id, at)")
 
     _consolidate_legacy_history(conn)
     _retire_blocked_columns(conn)
@@ -195,8 +193,17 @@ def ensure_schema_up_to_date(conn: sqlite3.Connection) -> None:
 # Fields logged with their new value. A dependency is not among them: it lives
 # on a link now, and a link's own history is the row's presence or absence.
 CHANGE_LOG_FIELDS = (
-    "epic_id", "scope_id", "status", "stage", "tier", "estimate",
-    "assignee", "reporter", "story_points", "record_type", "block_reason",
+    "epic_id",
+    "scope_id",
+    "status",
+    "stage",
+    "tier",
+    "estimate",
+    "assignee",
+    "reporter",
+    "story_points",
+    "record_type",
+    "block_reason",
     "due_date",
 )
 
@@ -322,8 +329,7 @@ def _migrate_stage_from_sprints(conn: sqlite3.Connection) -> None:
     task_cols = [r[1] for r in conn.execute("PRAGMA table_info(task)").fetchall()]
     rank = "pressure DESC, " if "pressure" in task_cols else ""
     rows = conn.execute(
-        "SELECT id, stage, status FROM task "
-        f"ORDER BY stage, {rank}id ASC"
+        f"SELECT id, stage, status FROM task ORDER BY stage, {rank}id ASC"
     ).fetchall()
     counters: dict[tuple, int] = {}
     for tid, stage, status in rows:
@@ -343,9 +349,7 @@ def _ensure_link_dep_type(conn: sqlite3.Connection) -> None:
     existed meant. Mirrors create_tickets._ensure_link_dep_type."""
     cols = [r[1] for r in conn.execute("PRAGMA table_info(task_link)").fetchall()]
     if cols and "dep_type" not in cols:
-        conn.execute(
-            "ALTER TABLE task_link ADD COLUMN dep_type TEXT NOT NULL DEFAULT 'related'"
-        )
+        conn.execute("ALTER TABLE task_link ADD COLUMN dep_type TEXT NOT NULL DEFAULT 'related'")
 
 
 def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
@@ -367,8 +371,7 @@ def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
         for task_id, blocker_id in conn.execute(
             "SELECT id, depends_on FROM task WHERE depends_on IS NOT NULL"
         ).fetchall():
-            if conn.execute("SELECT 1 FROM task WHERE id=?",
-                            (blocker_id,)).fetchone() is None:
+            if conn.execute("SELECT 1 FROM task WHERE id=?", (blocker_id,)).fetchone() is None:
                 continue
             row = conn.execute(
                 "SELECT id FROM task_link WHERE kind='issue' AND "
@@ -377,8 +380,7 @@ def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
             ).fetchone()
             if row:
                 conn.execute(
-                    "UPDATE task_link SET dep_type='blocks', task_id=?, other_id=? "
-                    "WHERE id=?",
+                    "UPDATE task_link SET dep_type='blocks', task_id=?, other_id=? WHERE id=?",
                     (blocker_id, task_id, row[0]),
                 )
             else:
@@ -415,8 +417,9 @@ def _retire_pressure(conn: sqlite3.Connection) -> None:
         # TEMP and installed after this, but an older build's may be live on
         # this connection.
         for (name,) in conn.execute(
-                "SELECT name FROM sqlite_temp_master WHERE type='trigger' "
-                "AND sql LIKE ?", (f"%{column}%",)).fetchall():
+            "SELECT name FROM sqlite_temp_master WHERE type='trigger' AND sql LIKE ?",
+            (f"%{column}%",),
+        ).fetchall():
             conn.execute(f"DROP TRIGGER IF EXISTS temp.{name}")
         try:
             conn.execute(f"ALTER TABLE task DROP COLUMN {column}")
@@ -489,16 +492,20 @@ def _recover_closed_at_from_the_log(conn: sqlite3.Connection) -> None:
     agrees from the start, so a second run writes nothing."""
     finishes: dict[int, list[str]] = {}
     for task_id, at in conn.execute(
-            "SELECT task_id, at FROM task_event "
-            "WHERE field='status' AND to_value='done' ORDER BY at"):
+        "SELECT task_id, at FROM task_event WHERE field='status' AND to_value='done' ORDER BY at"
+    ):
         finishes.setdefault(task_id, []).append(at)
     if not finishes:
         return
-    archived = dict(conn.execute(
-        "SELECT task_id, MAX(at) FROM task_event "
-        "WHERE field='stage' AND to_value='archive' GROUP BY task_id"))
+    archived = dict(
+        conn.execute(
+            "SELECT task_id, MAX(at) FROM task_event "
+            "WHERE field='stage' AND to_value='archive' GROUP BY task_id"
+        )
+    )
     for task_id, closed_at in conn.execute(
-            "SELECT id, closed_at FROM task WHERE closed_at IS NOT NULL").fetchall():
+        "SELECT id, closed_at FROM task WHERE closed_at IS NOT NULL"
+    ).fetchall():
         logged = finishes.get(task_id)
         if not logged:
             continue
@@ -509,5 +516,4 @@ def _recover_closed_at_from_the_log(conn: sqlite3.Connection) -> None:
             continue
         if abs((stamped - finish).total_seconds()) <= CLOSED_AT_DRIFT_SECONDS:
             continue
-        conn.execute("UPDATE task SET closed_at=? WHERE id=?",
-                     (candidates[-1], task_id))
+        conn.execute("UPDATE task SET closed_at=? WHERE id=?", (candidates[-1], task_id))

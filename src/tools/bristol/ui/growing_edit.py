@@ -28,24 +28,29 @@ class GrowingTextEdit(QTextEdit):
 
     submitted = Signal()
 
-    def __init__(self, parent=None, *, min_lines: int = 1, max_lines: int = 6,
-                 newline_on_return: bool = False) -> None:
+    def __init__(
+        self,
+        parent=None,
+        *,
+        min_lines: int = 1,
+        max_lines: int = 6,
+        newline_on_return: bool = False,
+    ) -> None:
         super().__init__(parent)
         self._min_lines = max(1, min_lines)
         self._max_lines = max(self._min_lines, max_lines)
         self._newline_on_return = newline_on_return
         self.setAcceptRichText(False)
-        self.setLineWrapMode(QTextEdit.WidgetWidth)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setTabChangesFocus(True)
         # Drawn with the slimmer padding the stylesheet gives a growing field,
         # so one line of it is exactly as tall as a button beside it.
         self.setProperty("growing", True)
         self.document().setDocumentMargin(space("xs"))
-        self.document().documentLayout().documentSizeChanged.connect(
-            lambda _size: self._fit())
+        self.document().documentLayout().documentSizeChanged.connect(lambda _size: self._fit())
         self._fit()
 
     def text(self) -> str:
@@ -59,8 +64,9 @@ class GrowingTextEdit(QTextEdit):
         # The border, the padding the stylesheet sets and the document's own
         # margin are whatever the field's height exceeds its viewport by, and
         # they are read off the widget rather than assumed.
-        chrome = max(self.height() - self.viewport().height(),
-                     int(self.document().documentMargin() * 2) + 2)
+        chrome = max(
+            self.height() - self.viewport().height(), int(self.document().documentMargin() * 2) + 2
+        )
         content = self.document().size().height()
         floor, ceiling = line * self._min_lines, line * self._max_lines
         height = int(min(max(content, floor), ceiling) + chrome)
@@ -75,8 +81,10 @@ class GrowingTextEdit(QTextEdit):
         self._fit()
 
     def keyPressEvent(self, event) -> None:
-        plain_return = (event.key() in (Qt.Key_Return, Qt.Key_Enter)
-                        and not event.modifiers() & Qt.ShiftModifier)
+        plain_return = (
+            event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
+            and not event.modifiers() & Qt.KeyboardModifier.ShiftModifier
+        )
         if plain_return and not self._newline_on_return:
             self.submitted.emit()
             event.accept()

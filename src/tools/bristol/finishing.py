@@ -30,8 +30,8 @@ def standing_epic(conn: sqlite3.Connection) -> int | None:
     rules below say what happens in the meantime rather than inventing one.
     """
     row = conn.execute(
-        "SELECT id FROM epic WHERE LOWER(COALESCE(type,'')) = ? ORDER BY id",
-        (STANDING_KIND,)).fetchone()
+        "SELECT id FROM epic WHERE LOWER(COALESCE(type,'')) = ? ORDER BY id", (STANDING_KIND,)
+    ).fetchone()
     return row[0] if row else None
 
 
@@ -45,23 +45,31 @@ def standing_conflict(conn: sqlite3.Connection, epic_id=None) -> str | None:
     held = standing_epic(conn)
     if held is None or held == epic_id:
         return None
-    name = conn.execute("SELECT name FROM epic WHERE id=?",
-                        (held,)).fetchone()[0] or f"#{held}"
-    return (f"{name} is already this board's standing workstream, and a board "
-            "has one. Make that epic a project first, or keep this one a "
-            "project.")
+    name = conn.execute("SELECT name FROM epic WHERE id=?", (held,)).fetchone()[0] or f"#{held}"
+    return (
+        f"{name} is already this board's standing workstream, and a board "
+        "has one. Make that epic a project first, or keep this one a "
+        "project."
+    )
 
 
 def _append_to(conn: sqlite3.Connection, stage: str, status: str | None) -> int:
     """The bottom of the list a card is moving into: one active-board status
     column, or the whole of any other tab."""
     if stage == "active":
-        return conn.execute(
-            "SELECT COALESCE(MAX(sort_order), -1) FROM task "
-            "WHERE stage='active' AND status=?", (status,)).fetchone()[0] + 1
-    return conn.execute(
-        "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage=?",
-        (stage,)).fetchone()[0] + 1
+        return (
+            conn.execute(
+                "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage='active' AND status=?",
+                (status,),
+            ).fetchone()[0]
+            + 1
+        )
+    return (
+        conn.execute(
+            "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage=?", (stage,)
+        ).fetchone()[0]
+        + 1
+    )
 
 
 def finish(conn: sqlite3.Connection, task_id: int) -> bool:
@@ -75,8 +83,8 @@ def finish(conn: sqlite3.Connection, task_id: int) -> bool:
     that card stays in Done as well.
     """
     row = conn.execute(
-        "SELECT epic_id, COALESCE(stage,'active') FROM task WHERE id=?",
-        (task_id,)).fetchone()
+        "SELECT epic_id, COALESCE(stage,'active') FROM task WHERE id=?", (task_id,)
+    ).fetchone()
     if row is None:
         return False
     epic_id, stage = row
@@ -89,8 +97,10 @@ def finish(conn: sqlite3.Connection, task_id: int) -> bool:
     if epic_id != standing:
         return False
     if stage != "archive":
-        conn.execute("UPDATE task SET stage='archive', sort_order=? WHERE id=?",
-                     (_append_to(conn, "archive", None), task_id))
+        conn.execute(
+            "UPDATE task SET stage='archive', sort_order=? WHERE id=?",
+            (_append_to(conn, "archive", None), task_id),
+        )
     return True
 
 
@@ -102,10 +112,12 @@ def reopen(conn: sqlite3.Connection, task_id: int) -> bool:
     undo it or the card would be unreachable from the board it belongs on.
     """
     row = conn.execute(
-        "SELECT COALESCE(stage,'active'), status FROM task WHERE id=?",
-        (task_id,)).fetchone()
+        "SELECT COALESCE(stage,'active'), status FROM task WHERE id=?", (task_id,)
+    ).fetchone()
     if row is None or row[0] != "archive":
         return False
-    conn.execute("UPDATE task SET stage='active', sort_order=? WHERE id=?",
-                 (_append_to(conn, "active", row[1]), task_id))
+    conn.execute(
+        "UPDATE task SET stage='active', sort_order=? WHERE id=?",
+        (_append_to(conn, "active", row[1]), task_id),
+    )
     return True

@@ -20,9 +20,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import instance  # noqa: E402  (bristol-local; see module docstring)
-import payload  # noqa: E402  (bristol-local; the tree a built app carries)
-
+import instance
+import payload
 
 
 def _project_root() -> Path | None:
@@ -108,6 +107,7 @@ def main() -> None:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     try:
         import sqlite3
+
         from PySide6.QtGui import QIcon
         from PySide6.QtWidgets import QApplication
         from ui.main_window import MainWindow
@@ -120,6 +120,7 @@ def main() -> None:
 
     # Before the QApplication, because AppKit reads the name as it starts.
     from process_name import set_process_name
+
     set_process_name("Bristol Tickets")
 
     app = QApplication(sys.argv)
@@ -136,13 +137,19 @@ def main() -> None:
     # opens the wizard draws it in the same scheme as the board.
     import config_file
     from ui.theme import appearance_choice, apply_scheme
+
     theme, mode = appearance_choice(
         config_file.get(config_file.APPEARANCE_THEME),
         config_file.get(config_file.APPEARANCE_MODE),
-        config_file.get(config_file.APPEARANCE_SCHEME))
-    apply_scheme(app, theme, mode,
-                 config_file.get(config_file.APPEARANCE_THEMES),
-                 config_file.get(config_file.APPEARANCE_CUSTOM))
+        config_file.get(config_file.APPEARANCE_SCHEME),
+    )
+    apply_scheme(
+        app,
+        theme,
+        mode,
+        config_file.get(config_file.APPEARANCE_THEMES),
+        config_file.get(config_file.APPEARANCE_CUSTOM),
+    )
 
     # An app newer than the installation it opens updates it first, so a user
     # who downloads a release gets the machinery that release ships with. Only

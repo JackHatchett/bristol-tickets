@@ -59,7 +59,7 @@ def add_button(label: str, on_add, tip: str = "") -> QPushButton:
     button.setAutoDefault(False)
     if tip:
         button.setToolTip(tip)
-    button.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+    button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
     button.clicked.connect(lambda _checked=False: on_add())
     return button
 
@@ -80,8 +80,9 @@ def remove_icon(tip: str, on_remove) -> QPushButton:
     return button
 
 
-def removable_item(view: QListWidget, item: QListWidgetItem, tip: str,
-                   on_remove, content: QWidget | None = None) -> QWidget:
+def removable_item(
+    view: QListWidget, item: QListWidgetItem, tip: str, on_remove, content: QWidget | None = None
+) -> QWidget:
     """End a list item's row in its ✕. ``content`` is drawn before the ✕ where
     the row is a widget; where it is ``None`` the list draws the item's text,
     selection and hover as before, under a row that carries only the ✕."""
@@ -94,7 +95,7 @@ def removable_item(view: QListWidget, item: QListWidgetItem, tip: str,
         line.addStretch(1)
     else:
         line.addWidget(content, 1)
-    line.addWidget(remove_icon(tip, on_remove), 0, Qt.AlignVCenter)
+    line.addWidget(remove_icon(tip, on_remove), 0, Qt.AlignmentFlag.AlignVCenter)
     holder.ensurePolished()
     # A row the list draws keeps the padding the style sheet gives its items,
     # which an item with a size of its own no longer asks the style for.
@@ -102,8 +103,9 @@ def removable_item(view: QListWidget, item: QListWidgetItem, tip: str,
     hint = item.sizeHint()
     if not hint.isValid():
         hint = padded if content is None else QSize(0, 0)
-    item.setSizeHint(hint.expandedTo(holder.sizeHint()).expandedTo(
-        padded if content is None else QSize(0, 0)))
+    item.setSizeHint(
+        hint.expandedTo(holder.sizeHint()).expandedTo(padded if content is None else QSize(0, 0))
+    )
     view.setItemWidget(item, holder)
     return holder
 
@@ -118,18 +120,18 @@ class RowList(QFrame):
         self.setObjectName("rowList")
         # As tall as its rows, whatever its host is short of: a squeezed list
         # would draw one row over the next.
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self._rows = QVBoxLayout(self)
-        self._rows.setContentsMargins(space("sm"), space("sm"), space("sm"),
-                                      space("sm"))
+        self._rows.setContentsMargins(space("sm"), space("sm"), space("sm"), space("sm"))
         self._rows.setSpacing(space("xs"))
         self.setVisible(False)
 
-    def add_row(self, content: QWidget, tip: str, on_remove,
-                align=Qt.AlignVCenter) -> QWidget:
+    def add_row(
+        self, content: QWidget, tip: str, on_remove, align=Qt.AlignmentFlag.AlignVCenter
+    ) -> QWidget:
         row = QWidget()
         # A row is as tall as its contents, whatever its host is short of.
-        row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        row.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         line = QHBoxLayout(row)
         line.setContentsMargins(0, 0, 0, 0)
         line.setSpacing(space("md"))
@@ -169,10 +171,15 @@ class Modal(QDialog):
     returns, the default's unless given.
     """
 
-    def __init__(self, parent, title: str, body: str,
-                 buttons: list[tuple[str, str, object]],
-                 default_index: int = 0,
-                 escape_index: int | None = None) -> None:
+    def __init__(
+        self,
+        parent,
+        title: str,
+        body: str,
+        buttons: list[tuple[str, str, object]],
+        default_index: int = 0,
+        escape_index: int | None = None,
+    ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setModal(True)
@@ -188,7 +195,7 @@ class Modal(QDialog):
 
         text = QLabel(body)
         text.setWordWrap(True)
-        text.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         row = QHBoxLayout()
         row.setSpacing(space("md"))
@@ -199,14 +206,11 @@ class Modal(QDialog):
                 button.setObjectName(rank)
             button.setAutoDefault(False)
             button.setDefault(index == default_index)
-            button.clicked.connect(
-                lambda _checked=False, value=result: self._choose(value)
-            )
+            button.clicked.connect(lambda _checked=False, value=result: self._choose(value))
             row.addWidget(button)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("lg"))
         column.addWidget(heading)
         column.addWidget(text)
@@ -222,8 +226,14 @@ class Modal(QDialog):
         return self._result
 
 
-def confirm(parent, title: str, body: str, accept_label: str,
-            cancel_label: str = "Cancel", destructive: bool = False) -> bool:
+def confirm(
+    parent,
+    title: str,
+    body: str,
+    accept_label: str,
+    cancel_label: str = "Cancel",
+    destructive: bool = False,
+) -> bool:
     """Ask a yes/no question. True when the user chose to go ahead.
 
     The action's button, at the right, carries the destructive rank where what
@@ -231,16 +241,24 @@ def confirm(parent, title: str, body: str, accept_label: str,
     action unless it is destructive, when Return presses the way out; Esc and
     the title-bar close always land on the way out.
     """
-    dialog = Modal(parent, title, body, [
-        (cancel_label, ORDINARY, False),
-        (accept_label, DESTRUCTIVE if destructive else PRIMARY, True),
-    ], default_index=0 if destructive else 1, escape_index=0)
+    dialog = Modal(
+        parent,
+        title,
+        body,
+        [
+            (cancel_label, ORDINARY, False),
+            (accept_label, DESTRUCTIVE if destructive else PRIMARY, True),
+        ],
+        default_index=0 if destructive else 1,
+        escape_index=0,
+    )
     dialog.exec()
     return bool(dialog.choice())
 
 
-def choose(parent, title: str, body: str,
-           options: list[tuple[str, str, object]], default_index: int = 0):
+def choose(
+    parent, title: str, body: str, options: list[tuple[str, str, object]], default_index: int = 0
+):
     """Ask a question whose answers are not yes and no. Returns the result of
     the option chosen, and of ``default_index`` when the window is closed."""
     dialog = Modal(parent, title, body, options, default_index)

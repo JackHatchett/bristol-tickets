@@ -75,11 +75,11 @@ COLUMNS = [
     ("done", "Done"),
 ]
 
-CARD_ROLE = Qt.UserRole + 1  # structured payload the delegate paints from
+CARD_ROLE = Qt.ItemDataRole.UserRole + 1  # structured payload the delegate paints from
 
 # The fleet's agent slugs plus 'user' — the valid set of owners/originators for
 # a task. Kept here as the single source for the record dialog's Owner picker
-#. Order: 'user' first (the most common default), then agents
+# . Order: 'user' first (the most common default), then agents
 # alphabetically. Mirrors src/agent_identities/*.md.
 FLEET_AGENTS = [
     "user",
@@ -94,9 +94,31 @@ FLEET_AGENTS = [
 # Words a caption leaves lowercase unless they open it, and words it capitalises
 # whole. The same rule src/tools/skill_tools/skills.py title_phrase applies to a
 # skill's name.
-_CAPTION_SMALL = {"a", "an", "the", "and", "but", "or", "nor", "for", "so",
-                  "yet", "as", "at", "by", "in", "of", "on", "to", "per",
-                  "via", "vs", "with", "from", "into"}
+_CAPTION_SMALL = {
+    "a",
+    "an",
+    "the",
+    "and",
+    "but",
+    "or",
+    "nor",
+    "for",
+    "so",
+    "yet",
+    "as",
+    "at",
+    "by",
+    "in",
+    "of",
+    "on",
+    "to",
+    "per",
+    "via",
+    "vs",
+    "with",
+    "from",
+    "into",
+}
 _CAPTION_UPPER = {"ai", "api", "csv", "html", "jd", "pdf", "qa", "ui", "url"}
 
 
@@ -123,8 +145,9 @@ def fleet_agents() -> list[str]:
     FLEET_AGENTS stands in where no configuration can be read."""
     try:
         import config_file  # bristol-local; absent in a bare import of theme
+
         slugs = sorted(config_file.agent_slugs())
-    except Exception:  # noqa: BLE001 - any failure falls back to the list
+    except Exception:
         slugs = []
     return ["user", *slugs] if slugs else list(FLEET_AGENTS)
 
@@ -161,50 +184,50 @@ TYPE = {"caption": 10, "body": 13, "title": 13, "section": 15, "display": 17}
 # split. Not a spacing scale — these size the window itself, and a module that
 # needs one names it here rather than writing the number.
 LAYOUT = {
-    "control_h": 34,       # every button, field and picker on a row: one height
+    "control_h": 34,  # every button, field and picker on a row: one height
     "toolbar_control_h": 28,  # a control in the top bar
-    "header_icon": 16,        # an icon in the top bar
-    "toolbar_box_w": 34,      # an icon button in the top bar
-    "header_mark_h": 20,      # the app's mark beside its name in the top bar
+    "header_icon": 16,  # an icon in the top bar
+    "toolbar_box_w": 34,  # an icon button in the top bar
+    "header_mark_h": 20,  # the app's mark beside its name in the top bar
     "traffic_lights_tall_w": 80,  # the traffic lights in the tall title bar, and room past them
-    "title_bar_h": 28,        # the Mac's title bar, which the top bar shares
-    "traffic_lights_w": 80,   # the close, minimize and zoom buttons, and room past them
+    "title_bar_h": 28,  # the Mac's title bar, which the top bar shares
+    "traffic_lights_w": 80,  # the close, minimize and zoom buttons, and room past them
     "filter_field_max_w": 420,  # a Filter field, before its pickers
     "window_min_w": 1240,
     "window_min_h": 780,
     "window_w": 1960,
     "window_h": 1080,
-    "split_board": 1180,   # opening width of the board side
-    "split_detail": 720,   # opening width of the detail side
-    "column_min_w": 260,   # a board column narrower than this is unreadable
-    "detail_min_w": 320,   # the detail pane narrower than this is unreadable
-    "filter_menu_w": 300,      # the filter panel, wide enough for an epic name
+    "split_board": 1180,  # opening width of the board side
+    "split_detail": 720,  # opening width of the detail side
+    "column_min_w": 260,  # a board column narrower than this is unreadable
+    "detail_min_w": 320,  # the detail pane narrower than this is unreadable
+    "filter_menu_w": 300,  # the filter panel, wide enough for an epic name
     "filter_menu_max_h": 420,  # its option list, before it scrolls
     "wizard_min_w": 720,
     "wizard_min_h": 480,
-    "dialog_min_w": 760,        # the record dialog
+    "dialog_min_w": 760,  # the record dialog
     "agent_dialog_min_w": 1180,  # the agent form: two columns, side by side
     "agent_dialog_min_h": 820,
-    "agent_fields_min_w": 480,   # its left column, the entry's own fields
-    "charter_min_w": 520,        # its right column, the charter document
-    "skill_list_min_h": 170,     # its tick list of skills
-    "path_list_min_h": 132,      # a list of declared paths, with its picker
-    "path_row_min_h": 40,        # one row in it: a path, its access, its ✕
-    "env_name_w": 210,           # an environment variable's name box
-    "env_choose_w": 34,          # the pick and remove buttons beside its value
-    "extra_min_h": 90,           # its JSON field for keys this build predates
+    "agent_fields_min_w": 480,  # its left column, the entry's own fields
+    "charter_min_w": 520,  # its right column, the charter document
+    "skill_list_min_h": 170,  # its tick list of skills
+    "path_list_min_h": 132,  # a list of declared paths, with its picker
+    "path_row_min_h": 40,  # one row in it: a path, its access, its ✕
+    "env_name_w": 210,  # an environment variable's name box
+    "env_choose_w": 34,  # the pick and remove buttons beside its value
+    "extra_min_h": 90,  # its JSON field for keys this build predates
     "small_dialog_min_w": 420,  # a single-purpose modal: add link
-    "preview_min_w": 480,       # the image preview modal
+    "preview_min_w": 480,  # the image preview modal
     "preview_min_h": 360,
     "theme_dialog_min_w": 1000,  # manage themes: the list, and a palette beside it
     "theme_dialog_min_h": 700,
-    "theme_list_min_w": 230,     # its left column, wide enough for a theme's name
-    "palette_caption_w": 210,    # what a colour row is called, at its longest
-    "palette_swatch_w": 44,      # the block of colour a row opens the picker from
-    "palette_hex_w": 110,        # its hex value, wide enough for #AARRGGBB
-    "settings_w": 880,           # the Settings modal, drawn over the window
+    "theme_list_min_w": 230,  # its left column, wide enough for a theme's name
+    "palette_caption_w": 210,  # what a colour row is called, at its longest
+    "palette_swatch_w": 44,  # the block of colour a row opens the picker from
+    "palette_hex_w": 110,  # its hex value, wide enough for #AARRGGBB
+    "settings_w": 880,  # the Settings modal, drawn over the window
     "settings_h": 640,
-    "settings_nav_w": 200,       # its side nav, wide enough for every tab's name
+    "settings_nav_w": 200,  # its side nav, wide enough for every tab's name
 }
 
 # The tint laid over the window behind a modal the app draws itself, written
@@ -318,129 +341,129 @@ def type_size(step: str) -> int:
 # schemes MUST carry the same keys so a swap never leaves a hole; check_schemes()
 # names any that does.
 WARM_LIGHT = {
-    "INK":          "#3d3325",  # primary text (warm near-black)
-    "INK_SOFT":     "#675c49",  # secondary text (6.1:1 on CANVAS)
-    "INK_FAINT":    "#796e5d",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#faf6ef",  # app / dialog background
-    "SURFACE":      "#fffdf9",  # card / input surface
-    "BORDER":       "#e7dcc6",  # hairline borders
-    "ACCENT":       "#c2410c",  # primary orange (4.8:1 on CANVAS, 5.2:1 under white)
-    "ACCENT_DK":    "#9a3412",  # deeper orange — bright accent text
-    "ON_ACCENT":    "#ffffff",  # text and marks drawn on an accent fill
-    "BUILD_BG":     "#e4eee6",  # Build record-type pill background (calm green)
-    "BUILD_TX":     "#2e5a3d",  # Build record-type pill text (6.7:1 on its tint)
-    "FIX_BG":       "#fbe2db",  # Fix record-type pill background (rust)
-    "FIX_TX":       "#97301b",  # Fix record-type pill text (6.2:1 on its tint)
-    "SEL_BG":       "#fff1e2",  # selected card fill
-    "HOVER_BG":     "#fffaf2",  # hovered card fill
-    "LIST_BG":      "#fbf6ee",  # kanban list / scroll area background
-    "BTN_BG":       "#fff4e8",  # normal button fill
-    "BTN_BORDER":   "#b18759",  # the edge of everything that can be clicked
-    "BTN_HOVER":    "#ffe9d2",  # button hover fill
-    "BTN_PRESSED":  "#ffddb8",  # button pressed fill
+    "INK": "#3d3325",  # primary text (warm near-black)
+    "INK_SOFT": "#675c49",  # secondary text (6.1:1 on CANVAS)
+    "INK_FAINT": "#796e5d",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#faf6ef",  # app / dialog background
+    "SURFACE": "#fffdf9",  # card / input surface
+    "BORDER": "#e7dcc6",  # hairline borders
+    "ACCENT": "#c2410c",  # primary orange (4.8:1 on CANVAS, 5.2:1 under white)
+    "ACCENT_DK": "#9a3412",  # deeper orange — bright accent text
+    "ON_ACCENT": "#ffffff",  # text and marks drawn on an accent fill
+    "BUILD_BG": "#e4eee6",  # Build record-type pill background (calm green)
+    "BUILD_TX": "#2e5a3d",  # Build record-type pill text (6.7:1 on its tint)
+    "FIX_BG": "#fbe2db",  # Fix record-type pill background (rust)
+    "FIX_TX": "#97301b",  # Fix record-type pill text (6.2:1 on its tint)
+    "SEL_BG": "#fff1e2",  # selected card fill
+    "HOVER_BG": "#fffaf2",  # hovered card fill
+    "LIST_BG": "#fbf6ee",  # kanban list / scroll area background
+    "BTN_BG": "#fff4e8",  # normal button fill
+    "BTN_BORDER": "#b18759",  # the edge of everything that can be clicked
+    "BTN_HOVER": "#ffe9d2",  # button hover fill
+    "BTN_PRESSED": "#ffddb8",  # button pressed fill
     "CREATE_HOVER": "#a83a0b",  # accent (Create) button hover fill
-    "DELETE_BG":    "#c53a20",  # destructive button text
+    "DELETE_BG": "#c53a20",  # destructive button text
     "DELETE_HOVER": "#b03118",  # destructive button text on hover
-    "MISSING":      "#d61f1f",  # required-but-empty field border (bright red)
-    "DISABLED_BG":  "#f3ece0",  # unclickable button fill
-    "DISABLED_TX":  "#b3a389",  # unclickable button text
-    "NEUTRAL_BG":   "#f0e7d6",  # a quiet pill: size, tier
-    "NEUTRAL_TX":   "#574e3b",  # text on a NEUTRAL_BG pill (6.7:1 on its tint)
+    "MISSING": "#d61f1f",  # required-but-empty field border (bright red)
+    "DISABLED_BG": "#f3ece0",  # unclickable button fill
+    "DISABLED_TX": "#b3a389",  # unclickable button text
+    "NEUTRAL_BG": "#f0e7d6",  # a quiet pill: size, tier
+    "NEUTRAL_TX": "#574e3b",  # text on a NEUTRAL_BG pill (6.7:1 on its tint)
 }
 
 WARM_DARK = {
-    "INK":          "#f2e6d5",  # primary text (warm near-white)
-    "INK_SOFT":     "#b89f7d",  # secondary text
-    "INK_FAINT":    "#988366",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#17120c",  # app / dialog background (deep warm)
-    "SURFACE":      "#241c14",  # card / input surface (dark warm)
-    "BORDER":       "#463724",  # hairline borders
-    "ACCENT":       "#f97316",  # primary orange (brighter for dark)
-    "ACCENT_DK":    "#fdba74",  # light orange — bright accent text on dark
-    "ON_ACCENT":    "#201409",  # deep warm text on the bright accent (6.4:1)
-    "BUILD_BG":     "#1e2a1e",  # Build record-type pill background (calm green)
-    "BUILD_TX":     "#8fca9a",  # Build record-type pill text
-    "FIX_BG":       "#3a1f18",  # Fix record-type pill background (rust)
-    "FIX_TX":       "#f0a58e",  # Fix record-type pill text
-    "SEL_BG":       "#3a2914",  # selected card fill
-    "HOVER_BG":     "#2a2115",  # hovered card fill
-    "LIST_BG":      "#1c160f",  # kanban list / scroll area background
-    "BTN_BG":       "#33281b",  # normal button fill
-    "BTN_BORDER":   "#806341",  # the edge of everything that can be clicked
-    "BTN_HOVER":    "#40311f",  # button hover fill
-    "BTN_PRESSED":  "#4a3826",  # button pressed fill
+    "INK": "#f2e6d5",  # primary text (warm near-white)
+    "INK_SOFT": "#b89f7d",  # secondary text
+    "INK_FAINT": "#988366",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#17120c",  # app / dialog background (deep warm)
+    "SURFACE": "#241c14",  # card / input surface (dark warm)
+    "BORDER": "#463724",  # hairline borders
+    "ACCENT": "#f97316",  # primary orange (brighter for dark)
+    "ACCENT_DK": "#fdba74",  # light orange — bright accent text on dark
+    "ON_ACCENT": "#201409",  # deep warm text on the bright accent (6.4:1)
+    "BUILD_BG": "#1e2a1e",  # Build record-type pill background (calm green)
+    "BUILD_TX": "#8fca9a",  # Build record-type pill text
+    "FIX_BG": "#3a1f18",  # Fix record-type pill background (rust)
+    "FIX_TX": "#f0a58e",  # Fix record-type pill text
+    "SEL_BG": "#3a2914",  # selected card fill
+    "HOVER_BG": "#2a2115",  # hovered card fill
+    "LIST_BG": "#1c160f",  # kanban list / scroll area background
+    "BTN_BG": "#33281b",  # normal button fill
+    "BTN_BORDER": "#806341",  # the edge of everything that can be clicked
+    "BTN_HOVER": "#40311f",  # button hover fill
+    "BTN_PRESSED": "#4a3826",  # button pressed fill
     "CREATE_HOVER": "#fb8b3d",  # accent (Create) button hover fill
-    "DELETE_BG":    "#ef6448",  # destructive button text
+    "DELETE_BG": "#ef6448",  # destructive button text
     "DELETE_HOVER": "#f97255",  # destructive button text on hover
-    "MISSING":      "#ff5449",  # required-but-empty field border (bright red)
-    "DISABLED_BG":  "#241c14",  # unclickable button fill
-    "DISABLED_TX":  "#6b5b45",  # unclickable button text
-    "NEUTRAL_BG":   "#2f2618",  # a quiet pill: size, tier
-    "NEUTRAL_TX":   "#c4ae8e",  # text on a NEUTRAL_BG pill
+    "MISSING": "#ff5449",  # required-but-empty field border (bright red)
+    "DISABLED_BG": "#241c14",  # unclickable button fill
+    "DISABLED_TX": "#6b5b45",  # unclickable button text
+    "NEUTRAL_BG": "#2f2618",  # a quiet pill: size, tier
+    "NEUTRAL_TX": "#c4ae8e",  # text on a NEUTRAL_BG pill
 }
 
 # The cool neutral alternate: grey canvas, white surfaces, a blue accent. Where
 # the warm family reads as paper, this one reads as a modern web tool.
 COOL_LIGHT = {
-    "INK":          "#0f172a",  # primary text (near-black slate)
-    "INK_SOFT":     "#5b6779",  # secondary text (4.9:1 on LIST_BG)
-    "INK_FAINT":    "#5e6a7c",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#f4f5f7",  # app / dialog background
-    "SURFACE":      "#ffffff",  # card / input surface
-    "BORDER":       "#e2e8f0",  # hairline borders
-    "ACCENT":       "#2563eb",  # primary blue
-    "ACCENT_DK":    "#1d4ed8",  # deeper blue — bright accent text
-    "ON_ACCENT":    "#ffffff",  # text and marks drawn on an accent fill
-    "BUILD_BG":     "#dcfce7",  # Build record-type pill background (green)
-    "BUILD_TX":     "#166534",  # Build record-type pill text (6.5:1 on its tint)
-    "FIX_BG":       "#fee2e2",  # Fix record-type pill background (red)
-    "FIX_TX":       "#991b1b",  # Fix record-type pill text (6.8:1 on its tint)
-    "SEL_BG":       "#e8f0fe",  # selected card fill
-    "HOVER_BG":     "#f8fafc",  # hovered card fill
-    "LIST_BG":      "#ebecf0",  # kanban list / scroll area background
-    "BTN_BG":       "#ffffff",  # normal button fill
-    "BTN_BORDER":   "#808994",  # the edge of everything that can be clicked
-    "BTN_HOVER":    "#f1f5f9",  # button hover fill
-    "BTN_PRESSED":  "#e2e8f0",  # button pressed fill
+    "INK": "#0f172a",  # primary text (near-black slate)
+    "INK_SOFT": "#5b6779",  # secondary text (4.9:1 on LIST_BG)
+    "INK_FAINT": "#5e6a7c",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#f4f5f7",  # app / dialog background
+    "SURFACE": "#ffffff",  # card / input surface
+    "BORDER": "#e2e8f0",  # hairline borders
+    "ACCENT": "#2563eb",  # primary blue
+    "ACCENT_DK": "#1d4ed8",  # deeper blue — bright accent text
+    "ON_ACCENT": "#ffffff",  # text and marks drawn on an accent fill
+    "BUILD_BG": "#dcfce7",  # Build record-type pill background (green)
+    "BUILD_TX": "#166534",  # Build record-type pill text (6.5:1 on its tint)
+    "FIX_BG": "#fee2e2",  # Fix record-type pill background (red)
+    "FIX_TX": "#991b1b",  # Fix record-type pill text (6.8:1 on its tint)
+    "SEL_BG": "#e8f0fe",  # selected card fill
+    "HOVER_BG": "#f8fafc",  # hovered card fill
+    "LIST_BG": "#ebecf0",  # kanban list / scroll area background
+    "BTN_BG": "#ffffff",  # normal button fill
+    "BTN_BORDER": "#808994",  # the edge of everything that can be clicked
+    "BTN_HOVER": "#f1f5f9",  # button hover fill
+    "BTN_PRESSED": "#e2e8f0",  # button pressed fill
     "CREATE_HOVER": "#1d4ed8",  # accent (Create) button hover fill
-    "DELETE_BG":    "#dc2626",  # destructive button text
+    "DELETE_BG": "#dc2626",  # destructive button text
     "DELETE_HOVER": "#b91c1c",  # destructive button text on hover
-    "MISSING":      "#da2324",  # required-but-empty field border
-    "DISABLED_BG":  "#f1f5f9",  # unclickable button fill
-    "DISABLED_TX":  "#94a3b8",  # unclickable button text
-    "NEUTRAL_BG":   "#eef1f5",  # a quiet pill: size, tier
-    "NEUTRAL_TX":   "#475569",  # text on a NEUTRAL_BG pill
+    "MISSING": "#da2324",  # required-but-empty field border
+    "DISABLED_BG": "#f1f5f9",  # unclickable button fill
+    "DISABLED_TX": "#94a3b8",  # unclickable button text
+    "NEUTRAL_BG": "#eef1f5",  # a quiet pill: size, tier
+    "NEUTRAL_TX": "#475569",  # text on a NEUTRAL_BG pill
 }
 
 COOL_DARK = {
-    "INK":          "#e2e8f0",  # primary text (near-white slate)
-    "INK_SOFT":     "#94a3b8",  # secondary text
-    "INK_FAINT":    "#7c899b",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#0f1216",  # app / dialog background
-    "SURFACE":      "#1a1f26",  # card / input surface
-    "BORDER":       "#2c333d",  # hairline borders
-    "ACCENT":       "#3b82f6",  # primary blue (brighter for dark)
-    "ACCENT_DK":    "#93c5fd",  # light blue — bright accent text on dark
-    "ON_ACCENT":    "#0f1216",  # deep slate text on the bright accent (5.1:1)
-    "BUILD_BG":     "#14261a",  # Build record-type pill background (green)
-    "BUILD_TX":     "#86efac",  # Build record-type pill text
-    "FIX_BG":       "#2c1618",  # Fix record-type pill background (red)
-    "FIX_TX":       "#fca5a5",  # Fix record-type pill text
-    "SEL_BG":       "#1e293b",  # selected card fill
-    "HOVER_BG":     "#20262e",  # hovered card fill
-    "LIST_BG":      "#14181d",  # kanban list / scroll area background
-    "BTN_BG":       "#232a33",  # normal button fill
-    "BTN_BORDER":   "#606a77",  # the edge of everything that can be clicked
-    "BTN_HOVER":    "#2b333d",  # button hover fill
-    "BTN_PRESSED":  "#333c48",  # button pressed fill
+    "INK": "#e2e8f0",  # primary text (near-white slate)
+    "INK_SOFT": "#94a3b8",  # secondary text
+    "INK_FAINT": "#7c899b",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#0f1216",  # app / dialog background
+    "SURFACE": "#1a1f26",  # card / input surface
+    "BORDER": "#2c333d",  # hairline borders
+    "ACCENT": "#3b82f6",  # primary blue (brighter for dark)
+    "ACCENT_DK": "#93c5fd",  # light blue — bright accent text on dark
+    "ON_ACCENT": "#0f1216",  # deep slate text on the bright accent (5.1:1)
+    "BUILD_BG": "#14261a",  # Build record-type pill background (green)
+    "BUILD_TX": "#86efac",  # Build record-type pill text
+    "FIX_BG": "#2c1618",  # Fix record-type pill background (red)
+    "FIX_TX": "#fca5a5",  # Fix record-type pill text
+    "SEL_BG": "#1e293b",  # selected card fill
+    "HOVER_BG": "#20262e",  # hovered card fill
+    "LIST_BG": "#14181d",  # kanban list / scroll area background
+    "BTN_BG": "#232a33",  # normal button fill
+    "BTN_BORDER": "#606a77",  # the edge of everything that can be clicked
+    "BTN_HOVER": "#2b333d",  # button hover fill
+    "BTN_PRESSED": "#333c48",  # button pressed fill
     "CREATE_HOVER": "#60a5fa",  # accent (Create) button hover fill
-    "DELETE_BG":    "#fe5350",  # destructive button text
+    "DELETE_BG": "#fe5350",  # destructive button text
     "DELETE_HOVER": "#f87171",  # destructive button text on hover
-    "MISSING":      "#f87171",  # required-but-empty field border
-    "DISABLED_BG":  "#1a1f26",  # unclickable button fill
-    "DISABLED_TX":  "#5b6672",  # unclickable button text
-    "NEUTRAL_BG":   "#242b34",  # a quiet pill: size, tier
-    "NEUTRAL_TX":   "#b6c0cc",  # text on a NEUTRAL_BG pill
+    "MISSING": "#f87171",  # required-but-empty field border
+    "DISABLED_BG": "#1a1f26",  # unclickable button fill
+    "DISABLED_TX": "#5b6672",  # unclickable button text
+    "NEUTRAL_BG": "#242b34",  # a quiet pill: size, tier
+    "NEUTRAL_TX": "#b6c0cc",  # text on a NEUTRAL_BG pill
 }
 
 # ---------------------------------------------------------------------------
@@ -455,193 +478,193 @@ COOL_DARK = {
 
 # GitHub
 GITHUB_LIGHT = {
-    "INK":          "#1f2328",
-    "INK_SOFT":     "#656d76",
-    "INK_FAINT":    "#656d76",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#f6f8fa",
-    "SURFACE":      "#ffffff",
-    "BORDER":       "#d0d7de",
-    "ACCENT":       "#0969da",
-    "ACCENT_DK":    "#0061cf",
-    "ON_ACCENT":    "#ffffff",
-    "BUILD_BG":     "#c6ddcf",
-    "BUILD_TX":     "#146a2e",
-    "FIX_BG":       "#edc9cd",
-    "FIX_TX":       "#ad1c28",
-    "SEL_BG":       "#d5e4f6",
-    "HOVER_BG":     "#f4f4f4",
-    "LIST_BG":      "#eef1f4",
-    "BTN_BG":       "#eef4fc",
-    "BTN_BORDER":   "#628ec0",
-    "BTN_HOVER":    "#dae8f9",
-    "BTN_PRESSED":  "#c4dbf6",
+    "INK": "#1f2328",
+    "INK_SOFT": "#656d76",
+    "INK_FAINT": "#656d76",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#f6f8fa",
+    "SURFACE": "#ffffff",
+    "BORDER": "#d0d7de",
+    "ACCENT": "#0969da",
+    "ACCENT_DK": "#0061cf",
+    "ON_ACCENT": "#ffffff",
+    "BUILD_BG": "#c6ddcf",
+    "BUILD_TX": "#146a2e",
+    "FIX_BG": "#edc9cd",
+    "FIX_TX": "#ad1c28",
+    "SEL_BG": "#d5e4f6",
+    "HOVER_BG": "#f4f4f4",
+    "LIST_BG": "#eef1f4",
+    "BTN_BG": "#eef4fc",
+    "BTN_BORDER": "#628ec0",
+    "BTN_HOVER": "#dae8f9",
+    "BTN_PRESSED": "#c4dbf6",
     "CREATE_HOVER": "#0858b7",
-    "DELETE_BG":    "#cf222e",
+    "DELETE_BG": "#cf222e",
     "DELETE_HOVER": "#b61e28",
-    "MISSING":      "#cf222e",
-    "DISABLED_BG":  "#e8eaed",
-    "DISABLED_TX":  "#b5b9bf",
-    "NEUTRAL_BG":   "#e2e5e8",
-    "NEUTRAL_TX":   "#5c646c",
+    "MISSING": "#cf222e",
+    "DISABLED_BG": "#e8eaed",
+    "DISABLED_TX": "#b5b9bf",
+    "NEUTRAL_BG": "#e2e5e8",
+    "NEUTRAL_TX": "#5c646c",
 }
 
 GITHUB_DARK = {
-    "INK":          "#e6edf3",
-    "INK_SOFT":     "#8b949e",
-    "INK_FAINT":    "#7d868f",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#0d1117",
-    "SURFACE":      "#161b22",
-    "BORDER":       "#30363d",
-    "ACCENT":       "#58a6ff",
-    "ACCENT_DK":    "#58a6ff",
-    "ON_ACCENT":    "#0c1724",
-    "BUILD_BG":     "#152c20",
-    "BUILD_TX":     "#3fb950",
-    "FIX_BG":       "#331b1f",
-    "FIX_TX":       "#f85149",
-    "SEL_BG":       "#1e324a",
-    "HOVER_BG":     "#2b3037",
-    "LIST_BG":      "#010409",
-    "BTN_BG":       "#2b3037",
-    "BTN_BORDER":   "#456992",
-    "BTN_HOVER":    "#393f46",
-    "BTN_PRESSED":  "#4a5056",
+    "INK": "#e6edf3",
+    "INK_SOFT": "#8b949e",
+    "INK_FAINT": "#7d868f",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#0d1117",
+    "SURFACE": "#161b22",
+    "BORDER": "#30363d",
+    "ACCENT": "#58a6ff",
+    "ACCENT_DK": "#58a6ff",
+    "ON_ACCENT": "#0c1724",
+    "BUILD_BG": "#152c20",
+    "BUILD_TX": "#3fb950",
+    "FIX_BG": "#331b1f",
+    "FIX_TX": "#f85149",
+    "SEL_BG": "#1e324a",
+    "HOVER_BG": "#2b3037",
+    "LIST_BG": "#010409",
+    "BTN_BG": "#2b3037",
+    "BTN_BORDER": "#456992",
+    "BTN_HOVER": "#393f46",
+    "BTN_PRESSED": "#4a5056",
     "CREATE_HOVER": "#73b4ff",
-    "DELETE_BG":    "#ff6258",
+    "DELETE_BG": "#ff6258",
     "DELETE_HOVER": "#ff857c",
-    "MISSING":      "#f85149",
-    "DISABLED_BG":  "#161b22",
-    "DISABLED_TX":  "#464c54",
-    "NEUTRAL_BG":   "#1d2229",
-    "NEUTRAL_TX":   "#8b949e",
+    "MISSING": "#f85149",
+    "DISABLED_BG": "#161b22",
+    "DISABLED_TX": "#464c54",
+    "NEUTRAL_BG": "#1d2229",
+    "NEUTRAL_TX": "#8b949e",
 }
 
 
 # Nord
 NORD_LIGHT = {
-    "INK":          "#2e3440",
-    "INK_SOFT":     "#4c566a",
-    "INK_FAINT":    "#5e6779",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#eceff4",
-    "SURFACE":      "#ffffff",
-    "BORDER":       "#d8dee9",
-    "ACCENT":       "#55759d",
-    "ACCENT_DK":    "#476487",
-    "ON_ACCENT":    "#ffffff",
-    "BUILD_BG":     "#d4ddd6",
-    "BUILD_TX":     "#4f6344",
-    "FIX_BG":       "#e2d0d6",
-    "FIX_TX":       "#89464c",
-    "SEL_BG":       "#d7dee8",
-    "HOVER_BG":     "#f5f5f5",
-    "LIST_BG":      "#e5e9f0",
-    "BTN_BG":       "#f3f5f8",
-    "BTN_BORDER":   "#77879d",
-    "BTN_HOVER":    "#e6eaf0",
-    "BTN_PRESSED":  "#d6dee7",
+    "INK": "#2e3440",
+    "INK_SOFT": "#4c566a",
+    "INK_FAINT": "#5e6779",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#eceff4",
+    "SURFACE": "#ffffff",
+    "BORDER": "#d8dee9",
+    "ACCENT": "#55759d",
+    "ACCENT_DK": "#476487",
+    "ON_ACCENT": "#ffffff",
+    "BUILD_BG": "#d4ddd6",
+    "BUILD_TX": "#4f6344",
+    "FIX_BG": "#e2d0d6",
+    "FIX_TX": "#89464c",
+    "SEL_BG": "#d7dee8",
+    "HOVER_BG": "#f5f5f5",
+    "LIST_BG": "#e5e9f0",
+    "BTN_BG": "#f3f5f8",
+    "BTN_BORDER": "#77879d",
+    "BTN_HOVER": "#e6eaf0",
+    "BTN_PRESSED": "#d6dee7",
     "CREATE_HOVER": "#476284",
-    "DELETE_BG":    "#ac565f",
+    "DELETE_BG": "#ac565f",
     "DELETE_HOVER": "#994d55",
-    "MISSING":      "#ab4f59",
-    "DISABLED_BG":  "#dce0e6",
-    "DISABLED_TX":  "#a4aab6",
-    "NEUTRAL_BG":   "#d6dae1",
-    "NEUTRAL_TX":   "#4c566a",
+    "MISSING": "#ab4f59",
+    "DISABLED_BG": "#dce0e6",
+    "DISABLED_TX": "#a4aab6",
+    "NEUTRAL_BG": "#d6dae1",
+    "NEUTRAL_TX": "#4c566a",
 }
 
 NORD_DARK = {
-    "INK":          "#eceff4",
-    "INK_SOFT":     "#c3cbd8",
-    "INK_FAINT":    "#a8b0bd",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#2e3440",
-    "SURFACE":      "#3b4252",
-    "BORDER":       "#434c5e",
-    "ACCENT":       "#88c0d0",
-    "ACCENT_DK":    "#93ccdc",
-    "ON_ACCENT":    "#131b1d",
-    "BUILD_BG":     "#414a4c",
-    "BUILD_TX":     "#a9c292",
-    "FIX_BG":       "#453b47",
-    "FIX_TX":       "#d69da3",
-    "SEL_BG":       "#425360",
-    "HOVER_BG":     "#4d5362",
-    "LIST_BG":      "#292e39",
-    "BTN_BG":       "#4d5362",
-    "BTN_BORDER":   "#7391a2",
-    "BTN_HOVER":    "#595f6e",
-    "BTN_PRESSED":  "#626875",
+    "INK": "#eceff4",
+    "INK_SOFT": "#c3cbd8",
+    "INK_FAINT": "#a8b0bd",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#2e3440",
+    "SURFACE": "#3b4252",
+    "BORDER": "#434c5e",
+    "ACCENT": "#88c0d0",
+    "ACCENT_DK": "#93ccdc",
+    "ON_ACCENT": "#131b1d",
+    "BUILD_BG": "#414a4c",
+    "BUILD_TX": "#a9c292",
+    "FIX_BG": "#453b47",
+    "FIX_TX": "#d69da3",
+    "SEL_BG": "#425360",
+    "HOVER_BG": "#4d5362",
+    "LIST_BG": "#292e39",
+    "BTN_BG": "#4d5362",
+    "BTN_BORDER": "#7391a2",
+    "BTN_HOVER": "#595f6e",
+    "BTN_PRESSED": "#626875",
     "CREATE_HOVER": "#9bcad8",
-    "DELETE_BG":    "#ffb2b6",
+    "DELETE_BG": "#ffb2b6",
     "DELETE_HOVER": "#ffcdcf",
-    "MISSING":      "#f59199",
-    "DISABLED_BG":  "#3b4252",
-    "DISABLED_TX":  "#717884",
-    "NEUTRAL_BG":   "#414854",
-    "NEUTRAL_TX":   "#c3cbd8",
+    "MISSING": "#f59199",
+    "DISABLED_BG": "#3b4252",
+    "DISABLED_TX": "#717884",
+    "NEUTRAL_BG": "#414854",
+    "NEUTRAL_TX": "#c3cbd8",
 }
 
 
 # Rosé Pine
 ROSE_PINE_LIGHT = {
-    "INK":          "#575279",
-    "INK_SOFT":     "#68657f",
-    "INK_FAINT":    "#68657f",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#faf4ed",
-    "SURFACE":      "#fffaf3",
-    "BORDER":       "#e3d9d1",
-    "ACCENT":       "#806c95",
-    "ACCENT_DK":    "#705e84",
-    "ON_ACCENT":    "#ffffff",
-    "BUILD_BG":     "#ccd5d6",
-    "BUILD_TX":     "#256077",
-    "FIX_BG":       "#ebd4d4",
-    "FIX_TX":       "#86495a",
-    "SEL_BG":       "#e9e1e1",
-    "HOVER_BG":     "#f7f2ed",
-    "LIST_BG":      "#f2e9e1",
-    "BTN_BG":       "#f6f0ec",
-    "BTN_BORDER":   "#90838f",
-    "BTN_HOVER":    "#ece5e5",
-    "BTN_PRESSED":  "#e1d8dc",
+    "INK": "#575279",
+    "INK_SOFT": "#68657f",
+    "INK_FAINT": "#68657f",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#faf4ed",
+    "SURFACE": "#fffaf3",
+    "BORDER": "#e3d9d1",
+    "ACCENT": "#806c95",
+    "ACCENT_DK": "#705e84",
+    "ON_ACCENT": "#ffffff",
+    "BUILD_BG": "#ccd5d6",
+    "BUILD_TX": "#256077",
+    "FIX_BG": "#ebd4d4",
+    "FIX_TX": "#86495a",
+    "SEL_BG": "#e9e1e1",
+    "HOVER_BG": "#f7f2ed",
+    "LIST_BG": "#f2e9e1",
+    "BTN_BG": "#f6f0ec",
+    "BTN_BORDER": "#90838f",
+    "BTN_HOVER": "#ece5e5",
+    "BTN_PRESSED": "#e1d8dc",
     "CREATE_HOVER": "#6c5b7d",
-    "DELETE_BG":    "#a3566b",
+    "DELETE_BG": "#a3566b",
     "DELETE_HOVER": "#965264",
-    "MISSING":      "#a7586f",
-    "DISABLED_BG":  "#ede7e4",
-    "DISABLED_TX":  "#c0bbc5",
-    "NEUTRAL_BG":   "#e8e2e0",
-    "NEUTRAL_TX":   "#625f77",
+    "MISSING": "#a7586f",
+    "DISABLED_BG": "#ede7e4",
+    "DISABLED_TX": "#c0bbc5",
+    "NEUTRAL_BG": "#e8e2e0",
+    "NEUTRAL_TX": "#625f77",
 }
 
 ROSE_PINE_DARK = {
-    "INK":          "#e0def4",
-    "INK_SOFT":     "#a5a1bd",
-    "INK_FAINT":    "#89859e",  # placeholder and example text, 4.5:1 or better
-    "CANVAS":       "#191724",
-    "SURFACE":      "#1f1d2e",
-    "BORDER":       "#26233a",
-    "ACCENT":       "#c4a7e7",
-    "ACCENT_DK":    "#c4a7e7",
-    "ON_ACCENT":    "#1b1720",
-    "BUILD_BG":     "#2e3441",
-    "BUILD_TX":     "#9ccfd8",
-    "FIX_BG":       "#3b2536",
-    "FIX_TX":       "#eb6f92",
-    "SEL_BG":       "#3f374f",
-    "HOVER_BG":     "#323042",
-    "LIST_BG":      "#16141f",
-    "BTN_BG":       "#323042",
-    "BTN_BORDER":   "#71638c",
-    "BTN_HOVER":    "#403e50",
-    "BTN_PRESSED":  "#4f4d60",
+    "INK": "#e0def4",
+    "INK_SOFT": "#a5a1bd",
+    "INK_FAINT": "#89859e",  # placeholder and example text, 4.5:1 or better
+    "CANVAS": "#191724",
+    "SURFACE": "#1f1d2e",
+    "BORDER": "#26233a",
+    "ACCENT": "#c4a7e7",
+    "ACCENT_DK": "#c4a7e7",
+    "ON_ACCENT": "#1b1720",
+    "BUILD_BG": "#2e3441",
+    "BUILD_TX": "#9ccfd8",
+    "FIX_BG": "#3b2536",
+    "FIX_TX": "#eb6f92",
+    "SEL_BG": "#3f374f",
+    "HOVER_BG": "#323042",
+    "LIST_BG": "#16141f",
+    "BTN_BG": "#323042",
+    "BTN_BORDER": "#71638c",
+    "BTN_HOVER": "#403e50",
+    "BTN_PRESSED": "#4f4d60",
     "CREATE_HOVER": "#cdb5eb",
-    "DELETE_BG":    "#ed7194",
+    "DELETE_BG": "#ed7194",
     "DELETE_HOVER": "#f88aa9",
-    "MISSING":      "#eb6f92",
-    "DISABLED_BG":  "#1f1d2e",
-    "DISABLED_TX":  "#585569",
-    "NEUTRAL_BG":   "#2b2938",
-    "NEUTRAL_TX":   "#a5a1bd",
+    "MISSING": "#eb6f92",
+    "DISABLED_BG": "#1f1d2e",
+    "DISABLED_TX": "#585569",
+    "NEUTRAL_BG": "#2b2938",
+    "NEUTRAL_TX": "#a5a1bd",
 }
 
 
@@ -749,11 +772,22 @@ KEY_GROUPS: list[tuple[str, list[str]]] = [
     ("Surfaces", ["CANVAS", "SURFACE", "LIST_BG", "BORDER"]),
     ("Accent", ["ACCENT", "ACCENT_DK", "ON_ACCENT"]),
     ("Cards", ["SEL_BG", "HOVER_BG"]),
-    ("Badges", ["BUILD_BG", "BUILD_TX",
-                "FIX_BG", "FIX_TX", "NEUTRAL_BG", "NEUTRAL_TX"]),
-    ("Buttons", ["BTN_BG", "BTN_BORDER", "BTN_HOVER", "BTN_PRESSED",
-                 "CREATE_HOVER", "DELETE_BG", "DELETE_HOVER",
-                 "DISABLED_BG", "DISABLED_TX", "MISSING"]),
+    ("Badges", ["BUILD_BG", "BUILD_TX", "FIX_BG", "FIX_TX", "NEUTRAL_BG", "NEUTRAL_TX"]),
+    (
+        "Buttons",
+        [
+            "BTN_BG",
+            "BTN_BORDER",
+            "BTN_HOVER",
+            "BTN_PRESSED",
+            "CREATE_HOVER",
+            "DELETE_BG",
+            "DELETE_HOVER",
+            "DISABLED_BG",
+            "DISABLED_TX",
+            "MISSING",
+        ],
+    ),
 ]
 
 # What each key is called on a palette form's rows. A caption names the thing
@@ -796,16 +830,31 @@ KEY_CAPTIONS: dict[str, str] = {
 # The unclickable pair is deliberately absent: text a control greys out is meant
 # to be hard to read, and every shipped scheme puts it near 2:1.
 TEXT_PAIRS: list[tuple[str, str]] = [
-    ("INK", "CANVAS"), ("INK", "SURFACE"), ("INK", "LIST_BG"),
-    ("INK", "SEL_BG"), ("INK", "HOVER_BG"),
-    ("INK", "BTN_BG"), ("INK", "BTN_HOVER"), ("INK", "BTN_PRESSED"),
-    ("INK_SOFT", "CANVAS"), ("INK_SOFT", "SURFACE"), ("INK_SOFT", "LIST_BG"),
-    ("INK_FAINT", "CANVAS"), ("INK_FAINT", "SURFACE"), ("INK_FAINT", "LIST_BG"),
-    ("ACCENT_DK", "CANVAS"), ("ACCENT_DK", "SURFACE"), ("ACCENT_DK", "SEL_BG"),
-    ("ON_ACCENT", "ACCENT"), ("ON_ACCENT", "CREATE_HOVER"),
-    ("DELETE_BG", "BTN_BG"), ("DELETE_HOVER", "BTN_HOVER"),
-    ("MISSING", "CANVAS"), ("MISSING", "SURFACE"),
-    ("BUILD_TX", "BUILD_BG"), ("FIX_TX", "FIX_BG"),
+    ("INK", "CANVAS"),
+    ("INK", "SURFACE"),
+    ("INK", "LIST_BG"),
+    ("INK", "SEL_BG"),
+    ("INK", "HOVER_BG"),
+    ("INK", "BTN_BG"),
+    ("INK", "BTN_HOVER"),
+    ("INK", "BTN_PRESSED"),
+    ("INK_SOFT", "CANVAS"),
+    ("INK_SOFT", "SURFACE"),
+    ("INK_SOFT", "LIST_BG"),
+    ("INK_FAINT", "CANVAS"),
+    ("INK_FAINT", "SURFACE"),
+    ("INK_FAINT", "LIST_BG"),
+    ("ACCENT_DK", "CANVAS"),
+    ("ACCENT_DK", "SURFACE"),
+    ("ACCENT_DK", "SEL_BG"),
+    ("ON_ACCENT", "ACCENT"),
+    ("ON_ACCENT", "CREATE_HOVER"),
+    ("DELETE_BG", "BTN_BG"),
+    ("DELETE_HOVER", "BTN_HOVER"),
+    ("MISSING", "CANVAS"),
+    ("MISSING", "SURFACE"),
+    ("BUILD_TX", "BUILD_BG"),
+    ("FIX_TX", "FIX_BG"),
     ("NEUTRAL_TX", "NEUTRAL_BG"),
 ]
 
@@ -817,11 +866,16 @@ CONTRAST_MIN = 4.5
 # check on the list and on its own fill, and a switch's knob on its track; an
 # empty required field's edge; and the edge of everything that can be clicked.
 MARK_PAIRS: list[tuple[str, str]] = [
-    ("ACCENT", "CANVAS"), ("ACCENT", "SURFACE"),
+    ("ACCENT", "CANVAS"),
+    ("ACCENT", "SURFACE"),
     ("MISSING", "SURFACE"),
-    ("BTN_BORDER", "CANVAS"), ("BTN_BORDER", "SURFACE"), ("BTN_BORDER", "LIST_BG"),
-    ("ACCENT", "LIST_BG"), ("ACCENT", "SEL_BG"),
-    ("INK_SOFT", "BTN_BG"), ("ON_ACCENT", "ACCENT"),
+    ("BTN_BORDER", "CANVAS"),
+    ("BTN_BORDER", "SURFACE"),
+    ("BTN_BORDER", "LIST_BG"),
+    ("ACCENT", "LIST_BG"),
+    ("ACCENT", "SEL_BG"),
+    ("INK_SOFT", "BTN_BG"),
+    ("ON_ACCENT", "ACCENT"),
 ]
 
 # The ratio a mark above has to reach. WCAG AA for non-text contrast.
@@ -935,9 +989,13 @@ def install_typeface(app) -> bool:
     return installed
 
 
-def apply_scheme(app, theme: str | None, mode: str | None,
-                 stored: dict | None = None,
-                 legacy_custom: dict | None = None) -> None:
+def apply_scheme(
+    app,
+    theme: str | None,
+    mode: str | None,
+    stored: dict | None = None,
+    legacy_custom: dict | None = None,
+) -> None:
     """Install the collection, resolve a theme and a mode against the OS state,
     make the scheme live, and style ``app``.
 
@@ -952,8 +1010,10 @@ def apply_scheme(app, theme: str | None, mode: str | None,
     set_scheme(live_scheme(app, theme, mode))
     if app is not None:
         from .popups import install as install_popups
+
         install_popups(app)
         from .scroll_bars import install as install_scroll_bars
+
         install_scroll_bars(app)
         if app.font().family() != TYPEFACE:
             install_typeface(app)
@@ -966,8 +1026,12 @@ def style_application(app) -> None:
     Text."""
     palette = app.palette()
     placeholder = QColor(C["INK_FAINT"])
-    for group in (QPalette.Active, QPalette.Inactive, QPalette.Disabled):
-        palette.setColor(group, QPalette.PlaceholderText, placeholder)
+    for group in (
+        QPalette.ColorGroup.Active,
+        QPalette.ColorGroup.Inactive,
+        QPalette.ColorGroup.Disabled,
+    ):
+        palette.setColor(group, QPalette.ColorRole.PlaceholderText, placeholder)
     app.setPalette(palette)
     app.setStyleSheet(build_style_sheet())
 
@@ -983,16 +1047,19 @@ def style_application(app) -> None:
 # is what lets a later release's new themes reach it.
 # ---------------------------------------------------------------------------
 
+
 def _complete(palette: dict | None, dark: bool = False) -> dict[str, str]:
     """``palette`` with every key the reference palette defines, its own values
     winning. A value that is not a colour string is dropped, so nothing
     unpaintable reaches a scheme. A dark half is completed against the dark
     reference, so a key it does not carry comes back dark."""
-    usable = {key: value for key, value in (palette or {}).items()
-              if isinstance(key, str) and isinstance(value, str) and value.strip()}
+    usable = {
+        key: value
+        for key, value in (palette or {}).items()
+        if isinstance(key, str) and isinstance(value, str) and value.strip()
+    }
     complete = dict(REFERENCE_DARK_PALETTE if dark else REFERENCE_PALETTE)
-    complete.update({key: value for key, value in usable.items()
-                     if key in complete})
+    complete.update({key: value for key, value in usable.items() if key in complete})
     return complete
 
 
@@ -1014,8 +1081,7 @@ def _baseline(legacy_custom: dict | None = None) -> dict[str, dict]:
     """What the differences are measured against: the shipped themes, and the
     one palette an older build stored outside them."""
     collection = shipped_collection()
-    if (isinstance(legacy_custom, dict) and legacy_custom
-            and LEGACY_CUSTOM_THEME not in collection):
+    if isinstance(legacy_custom, dict) and legacy_custom and LEGACY_CUSTOM_THEME not in collection:
         collection[LEGACY_CUSTOM_THEME] = {
             "name": LEGACY_CUSTOM_NAME,
             "light": _complete(legacy_custom),
@@ -1031,16 +1097,15 @@ def _stored_record(raw, fallback_name: str) -> dict | None:
     name = raw.get("name")
     dark = raw.get("dark")
     return {
-        "name": name.strip() if isinstance(name, str) and name.strip()
-                else fallback_name,
+        "name": name.strip() if isinstance(name, str) and name.strip() else fallback_name,
         "light": _complete(raw.get("light")),
-        "dark": (_complete(dark, dark=True)
-                 if isinstance(dark, dict) and dark else None),
+        "dark": (_complete(dark, dark=True) if isinstance(dark, dict) and dark else None),
     }
 
 
-def resolve_collection(stored: dict | None = None,
-                       legacy_custom: dict | None = None) -> dict[str, dict]:
+def resolve_collection(
+    stored: dict | None = None, legacy_custom: dict | None = None
+) -> dict[str, dict]:
     """The themes on offer: what this build ships, with the differences the
     configuration carries applied, ordered by name.
 
@@ -1048,8 +1113,7 @@ def resolve_collection(stored: dict | None = None,
     theme has nothing to draw.
     """
     stored = stored if isinstance(stored, dict) else {}
-    deleted = {name for name in stored.get("deleted", [])
-               if isinstance(name, str)}
+    deleted = {name for name in stored.get("deleted", []) if isinstance(name, str)}
     edited = stored.get("edited")
     edited = edited if isinstance(edited, dict) else {}
     added = stored.get("added")
@@ -1068,8 +1132,9 @@ def resolve_collection(stored: dict | None = None,
                 record["light"] = _complete(change["light"])
             if "dark" in change:
                 half = change["dark"]
-                record["dark"] = (_complete(half, dark=True)
-                                  if isinstance(half, dict) and half else None)
+                record["dark"] = (
+                    _complete(half, dark=True) if isinstance(half, dict) and half else None
+                )
         collection[theme_id] = record
 
     for theme_id, raw in added.items():
@@ -1083,10 +1148,13 @@ def resolve_collection(stored: dict | None = None,
     # theme, kept as one he added: the halves he changed are his, and a half he
     # left alone completes against the reference.
     for theme_id, change in edited.items():
-        if (not isinstance(theme_id, str) or theme_id in collection
-                or theme_id in deleted or not isinstance(change, dict)
-                or not (isinstance(change.get("light"), dict)
-                        or isinstance(change.get("dark"), dict))):
+        if (
+            not isinstance(theme_id, str)
+            or theme_id in collection
+            or theme_id in deleted
+            or not isinstance(change, dict)
+            or not (isinstance(change.get("light"), dict) or isinstance(change.get("dark"), dict))
+        ):
             continue
         record = _stored_record(change, theme_id.replace("_", " ").title())
         if record is not None:
@@ -1100,12 +1168,15 @@ def resolve_collection(stored: dict | None = None,
 def order_collection(collection: dict[str, dict]) -> dict[str, dict]:
     """The collection by name, which is the order a picker is read in: scan to
     the letter."""
-    return {theme_id: collection[theme_id] for theme_id in sorted(
-        collection, key=lambda key: (collection[key]["name"].casefold(), key))}
+    return {
+        theme_id: collection[theme_id]
+        for theme_id in sorted(
+            collection, key=lambda key: (collection[key]["name"].casefold(), key)
+        )
+    }
 
 
-def collection_differences(collection: dict[str, dict],
-                           legacy_custom: dict | None = None) -> dict:
+def collection_differences(collection: dict[str, dict], legacy_custom: dict | None = None) -> dict:
     """What the configuration stores for ``collection``: the themes added, the
     changes to shipped ones, and the shipped names deleted. A theme nobody has
     touched appears in none of them."""
@@ -1130,8 +1201,7 @@ def collection_differences(collection: dict[str, dict],
             change["dark"] = dict(record["dark"]) if record["dark"] else None
         if change:
             edited[theme_id] = change
-    deleted = sorted(theme_id for theme_id in baseline
-                     if theme_id not in collection)
+    deleted = sorted(theme_id for theme_id in baseline if theme_id not in collection)
     difference: dict = {}
     if added:
         difference["added"] = added
@@ -1163,8 +1233,9 @@ def install_collection(collection: dict[str, dict]) -> dict[str, dict]:
     return collection
 
 
-def register_collection(stored: dict | None = None,
-                        legacy_custom: dict | None = None) -> dict[str, dict]:
+def register_collection(
+    stored: dict | None = None, legacy_custom: dict | None = None
+) -> dict[str, dict]:
     """Resolve the stored differences and install what they come to."""
     return install_collection(resolve_collection(stored, legacy_custom))
 
@@ -1172,8 +1243,7 @@ def register_collection(stored: dict | None = None,
 def theme_choices(collection: dict[str, dict]) -> list[tuple[str, str]]:
     """What the Theme picker offers: each theme's id and its name, in the
     collection's own order."""
-    return [(theme_id, record["name"])
-            for theme_id, record in collection.items()]
+    return [(theme_id, record["name"]) for theme_id, record in collection.items()]
 
 
 def theme_id_for(name: str, taken) -> str:
@@ -1200,8 +1270,9 @@ def palette_rows() -> list[tuple[str, list[str]]]:
     so a palette gaining a key gains a field with no edit here.
     """
     grouped = {key for _, keys in KEY_GROUPS for key in keys}
-    rows = [(heading, [key for key in keys if key in REFERENCE_PALETTE])
-            for heading, keys in KEY_GROUPS]
+    rows = [
+        (heading, [key for key in keys if key in REFERENCE_PALETTE]) for heading, keys in KEY_GROUPS
+    ]
     loose = [key for key in REFERENCE_PALETTE if key not in grouped]
     if loose:
         rows[-1] = (rows[-1][0], rows[-1][1] + loose)
@@ -1227,9 +1298,8 @@ def _relative_luminance(colour: str) -> float:
         raise ValueError(f"not a colour: {colour!r}")
     channels = []
     for start in (0, 2, 4):
-        value = int(digits[start:start + 2], 16) / 255
-        channels.append(value / 12.92 if value <= 0.03928
-                        else ((value + 0.055) / 1.055) ** 2.4)
+        value = int(digits[start : start + 2], 16) / 255
+        channels.append(value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4)
     red, green, blue = channels
     return 0.2126 * red + 0.7152 * green + 0.0722 * blue
 
@@ -1268,8 +1338,10 @@ def contrast_complaints(palette: dict) -> list[str]:
     name, and a field mid-edit is the form's.
     """
     complaints = []
-    for pairs, minimum, what in ((TEXT_PAIRS, CONTRAST_MIN, "reads"),
-                                 (MARK_PAIRS, MARK_MIN, "shows")):
+    for pairs, minimum, what in (
+        (TEXT_PAIRS, CONTRAST_MIN, "reads"),
+        (MARK_PAIRS, MARK_MIN, "shows"),
+    ):
         for foreground, background in pairs:
             try:
                 ratio = contrast_ratio(palette[foreground], palette[background])
@@ -1370,8 +1442,7 @@ def live_scheme(app, theme: str | None, mode: str | None) -> str:
         _hold_platform(app, None)
     name = resolve_scheme(theme, mode, is_dark_scheme(app))
     if mode != SYSTEM_MODE:
-        _hold_platform(app, Qt.ColorScheme.Dark if scheme_is_dark(name)
-                       else Qt.ColorScheme.Light)
+        _hold_platform(app, Qt.ColorScheme.Dark if scheme_is_dark(name) else Qt.ColorScheme.Light)
     return name
 
 
@@ -1385,8 +1456,7 @@ def chevron_image(colour: str, direction: str = "down") -> str | None:
 
     # The chevron's own part of Lucide's 24-unit drawing, stroke included, at
     # the arrow's width-to-height ratio.
-    return image_file(f"chevron-{direction}", colour, space("lg"), space("md"),
-                      (4, 7, 16, 10))
+    return image_file(f"chevron-{direction}", colour, space("lg"), space("md"), (4, 7, 16, 10))
 
 
 def check_image(colour: str) -> str | None:
@@ -1406,15 +1476,20 @@ def build_style_sheet() -> str:
     chevron = chevron_image(C["INK_SOFT"])
     chevron_up = chevron_image(C["INK_SOFT"], "up")
     check = check_image(C["ON_ACCENT"])
-    arrow_rule = (f"QComboBox::down-arrow, QDateEdit::down-arrow {{ image: url({chevron}); "
-                  f"width: {space('lg')}px; height: {space('md')}px; }}"
-                  if chevron else "")
+    arrow_rule = (
+        f"QComboBox::down-arrow, QDateEdit::down-arrow {{ image: url({chevron}); "
+        f"width: {space('lg')}px; height: {space('md')}px; }}"
+        if chevron
+        else ""
+    )
     spin_arrow_rule = (
         f"QSpinBox::up-arrow {{ image: url({chevron_up}); "
         f"width: {space('lg')}px; height: {space('md')}px; }}\n"
         f"QSpinBox::down-arrow {{ image: url({chevron}); "
         f"width: {space('lg')}px; height: {space('md')}px; }}"
-        if chevron and chevron_up else "")
+        if chevron and chevron_up
+        else ""
+    )
     check_rule = f"image: url({check});" if check else ""
     ctl = control_height() - 2  # inside the 1px border every control draws
     tb_ctl = LAYOUT["toolbar_control_h"] - 2
@@ -1422,16 +1497,22 @@ def build_style_sheet() -> str:
 
     def _ink(alpha: float) -> str:
         ink = C["INK"].lstrip("#")[-6:]
-        r, g, b = (int(ink[i:i + 2], 16) for i in (0, 2, 4))
+        r, g, b = (int(ink[i : i + 2], 16) for i in (0, 2, 4))
         return f"rgba({r}, {g}, {b}, {alpha})"
 
     ink_06, ink_10, ink_14 = _ink(0.06), _ink(0.10), _ink(0.14)
-    s_xs, s_sm, s_md, s_lg, s_xl, s_2xl = (space("xs"), space("sm"), space("md"),
-                                           space("lg"), space("xl"), space("2xl"))
+    s_xs, s_sm, s_md, s_lg, s_xl, s_2xl = (
+        space("xs"),
+        space("sm"),
+        space("md"),
+        space("lg"),
+        space("xl"),
+        space("2xl"),
+    )
     return f"""
 QMainWindow, QDialog {{
-    background-color: {C['CANVAS']};
-    color: {C['INK']};
+    background-color: {C["CANVAS"]};
+    color: {C["INK"]};
 }}
 /* The board side of the body and the splitter's gap take the body's surface. */
 QWidget#leftContainer, QSplitter::handle {{
@@ -1440,18 +1521,18 @@ QWidget#leftContainer, QSplitter::handle {{
 /* The top bar: the window's own background; the body surface below it is what
    ends it. */
 QWidget#appHeader {{
-    background-color: {C['CANVAS']};
+    background-color: {C["CANVAS"]};
 }}
 /* The body: one rounded surface under the top bar, containing every view and
    the detail pane. */
 QWidget#bodySurface {{
-    background-color: {C['SURFACE']};
-    border-radius: {radius('xl')}px;
+    background-color: {C["SURFACE"]};
+    border-radius: {radius("xl")}px;
 }}
 /* A region's name: the app's beside its mark, a board column's. */
 QLabel#regionTitle {{
-    color: {C['INK']};
-    font-size: {type_size('title')}pt;
+    color: {C["INK"]};
+    font-size: {type_size("title")}pt;
     font-weight: 600;
 }}
 /* A view in the top bar: its name on the bar, a faint fill on
@@ -1463,19 +1544,19 @@ QPushButton#viewTab {{
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
     padding: 0px {s_lg}px;
-    color: {C['INK_SOFT']};
+    color: {C["INK_SOFT"]};
     font-weight: 600;
 }}
 QPushButton#viewTab:hover {{
     background-color: {ink_06};
-    color: {C['INK']};
+    color: {C["INK"]};
 }}
 QPushButton#viewTab:checked {{
     background-color: {ink_10};
-    color: {C['ACCENT_DK']};
+    color: {C["ACCENT_DK"]};
 }}
 QPushButton#viewTab:focus {{
-    border-color: {C['ACCENT']};
+    border-color: {C["ACCENT"]};
 }}
 /* The top bar's icon buttons — Search, Refresh, Settings — each its icon in a
    faint box; an open view's box takes the accent's edge. */
@@ -1494,10 +1575,10 @@ QPushButton#toolbarButton:hover, QPushButton#toolbarToggle:hover {{
 }}
 QPushButton#toolbarToggle:checked {{
     background-color: {ink_10};
-    border-color: {C['ACCENT']};
+    border-color: {C["ACCENT"]};
 }}
 QPushButton#toolbarButton:focus, QPushButton#toolbarToggle:focus {{
-    border-color: {C['ACCENT']};
+    border-color: {C["ACCENT"]};
 }}
 /* The top bar's Agent picker: a picker in the top bar's own box, an ink_06
    face with an ink_14 edge, at the top bar's height, its text the body text
@@ -1509,20 +1590,20 @@ QComboBox#toolbarPicker {{
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
     padding: 0px {s_md}px;
-    color: {C['INK']};
-    font-size: {type_size('body')}pt;
+    color: {C["INK"]};
+    font-size: {type_size("body")}pt;
     font-weight: 400;
 }}
 QComboBox#toolbarPicker:hover {{ background-color: {ink_14}; }}
 QComboBox#toolbarPicker:on {{ background-color: {ink_10}; }}
-QComboBox#toolbarPicker:focus {{ border-color: {C['ACCENT']}; }}
+QComboBox#toolbarPicker:focus {{ border-color: {C["ACCENT"]}; }}
 /* The top bar's Create: the primary button at the top bar's height. Where a
    view has no cards it is faded by an opacity effect rather than turned grey,
    as the Mac dims a toolbar item it has no use for. */
 QPushButton#toolbarCreate, QPushButton#toolbarCreate:disabled {{
-    background-color: {C['ACCENT']};
-    color: {C['ON_ACCENT']};
-    border: 1px solid {C['ACCENT']};
+    background-color: {C["ACCENT"]};
+    color: {C["ON_ACCENT"]};
+    border: 1px solid {C["ACCENT"]};
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
@@ -1531,16 +1612,16 @@ QPushButton#toolbarCreate, QPushButton#toolbarCreate:disabled {{
     padding: 0px;
 }}
 QPushButton#toolbarCreate:hover {{
-    background-color: {C['CREATE_HOVER']};
-    border-color: {C['CREATE_HOVER']};
+    background-color: {C["CREATE_HOVER"]};
+    border-color: {C["CREATE_HOVER"]};
 }}
 /* A list is a well of rows a person clicks or ticks, so it carries the edge
    everything clickable carries: its fill alone sits too close to the window's
    to be found. An editable list whose rows are widgets is the same well. */
 QListWidget, QFrame#rowList {{
-    background-color: {C['LIST_BG']};
-    color: {C['INK']};
-    border: 1px solid {C['BTN_BORDER']};
+    background-color: {C["LIST_BG"]};
+    color: {C["INK"]};
+    border: 1px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
     padding: {s_sm}px;
     outline: 0;
@@ -1560,62 +1641,62 @@ QListWidget#columnCards {{
 }}
 /* A column's name, a step above a card's title, and its count beside it. */
 QLabel#columnName {{
-    color: {C['INK']};
-    font-size: {type_size('section')}pt;
+    color: {C["INK"]};
+    font-size: {type_size("section")}pt;
     font-weight: 600;
 }}
 QLabel#columnCount {{
-    color: {C['INK_SOFT']};
-    font-size: {type_size('body')}pt;
+    color: {C["INK_SOFT"]};
+    font-size: {type_size("body")}pt;
 }}
 /* The detail pane is a sidebar surface: the one raised region right of the
    splitter, separated from the board canvas by a hairline. */
 QWidget#detailPane {{
-    background-color: {C['SURFACE']};
-    border-left: 1px solid {C['BORDER']};
-    border-top-right-radius: {radius('xl')}px;
-    border-bottom-right-radius: {radius('xl')}px;
+    background-color: {C["SURFACE"]};
+    border-left: 1px solid {C["BORDER"]};
+    border-top-right-radius: {radius("xl")}px;
+    border-bottom-right-radius: {radius("xl")}px;
 }}
 QScrollArea#detailScroll, QScrollArea#detailScroll > QWidget > QWidget {{
     background: transparent;
     border: none;
 }}
 /* The hairline under a section header in the detail pane. */
-QFrame#sectionRule {{ background-color: {C['BORDER']}; border: none; }}
+QFrame#sectionRule {{ background-color: {C["BORDER"]}; border: none; }}
 QPushButton#paneReveal {{
-    border-left: 1px solid {C['BORDER']};
+    border-left: 1px solid {C["BORDER"]};
     border-radius: 0px;
 }}
 /* A path the user may need to find on disk reads as a path. */
 QLabel#pathRow {{
-    background-color: {C['LIST_BG']};
+    background-color: {C["LIST_BG"]};
     border: 1px solid transparent;
     border-radius: {r_md}px;
     padding: {s_md}px {s_lg}px;
-    color: {C['INK']};
-    font-size: {type_size('body')}pt;
+    color: {C["INK"]};
+    font-size: {type_size("body")}pt;
 }}
 QLabel#pathRow[fieldMissing="true"] {{
-    color: {C['MISSING']};
-    border-color: {C['MISSING']};
+    color: {C["MISSING"]};
+    border-color: {C["MISSING"]};
 }}
-QLabel#sectionHeader[fieldMissing="true"] {{ color: {C['MISSING']}; }}
-QLabel#formCaption {{ color: {C['INK_SOFT']}; }}
+QLabel#sectionHeader[fieldMissing="true"] {{ color: {C["MISSING"]}; }}
+QLabel#formCaption {{ color: {C["INK_SOFT"]}; }}
 /* The filter panel: one raised surface under the Filter button, containing a
    section per facet and one row per option. A row is a whole click target, so
    it takes the pointer fill a card does. */
 QFrame#filterMenu {{
-    background-color: {C['SURFACE']};
-    border: 1px solid {C['BTN_BORDER']};
+    background-color: {C["SURFACE"]};
+    border: 1px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
 }}
 QLabel#facetHeading {{
-    color: {C['INK_SOFT']};
-    font-size: {type_size('caption')}pt;
+    color: {C["INK_SOFT"]};
+    font-size: {type_size("caption")}pt;
     font-weight: 600;
 }}
 QWidget#facetRow {{ border-radius: {r_md}px; }}
-QWidget#facetRow:hover {{ background-color: {C['HOVER_BG']}; }}
+QWidget#facetRow:hover {{ background-color: {C["HOVER_BG"]}; }}
 QScrollArea#filterScroll, QScrollArea#filterScroll > QWidget > QWidget,
 QScrollArea#paletteScroll, QScrollArea#paletteScroll > QWidget > QWidget,
 QScrollArea#recordScroll, QScrollArea#recordScroll > QWidget > QWidget {{
@@ -1623,7 +1704,7 @@ QScrollArea#recordScroll, QScrollArea#recordScroll > QWidget > QWidget {{
     border: none;
 }}
 QPushButton#link:disabled {{
-    color: {C['DISABLED_TX']};
+    color: {C["DISABLED_TX"]};
     text-decoration: none;
 }}
 /* The Filter button sits on the columns' header line at the top bar's control
@@ -1636,23 +1717,23 @@ QPushButton#filterBtn {{
 /* The Filter button takes the accent while it is leaving something out, so a
    narrowed board never reads as an empty one. */
 QPushButton#filterBtn[active="true"] {{
-    background-color: {C['SEL_BG']};
-    border: 1px solid {C['ACCENT']};
-    color: {C['ACCENT_DK']};
+    background-color: {C["SEL_BG"]};
+    border: 1px solid {C["ACCENT"]};
+    color: {C["ACCENT_DK"]};
 }}
 /* One applied filter, removable where it is read. */
 QPushButton#filterChip {{
-    background-color: {C['NEUTRAL_BG']};
-    color: {C['NEUTRAL_TX']};
+    background-color: {C["NEUTRAL_BG"]};
+    color: {C["NEUTRAL_TX"]};
     border: 1px solid transparent;
     border-radius: {r_sm}px;
     padding: {s_sm}px {s_lg}px;
     font-weight: 400;
 }}
-QPushButton#filterChip:focus {{ border-color: {C['ACCENT']}; }}
+QPushButton#filterChip:focus {{ border-color: {C["ACCENT"]}; }}
 QPushButton#filterChip:hover {{
-    background-color: {C['SEL_BG']};
-    color: {C['ACCENT_DK']};
+    background-color: {C["SEL_BG"]};
+    color: {C["ACCENT_DK"]};
 }}
 /* A scroll bar is chrome: a slim handle on an empty groove, so a column that
    overflows does not gain a heavy black rail down its edge. It keeps SPACE sm
@@ -1684,22 +1765,22 @@ QTextEdit QScrollBar:horizontal {{
     margin: 0px;
 }}
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {{
-    background: {C['BORDER']};
+    background: {C["BORDER"]};
     border-radius: {r_sm}px;
     min-height: {s_2xl}px;
     min-width: {s_2xl}px;
 }}
-QScrollBar::handle:hover {{ background: {C['INK_SOFT']}; }}
+QScrollBar::handle:hover {{ background: {C["INK_SOFT"]}; }}
 QScrollBar::add-line, QScrollBar::sub-line {{ height: 0px; width: 0px; }}
 QScrollBar::add-page, QScrollBar::sub-page {{ background: transparent; }}
 /* The setup wizard is the same application: the ground it draws on, the type
    its pages are titled in, and the buttons it is driven by all come from here. */
-QWizard {{ background-color: {C['CANVAS']}; }}
+QWizard {{ background-color: {C["CANVAS"]}; }}
 /* Direct children only: the header band, the page container and the button
    row. A field inside a page is not matched, so the input rules still win. */
-QWizard > QWidget {{ background-color: {C['CANVAS']}; }}
-QWizardPage {{ background-color: {C['CANVAS']}; }}
-QWizardPage > QLabel {{ font-size: {type_size('body')}pt; }}
+QWizard > QWidget {{ background-color: {C["CANVAS"]}; }}
+QWizardPage {{ background-color: {C["CANVAS"]}; }}
+QWizardPage > QLabel {{ font-size: {type_size("body")}pt; }}
 
 QListWidget::item {{ border: none; }}
 QListWidget::item:selected {{ background: transparent; }}
@@ -1717,54 +1798,54 @@ QListWidget#textList::item {{
    selection fills sit close enough that a hovered row would otherwise read as
    a second selection. */
 QListWidget#textList::item:selected {{
-    background: {C['SEL_BG']};
-    color: {C['ACCENT_DK']};
-    border-left: 3px solid {C['ACCENT']};
+    background: {C["SEL_BG"]};
+    color: {C["ACCENT_DK"]};
+    border-left: 3px solid {C["ACCENT"]};
 }}
 QListWidget#textList::item:hover:!selected {{
-    background: {C['HOVER_BG']};
+    background: {C["HOVER_BG"]};
 }}
 /* The Search and Archive results: a table read as a list, with a header per
    fact and alternate rows, and the selection in the accent the lists use. */
 QTableWidget#resultsTable {{
-    background-color: {C['LIST_BG']};
-    alternate-background-color: {C['SURFACE']};
-    color: {C['INK']};
-    border: 1px solid {C['BTN_BORDER']};
+    background-color: {C["LIST_BG"]};
+    alternate-background-color: {C["SURFACE"]};
+    color: {C["INK"]};
+    border: 1px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
     outline: 0;
 }}
 QTableWidget#resultsTable::item {{ padding: {s_sm}px {s_md}px; border: none; }}
 QTableWidget#resultsTable::item:selected {{
-    background-color: {C['SEL_BG']};
-    color: {C['ACCENT_DK']};
+    background-color: {C["SEL_BG"]};
+    color: {C["ACCENT_DK"]};
 }}
 QHeaderView::section {{
-    background-color: {C['CANVAS']};
-    color: {C['INK_SOFT']};
+    background-color: {C["CANVAS"]};
+    color: {C["INK_SOFT"]};
     border: none;
-    border-bottom: 1px solid {C['BORDER']};
+    border-bottom: 1px solid {C["BORDER"]};
     padding: {s_sm}px {s_md}px;
     font-weight: 600;
 }}
 QComboBox, QLineEdit, QAbstractSpinBox, QTextEdit {{
-    background-color: {C['SURFACE']};
-    border: 1px solid {C['BTN_BORDER']};
+    background-color: {C["SURFACE"]};
+    border: 1px solid {C["BTN_BORDER"]};
     border-radius: {r_md}px;
     padding: {s_md}px {s_md}px;
-    color: {C['INK']};
-    selection-background-color: {C['ACCENT']};
-    selection-color: {C['ON_ACCENT']};
+    color: {C["INK"]};
+    selection-background-color: {C["ACCENT"]};
+    selection-color: {C["ON_ACCENT"]};
 }}
 /* A picker is a button that opens a list, so it takes the control face. */
 QComboBox, QDateEdit {{
-    background-color: {C['BTN_BG']};
-    border: 1px solid {C['BTN_BORDER']};
+    background-color: {C["BTN_BG"]};
+    border: 1px solid {C["BTN_BORDER"]};
 }}
-QComboBox:hover, QDateEdit:hover {{ background-color: {C['BTN_HOVER']}; }}
-QComboBox:on {{ background-color: {C['BTN_PRESSED']}; }}
+QComboBox:hover, QDateEdit:hover {{ background-color: {C["BTN_HOVER"]}; }}
+QComboBox:on {{ background-color: {C["BTN_PRESSED"]}; }}
 QComboBox:focus, QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus {{
-    border: 1px solid {C['ACCENT']};
+    border: 1px solid {C["ACCENT"]};
 }}
 /* A required field that is currently empty. Set via the dynamic property
    fieldMissing=true (see record_dialog._refresh_required_state), and repeated
@@ -1772,25 +1853,25 @@ QComboBox:focus, QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus {{
    user is typing in — or deleting out of — the very field that is missing. */
 QLineEdit[fieldMissing="true"], QTextEdit[fieldMissing="true"],
 QLineEdit[fieldMissing="true"]:focus, QTextEdit[fieldMissing="true"]:focus {{
-    border: 2px solid {C['MISSING']};
+    border: 2px solid {C["MISSING"]};
 }}
-QLabel[fieldMissing="true"] {{ color: {C['MISSING']}; }}
+QLabel[fieldMissing="true"] {{ color: {C["MISSING"]}; }}
 /* A formCaption carries its own missing state. */
-QLabel#formCaption[fieldMissing="true"] {{ color: {C['MISSING']}; }}
+QLabel#formCaption[fieldMissing="true"] {{ color: {C["MISSING"]}; }}
 /* A picker opens this app's own list rather than the platform's menu: a raised
    surface with a rounded corner, room around every option, and the same
    selected fill a list row takes. popups.py makes its window transparent so
    the corner is the one drawn here, and as wide as its longest option. */
 QComboBox {{ combobox-popup: 0; }}
 QComboBox QAbstractItemView {{
-    background-color: {C['SURFACE']};
-    color: {C['INK']};
-    border: 1px solid {C['BTN_BORDER']};
+    background-color: {C["SURFACE"]};
+    color: {C["INK"]};
+    border: 1px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
     padding: {s_sm}px;
     outline: 0;
-    selection-background-color: {C['SEL_BG']};
-    selection-color: {C['ACCENT_DK']};
+    selection-background-color: {C["SEL_BG"]};
+    selection-color: {C["ACCENT_DK"]};
 }}
 QComboBox QAbstractItemView::item {{
     min-height: {s_2xl}px;
@@ -1798,11 +1879,11 @@ QComboBox QAbstractItemView::item {{
     border-radius: {r_md}px;
 }}
 QComboBox QAbstractItemView::item:hover {{
-    background-color: {C['HOVER_BG']};
+    background-color: {C["HOVER_BG"]};
 }}
 QComboBox QAbstractItemView::item:selected {{
-    background-color: {C['SEL_BG']};
-    color: {C['ACCENT_DK']};
+    background-color: {C["SEL_BG"]};
+    color: {C["ACCENT_DK"]};
 }}
 /* A growing text field takes slimmer vertical padding, so one line of it is
    one control tall (growing_edit.py fixes the height). */
@@ -1826,21 +1907,21 @@ QSpinBox::up-button, QSpinBox::down-button {{
 QSpinBox::up-button {{ subcontrol-position: top right; }}
 QSpinBox::down-button {{ subcontrol-position: bottom right; }}
 {spin_arrow_rule}
-QLabel {{ color: {C['INK']}; background: transparent; }}
-QLabel#inspectorTitle {{ color: {C['ACCENT_DK']}; }}
-QLabel#sectionHeader {{ color: {C['INK_SOFT']}; font-weight: 600; }}
+QLabel {{ color: {C["INK"]}; background: transparent; }}
+QLabel#inspectorTitle {{ color: {C["ACCENT_DK"]}; }}
+QLabel#sectionHeader {{ color: {C["INK_SOFT"]}; font-weight: 600; }}
 /* The one thing a confirmation or a notice says first: the largest text in a
    modal that carries no icon, since the words are all it has. */
 QLabel#dialogHeading {{
-    color: {C['INK']};
-    font-size: {type_size('section')}pt;
+    color: {C["INK"]};
+    font-size: {type_size("section")}pt;
     font-weight: 600;
 }}
-QLabel#metaText {{ color: {C['INK_SOFT']}; }}
+QLabel#metaText {{ color: {C["INK_SOFT"]}; }}
 /* The Settings modal: a dialog's canvas at the body's corner, over the scrim. */
 QFrame#settingsModal {{
-    background-color: {C['CANVAS']};
-    border-radius: {radius('xl')}px;
+    background-color: {C["CANVAS"]};
+    border-radius: {radius("xl")}px;
 }}
 /* A tab of its side nav: its name with no face, a hover fill under the
    pointer, and the open tab chosen as a picker's item is. */
@@ -1852,16 +1933,16 @@ QPushButton#settingsNav {{
     max-height: {ctl}px;
     padding: 0px {s_lg}px;
     text-align: left;
-    color: {C['INK']};
+    color: {C["INK"]};
     font-weight: 400;
 }}
-QPushButton#settingsNav:hover {{ background-color: {C['HOVER_BG']}; }}
+QPushButton#settingsNav:hover {{ background-color: {C["HOVER_BG"]}; }}
 QPushButton#settingsNav:checked {{
-    background-color: {C['SEL_BG']};
-    color: {C['ACCENT_DK']};
+    background-color: {C["SEL_BG"]};
+    color: {C["ACCENT_DK"]};
     font-weight: 600;
 }}
-QPushButton#settingsNav:focus {{ border-color: {C['ACCENT']}; }}
+QPushButton#settingsNav:focus {{ border-color: {C["ACCENT"]}; }}
 /* A link: accent text with no surface, underlined under the pointer and with
    focus. A link row, Clear All in the filter panel, a skill's source. */
 QPushButton#link {{
@@ -1869,7 +1950,7 @@ QPushButton#link {{
     border: none;
     padding: {s_xs}px 0px;
     text-align: left;
-    color: {C['ACCENT_DK']};
+    color: {C["ACCENT_DK"]};
     font-weight: 400;
 }}
 QPushButton#link:hover, QPushButton#link:focus {{ text-decoration: underline; }}
@@ -1882,19 +1963,19 @@ QPushButton#quietIcon, QPushButton#paneToggle, QPushButton#paneReveal {{
     border: 1px solid transparent;
     border-radius: {r_md}px;
     padding: {s_xs}px;
-    color: {C['INK_SOFT']};
+    color: {C["INK_SOFT"]};
     font-weight: 400;
 }}
 QPushButton#quietIcon:hover, QPushButton#paneToggle:hover,
 QPushButton#paneReveal:hover {{
-    background-color: {C['HOVER_BG']};
-    color: {C['INK']};
+    background-color: {C["HOVER_BG"]};
+    color: {C["INK"]};
 }}
 QPushButton#quietIcon:focus, QPushButton#paneToggle:focus {{
-    border-color: {C['ACCENT']};
+    border-color: {C["ACCENT"]};
 }}
 QCheckBox {{
-    color: {C['INK']};
+    color: {C["INK"]};
     background: transparent;
     spacing: {s_md}px;
     padding: {s_xs}px 0px;
@@ -1904,64 +1985,64 @@ QCheckBox {{
 QCheckBox::indicator {{
     width: {s_lg}px;
     height: {s_lg}px;
-    border: 1px solid {C['ACCENT']};
+    border: 1px solid {C["ACCENT"]};
     border-radius: {r_sm}px;
-    background-color: {C['SURFACE']};
+    background-color: {C["SURFACE"]};
 }}
-QCheckBox::indicator:hover {{ border-color: {C['ACCENT']}; }}
+QCheckBox::indicator:hover {{ border-color: {C["ACCENT"]}; }}
 QCheckBox::indicator:checked {{
-    background-color: {C['ACCENT']};
-    border-color: {C['ACCENT']};
+    background-color: {C["ACCENT"]};
+    border-color: {C["ACCENT"]};
     {check_rule}
 }}
 QMenu {{
-    background-color: {C['SURFACE']};
-    color: {C['INK']};
-    border: 1px solid {C['BTN_BORDER']};
+    background-color: {C["SURFACE"]};
+    color: {C["INK"]};
+    border: 1px solid {C["BTN_BORDER"]};
     border-radius: {r_md}px;
     padding: {s_sm}px;
 }}
 QMenu::item {{ padding: {s_md}px {s_xl}px {s_md}px {s_lg}px; border-radius: {r_md}px; }}
-QMenu::item:selected {{ background-color: {C['SEL_BG']}; color: {C['ACCENT_DK']}; }}
-QMenu::separator {{ height: 1px; background: {C['BORDER']}; margin: {s_sm}px {s_md}px; }}
+QMenu::item:selected {{ background-color: {C["SEL_BG"]}; color: {C["ACCENT_DK"]}; }}
+QMenu::separator {{ height: 1px; background: {C["BORDER"]}; margin: {s_sm}px {s_md}px; }}
 QPushButton {{
-    background-color: {C['BTN_BG']};
-    border: 1px solid {C['BTN_BORDER']};
+    background-color: {C["BTN_BG"]};
+    border: 1px solid {C["BTN_BORDER"]};
     border-radius: {r_md}px;
     padding: {s_md}px {s_lg}px;
     font-weight: 400;
-    color: {C['INK']};
+    color: {C["INK"]};
 }}
-QPushButton:hover {{ background-color: {C['BTN_HOVER']}; }}
-QPushButton:pressed {{ background-color: {C['BTN_PRESSED']}; }}
-QPushButton:focus {{ border-color: {C['ACCENT']}; }}
+QPushButton:hover {{ background-color: {C["BTN_HOVER"]}; }}
+QPushButton:pressed {{ background-color: {C["BTN_PRESSED"]}; }}
+QPushButton:focus {{ border-color: {C["ACCENT"]}; }}
 /* A button kept unclickable until its form is valid must LOOK unclickable —
    Qt's default disabled rendering is barely distinguishable under this
    stylesheet, which would read as "the button is broken". */
 QPushButton:disabled {{
-    background-color: {C['DISABLED_BG']};
-    border: 1px solid {C['BORDER']};
-    color: {C['DISABLED_TX']};
+    background-color: {C["DISABLED_BG"]};
+    border: 1px solid {C["BORDER"]};
+    color: {C["DISABLED_TX"]};
 }}
 QPushButton::menu-indicator {{ width: 0px; image: none; }}
 QPushButton#globalCreateBtn {{
-    background-color: {C['ACCENT']};
-    color: {C['ON_ACCENT']};
-    border: 1px solid {C['ACCENT']};
+    background-color: {C["ACCENT"]};
+    color: {C["ON_ACCENT"]};
+    border: 1px solid {C["ACCENT"]};
 }}
 QPushButton#globalCreateBtn:hover {{
-    background-color: {C['CREATE_HOVER']};
-    border-color: {C['CREATE_HOVER']};
+    background-color: {C["CREATE_HOVER"]};
+    border-color: {C["CREATE_HOVER"]};
 }}
 QPushButton#globalCreateBtn:focus, QPushButton#toolbarCreate:focus {{
-    border-color: {C['ON_ACCENT']};
+    border-color: {C["ON_ACCENT"]};
 }}
 /* The id selector outranks the generic :disabled rule, so the primary button
    needs its own unclickable look or it would stay accent-filled while dead. */
 QPushButton#globalCreateBtn:disabled {{
-    background-color: {C['DISABLED_BG']};
-    border: 1px solid {C['BORDER']};
-    color: {C['DISABLED_TX']};
+    background-color: {C["DISABLED_BG"]};
+    border: 1px solid {C["BORDER"]};
+    color: {C["DISABLED_TX"]};
 }}
 /* A segmented control: its segments share the control face and join into one
    control; the chosen one takes the selection fill and the accent text. */
@@ -1981,21 +2062,21 @@ QPushButton#segment[position="last"] {{
     border-bottom-right-radius: {r_md}px;
 }}
 QPushButton#segment:checked {{
-    background-color: {C['SEL_BG']};
-    color: {C['ACCENT_DK']};
+    background-color: {C["SEL_BG"]};
+    color: {C["ACCENT_DK"]};
 }}
 /* A button whose window contains something that is not on disk. */
 QPushButton[missing="true"] {{
-    border: 1px solid {C['MISSING']};
-    color: {C['MISSING']};
+    border: 1px solid {C["MISSING"]};
+    color: {C["MISSING"]};
 }}
 /* A destructive action is an ordinary button whose words are red, as the Mac
    marks one; the fill stays the plain button's. */
 QPushButton#deleteBtn {{
-    color: {C['DELETE_BG']};
+    color: {C["DELETE_BG"]};
 }}
 QPushButton#deleteBtn:hover {{
-    color: {C['DELETE_HOVER']};
+    color: {C["DELETE_HOVER"]};
 }}
 /* The + and − under an editable list: two square buttons joined at their
    shared edge. */
@@ -2024,10 +2105,10 @@ QPushButton#exampleLink {{
     background: transparent;
     border: none;
     text-align: left;
-    color: {C['INK_FAINT']};
+    color: {C["INK_FAINT"]};
     font-weight: 400;
 }}
-QPushButton#exampleLink:hover, QPushButton#exampleLink:focus {{ color: {C['ACCENT_DK']}; text-decoration: underline; }}
+QPushButton#exampleLink:hover, QPushButton#exampleLink:focus {{ color: {C["ACCENT_DK"]}; text-decoration: underline; }}
 """
 
 
@@ -2038,8 +2119,9 @@ def _mono_font(point_size: int | None = None):
     """A monospace font so mad-lib templates and their fill-in blanks line up in
     the Description editor. Menlo, with a Monospace style hint behind it."""
     from PySide6.QtGui import QFont
+
     f = QFont("Menlo")
-    f.setStyleHint(QFont.Monospace)
+    f.setStyleHint(QFont.StyleHint.Monospace)
     f.setPointSize(point_size if point_size is not None else type_size("section"))
     return f
 
@@ -2053,7 +2135,7 @@ def _is_checked(state) -> bool:
     try:
         return int(val) == 2  # Qt.Checked == 2
     except (TypeError, ValueError):
-        return bool(state == Qt.Checked)
+        return bool(state == Qt.CheckState.Checked)
 
 
 def _utcnow() -> str:
@@ -2066,8 +2148,7 @@ def _today() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
 
-def log_lines(conn, task_id: int, comments: bool = True,
-              changes: bool = True) -> list[str]:
+def log_lines(conn, task_id: int, comments: bool = True, changes: bool = True) -> list[str]:
     """One ticket's log as display lines, newest first.
 
     Two kinds share the list: `issue_log` comments, written by a person or an
@@ -2086,9 +2167,8 @@ def log_lines(conn, task_id: int, comments: bool = True,
                 "SELECT id, author, body, created_at FROM issue_log WHERE task_id=?",
                 (task_id,),
             ).fetchall():
-                entries.append((ts or "", 0, row_id,
-                                f"[{_fmt_dt(ts)}] {author}: {body}"))
-        except Exception:  # noqa: BLE001 — a missing log must not blank the pane
+                entries.append((ts or "", 0, row_id, f"[{_fmt_dt(ts)}] {author}: {body}"))
+        except Exception:
             pass
     if changes:
         try:
@@ -2097,10 +2177,14 @@ def log_lines(conn, task_id: int, comments: bool = True,
                 (task_id,),
             ).fetchall():
                 entries.append(
-                    (at or "", 1, row_id,
-                     f"[{_fmt_dt(at)}] {actor or 'unknown'} · {field}: {to_value}")
+                    (
+                        at or "",
+                        1,
+                        row_id,
+                        f"[{_fmt_dt(at)}] {actor or 'unknown'} · {field}: {to_value}",
+                    )
                 )
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
     # Row id breaks ties: several fields changed by one write share a timestamp,
     # and the newest of them should still sort to the top.
@@ -2108,8 +2192,7 @@ def log_lines(conn, task_id: int, comments: bool = True,
     return [line for _, _, _, line in entries]
 
 
-def log_entries(conn, task_id: int, comments: bool = True,
-                changes: bool = True) -> list[dict]:
+def log_entries(conn, task_id: int, comments: bool = True, changes: bool = True) -> list[dict]:
     """One ticket's log as structured entries, newest first — what the detail
     pane's timeline renders from. Same two sources and the same merge order as
     ``log_lines``; each entry is a dict:
@@ -2124,10 +2207,20 @@ def log_entries(conn, task_id: int, comments: bool = True,
                 "SELECT id, author, body, created_at FROM issue_log WHERE task_id=?",
                 (task_id,),
             ).fetchall():
-                rows.append((ts or "", 0, row_id, {
-                    "kind": "comment", "author": author or "unknown",
-                    "at": ts, "body": body or ""}))
-        except Exception:  # noqa: BLE001 — a missing log must not blank the pane
+                rows.append(
+                    (
+                        ts or "",
+                        0,
+                        row_id,
+                        {
+                            "kind": "comment",
+                            "author": author or "unknown",
+                            "at": ts,
+                            "body": body or "",
+                        },
+                    )
+                )
+        except Exception:
             pass
     if changes:
         try:
@@ -2135,10 +2228,21 @@ def log_entries(conn, task_id: int, comments: bool = True,
                 "SELECT id, at, actor, field, to_value FROM task_event WHERE task_id=?",
                 (task_id,),
             ).fetchall():
-                rows.append((at or "", 1, row_id, {
-                    "kind": "change", "author": actor or "unknown",
-                    "at": at, "field": field, "value": to_value}))
-        except Exception:  # noqa: BLE001
+                rows.append(
+                    (
+                        at or "",
+                        1,
+                        row_id,
+                        {
+                            "kind": "change",
+                            "author": actor or "unknown",
+                            "at": at,
+                            "field": field,
+                            "value": to_value,
+                        },
+                    )
+                )
+        except Exception:
             pass
     rows.sort(key=lambda row: (row[0], row[1], row[2]), reverse=True)
     return [entry for _, _, _, entry in rows]

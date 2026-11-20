@@ -9,7 +9,7 @@ icon, without its tile, in ``ui/icons/bristol_mark.png``.
 from __future__ import annotations
 
 import weakref
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QRectF, Qt
@@ -22,13 +22,14 @@ ICON_DIR = Path(__file__).resolve().parent / "icons"
 _RATIO = 2
 
 
-@lru_cache(maxsize=None)
+@cache
 def _svg(name: str) -> str:
     return (ICON_DIR / f"{name}.svg").read_text(encoding="utf-8")
 
 
-def _render(name: str, color: str, width: int, height: int,
-            view: tuple[float, float, float, float] | None) -> QPixmap:
+def _render(
+    name: str, color: str, width: int, height: int, view: tuple[float, float, float, float] | None
+) -> QPixmap:
     """``name`` in ``color`` on a ``width`` × ``height`` device-pixel canvas,
     showing the part of the 24-unit drawing ``view`` names, or all of it."""
     source = _svg(name).replace("currentColor", color)
@@ -36,9 +37,9 @@ def _render(name: str, color: str, width: int, height: int,
     if view is not None:
         renderer.setViewBox(QRectF(*view))
     image = QPixmap(width, height)
-    image.fill(Qt.transparent)
+    image.fill(Qt.GlobalColor.transparent)
     painter = QPainter(image)
-    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     renderer.render(painter, QRectF(0, 0, width, height))
     painter.end()
     return image
@@ -52,8 +53,13 @@ def pixmap(name: str, color: str, size: int = 16) -> QPixmap:
     return image
 
 
-def image_file(name: str, color: str, width: int, height: int,
-               view: tuple[float, float, float, float] | None = None) -> str | None:
+def image_file(
+    name: str,
+    color: str,
+    width: int,
+    height: int,
+    view: tuple[float, float, float, float] | None = None,
+) -> str | None:
     """The icon ``name`` in ``color`` as an image file a style sheet can point
     at, ``width`` × ``height`` device-independent pixels, with the ``@2x`` copy
     a Retina screen reads beside it. Kept in the system's temporary folder,
@@ -69,13 +75,12 @@ def image_file(name: str, color: str, width: int, height: int,
         if target.exists() and sharp.exists():
             return str(target)
         folder.mkdir(parents=True, exist_ok=True)
-        if not _render(name, color, width * _RATIO, height * _RATIO,
-                       view).save(str(sharp)):
+        if not _render(name, color, width * _RATIO, height * _RATIO, view).save(str(sharp)):
             return None
         if not _render(name, color, width, height, view).save(str(target)):
             return None
         return str(target)
-    except Exception:  # noqa: BLE001 — an arrow is never worth failing a paint
+    except Exception:
         return None
 
 
@@ -87,14 +92,14 @@ def icon(name: str, color: str, size: int = 16) -> QIcon:
 def toggle_icon(name: str, off: str, on: str, size: int = 16) -> QIcon:
     """The icon ``name`` in ``off`` and, for a checked button, in ``on``."""
     result = QIcon()
-    result.addPixmap(pixmap(name, off, size), QIcon.Normal, QIcon.Off)
-    result.addPixmap(pixmap(name, on, size), QIcon.Normal, QIcon.On)
+    result.addPixmap(pixmap(name, off, size), QIcon.Mode.Normal, QIcon.State.Off)
+    result.addPixmap(pixmap(name, on, size), QIcon.Mode.Normal, QIcon.State.On)
     return result
 
 
 # Buttons whose only face is an icon in a theme color, so a change of theme or
 # mode redraws them: button -> (icon name, theme color key, size).
-_TINTED: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+_TINTED: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 
 
 def tint(button, name: str, key: str = "INK_SOFT", size: int = 14) -> None:
@@ -122,6 +127,6 @@ def mark(height: int) -> QPixmap:
     image = QPixmap(str(ICON_DIR / "bristol_mark.png"))
     if image.isNull():
         return image
-    image = image.scaledToHeight(height * _RATIO, Qt.SmoothTransformation)
+    image = image.scaledToHeight(height * _RATIO, Qt.TransformationMode.SmoothTransformation)
     image.setDevicePixelRatio(_RATIO)
     return image

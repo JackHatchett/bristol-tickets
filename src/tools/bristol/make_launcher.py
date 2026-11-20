@@ -26,18 +26,17 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import stat
 import subprocess
 import sys
 from pathlib import Path
 
-APP_NAME = "BristolTickets"          # bundle directory and executable: no space
-DISPLAY_NAME = "Bristol Tickets"     # the display name, which carries a space
-RETIRED_APP_NAMES = ("Bristol",)     # bundles removed when this one is built
+APP_NAME = "BristolTickets"  # bundle directory and executable: no space
+DISPLAY_NAME = "Bristol Tickets"  # the display name, which carries a space
+RETIRED_APP_NAMES = ("Bristol",)  # bundles removed when this one is built
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parents[2]          # src/tools/bristol -> src/tools -> src -> repo
+REPO_ROOT = HERE.parents[2]  # src/tools/bristol -> src/tools -> src -> repo
 
 
 def app_path() -> Path:
@@ -46,8 +45,7 @@ def app_path() -> Path:
 
 
 def find_python() -> str:
-    """The interpreter that actually has PySide6.
-    """
+    """The interpreter that actually has PySide6."""
     candidates = [sys.executable]
     which = shutil.which("python3")
     if which:
@@ -56,8 +54,9 @@ def find_python() -> str:
         if not exe:
             continue
         try:
-            subprocess.run([exe, "-c", "import PySide6"], check=True,
-                           capture_output=True, timeout=60)
+            subprocess.run(
+                [exe, "-c", "import PySide6"], check=True, capture_output=True, timeout=60
+            )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
             continue
         return exe
@@ -147,8 +146,9 @@ def build() -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--where", action="store_true",
-                        help="print where the launcher lives and exit")
+    parser.add_argument(
+        "--where", action="store_true", help="print where the launcher lives and exit"
+    )
     args = parser.parse_args()
 
     if args.where:
@@ -161,8 +161,9 @@ def main() -> None:
     bundle = build()
     print(f"OK: {bundle}")
     print(f"    runs: {REPO_ROOT}/src/tools/bristol/app.py")
-    print("    Open it once from Finder, then right-click its Dock tile -> "
-          "Options -> Keep in Dock.")
+    print(
+        "    Open it once from Finder, then right-click its Dock tile -> Options -> Keep in Dock."
+    )
 
 
 if __name__ == "__main__":

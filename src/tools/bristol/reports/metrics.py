@@ -32,7 +32,6 @@ history still produces a valid report that says so.
 from __future__ import annotations
 
 import math
-import sqlite3
 from datetime import datetime, timezone
 
 # A card closed within this many seconds of being created was almost certainly
@@ -61,6 +60,7 @@ SECONDS_PER_DAY = 86400.0
 # ---------------------------------------------------------------------------
 # small numeric helpers (stdlib only — the only dependency is PySide6)
 # ---------------------------------------------------------------------------
+
 
 def _parse_ts(value):
     """Parse a stored timestamp, tolerating every shape this DB has contained.
@@ -148,14 +148,18 @@ def _tally(rows, key, unknown="(none)"):
 
 
 def _table_exists(conn, name):
-    return conn.execute(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
-    ).fetchone() is not None
+    return (
+        conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
+        ).fetchone()
+        is not None
+    )
 
 
 # ---------------------------------------------------------------------------
 # card-level facts
 # ---------------------------------------------------------------------------
+
 
 def _load_cards(conn, task_ids):
     """One dict per card in the batch, with its durations already resolved."""
@@ -163,9 +167,21 @@ def _load_cards(conn, task_ids):
         return []
     placeholders = ",".join("?" * len(task_ids))
     columns = [
-        "id", "title", "description", "status", "stage", "tier",
-        "record_type", "assignee", "reporter", "estimate",
-        "created_at", "updated_at", "closed_at", "epic_name", "epic_id",
+        "id",
+        "title",
+        "description",
+        "status",
+        "stage",
+        "tier",
+        "record_type",
+        "assignee",
+        "reporter",
+        "estimate",
+        "created_at",
+        "updated_at",
+        "closed_at",
+        "epic_name",
+        "epic_id",
     ]
     rows = conn.execute(
         f"""SELECT t.id, t.title, t.description, t.status, t.stage, t.tier,
@@ -178,10 +194,17 @@ def _load_cards(conn, task_ids):
         list(task_ids),
     ).fetchall()
 
-    comments = dict(conn.execute(
-        f"SELECT task_id, COUNT(*) FROM issue_log WHERE task_id IN ({placeholders}) "
-        "GROUP BY task_id", list(task_ids),
-    ).fetchall()) if _table_exists(conn, "issue_log") else {}
+    comments = (
+        dict(
+            conn.execute(
+                f"SELECT task_id, COUNT(*) FROM issue_log WHERE task_id IN ({placeholders}) "
+                "GROUP BY task_id",
+                list(task_ids),
+            ).fetchall()
+        )
+        if _table_exists(conn, "issue_log")
+        else {}
+    )
 
     # First entry into `doing` per card — the start of cycle time. MIN(at) is
     # correct even for a card that bounced in and out of `doing`: cycle time is
@@ -189,15 +212,18 @@ def _load_cards(conn, task_ids):
     # forgiven.
     first_doing = {}
     if _table_exists(conn, "task_event"):
-        first_doing = dict(conn.execute(
-            f"SELECT task_id, MIN(at) FROM task_event "
-            f"WHERE task_id IN ({placeholders}) AND field='status' AND to_value='doing' "
-            "GROUP BY task_id", list(task_ids),
-        ).fetchall())
+        first_doing = dict(
+            conn.execute(
+                f"SELECT task_id, MIN(at) FROM task_event "
+                f"WHERE task_id IN ({placeholders}) AND field='status' AND to_value='doing' "
+                "GROUP BY task_id",
+                list(task_ids),
+            ).fetchall()
+        )
 
     cards = []
     for row in rows:
-        card = dict(zip(columns, row))
+        card = dict(zip(columns, row, strict=False))
         card["comments"] = comments.get(card["id"], 0)
         card["first_doing_at"] = first_doing.get(card["id"])
         # closed_at is the moment the card went done and nothing rewrites it.
@@ -207,16 +233,16 @@ def _load_cards(conn, task_ids):
         card["lead_days"] = _days_between(card["created_at"], card["closed_effective"])
         card["cycle_days"] = (
             _days_between(card["first_doing_at"], card["closed_effective"])
-            if card["first_doing_at"] else None
+            if card["first_doing_at"]
+            else None
         )
         card["flow_efficiency"] = (
             round(card["cycle_days"] / card["lead_days"], 3)
-            if card["cycle_days"] is not None and card["lead_days"] else None
+            if card["cycle_days"] is not None and card["lead_days"]
+            else None
         )
         span = _days_between(card["created_at"], card["closed_effective"])
-        card["instant_close"] = (
-            span is not None and span * SECONDS_PER_DAY <= INSTANT_CLOSE_SECONDS
-        )
+        card["instant_close"] = span is not None and span * SECONDS_PER_DAY <= INSTANT_CLOSE_SECONDS
         cards.append(card)
     cards.sort(key=lambda c: c["id"])
     return cards
@@ -240,6 +266,7 @@ def _batch_close_groups(cards):
 # board-wide context
 # ---------------------------------------------------------------------------
 
+
 def _work_in_progress(conn, now):
     """Cards left in `doing` on the active board, with their age.
 
@@ -256,20 +283,29 @@ def _work_in_progress(conn, now):
     ).fetchall()
     first_doing = {}
     if _table_exists(conn, "task_event"):
-        first_doing = dict(conn.execute(
-            "SELECT task_id, MIN(at) FROM task_event "
-            "WHERE field='status' AND to_value='doing' GROUP BY task_id"
-        ).fetchall())
+        first_doing = dict(
+            conn.execute(
+                "SELECT task_id, MIN(at) FROM task_event "
+                "WHERE field='status' AND to_value='doing' GROUP BY task_id"
+            ).fetchall()
+        )
     out = []
     for tid, title, tier, assignee, created_at, record_type, epic in rows:
         started = first_doing.get(tid)
-        out.append({
-            "id": tid, "title": title, "tier": tier,
-            "assignee": assignee or "(unassigned)", "record_type": record_type,
-            "epic_name": epic, "created_at": created_at, "started_at": started,
-            "age_days": _days_between(created_at, now),
-            "doing_days": _days_between(started, now) if started else None,
-        })
+        out.append(
+            {
+                "id": tid,
+                "title": title,
+                "tier": tier,
+                "assignee": assignee or "(unassigned)",
+                "record_type": record_type,
+                "epic_name": epic,
+                "created_at": created_at,
+                "started_at": started,
+                "age_days": _days_between(created_at, now),
+                "doing_days": _days_between(started, now) if started else None,
+            }
+        )
     return out
 
 
@@ -277,8 +313,7 @@ def _queue_snapshot(conn, now):
     """The `todo` column — committed but not started. Its size relative to
     throughput is how long the current queue would take to drain."""
     rows = conn.execute(
-        "SELECT id, created_at FROM task "
-        "WHERE stage='active' AND status='todo'"
+        "SELECT id, created_at FROM task WHERE stage='active' AND status='todo'"
     ).fetchall()
     ages = [_days_between(created, now) for _, created in rows]
     return {
@@ -290,17 +325,15 @@ def _queue_snapshot(conn, now):
 
 def _backlog_snapshot(conn, now):
     rows = conn.execute(
-        "SELECT id, title, created_at, updated_at FROM task "
-        "WHERE stage='backlog'"
+        "SELECT id, title, created_at, updated_at FROM task WHERE stage='backlog'"
     ).fetchall()
     ages = [_days_between(created, now) for _, _, created, _ in rows]
     stale = sum(
-        1 for *_, updated in rows
-        if (_days_between(updated, now) or 0) > STALE_BACKLOG_DAYS
+        1 for *_, updated in rows if (_days_between(updated, now) or 0) > STALE_BACKLOG_DAYS
     )
     oldest = None
     if rows:
-        aged = [(a, r) for a, r in zip(ages, rows) if a is not None]
+        aged = [(a, r) for a, r in zip(ages, rows, strict=False) if a is not None]
         if aged:
             days, row = max(aged, key=lambda pair: pair[0])
             oldest = {"id": row[0], "title": row[1], "age_days": days}
@@ -342,14 +375,14 @@ def _historical_throughput(conn, now, weeks=8):
 # signals — threshold-driven findings, each with a recommended action
 # ---------------------------------------------------------------------------
 
+
 def _signals(facts):
     """Rules-based findings. Every one names the number that triggered it and
     what to do, because a finding with neither is just decoration."""
     out = []
 
     def add(severity, title, detail, action):
-        out.append({"severity": severity, "title": title,
-                    "detail": detail, "action": action})
+        out.append({"severity": severity, "title": title, "detail": detail, "action": action})
 
     batch = facts["batch"]
     n = len(batch)
@@ -360,77 +393,104 @@ def _signals(facts):
     stalled = [w for w in facts["wip"] if (w["age_days"] or 0) > threshold]
     if stalled:
         worst = max(stalled, key=lambda w: w["age_days"] or 0)
-        add("attention", "Work in progress is aging past the norm",
+        add(
+            "attention",
+            "Work in progress is aging past the norm",
             f"{len(stalled)} of {len(facts['wip'])} card(s) in Doing are older than "
             f"the {threshold:.1f}-day 85th-percentile lead time for this period. "
             f"Oldest: #{worst['id']} at {worst['age_days']:.0f} days.",
             "Finish it, split it, or move it back to Todo. A card that sits in "
-            "Doing stops being a status and starts being a wish.")
+            "Doing stops being a status and starts being a wish.",
+        )
 
     # 2. Bulk closes make closed_at administrative rather than real.
     grouped = sum(len(g) for g in facts["batch_close_groups"])
     if n and grouped / n > 0.3:
-        add("watch", "Most cards were closed in bulk, not individually",
+        add(
+            "watch",
+            "Most cards were closed in bulk, not individually",
             f"{grouped} of {n} cards share a close timestamp with at least one "
             f"other ({len(facts['batch_close_groups'])} group(s)). Their closed_at "
             "is the moment someone marked a batch done, not the moment each "
             "piece of work ended.",
             "Treat this period's lead times as an upper bound. Marking cards done "
-            "as you finish them makes the next report's durations real.")
+            "as you finish them makes the next report's durations real.",
+        )
 
     # 3. Retroactive logging.
     instant = sum(1 for c in batch if c["instant_close"])
     if n and instant / n > 0.25:
-        add("watch", "A quarter or more of the batch was logged after the fact",
+        add(
+            "watch",
+            "A quarter or more of the batch was logged after the fact",
             f"{instant} of {n} cards were created and closed within an hour.",
             "Fine as a record, but these cards carry no delivery signal — they "
-            "were never forecast. Exclude them mentally from the lead-time table.")
+            "were never forecast. Exclude them mentally from the lead-time table.",
+        )
 
     # 4. Rework pressure.
     fix_ratio = facts["mix"]["fix_ratio"]
     if n >= 5 and fix_ratio > 0.25:
-        add("attention", "Fixes are a large share of completed work",
+        add(
+            "attention",
+            "Fixes are a large share of completed work",
             f"{facts['mix']['fix']} of {n} cards ({fix_ratio:.0%}) were Fixes.",
             "Above roughly a quarter, rework is displacing new capability. Worth "
-            "asking whether the Fixes trace back to a common source.")
+            "asking whether the Fixes trace back to a common source.",
+        )
 
     # 5. Work not laddering to an epic.
     no_epic = sum(1 for c in batch if not c["epic_name"])
     if n >= 5 and no_epic / n > 0.4:
-        add("watch", "Most completed work sits outside any epic",
+        add(
+            "watch",
+            "Most completed work sits outside any epic",
             f"{no_epic} of {n} cards had no epic.",
             "Either the epics no longer describe the real work, or the work is "
-            "drifting from the plan. Both are worth ten minutes.")
+            "drifting from the plan. Both are worth ten minutes.",
+        )
 
     # 6. Delivery concentration.
     by_assignee = facts["by_assignee"]
     if n >= 5 and by_assignee and by_assignee[0]["share"] > 0.7:
         top = by_assignee[0]
-        add("watch", "Delivery is concentrated in one owner",
+        add(
+            "watch",
+            "Delivery is concentrated in one owner",
             f"{top['name']} closed {top['count']} of {n} cards ({top['share']:.0%}).",
             "Expected on a personal board; worth noting only if you meant the "
-            "fleet to be sharing this load.")
+            "fleet to be sharing this load.",
+        )
 
     # 7. Backlog rot.
     backlog = facts["backlog"]
     if backlog["stale_count"] and backlog["stale_share"] > 0.5:
         oldest = backlog["oldest_card"]
-        detail = (f"{backlog['stale_count']} of {backlog['size']} backlog cards "
-                  f"have not been touched in {STALE_BACKLOG_DAYS} days.")
+        detail = (
+            f"{backlog['stale_count']} of {backlog['size']} backlog cards "
+            f"have not been touched in {STALE_BACKLOG_DAYS} days."
+        )
         if oldest:
             detail += f" Oldest: #{oldest['id']} at {oldest['age_days']:.0f} days."
-        add("attention", "The backlog is mostly untouched", detail,
+        add(
+            "attention",
+            "The backlog is mostly untouched",
+            detail,
             "Delete what you will not do. A backlog you do not trust is one you "
-            "stop reading, and then it hides the things that mattered.")
+            "stop reading, and then it hides the things that mattered.",
+        )
 
     # 8. Cycle-time coverage.
     cycle = facts["cycle_time"]
     if n and cycle["coverage"] < 0.5:
-        add("watch", "Cycle time is not yet measurable for most cards",
+        add(
+            "watch",
+            "Cycle time is not yet measurable for most cards",
             f"Only {cycle['n']} of {n} cards have a recorded start. The transition "
             "log begins when it was added, so older cards can never have one.",
             "Nothing to fix — coverage rises on its own as cards move through the "
-            "board from here. Lead time carries this report in the meantime.")
+            "board from here. Lead time carries this report in the meantime.",
+        )
 
     # 9. Fields that exist but are effectively never filled. Sized rather than
     #     binary: one card out of thirty-five carrying an estimate is the same
@@ -438,19 +498,25 @@ def _signals(facts):
     quality = facts["data_quality"]
     sized = quality["estimates_used"]
     if n >= 5 and sized / n < SIZING_COVERAGE_FLOOR:
-        add("watch", "Estimate and story-point fields are going unused",
+        add(
+            "watch",
+            "Estimate and story-point fields are going unused",
             f"{quality['estimates_used']} of {n} cards carried a size.",
             "Not a problem in itself — but velocity and forecast accuracy are "
             "unavailable without one of them filled consistently. Either commit "
-            "to a single sizing field or drop both from the card.")
+            "to a single sizing field or drop both from the card.",
+        )
 
     # 10. Written trace.
     silent = facts["discussion"]["silent"]
     if n >= 5 and silent / n > 0.6:
-        add("watch", "Most cards closed with no written trace",
+        add(
+            "watch",
+            "Most cards closed with no written trace",
             f"{silent} of {n} cards had no comments at all.",
             "The board records that these happened but not what was decided. "
-            "One line on close is usually enough to make the archive searchable.")
+            "One line on close is usually enough to make the archive searchable.",
+        )
 
     order = {"attention": 0, "watch": 1}
     out.sort(key=lambda s: order.get(s["severity"], 2))
@@ -461,8 +527,8 @@ def _signals(facts):
 # entry point
 # ---------------------------------------------------------------------------
 
-def collect(conn, task_ids, now=None, period_start=None, period_end=None,
-            prior=None):
+
+def collect(conn, task_ids, now=None, period_start=None, period_end=None, prior=None):
     """Compute every fact the report needs.
 
     `task_ids`      the cards this period closed (what its epic closed with).
@@ -512,10 +578,16 @@ def collect(conn, task_ids, now=None, period_start=None, period_end=None,
             "p85": _percentile(lead, 0.85),
             "max": max((v for v in lead if v is not None), default=None),
             "min": min((v for v in lead if v is not None), default=None),
-            "distribution": _distribution(lead, [
-                ("same day", 1), ("1–3 days", 3), ("3–7 days", 7),
-                ("1–2 weeks", 14), ("over 2 weeks", None),
-            ]),
+            "distribution": _distribution(
+                lead,
+                [
+                    ("same day", 1),
+                    ("1–3 days", 3),
+                    ("3–7 days", 7),
+                    ("1–2 weeks", 14),
+                    ("over 2 weeks", None),
+                ],
+            ),
         },
         "cycle_time": {
             "n": len(cycle),

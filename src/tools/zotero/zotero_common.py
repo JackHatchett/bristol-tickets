@@ -41,9 +41,7 @@ def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 def _config() -> dict:
@@ -67,7 +65,7 @@ def data_dir() -> Path:
     if not env:
         env = str(Path.home() / "Zotero")
     sys.path.insert(0, str(_project_root() / "src" / "tools" / "config_tools"))
-    import data_paths  # noqa: E402  (resolved here so the module imports alone)
+    import data_paths
 
     return data_paths.resolve(env)
 
@@ -85,9 +83,7 @@ def zotero_is_running() -> bool:
     if (data_dir() / "zotero.sqlite-journal").exists():
         return True
     try:
-        out = subprocess.run(
-            ["pgrep", "-x", "zotero"], capture_output=True, text=True, timeout=10
-        )
+        out = subprocess.run(["pgrep", "-x", "zotero"], capture_output=True, text=True, timeout=10)
         return out.returncode == 0 and bool(out.stdout.strip())
     except (OSError, subprocess.SubprocessError):
         return False
@@ -147,9 +143,7 @@ def field_id(conn: sqlite3.Connection, name: str) -> int:
 
 
 def item_type_id(conn: sqlite3.Connection, name: str) -> int:
-    row = conn.execute(
-        "SELECT itemTypeID FROM itemTypes WHERE typeName=?", (name,)
-    ).fetchone()
+    row = conn.execute("SELECT itemTypeID FROM itemTypes WHERE typeName=?", (name,)).fetchone()
     if row is None:
         raise KeyError(f"Zotero has no item type named {name!r}")
     return row[0]
@@ -166,9 +160,7 @@ def creator_type_id(conn: sqlite3.Connection, name: str) -> int:
 
 def value_id(conn: sqlite3.Connection, value: str) -> int:
     """The itemDataValues id for a string, inserting it if new."""
-    row = conn.execute(
-        "SELECT valueID FROM itemDataValues WHERE value=?", (value,)
-    ).fetchone()
+    row = conn.execute("SELECT valueID FROM itemDataValues WHERE value=?", (value,)).fetchone()
     if row:
         return row[0]
     cur = conn.execute("INSERT INTO itemDataValues (value) VALUES (?)", (value,))

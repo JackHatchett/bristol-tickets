@@ -49,6 +49,19 @@ literals.
 Run `bash src/tools/test_tools/run_smoke.sh` before opening a pull request. It
 builds each GUI's widgets headlessly and catches what `py_compile` cannot.
 
+Run the three code checks too; `pyproject.toml` configures them and CI runs
+them on every push:
+
+```bash
+pip install ruff==0.16.9 pyright==1.1.414 PySide6
+ruff check src
+ruff format --check src
+pyright
+```
+
+A rule turned off is turned off in `pyproject.toml` with its reason, and a
+`# noqa` on a line carries its reason after the code.
+
 ## Documentation
 
 Every governing document under `/src` — the agent charters, the skills, the

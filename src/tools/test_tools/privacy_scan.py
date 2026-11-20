@@ -42,12 +42,24 @@ def main(argv: list[str]) -> int:
     if not needles:
         print("privacy_scan: published_tree.private_names is empty", file=sys.stderr)
         return 2
-    patterns = [(n, re.compile(r"(?<![a-z0-9])" + re.escape(n.lower()) + r"(?![a-z0-9])"))
-                for n in needles]
+    patterns = [
+        (n, re.compile(r"(?<![a-z0-9])" + re.escape(n.lower()) + r"(?![a-z0-9])")) for n in needles
+    ]
     log = subprocess.run(
-        ["git", "-C", str(data_paths.project_root()), "log", *revs, "-p",
-         "--format=@@COMMIT %h%n%an%n%B"],
-        capture_output=True, text=True, errors="replace", check=True).stdout
+        [
+            "git",
+            "-C",
+            str(data_paths.project_root()),
+            "log",
+            *revs,
+            "-p",
+            "--format=@@COMMIT %h%n%an%n%B",
+        ],
+        capture_output=True,
+        text=True,
+        errors="replace",
+        check=True,
+    ).stdout
     hits: dict[str, str] = {}
     count: dict[str, int] = {}
     commit = "?"

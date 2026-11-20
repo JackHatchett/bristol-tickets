@@ -25,7 +25,10 @@ draws a half-lit board the first time the OS goes dark.
 
 from __future__ import annotations
 
+from typing import cast
+
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -81,21 +84,21 @@ class ThemeManagerDialog(QDialog):
     open.
     """
 
-    def __init__(self, collection: dict[str, dict], current: str,
-                 parent=None, on_preview=None) -> None:
+    def __init__(
+        self, collection: dict[str, dict], current: str, parent=None, on_preview=None
+    ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Manage Themes")
         self.setModal(True)
-        self.setMinimumSize(LAYOUT["theme_dialog_min_w"],
-                            LAYOUT["theme_dialog_min_h"])
+        self.setMinimumSize(LAYOUT["theme_dialog_min_w"], LAYOUT["theme_dialog_min_h"])
         self._on_preview = on_preview
 
         # The working copy. Nothing here reaches the configuration until Save,
         # so a window closed on Cancel has changed nothing at all.
-        self._collection = {theme_id: dict(record)
-                            for theme_id, record in collection.items()}
-        self._current = current if current in self._collection else next(
-            iter(self._collection), current)
+        self._collection = {theme_id: dict(record) for theme_id, record in collection.items()}
+        self._current = (
+            current if current in self._collection else next(iter(self._collection), current)
+        )
         self._selected = self._current
         # The themes added in this window, whose ids are still the window's to
         # choose. A theme's id is fixed the moment it is stored, so one added
@@ -109,19 +112,18 @@ class ThemeManagerDialog(QDialog):
         # An empty name is marked only once a save has been tried with it.
         self._save_tried = False
 
-
         self.list = QListWidget()
         self.list.setObjectName("textList")
         self.list.setMinimumWidth(LAYOUT["theme_list_min_w"])
         self.list.currentRowChanged.connect(self._row_chosen)
 
         self.add_button = add_button(
-            "Add Theme", self._add_clicked,
-            "Add a theme, seeded from the one selected")
+            "Add Theme", self._add_clicked, "Add a theme, seeded from the one selected"
+        )
         self.restore_button = QPushButton("Restore Shipped Themes")
         self.restore_button.setToolTip(
-            "Put every theme this build ships back as it ships it. Themes you "
-            "added are untouched.")
+            "Put every theme this build ships back as it ships it. Themes you added are untouched."
+        )
         self.restore_button.clicked.connect(self._restore_clicked)
 
         left = QVBoxLayout()
@@ -137,7 +139,8 @@ class ThemeManagerDialog(QDialog):
         self.name = QLineEdit()
         self.name.setToolTip(
             "What this theme is called. The name is yours; what the "
-            "configuration stores is the theme, so renaming one keeps it.")
+            "configuration stores is the theme, so renaming one keeps it."
+        )
         self.name.textChanged.connect(self._name_typed)
 
         name_row = QHBoxLayout()
@@ -148,8 +151,7 @@ class ThemeManagerDialog(QDialog):
         name_row.addWidget(self.name, 1)
 
         self.half = fill_words(QComboBox(), HALF_CHOICES)
-        self.half.setToolTip(
-            "Which half of this theme the colors below belong to.")
+        self.half.setToolTip("Which half of this theme the colors below belong to.")
         self.half.currentIndexChanged.connect(self._half_chosen)
 
         self.dark_half = QPushButton(ADD_DARK_HALF)
@@ -180,20 +182,21 @@ class ThemeManagerDialog(QDialog):
         self.notice = QLabel()
         self.notice.setObjectName("formCaption")
         self.notice.setWordWrap(True)
-        self.notice.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.notice.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
+        )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        self.save_button = buttons.button(QDialogButtonBox.Save)
+        self.save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
         self.save_button.setObjectName("globalCreateBtn")
         self.save_button.setText("Save Themes")
         self.save_button.setAutoDefault(False)
-        buttons.button(QDialogButtonBox.Cancel).setAutoDefault(False)
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setAutoDefault(False)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("lg"))
         column.addLayout(columns, 1)
         column.addWidget(self.notice)
@@ -206,13 +209,11 @@ class ThemeManagerDialog(QDialog):
     def themes(self) -> dict[str, dict]:
         """The collection as the window now contains it, the selected theme's
         unsaved edits included."""
-        collection = {theme_id: dict(record)
-                      for theme_id, record in self._collection.items()}
+        collection = {theme_id: dict(record) for theme_id, record in self._collection.items()}
         if self._selected in collection:
             record = collection[self._selected]
             record["name"] = self.name.text().strip() or record["name"]
-            record[self._half] = complete_palette(
-                self.form.palette(), self._half == DARK_MODE)
+            record[self._half] = complete_palette(self.form.palette(), self._half == DARK_MODE)
         return order_collection(collection)
 
     def theme_in_force(self) -> str:
@@ -259,14 +260,12 @@ class ThemeManagerDialog(QDialog):
         of Pumpkin that leaves Pumpkin alone comes from.
         """
         self._keep_edits()
-        seed = self._collection.get(self._selected) or next(
-            iter(self._collection.values()), None)
+        seed = self._collection.get(self._selected) or next(iter(self._collection.values()), None)
         theme_id = theme_id_for(name, self._collection)
         self._collection[theme_id] = {
             "name": self._unused_name(name),
             "light": complete_palette(seed["light"] if seed else None),
-            "dark": complete_palette(seed["dark"], True)
-                    if seed and seed.get("dark") else None,
+            "dark": complete_palette(seed["dark"], True) if seed and seed.get("dark") else None,
         }
         self._collection = order_collection(self._collection)
         self._fresh.add(theme_id)
@@ -354,9 +353,11 @@ class ThemeManagerDialog(QDialog):
         themes the user added exactly where they are."""
         self._keep_edits()
         shipped = shipped_collection()
-        added = {theme_id: record
-                 for theme_id, record in self._collection.items()
-                 if theme_id not in shipped}
+        added = {
+            theme_id: record
+            for theme_id, record in self._collection.items()
+            if theme_id not in shipped
+        }
         restored = dict(shipped)
         restored.update(added)
         self._collection = order_collection(restored)
@@ -375,9 +376,11 @@ class ThemeManagerDialog(QDialog):
         name = self.name.text().strip()
         if not name:
             return "A theme needs a name." if self._save_tried else ""
-        taken = {record["name"].casefold()
-                 for theme_id, record in self._collection.items()
-                 if theme_id != self._selected}
+        taken = {
+            record["name"].casefold()
+            for theme_id, record in self._collection.items()
+            if theme_id != self._selected
+        }
         if name.casefold() in taken:
             return f"Another theme is already called {name}."
         return ""
@@ -419,11 +422,15 @@ class ThemeManagerDialog(QDialog):
             self.add_dark_half()
             return
         name = self._collection[self._selected]["name"]
-        if not confirm(self, f"Remove {name}'s dark half?",
-                       f"{name} goes back to light only, and the colors in "
-                       f"its dark half are gone. Dark and Follow System stop "
-                       f"being offered for it.",
-                       "Remove", destructive=True):
+        if not confirm(
+            self,
+            f"Remove {name}'s dark half?",
+            f"{name} goes back to light only, and the colors in "
+            f"its dark half are gone. Dark and Follow System stop "
+            f"being offered for it.",
+            "Remove",
+            destructive=True,
+        ):
             return
         self.remove_dark_half()
 
@@ -434,11 +441,15 @@ class ThemeManagerDialog(QDialog):
         if len(self._collection) <= 1:
             self._read_notice()
             return
-        if not confirm(self, f"Delete {name}?",
-                       f"{name} leaves the list of themes on this "
-                       f"installation. A shipped theme comes back with "
-                       f"Restore Shipped Themes; one you added does not.",
-                       "Delete", destructive=True):
+        if not confirm(
+            self,
+            f"Delete {name}?",
+            f"{name} leaves the list of themes on this "
+            f"installation. A shipped theme comes back with "
+            f"Restore Shipped Themes; one you added does not.",
+            "Delete",
+            destructive=True,
+        ):
             return
         self.delete()
         self._preview()
@@ -449,11 +460,14 @@ class ThemeManagerDialog(QDialog):
         self._delete_clicked()
 
     def _restore_clicked(self) -> None:
-        if not confirm(self, "Restore shipped themes?",
-                       "Every theme this build ships goes back to the colors "
-                       "and the name it ships with, and any you deleted come "
-                       "back. Themes you added are untouched.",
-                       "Restore"):
+        if not confirm(
+            self,
+            "Restore shipped themes?",
+            "Every theme this build ships goes back to the colors "
+            "and the name it ships with, and any you deleted come "
+            "back. Themes you added are untouched.",
+            "Restore",
+        ):
             return
         self.restore_shipped()
         self._preview()
@@ -465,8 +479,7 @@ class ThemeManagerDialog(QDialog):
         self._read_notice()
         row = self.list.currentRow()
         if 0 <= row < self.list.count():
-            self.list.item(row).setText(self.name.text().strip()
-                                        or NEW_THEME_NAME)
+            self.list.item(row).setText(self.name.text().strip() or NEW_THEME_NAME)
 
     def _palette_typed(self) -> None:
         if self._seating:
@@ -481,8 +494,7 @@ class ThemeManagerDialog(QDialog):
             return
         record = self._collection[self._selected]
         record["name"] = self.name.text().strip() or record["name"]
-        record[self._half] = complete_palette(self.form.palette(),
-                                              self._half == DARK_MODE)
+        record[self._half] = complete_palette(self.form.palette(), self._half == DARK_MODE)
 
     def _fill_list(self) -> None:
         was, self._seating = self._seating, True
@@ -491,8 +503,9 @@ class ThemeManagerDialog(QDialog):
             for theme_id, record in self._collection.items():
                 item = QListWidgetItem(record["name"])
                 self.list.addItem(item)
-                removable_item(self.list, item, "Delete this theme",
-                               lambda t=theme_id: self._delete_row(t))
+                removable_item(
+                    self.list, item, "Delete this theme", lambda t=theme_id: self._delete_row(t)
+                )
             order = list(self._collection)
             if self._selected in order:
                 self.list.setCurrentRow(order.index(self._selected))
@@ -529,23 +542,25 @@ class ThemeManagerDialog(QDialog):
             self._half = LIGHT_MODE
         was, self._seating = self._seating, True
         try:
-            model = self.half.model()
+            model = cast(QStandardItemModel, self.half.model())
             for index in range(self.half.count()):
                 allowed = has_dark or self.half.itemData(index) == LIGHT_MODE
                 model.item(index).setEnabled(allowed)
-                self.half.setItemData(index, "" if allowed else NO_DARK_HALF,
-                                      Qt.ToolTipRole)
+                self.half.setItemData(
+                    index, "" if allowed else NO_DARK_HALF, Qt.ItemDataRole.ToolTipRole
+                )
             index = self.half.findData(self._half)
             self.half.setCurrentIndex(index if index >= 0 else 0)
-            self.dark_half.setText(
-                REMOVE_DARK_HALF if has_dark else ADD_DARK_HALF)
+            self.dark_half.setText(REMOVE_DARK_HALF if has_dark else ADD_DARK_HALF)
             self.dark_half.setToolTip(
                 "This theme goes back to light only."
-                if has_dark else
-                "Give this theme a dark half, every color of it at once.")
-            self.form.set_palette(record["dark"] if self._half == DARK_MODE
-                                  else record["light"],
-                                  self._half == DARK_MODE)
+                if has_dark
+                else "Give this theme a dark half, every color of it at once."
+            )
+            self.form.set_palette(
+                record["dark"] if self._half == DARK_MODE else record["light"],
+                self._half == DARK_MODE,
+            )
         finally:
             self._seating = was
         self._read_notice()
@@ -587,7 +602,8 @@ class ThemeManagerDialog(QDialog):
             return
         failures = self.form.unreadable()
         if failures and not confirm(
-            self, "Some colors will be hard to see",
+            self,
+            "Some colors will be hard to see",
             "This palette puts these under their minimum:\n\n"
             + "\n".join(f"• {line}" for line in failures)
             + "\n\nSave it anyway?",
@@ -626,8 +642,7 @@ class ThemeManagerDialog(QDialog):
 
     def _unused_name(self, name: str) -> str:
         """``name``, or the first numbered version of it nothing else uses."""
-        taken = {record["name"].casefold()
-                 for record in self._collection.values()}
+        taken = {record["name"].casefold() for record in self._collection.values()}
         if name.casefold() not in taken:
             return name
         suffix = 2

@@ -188,6 +188,7 @@ def prune(root, tail_cap=DEFAULT_TAIL_CAP):
 
     Returns a new tree, or None when the account appears nowhere in it.
     """
+
     def mark(node):
         found = node.mine
         for child in node.children:
@@ -277,6 +278,7 @@ def without(root, dropped):
     keeps its place as the marker for a post that is not there, the same
     marker a post deleted by its author leaves.
     """
+
     def reaches(node):
         found = node.mine and node.uri not in dropped
         for child in node.children:
@@ -301,8 +303,7 @@ def without(root, dropped):
                 children.extend(branch(child, under_kept or kept_here))
         if node.uri in dropped:
             return children
-        copy = Node(node.uri, node.author, node.text, node.created, node.record,
-                    node.kind)
+        copy = Node(node.uri, node.author, node.text, node.created, node.record, node.kind)
         copy.mine = node.mine
         copy.children = children
         return [copy]
@@ -330,7 +331,8 @@ def conversation(root, my_uris, fetch, tail_cap=DEFAULT_TAIL_CAP):
 
     def usable(raw):
         return raw is not None and not raw.get("$type", "").endswith(
-            ("notFoundPost", "blockedPost"))
+            ("notFoundPost", "blockedPost")
+        )
 
     raw = fetch(root, 100, 1)
     if usable(raw):

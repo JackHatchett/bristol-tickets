@@ -35,9 +35,12 @@ def due_rows() -> list[dict]:
     """Every row the view returns, overdue first and today's after it."""
     conn = dbc.connect()
     try:
-        rows = [dict(r) for r in conn.execute(
-            "SELECT contact_id, name, reason, ask_id, kind, since, due_on "
-            "FROM v_contact_due")]
+        rows = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT contact_id, name, reason, ask_id, kind, since, due_on FROM v_contact_due"
+            )
+        ]
     finally:
         conn.close()
     today = datetime.date.today().isoformat()
@@ -52,11 +55,19 @@ def resting_rows() -> list[dict]:
     ask is fine. Read from v_friend_rest, which contains the arithmetic."""
     conn = dbc.connect()
     try:
-        has = conn.execute("SELECT 1 FROM sqlite_master WHERE type='view' "
-                           "AND name='v_friend_rest'").fetchone()
-        return ([dict(r) for r in conn.execute(
-            "SELECT name, next_ask_on FROM v_friend_rest ORDER BY next_ask_on, name")]
-            if has else [])
+        has = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='view' AND name='v_friend_rest'"
+        ).fetchone()
+        return (
+            [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT name, next_ask_on FROM v_friend_rest ORDER BY next_ask_on, name"
+                )
+            ]
+            if has
+            else []
+        )
     finally:
         conn.close()
 
@@ -66,12 +77,12 @@ def _line(row: dict) -> str:
     if row["reason"] == "cadence":
         since = f"last contact {row['since']}" if row["since"] else "never contacted"
         return f"  {row['name']} — {since}, due {when}"
-    return (f"  {row['name']} — ask #{row['ask_id']} ({row['kind']}), "
-            f"opened {row['since']}, due {when}")
+    return (
+        f"  {row['name']} — ask #{row['ask_id']} ({row['kind']}), opened {row['since']}, due {when}"
+    )
 
 
-def capture(rows: list[dict], today: str | None = None,
-            folder: Path | None = None) -> Path | None:
+def capture(rows: list[dict], today: str | None = None, folder: Path | None = None) -> Path | None:
     """Write the day's due list into the notebook's capture inbox, and return
     the file. None where nothing is due: a capture saying nothing is due is a
     note the user has to open to learn nothing.
@@ -84,8 +95,11 @@ def capture(rows: list[dict], today: str | None = None,
     from config_tools import data_paths, read_config
 
     day = today or datetime.date.today().isoformat()
-    folder = (Path(folder) if folder is not None
-              else data_paths.ensure_dir(read_config.get("markdown_notebook.inbox_dir")))
+    folder = (
+        Path(folder)
+        if folder is not None
+        else data_paths.ensure_dir(read_config.get("markdown_notebook.inbox_dir"))
+    )
     folder.mkdir(parents=True, exist_ok=True)
     written = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     spoken = datetime.date.fromisoformat(day).strftime("%-d %B %Y")
@@ -102,20 +116,20 @@ def capture(rows: list[dict], today: str | None = None,
         f"# {title}",
         "",
         f"{len(rows)} person or ask is owed something today."
-        if len(rows) == 1 else
-        f"{len(rows)} people or asks are owed something today.",
+        if len(rows) == 1
+        else f"{len(rows)} people or asks are owed something today.",
         "",
     ]
     for row in rows:
         late = "overdue" if row["overdue"] else "due today"
         if row["reason"] == "cadence":
-            since = (f"last contact {row['since']}" if row["since"]
-                     else "never contacted")
-            lines.append(f"- **{row['name']}** — {since}, {late} "
-                         f"({row['due_on'] or 'no date'}).")
+            since = f"last contact {row['since']}" if row["since"] else "never contacted"
+            lines.append(f"- **{row['name']}** — {since}, {late} ({row['due_on'] or 'no date'}).")
         else:
-            lines.append(f"- **{row['name']}** — {row['kind']} opened "
-                         f"{row['since']}, {late} ({row['due_on']}).")
+            lines.append(
+                f"- **{row['name']}** — {row['kind']} opened "
+                f"{row['since']}, {late} ({row['due_on']})."
+            )
     lines.append("")
     target = folder / f"contacts_due_{day}.md"
     target.write_text("\n".join(lines), encoding="utf-8")

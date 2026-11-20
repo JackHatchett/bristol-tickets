@@ -25,17 +25,14 @@ from pathlib import Path
 MODULES = ("QtCore", "QtGui", "QtWidgets", "QtSvg")
 
 # The Qt frameworks the bundle keeps beside those.
-FRAMEWORKS = MODULES + ("QtDBus", "QtNetwork", "QtPrintSupport",
-                        "QtSvgWidgets")
+FRAMEWORKS = MODULES + ("QtDBus", "QtNetwork", "QtPrintSupport", "QtSvgWidgets")
 
 # The plugin folders the bundle keeps.
-PLUGINS = ("platforms", "styles", "imageformats", "iconengines", "tls",
-           "generic")
+PLUGINS = ("platforms", "styles", "imageformats", "iconengines", "tls", "generic")
 
 # Whole folders under PySide6/ that serve development, QML or documentation.
 DEV_DIRS = ("include", "glue", "typesystems", "examples", "scripts", "doc")
-QT_DIRS = ("qml", "metatypes", "translations", "libexec", "doc", "include",
-           "mkspecs", "modules")
+QT_DIRS = ("qml", "metatypes", "translations", "libexec", "doc", "include", "mkspecs", "modules")
 
 
 def _pyside_root(bundle: Path) -> Path | None:
@@ -59,13 +56,22 @@ def removals(bundle: Path) -> list[Path]:
         elif name.endswith(".abi3.so"):
             if name.split(".")[0] not in MODULES:
                 out.append(entry)
-        elif name.endswith(".pyi") or name in ("assistant", "designer",
-                                               "linguist", "lupdate",
-                                               "lrelease", "qmlls",
-                                               "qmlformat", "qmllint",
-                                               "qmltestrunner", "balsam",
-                                               "balsamui", "svgtoqml",
-                                               "qsb", "pyside6-lupdate"):
+        elif name.endswith(".pyi") or name in (
+            "assistant",
+            "designer",
+            "linguist",
+            "lupdate",
+            "lrelease",
+            "qmlls",
+            "qmlformat",
+            "qmllint",
+            "qmltestrunner",
+            "balsam",
+            "balsamui",
+            "svgtoqml",
+            "qsb",
+            "pyside6-lupdate",
+        ):
             out.append(entry)
 
     qt = root / "Qt"
@@ -104,8 +110,11 @@ def reseal(bundle: Path) -> None:
     Privacy and Security step an unsigned app gets. Signing again is what keeps
     the slimmed bundle in the openable case.
     """
-    subprocess.run(["codesign", "--force", "--deep", "--sign", "-", str(bundle)],
-                   check=True, capture_output=True)
+    subprocess.run(
+        ["codesign", "--force", "--deep", "--sign", "-", str(bundle)],
+        check=True,
+        capture_output=True,
+    )
 
 
 def slim(bundle: Path, report_only: bool = False) -> tuple[int, int]:
@@ -124,8 +133,7 @@ def slim(bundle: Path, report_only: bool = False) -> tuple[int, int]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("bundle", type=Path)
-    parser.add_argument("--report", action="store_true",
-                        help="say what would go, remove nothing")
+    parser.add_argument("--report", action="store_true", help="say what would go, remove nothing")
     args = parser.parse_args(argv)
     if not args.bundle.is_dir():
         raise SystemExit(f"no bundle at {args.bundle}")

@@ -27,9 +27,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import db_common as dbc  # noqa: E402
-import personal_write as pw  # noqa: E402
-import silence  # noqa: E402
+import db_common as dbc
+import personal_write as pw
+import silence
 
 
 def stale(today=None):
@@ -37,16 +37,18 @@ def stale(today=None):
     conn = dbc.connect()
     try:
         apps = [dict(r) for r in conn.execute("SELECT * FROM applications")]
-        links = [dict(r) for r in conn.execute(
-            "SELECT contact_id, target_id FROM contact_link "
-            "WHERE target_kind='application'")]
-        asks = [dict(r) for r in conn.execute(
-            "SELECT * FROM contact_ask WHERE status='open'")]
+        links = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT contact_id, target_id FROM contact_link WHERE target_kind='application'"
+            )
+        ]
+        asks = [dict(r) for r in conn.execute("SELECT * FROM contact_ask WHERE status='open'")]
     finally:
         conn.close()
     out = []
     for app in apps:
-        people = {l["contact_id"] for l in links if l["target_id"] == app["id"]}
+        people = {link["contact_id"] for link in links if link["target_id"] == app["id"]}
         about = silence.matching_asks(app, [a for a in asks if a["contact_id"] in people])
         if silence.is_stale(app, about, today):
             out.append((app, about))
@@ -72,21 +74,38 @@ def main(argv=None):
         return 0
     if not args.dry_run:
         for app, about in items:
-            cmd = ["update-application", "--id", str(app["id"]),
-                   "--status", "No response", "--no-render"]
+            cmd = [
+                "update-application",
+                "--id",
+                str(app["id"]),
+                "--status",
+                "No response",
+                "--no-render",
+            ]
             if app.get("intro_stage"):
                 cmd += ["--intro-stage", "no_response"]
             _run(cmd)
             for a in about:
-                _run(["close-ask", "--id", str(a["id"]), "--status", "dropped",
-                      "--keep-last-contact", "--no-render"])
+                _run(
+                    [
+                        "close-ask",
+                        "--id",
+                        str(a["id"]),
+                        "--status",
+                        "dropped",
+                        "--keep-last-contact",
+                        "--no-render",
+                    ]
+                )
         with contextlib.redirect_stdout(io.StringIO()):
             pw._rerender("applications")
             pw._rerender("contacts")
-    names = "; ".join(f"{a['company']}, {a['role'] or 'role not recorded'}"
-                      for a, _ in items)
-    print(f"Closed for silence: {names}" if not args.dry_run
-          else f"Would close for silence ({len(items)}): {names}")
+    names = "; ".join(f"{a['company']}, {a['role'] or 'role not recorded'}" for a, _ in items)
+    print(
+        f"Closed for silence: {names}"
+        if not args.dry_run
+        else f"Would close for silence ({len(items)}): {names}"
+    )
     return 0
 
 

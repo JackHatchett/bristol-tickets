@@ -1,0 +1,53 @@
+# Bristol's checks: ruff lints and formats, pyright checks types. CI runs all
+# three (.github/workflows/smoke.yml), and a finding fails the run.
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+# Pyflakes, pycodestyle, import order, pyupgrade, bugbear and pep8-naming.
+select = ["E", "F", "W", "I", "UP", "B", "N", "RUF100"]
+# E501: the formatter wraps code at the line length; a line it leaves longer is
+# a string, a SQL statement or a URL, kept whole so it can be searched for.
+ignore = ["E501"]
+
+[tool.ruff.lint.pep8-naming]
+# A Qt override keeps the name Qt calls it by. The card delegate's geometry is
+# read as constants, MARGIN and PAD, though each is a property over a token.
+extend-ignore-names = [
+    "*Event", "sizeHint", "minimumSizeHint", "hitButton", "setText",
+    "isComplete", "nextId", "validatePage", "initializePage", "eventFilter",
+    "paint", "data", "flags",
+    "MARGIN", "PAD", "GAP", "CHECK_W", "CHECK_BOX", "PILL_H", "FOOT_H", "DESC_H", "MARK_D",
+]
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.10"
+typeCheckingMode = "basic"
+reportMissingImports = "none"
+reportMissingModuleSource = "none"
+# Each tool is a script that puts its sibling folders on sys.path before it
+# imports from them; these are those folders, in the order the scripts add them.
+extraPaths = [
+    "src/tools/config_tools",
+    "src/tools/skill_tools",
+    "src/tools/_shared",
+    "src/tools/ticket_tools",
+]
+# Off: each reports a value that may be None, or a wider union, reaching a
+# place that needs the narrower type. The tools were written unannotated and
+# pass values read from JSON configuration and from Qt lookups whose PySide6
+# stubs mark every result Optional; at adoption these rules reported 92 such
+# places, each a guard the code does not write.
+reportOptionalMemberAccess = "none"
+reportOptionalSubscript = "none"
+reportOptionalCall = "none"
+reportArgumentType = "none"
+reportCallIssue = "none"
+reportReturnType = "none"
+reportAssignmentType = "none"
+reportGeneralTypeIssues = "none"
+reportOperatorIssue = "none"

@@ -19,8 +19,8 @@ from PySide6.QtWidgets import QAbstractScrollArea
 
 
 class _ScrollBarStyler(QObject):
-    def eventFilter(self, obj, event):  # noqa: N802 (Qt override)
-        if event.type() == QEvent.Polish and isinstance(obj, QAbstractScrollArea):
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.Polish and isinstance(obj, QAbstractScrollArea):
             for bar in (obj.verticalScrollBar(), obj.horizontalScrollBar()):
                 bar.style().unpolish(bar)
                 bar.style().polish(bar)

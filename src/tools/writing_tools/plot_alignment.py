@@ -40,19 +40,20 @@ from urllib.parse import quote, unquote
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
 
 NO_BAND = "No Book Given"
-POINTS = ("Hook", "Plot Turn 1", "Pinch 1", "Midpoint", "Pinch 2",
-          "Plot Turn 2", "Resolution")
+POINTS = ("Hook", "Plot Turn 1", "Pinch 1", "Midpoint", "Pinch 2", "Plot Turn 2", "Resolution")
 # Column groups, left to right; a group with no column is left out, and a
 # blank column parts each group from the next.
-GROUPS = [("character", True, "Character Arcs with Parallels"),
-          ("character_story", True, "Character Stories with Parallels"),
-          ("romance", True, "Romances with Parallels"),
-          ("story", True, "Stories with Parallels"),
-          ("character", False, "Character Arcs"),
-          ("character_story", False, "Character Stories"),
-          ("romance", False, "Romances"),
-          ("story", False, "Stories"),
-          ("setting", None, "Setting Promises")]
+GROUPS = [
+    ("character", True, "Character Arcs with Parallels"),
+    ("character_story", True, "Character Stories with Parallels"),
+    ("romance", True, "Romances with Parallels"),
+    ("story", True, "Stories with Parallels"),
+    ("character", False, "Character Arcs"),
+    ("character_story", False, "Character Stories"),
+    ("romance", False, "Romances"),
+    ("story", False, "Stories"),
+    ("setting", None, "Setting Promises"),
+]
 HEADER_ROWS = 3
 
 WIKILINK = re.compile(r"\[\[([^|\]]+)(?:\|([^\]]+))?\]\]")
@@ -78,9 +79,11 @@ def tag_of(text: str) -> str | None:
 
 # --- reading the notes -------------------------------------------------------
 
+
 def _settings() -> dict:
     """The `plot_alignment` key of whichever agent's config entry has one."""
     import read_config
+
     for entry in (read_config.get("agents", None) or {}).values():
         if isinstance(entry, dict) and entry.get("plot_alignment"):
             return entry["plot_alignment"]
@@ -89,6 +92,7 @@ def _settings() -> dict:
 
 def _resolve(path: str) -> Path:
     import data_paths
+
     return data_paths.resolve(path)
 
 
@@ -131,8 +135,9 @@ class Sheet:
             m = re.match(r"^\d+\. (.+)$", line)
             if m:
                 self.beats.append(plain(m.group(1)))
-        self.links = [m.group(1) for line in sec.get("Related Notes", [])
-                      for m in WIKILINK.finditer(line)]
+        self.links = [
+            m.group(1) for line in sec.get("Related Notes", []) for m in WIKILINK.finditer(line)
+        ]
 
     def labelled(self, beat: str) -> str:
         label = self.points.get(beat)
@@ -152,8 +157,11 @@ def outline_columns(outline: Path, sheets: dict[str, Sheet], tier: str):
     """(sheet, kind) for every plot sheet the outline links, in link order."""
     sec = _sections(outline.read_text(encoding="utf-8"))
     seen, cols = set(), []
-    for name, kind_default in (("Characters", "character_story"),
-                               ("Plot", "story"), ("Setting", "setting")):
+    for name, kind_default in (
+        ("Characters", "character_story"),
+        ("Plot", "story"),
+        ("Setting", "setting"),
+    ):
         for line in sec.get(name, []):
             for m in WIKILINK.finditer(line):
                 stem = m.group(1)
@@ -173,8 +181,10 @@ def outline_columns(outline: Path, sheets: dict[str, Sheet], tier: str):
 def has_parallel(sheet: Sheet, sheets: dict[str, Sheet]) -> bool:
     """Whether the plot has a parallel: a sheet of the same kind at another
     tier, linked from either sheet's Related Notes."""
+
     def kind(sh):
         return sh.rel.parts[1] if len(sh.rel.parts) > 2 else ""
+
     stem = sheet.path.stem
     for other in sheets.values():
         if other.rel.parts[0] == sheet.rel.parts[0] or kind(other) != kind(sheet):
@@ -186,13 +196,14 @@ def has_parallel(sheet: Sheet, sheets: dict[str, Sheet]) -> bool:
 
 def obsidian_link(path: Path) -> str:
     import read_config
+
     root = _resolve(read_config.get("markdown_notebook.notes_dir"))
     rel = path.resolve().relative_to(root.resolve()).with_suffix("")
-    return (f"obsidian://open?vault={quote(root.name)}"
-            f"&file={quote(rel.as_posix(), safe='')}")
+    return f"obsidian://open?vault={quote(root.name)}&file={quote(rel.as_posix(), safe='')}"
 
 
 # --- generating a tab --------------------------------------------------------
+
 
 def _band_of(tag: str | None, bands: list[dict]) -> str | None:
     for band in bands:
@@ -201,8 +212,9 @@ def _band_of(tag: str | None, bands: list[dict]) -> str | None:
     return None
 
 
-def column_beats(sheet: Sheet, sheets: dict[str, Sheet], tab: dict,
-                 tier: str) -> list[tuple[str, str | None]]:
+def column_beats(
+    sheet: Sheet, sheets: dict[str, Sheet], tab: dict, tier: str
+) -> list[tuple[str, str | None]]:
     """(text, band) for each beat the column contains, in order."""
     bands = tab.get("bands") or []
     beats = [(sheet.labelled(b), b) for b in sheet.beats]
@@ -212,9 +224,11 @@ def column_beats(sheet: Sheet, sheets: dict[str, Sheet], tab: dict,
             parent = sheets.get(stem)
             if not parent or parent.rel.parts[0] == tier:
                 continue
-            got = [(f"{TAG.sub('', parent.labelled(b)).rstrip()}  "
-                    f"[{parent.title}]", b)
-                   for b in parent.beats if tag_of(b) == book]
+            got = [
+                (f"{TAG.sub('', parent.labelled(b)).rstrip()}  [{parent.title}]", b)
+                for b in parent.beats
+                if tag_of(b) == book
+            ]
             if got:
                 beats = got
                 break
@@ -237,14 +251,27 @@ def build_tab(tab: dict) -> dict:
     cols = outline_columns(outline, sheets, tier)
     groups = []
     for kind, parallel, label in GROUPS:
-        members = [sh for sh, k in cols if k == kind and
-                   (parallel is None or has_parallel(sh, sheets) == parallel)]
+        members = [
+            sh
+            for sh, k in cols
+            if k == kind and (parallel is None or has_parallel(sh, sheets) == parallel)
+        ]
         if members:
-            groups.append({"label": label, "columns": [
-                {"title": sh.title, "link": obsidian_link(sh.path),
-                 "note": sh.rel.as_posix(), "promise": sh.promise,
-                 "beats": column_beats(sh, sheets, tab, tier)}
-                for sh in members]})
+            groups.append(
+                {
+                    "label": label,
+                    "columns": [
+                        {
+                            "title": sh.title,
+                            "link": obsidian_link(sh.path),
+                            "note": sh.rel.as_posix(),
+                            "promise": sh.promise,
+                            "beats": column_beats(sh, sheets, tab, tier),
+                        }
+                        for sh in members
+                    ],
+                }
+            )
     band_labels = [b["label"] for b in tab.get("bands") or []]
     if band_labels:
         band_labels.append(NO_BAND)
@@ -261,12 +288,14 @@ def layout(built: dict) -> list[list[str]]:
         for ci, col in enumerate(group["columns"]):
             columns.append(col)
             row1.append(group["label"] if ci == 0 else "")
-    rows = [row1, [c["title"] if c else "" for c in columns],
-            [c["promise"] if c else "" for c in columns]]
+    rows = [
+        row1,
+        [c["title"] if c else "" for c in columns],
+        [c["promise"] if c else "" for c in columns],
+    ]
     bands = built["bands"] or [None]
     for band in bands:
-        depth = max([sum(1 for _, b in c["beats"] if b == band)
-                     for c in columns if c] + [0])
+        depth = max([sum(1 for _, b in c["beats"] if b == band) for c in columns if c] + [0])
         if band is not None:
             if not depth:
                 if band == NO_BAND:
@@ -286,6 +315,7 @@ def tabs() -> list[dict]:
 
 
 # --- syncing -----------------------------------------------------------------
+
 
 def col_letter(i: int) -> str:
     s = ""
@@ -313,8 +343,7 @@ def sync_tab(built: dict, grid: list[list[str]]) -> tuple[list[dict], list[str]]
 
     def is_band_row(r):
         first = _cell(grid, r, 0)
-        return first in band_set and not any(_cell(grid, r, c)
-                                              for c in range(1, width))
+        return first in band_set and not any(_cell(grid, r, c) for c in range(1, width))
 
     def band_at(r):
         current = None
@@ -344,33 +373,46 @@ def sync_tab(built: dict, grid: list[list[str]]) -> tuple[list[dict], list[str]]
         used.add(id(loose_notes[0]))
         loose_sheet, loose_notes = [], []
     for c in loose_sheet:
-        ops.append({"tab": title, "op": "remove_column", "column": col_letter(c),
-                    "title": _cell(grid, 1, c)})
-        report.append(f"{title}: {_cell(grid, 1, c)} is in no outline link; "
-                      "its column is removed")
+        ops.append(
+            {
+                "tab": title,
+                "op": "remove_column",
+                "column": col_letter(c),
+                "title": _cell(grid, 1, c),
+            }
+        )
+        report.append(f"{title}: {_cell(grid, 1, c)} is in no outline link; its column is removed")
     for col in loose_notes:
         group = next(g["label"] for g in built["groups"] if col in g["columns"])
-        ops.append({"tab": title, "op": "add_column", "group": group,
-                    "title": col["title"], "link": col["link"],
-                    "promise": col["promise"], "beats": col["beats"]})
-        report.append(f"{title}: {col['title']} is new; its column goes at the "
-                      f"end of {group}, its beats packed from the top of each band")
+        ops.append(
+            {
+                "tab": title,
+                "op": "add_column",
+                "group": group,
+                "title": col["title"],
+                "link": col["link"],
+                "promise": col["promise"],
+                "beats": col["beats"],
+            }
+        )
+        report.append(
+            f"{title}: {col['title']} is new; its column goes at the "
+            f"end of {group}, its beats packed from the top of each band"
+        )
 
     for c, col in sorted(matched.items()):
         formula = f'=HYPERLINK("{col["link"]}","{col["title"]}")'
         if _cell(grid, 1, c) != col["title"] and _cell(grid, 1, c) != formula:
-            ops.append({"tab": title, "op": "set", "cell": a1(1, c),
-                        "value": formula})
+            ops.append({"tab": title, "op": "set", "cell": a1(1, c), "value": formula})
         if _cell(grid, 2, c) != col["promise"]:
-            ops.append({"tab": title, "op": "set", "cell": a1(2, c),
-                        "value": col["promise"]})
-        placed = [r for r in range(HEADER_ROWS, len(grid))
-                  if _cell(grid, r, c) and not is_band_row(r)]
+            ops.append({"tab": title, "op": "set", "cell": a1(2, c), "value": col["promise"]})
+        placed = [
+            r for r in range(HEADER_ROWS, len(grid)) if _cell(grid, r, c) and not is_band_row(r)
+        ]
         have = [_cell(grid, r, c) for r in placed]
         want = [t for t, _ in col["beats"]]
         bands = [b for _, b in col["beats"]]
         sm = difflib.SequenceMatcher(a=have, b=want, autojunk=False)
-        new_rows = list(placed)
         shift_ops = []
         for tag, i1, i2, j1, j2 in sm.get_opcodes():
             if tag == "equal":
@@ -391,22 +433,29 @@ def sync_tab(built: dict, grid: list[list[str]]) -> tuple[list[dict], list[str]]
         last_insert = {}
         for kind, r, payload in shift_ops:
             if kind == "set":
-                ops.append({"tab": title, "op": "set", "cell": a1(r + offset, c),
-                            "value": payload})
+                ops.append({"tab": title, "op": "set", "cell": a1(r + offset, c), "value": payload})
                 grid[r + offset][c] = payload
             elif kind == "clear":
-                ops.append({"tab": title, "op": "clear", "cell": a1(r + offset, c),
-                            "was": _cell(grid, r + offset, c)})
+                ops.append(
+                    {
+                        "tab": title,
+                        "op": "clear",
+                        "cell": a1(r + offset, c),
+                        "was": _cell(grid, r + offset, c),
+                    }
+                )
                 grid[r + offset][c] = ""
             else:
                 text, band, after = payload
-                start = (last_insert.get(r, r + offset if r is not None
-                                         else HEADER_ROWS - 1)) + 1
+                start = (last_insert.get(r, r + offset if r is not None else HEADER_ROWS - 1)) + 1
                 stop = after + offset if after is not None else len(grid)
                 spot = None
                 for rr in range(start, stop):
-                    if not is_band_row(rr) and not _cell(grid, rr, c) \
-                            and (band is None or band_at(rr) == band):
+                    if (
+                        not is_band_row(rr)
+                        and not _cell(grid, rr, c)
+                        and (band is None or band_at(rr) == band)
+                    ):
                         spot = rr
                         break
                 if spot is None:
@@ -416,26 +465,28 @@ def sync_tab(built: dict, grid: list[list[str]]) -> tuple[list[dict], list[str]]
                             spot += 1
                         if spot < len(grid) and is_band_row(spot):
                             spot += 1
-                    ops.append({"tab": title, "op": "insert_row",
-                                "row": spot + 1})
+                    ops.append({"tab": title, "op": "insert_row", "row": spot + 1})
                     grid.insert(spot, [""] * width)
                     offset += 1
-                    report.append(f"{title}: a row is inserted at {spot + 1} for "
-                                  f"a new beat of {col['title']}; every column "
-                                  "moves down together")
+                    report.append(
+                        f"{title}: a row is inserted at {spot + 1} for "
+                        f"a new beat of {col['title']}; every column "
+                        "moves down together"
+                    )
                 while len(grid[spot]) < width:
                     grid[spot].append("")
                 grid[spot][c] = text
-                ops.append({"tab": title, "op": "set", "cell": a1(spot, c),
-                            "value": text})
+                ops.append({"tab": title, "op": "set", "cell": a1(spot, c), "value": text})
                 last_insert[r] = spot
         for r in range(HEADER_ROWS, len(grid)):
             text = _cell(grid, r, c)
             if text and not is_band_row(r) and text in want:
                 b = bands[want.index(text)]
                 if b is not None and band_at(r) != b:
-                    report.append(f"{title}: {col['title']} - '{text[:50]}' sits "
-                                  f"under {band_at(r)} and is tagged for {b}")
+                    report.append(
+                        f"{title}: {col['title']} - '{text[:50]}' sits "
+                        f"under {band_at(r)} and is tagged for {b}"
+                    )
     return ops, report
 
 
@@ -466,12 +517,14 @@ def main(argv=None) -> int:
             if args.tab and tab["title"] != args.tab:
                 continue
             built = build_tab(tab)
-            out[tab["title"]] = {"rows": layout(built),
-                                 "groups": [{"label": g["label"], "columns":
-                                             [c["title"] for c in g["columns"]]}
-                                            for g in built["groups"]],
-                                 "links": [c["link"] for g in built["groups"]
-                                           for c in g["columns"]]}
+            out[tab["title"]] = {
+                "rows": layout(built),
+                "groups": [
+                    {"label": g["label"], "columns": [c["title"] for c in g["columns"]]}
+                    for g in built["groups"]
+                ],
+                "links": [c["link"] for g in built["groups"] for c in g["columns"]],
+            }
         print(json.dumps(out, ensure_ascii=False, indent=1))
         return 0
     data = json.loads(Path(args.sheet_json).read_text(encoding="utf-8"))

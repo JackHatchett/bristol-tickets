@@ -40,9 +40,10 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import instance_pointer  # noqa: E402  (runs as a script as well as a module)
+import instance_pointer
 
 
 def _project_root() -> Path:
@@ -54,9 +55,7 @@ def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 _ENV_OVERRIDE = "CONFIG_LOCAL_JSON"
@@ -89,11 +88,11 @@ def load() -> dict:
     path = _config_path()
     if not path.exists():
         raise SystemExit(f"read_config: config not found at {path}")
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
-def get(dotted: str, default=_MISSING, *, data: dict | None = None):
+def get(dotted: str, default=_MISSING, *, data: dict | None = None) -> Any:
     """Return the value at a dotted key path, e.g. 'drives.external1.path'.
 
     Integer segments index into lists (e.g. 'agents.x.key_data_paths.0').
@@ -107,7 +106,7 @@ def get(dotted: str, default=_MISSING, *, data: dict | None = None):
             except (ValueError, IndexError):
                 if default is not _MISSING:
                     return default
-                raise KeyError(dotted)
+                raise KeyError(dotted) from None
         elif isinstance(node, dict) and seg in node:
             node = node[seg]
         else:

@@ -35,26 +35,28 @@ def set_process_name(name: str) -> bool:
 
         # objc_msgSend takes whatever the method takes, so each shape it is
         # called with gets a prototype of its own.
-        send0 = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p,
-                                 ctypes.c_void_p)(address)
-        send_str = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p,
-                                    ctypes.c_void_p, ctypes.c_char_p)(address)
-        send2 = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p,
-                                 ctypes.c_void_p, ctypes.c_void_p)(address)
+        send0 = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)(address)
+        send_str = ctypes.CFUNCTYPE(
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_char_p
+        )(address)
+        send2 = ctypes.CFUNCTYPE(
+            None, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p
+        )(address)
 
-        def cls(n): return objc.objc_getClass(n.encode())
-        def sel(n): return objc.sel_registerName(n.encode())
+        def cls(n):
+            return objc.objc_getClass(n.encode())
+
+        def sel(n):
+            return objc.sel_registerName(n.encode())
 
         def nsstring(text: str):
-            return send_str(cls("NSString"), sel("stringWithUTF8String:"),
-                            text.encode("utf-8"))
+            return send_str(cls("NSString"), sel("stringWithUTF8String:"), text.encode("utf-8"))
 
         bundle = send0(cls("NSBundle"), sel("mainBundle"))
         info = send0(bundle, sel("infoDictionary")) if bundle else None
         if not info:
             return False
-        send2(info, sel("setObject:forKey:"), nsstring(name),
-              nsstring("CFBundleName"))
+        send2(info, sel("setObject:forKey:"), nsstring(name), nsstring("CFBundleName"))
         return True
     except (OSError, AttributeError, TypeError, ValueError):
         return False

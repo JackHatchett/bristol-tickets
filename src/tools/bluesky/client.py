@@ -72,14 +72,17 @@ def certificate_authorities():
     if not context.cert_store_stats()["x509_ca"] and sys.platform == "darwin":
         exported = subprocess.run(
             ["/usr/bin/security", "find-certificate", "-a", "-p", KEYCHAIN],
-            capture_output=True, text=True)
+            capture_output=True,
+            text=True,
+        )
         if exported.returncode == 0 and exported.stdout.strip():
             context.load_verify_locations(cadata=exported.stdout)
     if not context.cert_store_stats()["x509_ca"]:
         raise BlueskyError(
             "this interpreter has no certificate authorities to verify a "
             "server with; install certifi for it, or run its own certificate "
-            "installer")
+            "installer"
+        )
     _context = context
     return _context
 
@@ -94,12 +97,12 @@ def _get(url, params=None, attempts=MAX_ATTEMPTS):
         url = url + "?" + urllib.parse.urlencode(params)
     delay = FIRST_BACKOFF_SECONDS
     last = None
-    for attempt in range(attempts):
+    for _attempt in range(attempts):
         request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         try:
             with urllib.request.urlopen(
-                    request, timeout=30,
-                    context=certificate_authorities()) as response:
+                request, timeout=30, context=certificate_authorities()
+            ) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             last = error
@@ -135,8 +138,7 @@ def image_blobs(record):
         cid = (blob.get("ref") or {}).get("$link") or blob.get("cid")
         if not cid:
             continue
-        found.append((cid, blob.get("mimeType") or "image/jpeg",
-                      image.get("alt") or ""))
+        found.append((cid, blob.get("mimeType") or "image/jpeg", image.get("alt") or ""))
     return found
 
 
@@ -146,16 +148,15 @@ def fetch_blob(pds, did, cid, attempts=MAX_ATTEMPTS):
     A blob the account deleted is gone rather than late, so a 400 or a 404 is an
     answer and not a failure: the caller records that it asked and carries on.
     """
-    url = (f"{pds}/xrpc/com.atproto.sync.getBlob?"
-           + urllib.parse.urlencode({"did": did, "cid": cid}))
+    url = f"{pds}/xrpc/com.atproto.sync.getBlob?" + urllib.parse.urlencode({"did": did, "cid": cid})
     delay = FIRST_BACKOFF_SECONDS
     last = None
     for _ in range(attempts):
         request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         try:
             with urllib.request.urlopen(
-                    request, timeout=60,
-                    context=certificate_authorities()) as response:
+                request, timeout=60, context=certificate_authorities()
+            ) as response:
                 return response.read()
         except urllib.error.HTTPError as error:
             if error.code in (400, 404):
@@ -187,7 +188,7 @@ def resolve_pds(did):
     if did.startswith("did:plc:"):
         document = _get(f"{PLC_DIRECTORY}/{did}")
     elif did.startswith("did:web:"):
-        host = urllib.parse.unquote(did[len("did:web:"):]).replace(":", "/")
+        host = urllib.parse.unquote(did[len("did:web:") :]).replace(":", "/")
         document = _get(f"https://{host}/.well-known/did.json")
     else:
         raise BlueskyError(f"unsupported account identifier {did}")
@@ -212,7 +213,7 @@ def created_at(record):
     try:
         moment = datetime.fromisoformat(text)
     except ValueError:
-        raise BlueskyError(f"unreadable timestamp {raw!r}")
+        raise BlueskyError(f"unreadable timestamp {raw!r}") from None
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=timezone.utc)
     return moment.astimezone(timezone.utc)
@@ -279,6 +280,5 @@ def author_feed(actor, limit=25):
     the authority on what anyone else can still read, and the two can disagree
     for as long as it takes an indexer to catch up.
     """
-    payload = _get(f"{APPVIEW}/xrpc/app.bsky.feed.getAuthorFeed",
-                   {"actor": actor, "limit": limit})
+    payload = _get(f"{APPVIEW}/xrpc/app.bsky.feed.getAuthorFeed", {"actor": actor, "limit": limit})
     return payload.get("feed") or []

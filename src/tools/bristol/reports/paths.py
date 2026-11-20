@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import instance  # noqa: E402  (bristol-local; see module docstring)
+import instance
 
 
 def _project_root() -> Path:
@@ -40,9 +40,7 @@ def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 _ENV_VAR = "BRISTOL_REPORTS_DIR"
@@ -113,7 +111,8 @@ def resolve_reports_dir(explicit: str | os.PathLike | None = None) -> Path | Non
     materialising a stray tree in the wrong place.
     """
     candidate = (
-        Path(os.path.expanduser(str(explicit))) if explicit
+        Path(os.path.expanduser(str(explicit)))
+        if explicit
         else _from_env() or _from_pointer() or _from_local_pointer() or _from_tree()
     )
     if candidate is None:

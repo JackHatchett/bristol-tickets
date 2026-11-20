@@ -42,7 +42,6 @@ Usage:
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import sqlite3
 import sys
@@ -51,7 +50,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import zotero_common as zc  # noqa: E402
+import zotero_common as zc
 
 READ_COLLECTION = "Books I've Read"
 SHELVED_TAG = "Shelved"
@@ -73,8 +72,19 @@ LIBRARY_TYPES = ("book", "magazineArticle")
 # report "Shelved" as a literary category.
 NON_GENRE_TAGS = {SHELVED_TAG, "Not shelved", SIGNED_TAG, "unverified-metadata"}
 
-COLUMNS = ["author", "title", "publisher", "edition", "signed", "genre",
-           "pub_date", "page_count", "price_paid", "read", "shelved"]
+COLUMNS = [
+    "author",
+    "title",
+    "publisher",
+    "edition",
+    "signed",
+    "genre",
+    "pub_date",
+    "page_count",
+    "price_paid",
+    "read",
+    "shelved",
+]
 
 
 @contextmanager
@@ -126,12 +136,14 @@ def read_books(conn=None) -> list[dict]:
             f"SELECT i.itemID FROM items i JOIN itemTypes t USING (itemTypeID) "
             f"WHERE t.typeName IN ({ph}) "
             f"AND i.itemID NOT IN (SELECT itemID FROM deletedItems)",
-            LIBRARY_TYPES)
+            LIBRARY_TYPES,
+        )
     }
 
     for r in conn.execute(
-            "SELECT d.itemID, f.fieldName, v.value FROM itemData d "
-            "JOIN fields f USING (fieldID) JOIN itemDataValues v USING (valueID)"):
+        "SELECT d.itemID, f.fieldName, v.value FROM itemData d "
+        "JOIN fields f USING (fieldID) JOIN itemDataValues v USING (valueID)"
+    ):
         if r["itemID"] in items:
             items[r["itemID"]]["fields"][r["fieldName"]] = r["value"]
 
@@ -139,24 +151,29 @@ def read_books(conn=None) -> list[dict]:
     # field — "Ovid", "Anonymous". fieldMode=1 marks the single-field form,
     # which must not be rendered as "Ovid, ".
     for r in conn.execute(
-            "SELECT ic.itemID, c.lastName, c.firstName, c.fieldMode "
-            "FROM itemCreators ic JOIN creators c USING (creatorID) "
-            "ORDER BY ic.itemID, ic.orderIndex"):
+        "SELECT ic.itemID, c.lastName, c.firstName, c.fieldMode "
+        "FROM itemCreators ic JOIN creators c USING (creatorID) "
+        "ORDER BY ic.itemID, ic.orderIndex"
+    ):
         if r["itemID"] not in items:
             continue
-        name = (r["lastName"] or "") if r["fieldMode"] == 1 else \
-            ", ".join(p for p in (r["lastName"], r["firstName"]) if p)
+        name = (
+            (r["lastName"] or "")
+            if r["fieldMode"] == 1
+            else ", ".join(p for p in (r["lastName"], r["firstName"]) if p)
+        )
         if name:
             items[r["itemID"]]["author"].append(name)
 
-    for r in conn.execute(
-            "SELECT it.itemID, t.name FROM itemTags it JOIN tags t USING (tagID)"):
+    for r in conn.execute("SELECT it.itemID, t.name FROM itemTags it JOIN tags t USING (tagID)"):
         if r["itemID"] in items:
             items[r["itemID"]]["tags"].add(r["name"])
 
     for r in conn.execute(
-            "SELECT ci.itemID FROM collectionItems ci JOIN collections co "
-            "USING (collectionID) WHERE co.collectionName=?", (READ_COLLECTION,)):
+        "SELECT ci.itemID FROM collectionItems ci JOIN collections co "
+        "USING (collectionID) WHERE co.collectionName=?",
+        (READ_COLLECTION,),
+    ):
         if r["itemID"] in items:
             items[r["itemID"]]["read"] = "Y"
 
@@ -167,24 +184,25 @@ def read_books(conn=None) -> list[dict]:
             continue
         f = it["fields"]
         extra = _parse_extra(f.get("extra"))
-        genre = extra.get("genre") or ", ".join(
-            sorted(it["tags"] - NON_GENRE_TAGS)) or None
+        genre = extra.get("genre") or ", ".join(sorted(it["tags"] - NON_GENRE_TAGS)) or None
         # A page count is `numPages` on a book and `pages` on a
         # magazineArticle.
         pages = f.get("numPages") or f.get("pages")
-        rows.append({
-            "author": "; ".join(it["author"]) or None,
-            "title": f.get("title"),
-            "publisher": f.get("publisher"),
-            "edition": extra.get("copy") or f.get("edition"),
-            "signed": "Y" if SIGNED_TAG in it["tags"] else "N",
-            "genre": genre,
-            "pub_date": (f.get("date") or "")[:4] or None,
-            "page_count": int(pages) if (pages or "").isdigit() else None,
-            "price_paid": extra.get("price paid"),
-            "read": it["read"],
-            "shelved": "Y" if SHELVED_TAG in it["tags"] else "N",
-        })
+        rows.append(
+            {
+                "author": "; ".join(it["author"]) or None,
+                "title": f.get("title"),
+                "publisher": f.get("publisher"),
+                "edition": extra.get("copy") or f.get("edition"),
+                "signed": "Y" if SIGNED_TAG in it["tags"] else "N",
+                "genre": genre,
+                "pub_date": (f.get("date") or "")[:4] or None,
+                "page_count": int(pages) if (pages or "").isdigit() else None,
+                "price_paid": extra.get("price paid"),
+                "read": it["read"],
+                "shelved": "Y" if SHELVED_TAG in it["tags"] else "N",
+            }
+        )
 
     rows.sort(key=lambda r: ((r["author"] or "").lower(), (r["title"] or "").lower()))
     return rows
@@ -196,6 +214,7 @@ def library_stats(rows: list[dict]) -> dict:
     lists live in their own Zotero collections and are deliberately NOT counted
     here: they are books to read, not a library of unread books, and folding
     them in would silently redefine every metric below."""
+
     def pages(rs):
         return sum(r["page_count"] or 0 for r in rs) or None
 

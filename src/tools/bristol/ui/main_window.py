@@ -34,13 +34,13 @@ one pass.
 
 from __future__ import annotations
 
-import os
 import sqlite3
 import sys
 from pathlib import Path
 
+import config_file  # bristol-local: the one config.local.json reader/writer
 from PySide6.QtCore import QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
+from PySide6.QtGui import QAction, QDesktopServices, QGuiApplication, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -58,37 +58,34 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-import config_file  # bristol-local: the one config.local.json reader/writer
-
 from . import icons, mac_window
+from .agents_tab import AgentsTab
 from .detail_pane import DetailPane
 from .dialogs import confirm, notify
-from .switch import Switch
 from .filter_menu import FilterMenu, FilterState, applied
-from .links import remove_links_for_task
 from .kanban_column import KanbanColumn
-from .results_table import ResultsTable, magnifier_icon
+from .links import remove_links_for_task
 from .record_dialog import UnifiedRecordDialog
+from .results_table import ResultsTable, magnifier_icon
 from .schema_guard import ensure_schema_up_to_date
-from .agents_tab import AgentsTab
 from .settings_modal import SettingsModal
 from .settings_tab import SettingsTab
 from .settled_combo import SettledComboBox
 from .skills_tab import SkillsTab
+from .switch import Switch
 from .theme import (
-    C,
     COLUMNS,
     LAYOUT,
+    C,
+    _fmt_dt,
     appearance_choice,
-    fill_agents,
     apply_scheme,
     build_style_sheet,
+    fill_agents,
     live_scheme,
     set_scheme,
     space,
     style_application,
-    _fmt_dt,
-    _utcnow,
 )
 
 # How long the splitter may keep moving before its width is written to the
@@ -120,14 +117,14 @@ class _HeaderBar(QWidget):
     the window when dragged and zoom it when double-clicked, as a title bar's
     do."""
 
-    def mousePressEvent(self, event) -> None:  # noqa: N802 — Qt's name
+    def mousePressEvent(self, event) -> None:
         handle = self.window().windowHandle()
-        if event.button() == Qt.LeftButton and handle is not None:
+        if event.button() == Qt.MouseButton.LeftButton and handle is not None:
             handle.startSystemMove()
             return
         super().mousePressEvent(event)
 
-    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802
+    def mouseDoubleClickEvent(self, event) -> None:
         window = self.window()
         window.showNormal() if window.isMaximized() else window.showMaximized()
 
@@ -140,6 +137,7 @@ ICON_VIEWS = {"Search": "search"}
 # Past this the row would push the board's own controls around, and the panel
 # is one click away.
 CHIPS_SHOWN = 4
+
 
 class MainWindow(QMainWindow):
     def __init__(self, conn: sqlite3.Connection, initial_db: Path | None = None) -> None:
@@ -165,7 +163,7 @@ class MainWindow(QMainWindow):
         self._apply_theme()
         app = QApplication.instance()
         if app is not None:
-            app.styleHints().colorSchemeChanged.connect(self._on_color_scheme_changed)
+            QGuiApplication.styleHints().colorSchemeChanged.connect(self._on_color_scheme_changed)
 
         # The top bar shares the title bar's band; the window title names the
         # app, so the bar carries only the views and the commands.
@@ -179,14 +177,13 @@ class MainWindow(QMainWindow):
         # a segment has something to select.
         self.pages = QStackedWidget()
 
-        main_splitter = QSplitter(Qt.Horizontal)
+        main_splitter = QSplitter(Qt.Orientation.Horizontal)
         main_splitter.setHandleWidth(space("lg"))
 
         left_container = QWidget()
         left_container.setObjectName("leftContainer")
         outer_layout = QVBoxLayout(left_container)
-        outer_layout.setContentsMargins(space("lg"), space("lg"),
-                                        space("lg"), space("lg"))
+        outer_layout.setContentsMargins(space("lg"), space("lg"), space("lg"), space("lg"))
         outer_layout.setSpacing(space("lg"))
         main_splitter.addWidget(left_container)
 
@@ -196,16 +193,14 @@ class MainWindow(QMainWindow):
         self.refresh_btn = QPushButton()
         self.refresh_btn.setObjectName("toolbarButton")
         self.refresh_btn.setAccessibleName("Refresh")
-        self.refresh_btn.setIconSize(QSize(LAYOUT["header_icon"],
-                                           LAYOUT["header_icon"]))
+        self.refresh_btn.setIconSize(QSize(LAYOUT["header_icon"], LAYOUT["header_icon"]))
         self.refresh_btn.clicked.connect(self._refresh_board)
 
         self.global_create_btn = QPushButton()
         self.global_create_btn.setObjectName("toolbarCreate")
         self.global_create_btn.setAccessibleName("Create")
         self.global_create_btn.clicked.connect(self._open_global_create)
-        self.global_create_btn.setIconSize(QSize(LAYOUT["header_icon"],
-                                                 LAYOUT["header_icon"]))
+        self.global_create_btn.setIconSize(QSize(LAYOUT["header_icon"], LAYOUT["header_icon"]))
 
         # Settings is a modal over the window rather than a view; its button
         # stands checked while the modal is open.
@@ -213,9 +208,8 @@ class MainWindow(QMainWindow):
         self.settings_btn.setObjectName("toolbarToggle")
         self.settings_btn.setAccessibleName("Settings")
         self.settings_btn.setCheckable(True)
-        self.settings_btn.setFocusPolicy(Qt.TabFocus)
-        self.settings_btn.setIconSize(QSize(LAYOUT["header_icon"],
-                                            LAYOUT["header_icon"]))
+        self.settings_btn.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        self.settings_btn.setIconSize(QSize(LAYOUT["header_icon"], LAYOUT["header_icon"]))
         # Toggled rather than clicked, as a view's button is: an assistive
         # tool presses a checkable button by toggling it, which emits no click.
         self.settings_btn.toggled.connect(self._settings_toggled)
@@ -230,15 +224,15 @@ class MainWindow(QMainWindow):
         self.filter_btn = QPushButton("Filter")
         self.filter_btn.setObjectName("filterBtn")
         self.filter_btn.setToolTip(
-            "Narrow the Board, the Backlog and the Archive to an assignee, an "
-            "epic, or both.")
+            "Narrow the Board, the Backlog and the Archive to an assignee, an epic, or both."
+        )
         self.filter_btn.clicked.connect(self._open_filter_menu)
         # Built on first use, against the board as it stands at that moment.
         self.filter_menu = None
 
         self.filter_clear_btn = QPushButton("Clear")
         self.filter_clear_btn.setObjectName("link")
-        self.filter_clear_btn.setCursor(Qt.PointingHandCursor)
+        self.filter_clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.filter_clear_btn.setToolTip("Remove every filter.")
         self.filter_clear_btn.clicked.connect(self._clear_filters)
 
@@ -253,7 +247,7 @@ class MainWindow(QMainWindow):
         # The body is one rounded surface under the top bar, inset from the
         # window's sides and foot; every view and the detail pane sit on it.
         board_and_pane.setObjectName("bodySurface")
-        board_and_pane.setAttribute(Qt.WA_StyledBackground, True)
+        board_and_pane.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         body_row = QHBoxLayout(board_and_pane)
         body_row.setContentsMargins(0, 0, 0, 0)
         body_row.setSpacing(0)
@@ -263,9 +257,9 @@ class MainWindow(QMainWindow):
         icons.tint(self.pane_reveal, "chevron-left", size=14)
         self.pane_reveal.setToolTip("Show the detail pane")
         self.pane_reveal.setAccessibleName("Show the detail pane")
-        self.pane_reveal.setCursor(Qt.PointingHandCursor)
+        self.pane_reveal.setCursor(Qt.CursorShape.PointingHandCursor)
         self.pane_reveal.setFixedWidth(space("2xl"))
-        self.pane_reveal.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.pane_reveal.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.pane_reveal.clicked.connect(lambda: self._set_pane_collapsed(False))
         self.pane_reveal.setVisible(False)
         body_row.addWidget(self.pane_reveal)
@@ -294,20 +288,19 @@ class MainWindow(QMainWindow):
         self.search_input.setPlaceholderText("Search cards and epics")
         self.search_input.setClearButtonEnabled(True)
         self._search_glass = self.search_input.addAction(
-            magnifier_icon(C["INK_SOFT"]), QLineEdit.LeadingPosition)
+            magnifier_icon(C["INK_SOFT"]), QLineEdit.ActionPosition.LeadingPosition
+        )
         self._search_settle = QTimer(self)
         self._search_settle.setSingleShot(True)
         self._search_settle.setInterval(SEARCH_SETTLE_MS)
         self._search_settle.timeout.connect(self._execute_global_search)
-        self.search_input.textChanged.connect(
-            lambda _text: self._search_settle.start())
+        self.search_input.textChanged.connect(lambda _text: self._search_settle.start())
         self.search_input.returnPressed.connect(self._execute_global_search)
         search_bar_layout.addWidget(self.search_input, 1)
 
         self.hide_closed_switch = Switch("Hide Closed Items")
         self.hide_closed_switch.setChecked(True)
-        self.hide_closed_switch.toggled.connect(
-            lambda _on: self._execute_global_search())
+        self.hide_closed_switch.toggled.connect(lambda _on: self._execute_global_search())
         search_bar_layout.addWidget(self.hide_closed_switch)
         search_layout.addLayout(search_bar_layout)
 
@@ -315,8 +308,7 @@ class MainWindow(QMainWindow):
         self.search_count.setObjectName("formCaption")
         search_layout.addWidget(self.search_count)
 
-        self.search_results = ResultsTable(
-            ["Type", "#", "Title", "Status", "Closed"], stretch=2)
+        self.search_results = ResultsTable(["Type", "#", "Title", "Status", "Closed"], stretch=2)
         self.search_results.picked.connect(self._update_inspector)
         self.search_results.opened.connect(self._open_record)
         search_layout.addWidget(self.search_results, 1)
@@ -331,8 +323,9 @@ class MainWindow(QMainWindow):
         self.backlog_filter_note = QLabel()
         self.backlog_filter_note.setObjectName("formCaption")
         backlog_outer.addWidget(self.backlog_filter_note)
-        self.backlog_column = KanbanColumn(self, self.conn, None, "Backlog (drag to reorder)",
-                                           is_backlog=True)
+        self.backlog_column = KanbanColumn(
+            self, self.conn, None, "Backlog (drag to reorder)", is_backlog=True
+        )
         backlog_outer.addWidget(self.backlog_column)
 
         backlog_bar = QHBoxLayout()
@@ -344,7 +337,8 @@ class MainWindow(QMainWindow):
         self.backlog_edit_btn.setObjectName("globalCreateBtn")
         self.backlog_edit_btn.setToolTip(
             "Show the bulk-select checkboxes to activate or delete cards. "
-            "Dragging to reorder never needs Edit.")
+            "Dragging to reorder never needs Edit."
+        )
         self.backlog_edit_btn.clicked.connect(self._toggle_backlog_edit)
         self.backlog_selall_btn = QPushButton("Select All")
         self.backlog_selall_btn.clicked.connect(lambda: self._set_all_backlog_checks(True))
@@ -354,7 +348,8 @@ class MainWindow(QMainWindow):
         self.backlog_activate_btn.setObjectName("globalCreateBtn")
         self.backlog_activate_btn.setToolTip(
             "Move checked cards to the active Board (appended to the bottom of "
-            "their status column, in their current backlog order).")
+            "their status column, in their current backlog order)."
+        )
         self.backlog_activate_btn.clicked.connect(self._bulk_activate_backlog)
         self.backlog_delete_btn = QPushButton("Delete")
         self.backlog_delete_btn.setObjectName("deleteBtn")
@@ -417,8 +412,7 @@ class MainWindow(QMainWindow):
         self.archive_filter_note = QLabel()
         self.archive_filter_note.setObjectName("formCaption")
         archive_layout.addWidget(self.archive_filter_note)
-        self.archive_results = ResultsTable(
-            ["Type", "#", "Title", "Status", "Archived"], stretch=2)
+        self.archive_results = ResultsTable(["Type", "#", "Title", "Status", "Archived"], stretch=2)
         self.archive_results.picked.connect(self._update_inspector)
         self.archive_results.opened.connect(self._open_record)
         archive_layout.addWidget(self.archive_results)
@@ -427,18 +421,22 @@ class MainWindow(QMainWindow):
         # Everything that configures Bristol: the fleet's two pages and the
         # Settings sections, in one modal over the window.
         self.agents_tab = AgentsTab()
-        self.skills_tab = SkillsTab(self.conn,
-                                    on_ticket_filed=self._refresh_board)
+        self.skills_tab = SkillsTab(self.conn, on_ticket_filed=self._refresh_board)
         self.settings_tab = SettingsTab(
-            on_appearance_changed=self._preview_appearance, conn=self.conn,
-            on_board_changed=self._refresh_board)
+            on_appearance_changed=self._preview_appearance,
+            conn=self.conn,
+            on_board_changed=self._refresh_board,
+        )
         self.settings_modal = SettingsModal(
-            self, self.agents_tab, self.skills_tab, self.settings_tab,
-            on_closed=lambda: self.settings_btn.setChecked(False))
+            self,
+            self.agents_tab,
+            self.skills_tab,
+            self.settings_tab,
+            on_closed=lambda: self.settings_btn.setChecked(False),
+        )
         # The two Agent pickers write one key, and each shows the other's
         # choice: Settings writes it first, then the top bar re-reads it.
-        self.settings_tab.next_agent.picked.connect(
-            lambda _slug: self._load_agent_picker())
+        self.settings_tab.next_agent.picked.connect(lambda _slug: self._load_agent_picker())
         self._load_agent_picker()
         self._tint_header()
         # After every tab exists, since the View menu lists them.
@@ -450,7 +448,8 @@ class MainWindow(QMainWindow):
         self.detail_pane = DetailPane(
             self.conn,
             on_changed=self._on_pane_edit,
-            on_collapse=lambda: self._set_pane_collapsed(True))
+            on_collapse=lambda: self._set_pane_collapsed(True),
+        )
         main_splitter.addWidget(self.detail_pane)
 
         # Both panes are elastic (no max width — the user can widen the pane as
@@ -462,9 +461,9 @@ class MainWindow(QMainWindow):
         self._pane_collapsed = False
         self._detail_width = int(
             config_file.get(config_file.DETAIL_WIDTH, LAYOUT["split_detail"])
-            or LAYOUT["split_detail"])
-        main_splitter.setSizes(
-            [LAYOUT["window_w"] - self._detail_width, self._detail_width])
+            or LAYOUT["split_detail"]
+        )
+        main_splitter.setSizes([LAYOUT["window_w"] - self._detail_width, self._detail_width])
         self._main_splitter = main_splitter
 
         # Another session or the command line writing the board is seen within
@@ -519,8 +518,7 @@ class MainWindow(QMainWindow):
         editing = getattr(self, "_backlog_editing", False)
         self.backlog_selall_btn.setVisible(editing)
         has = editing and bool(self.backlog_column.checked_ids())
-        for w in (self.backlog_clear_btn, self.backlog_activate_btn,
-                  self.backlog_delete_btn):
+        for w in (self.backlog_clear_btn, self.backlog_activate_btn, self.backlog_delete_btn):
             w.setVisible(has)
 
     def _set_backlog_read_mode(self) -> None:
@@ -561,8 +559,9 @@ class MainWindow(QMainWindow):
             self.detail_pane.setVisible(True)
             self.pane_reveal.setVisible(False)
             total = sum(self._main_splitter.sizes()) or LAYOUT["window_w"]
-            width = max(LAYOUT["detail_min_w"],
-                        min(self._detail_width, total - LAYOUT["column_min_w"]))
+            width = max(
+                LAYOUT["detail_min_w"], min(self._detail_width, total - LAYOUT["column_min_w"])
+            )
             self._main_splitter.setSizes([total - width, width])
         self._pane_collapsed = collapsed
         if save:
@@ -582,10 +581,12 @@ class MainWindow(QMainWindow):
             if len(sizes) > 1 and sizes[1] > 0:
                 self._detail_width = sizes[1]
         try:
-            config_file.update({
-                config_file.DETAIL_WIDTH: self._detail_width,
-                config_file.DETAIL_COLLAPSED: self._pane_collapsed,
-            })
+            config_file.update(
+                {
+                    config_file.DETAIL_WIDTH: self._detail_width,
+                    config_file.DETAIL_COLLAPSED: self._pane_collapsed,
+                }
+            )
         except OSError:
             pass
 
@@ -593,7 +594,7 @@ class MainWindow(QMainWindow):
         """A field changed from the pane: the board reflects it immediately."""
         self._refresh_board()
 
-    def closeEvent(self, event):  # noqa: N802 (Qt override)
+    def closeEvent(self, event):
         """Leave nothing behind: a splitter save still waiting on its debounce,
         so a drag made just before quitting survives the restart."""
         if self._splitter_save_timer.isActive():
@@ -645,8 +646,9 @@ class MainWindow(QMainWindow):
         self.filter_clear_btn.setVisible(bool(count))
         self.filter_row.setVisible(bool(count))
 
-        notice = "" if not count else (
-            f"Filtered · {count} — the Filter button on the Board sets it.")
+        notice = (
+            "" if not count else (f"Filtered · {count} — the Filter button on the Board sets it.")
+        )
         for label in (self.backlog_filter_note, self.archive_filter_note):
             label.setText(notice)
             label.setVisible(bool(count))
@@ -660,12 +662,11 @@ class MainWindow(QMainWindow):
             chip = QPushButton(label)
             chip.setObjectName("filterChip")
             # The way to remove the filter sits after its name.
-            chip.setLayoutDirection(Qt.RightToLeft)
+            chip.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
             icons.tint(chip, "x", "NEUTRAL_TX")
-            chip.setCursor(Qt.PointingHandCursor)
+            chip.setCursor(Qt.CursorShape.PointingHandCursor)
             chip.setToolTip("Remove this filter")
-            chip.clicked.connect(
-                lambda _checked=False, k=kind, v=value: self._remove_filter(k, v))
+            chip.clicked.connect(lambda _checked=False, k=kind, v=value: self._remove_filter(k, v))
             self.chip_row.addWidget(chip)
         if len(chips) > CHIPS_SHOWN:
             rest = QLabel(f"+{len(chips) - CHIPS_SHOWN}")
@@ -704,17 +705,15 @@ class MainWindow(QMainWindow):
         header = _HeaderBar()
         header.setObjectName("appHeader")
         # A QWidget subclass paints its stylesheet background only when asked.
-        header.setAttribute(Qt.WA_StyledBackground, True)
+        header.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         bar = QHBoxLayout(header)
         bar.setSpacing(space("lg"))
         if self._tall_title_bar:
             header.setFixedHeight(mac_window.TALL_TITLE_BAR)
-            bar.setContentsMargins(LAYOUT["traffic_lights_tall_w"], 0,
-                                   space("xl"), 0)
+            bar.setContentsMargins(LAYOUT["traffic_lights_tall_w"], 0, space("xl"), 0)
         elif self._header_in_title_bar:
             header.setFixedHeight(LAYOUT["title_bar_h"])
-            bar.setContentsMargins(LAYOUT["traffic_lights_w"], 0,
-                                   space("xl"), 0)
+            bar.setContentsMargins(LAYOUT["traffic_lights_w"], 0, space("xl"), 0)
         else:
             header.setFixedHeight(mac_window.TALL_TITLE_BAR)
             bar.setContentsMargins(space("xl"), 0, space("xl"), 0)
@@ -728,8 +727,8 @@ class MainWindow(QMainWindow):
         self._mark.setPixmap(icons.mark(LAYOUT["header_mark_h"]))
         title = QLabel("Bristol Tickets")
         title.setObjectName("regionTitle")
-        identity_row.addWidget(self._mark, 0, Qt.AlignVCenter)
-        identity_row.addWidget(title, 0, Qt.AlignVCenter)
+        identity_row.addWidget(self._mark, 0, Qt.AlignmentFlag.AlignVCenter)
+        identity_row.addWidget(title, 0, Qt.AlignmentFlag.AlignVCenter)
 
         views = QWidget()
         views.setObjectName("viewTabs")
@@ -747,12 +746,11 @@ class MainWindow(QMainWindow):
         left = QWidget()
         left_row = QHBoxLayout(left)
         left_row.setContentsMargins(0, 0, 0, 0)
-        left_row.addWidget(identity, 0, Qt.AlignVCenter)
+        left_row.addWidget(identity, 0, Qt.AlignmentFlag.AlignVCenter)
         left_row.addStretch(1)
         # Hidden once it has a parent: a parentless widget made visible
         # would open as a window of its own.
-        identity.setHidden(self._header_in_title_bar
-                           and not self._tall_title_bar)
+        identity.setHidden(self._header_in_title_bar and not self._tall_title_bar)
         right = QWidget()
         right_row = QHBoxLayout(right)
         right_row.setContentsMargins(0, 0, 0, 0)
@@ -766,17 +764,17 @@ class MainWindow(QMainWindow):
         self.agent_picker = SettledComboBox()
         self.agent_picker.setObjectName("toolbarPicker")
         self.agent_picker.setAccessibleName("Agent")
-        self.agent_picker.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.agent_picker.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.agent_picker.picked.connect(self._choose_agent)
-        right_row.addWidget(self.agent_picker, 0, Qt.AlignVCenter)
+        right_row.addWidget(self.agent_picker, 0, Qt.AlignmentFlag.AlignVCenter)
         right_row.addLayout(self._icon_slots["Search"])
-        right_row.addWidget(self.refresh_btn, 0, Qt.AlignVCenter)
-        right_row.addWidget(self.global_create_btn, 0, Qt.AlignVCenter)
-        right_row.addWidget(self.settings_btn, 0, Qt.AlignVCenter)
+        right_row.addWidget(self.refresh_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+        right_row.addWidget(self.global_create_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+        right_row.addWidget(self.settings_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         for side in (left, right):
-            side.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            side.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         bar.addWidget(left, 1)
-        bar.addWidget(views, 0, Qt.AlignVCenter)
+        bar.addWidget(views, 0, Qt.AlignmentFlag.AlignVCenter)
         bar.addWidget(right, 1)
         return header
 
@@ -811,11 +809,9 @@ class MainWindow(QMainWindow):
         for button in getattr(self, "_tab_buttons", []):
             name = ICON_VIEWS.get(button.accessibleName())
             if name:
-                button.setIcon(icons.toggle_icon(name, C["INK_SOFT"],
-                                                 C["ACCENT"]))
+                button.setIcon(icons.toggle_icon(name, C["INK_SOFT"], C["ACCENT"]))
         if hasattr(self, "settings_btn"):
-            self.settings_btn.setIcon(icons.toggle_icon(
-                "settings", C["INK_SOFT"], C["ACCENT"]))
+            self.settings_btn.setIcon(icons.toggle_icon("settings", C["INK_SOFT"], C["ACCENT"]))
         if hasattr(self, "refresh_btn"):
             self.refresh_btn.setIcon(icons.icon("refresh-cw", C["INK_SOFT"]))
             self.global_create_btn.setIcon(icons.icon("plus", C["ON_ACCENT"]))
@@ -831,18 +827,16 @@ class MainWindow(QMainWindow):
         button.setAccessibleName(name)
         button.setObjectName("toolbarToggle" if icon_view else "viewTab")
         button.setCheckable(True)
-        button.setFocusPolicy(Qt.TabFocus)
+        button.setFocusPolicy(Qt.FocusPolicy.TabFocus)
         if icon_view:
-            button.setIconSize(QSize(LAYOUT["header_icon"],
-                                     LAYOUT["header_icon"]))
+            button.setIconSize(QSize(LAYOUT["header_icon"], LAYOUT["header_icon"]))
         # Toggled rather than clicked: an assistive tool presses a checkable
         # button by toggling it, which emits no click, and a pointer click
         # toggles it as well.
-        button.toggled.connect(
-            lambda checked, i=index: checked and self._show_page(i))
+        button.toggled.connect(lambda checked, i=index: checked and self._show_page(i))
         self._tab_group.addButton(button)
         if icon_view:
-            self._icon_slots[name].addWidget(button, 0, Qt.AlignVCenter)
+            self._icon_slots[name].addWidget(button, 0, Qt.AlignmentFlag.AlignVCenter)
         else:
             self._tab_row.addWidget(button)
         self._tab_buttons.append(button)
@@ -873,8 +867,9 @@ class MainWindow(QMainWindow):
 
     # ----- Menu bar ---------------------------------------------------------
 
-    def _action(self, menu, text: str, slot, shortcut=None,
-                role=QAction.NoRole) -> QAction:
+    def _action(
+        self, menu, text: str, slot, shortcut=None, role=QAction.MenuRole.NoRole
+    ) -> QAction:
         """One menu item. Every item states its role, because Qt otherwise
         moves an item whose title merely resembles About, Settings or Quit
         into the application menu."""
@@ -892,53 +887,69 @@ class MainWindow(QMainWindow):
         bar = self.menuBar()
 
         file_menu = bar.addMenu("File")
-        self._action(file_menu, "New Card", self._open_global_create,
-                     QKeySequence.New)
-        self._action(file_menu, "Reload", self._refresh_board,
-                     QKeySequence.Refresh)
+        self._action(file_menu, "New Card", self._open_global_create, QKeySequence.StandardKey.New)
+        self._action(file_menu, "Reload", self._refresh_board, QKeySequence.StandardKey.Refresh)
         file_menu.addSeparator()
         self._action(file_menu, "Setup…", self._open_setup_wizard)
         file_menu.addSeparator()
-        self._action(file_menu, "Close Window", self.close, QKeySequence.Close)
+        self._action(file_menu, "Close Window", self.close, QKeySequence.StandardKey.Close)
         # Filed in the application menu by their roles.
-        self._action(file_menu, "About Bristol Tickets", self._show_about,
-                     role=QAction.AboutRole)
-        self._action(file_menu, "Settings…", self._open_settings,
-                     QKeySequence.Preferences, QAction.PreferencesRole)
-        self._action(file_menu, "Quit Bristol Tickets",
-                     QApplication.instance().quit if QApplication.instance()
-                     else self.close, QKeySequence.Quit, QAction.QuitRole)
+        self._action(
+            file_menu, "About Bristol Tickets", self._show_about, role=QAction.MenuRole.AboutRole
+        )
+        self._action(
+            file_menu,
+            "Settings…",
+            self._open_settings,
+            QKeySequence.StandardKey.Preferences,
+            QAction.MenuRole.PreferencesRole,
+        )
+        self._action(
+            file_menu,
+            "Quit Bristol Tickets",
+            QApplication.instance().quit if QApplication.instance() else self.close,
+            QKeySequence.StandardKey.Quit,
+            QAction.MenuRole.QuitRole,
+        )
 
         edit_menu = bar.addMenu("Edit")
         for text, method, key in (
-                ("Undo", "undo", QKeySequence.Undo),
-                ("Redo", "redo", QKeySequence.Redo),
-                (None, None, None),
-                ("Cut", "cut", QKeySequence.Cut),
-                ("Copy", "copy", QKeySequence.Copy),
-                ("Paste", "paste", QKeySequence.Paste),
-                ("Select All", "selectAll", QKeySequence.SelectAll)):
+            ("Undo", "undo", QKeySequence.StandardKey.Undo),
+            ("Redo", "redo", QKeySequence.StandardKey.Redo),
+            (None, None, None),
+            ("Cut", "cut", QKeySequence.StandardKey.Cut),
+            ("Copy", "copy", QKeySequence.StandardKey.Copy),
+            ("Paste", "paste", QKeySequence.StandardKey.Paste),
+            ("Select All", "selectAll", QKeySequence.StandardKey.SelectAll),
+        ):
             if text is None:
                 edit_menu.addSeparator()
                 continue
-            self._action(edit_menu, text,
-                         lambda m=method: self._edit_focused(m), key)
+            self._action(edit_menu, text, lambda m=method: self._edit_focused(m), key)
 
         view_menu = bar.addMenu("View")
         for number, button in enumerate(self._tab_buttons, start=1):
-            self._action(view_menu, button.accessibleName(),
-                         lambda i=number - 1: self._show_page(i),
-                         f"Ctrl+{number}" if number <= 9 else None)
+            self._action(
+                view_menu,
+                button.accessibleName(),
+                lambda i=number - 1: self._show_page(i),
+                f"Ctrl+{number}" if number <= 9 else None,
+            )
         view_menu.addSeparator()
-        self._action(view_menu, "Show or Hide Details",
-                     lambda: self._set_pane_collapsed(not self._pane_collapsed),
-                     "Ctrl+Alt+I")
+        self._action(
+            view_menu,
+            "Show or Hide Details",
+            lambda: self._set_pane_collapsed(not self._pane_collapsed),
+            "Ctrl+Alt+I",
+        )
 
         window_menu = bar.addMenu("Window")
         self._action(window_menu, "Minimize", self.showMinimized, "Ctrl+M")
-        self._action(window_menu, "Zoom",
-                     lambda: self.showNormal() if self.isMaximized()
-                     else self.showMaximized())
+        self._action(
+            window_menu,
+            "Zoom",
+            lambda: self.showNormal() if self.isMaximized() else self.showMaximized(),
+        )
 
         help_menu = bar.addMenu("Help")
         self._action(help_menu, "Bristol Tickets Help", self._open_help)
@@ -952,11 +963,15 @@ class MainWindow(QMainWindow):
 
     def _show_about(self) -> None:
         import payload  # bristol-local
+
         root = config_file.project_root()
         release = payload.version(root) if root is not None else None
-        notify(self, "About Bristol Tickets",
-               f"Bristol Tickets {release}" if release else "Bristol Tickets",
-               "Close")
+        notify(
+            self,
+            "About Bristol Tickets",
+            f"Bristol Tickets {release}" if release else "Bristol Tickets",
+            "Close",
+        )
 
     def _open_help(self) -> None:
         """The README the project ships, which is the guide to the app."""
@@ -973,9 +988,12 @@ class MainWindow(QMainWindow):
         if db_path is None:
             return
         self.settings_tab.reload()
-        notify(self, "Setup complete",
-               f"Your installation is at {db_path}.\n\n"
-               f"Bristol Tickets opens it the next time it launches.")
+        notify(
+            self,
+            "Setup complete",
+            f"Your installation is at {db_path}.\n\n"
+            f"Bristol Tickets opens it the next time it launches.",
+        )
 
     # ----- Theming (OS light/dark, warm orange both ways) -------------------
 
@@ -991,14 +1009,19 @@ class MainWindow(QMainWindow):
         theme, mode = appearance_choice(
             config_file.get(config_file.APPEARANCE_THEME),
             config_file.get(config_file.APPEARANCE_MODE),
-            config_file.get(config_file.APPEARANCE_SCHEME))
+            config_file.get(config_file.APPEARANCE_SCHEME),
+        )
         # Applied app-wide so child dialogs and message boxes inherit; fall back
         # to the window itself if there's somehow no application object. The
         # collection goes down with it, so a stored choice naming a theme the
         # user added resolves to that theme rather than falling back.
-        apply_scheme(app, theme, mode,
-                     config_file.get(config_file.APPEARANCE_THEMES),
-                     config_file.get(config_file.APPEARANCE_CUSTOM))
+        apply_scheme(
+            app,
+            theme,
+            mode,
+            config_file.get(config_file.APPEARANCE_THEMES),
+            config_file.get(config_file.APPEARANCE_CUSTOM),
+        )
         if app is None:
             self.setStyleSheet(build_style_sheet())
 
@@ -1053,31 +1076,33 @@ class MainWindow(QMainWindow):
         tab move itself, from the database triggers on this connection."""
         for tid in ids:
             status_row = self.conn.execute(
-                "SELECT status, COALESCE(stage,'backlog') FROM task WHERE id=?",
-                (tid,)).fetchone()
+                "SELECT status, COALESCE(stage,'backlog') FROM task WHERE id=?", (tid,)
+            ).fetchone()
             if status_row is None:
                 continue
             status, prior_stage = status_row
             if stage == "active":
                 base = self.conn.execute(
                     "SELECT COALESCE(MAX(sort_order), -1) FROM task "
-                    "WHERE stage='active' AND status=?", (status,)).fetchone()[0]
+                    "WHERE stage='active' AND status=?",
+                    (status,),
+                ).fetchone()[0]
             else:
                 base = self.conn.execute(
-                    "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage=?",
-                    (stage,)).fetchone()[0]
+                    "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage=?", (stage,)
+                ).fetchone()[0]
             self.conn.execute(
-                "UPDATE task SET stage=?, sort_order=? WHERE id=?",
-                (stage, base + 1, tid))
+                "UPDATE task SET stage=?, sort_order=? WHERE id=?", (stage, base + 1, tid)
+            )
         self.conn.commit()
 
     # ----- Backlog bulk actions -------------------------------
 
     def _set_all_backlog_checks(self, checked: bool) -> None:
         lw = self.backlog_column.list_widget
-        state = Qt.Checked if checked else Qt.Unchecked
+        state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
         for i in range(lw.count()):
-            lw.item(i).setData(Qt.CheckStateRole, state)
+            lw.item(i).setData(Qt.ItemDataRole.CheckStateRole, state)
         lw.viewport().update()
 
     def _bulk_activate_backlog(self) -> None:
@@ -1085,8 +1110,7 @@ class MainWindow(QMainWindow):
         relative backlog order and append to the bottom of their status column."""
         ids = self.backlog_column.checked_ids()
         if not ids:
-            notify(self, "Nothing checked",
-                   "Tick one or more backlog cards first.")
+            notify(self, "Nothing checked", "Tick one or more backlog cards first.")
             return
         self._move_tasks_to_stage(ids, "active")
         self._refresh_board()
@@ -1094,13 +1118,15 @@ class MainWindow(QMainWindow):
     def _bulk_delete_backlog(self) -> None:
         ids = self.backlog_column.checked_ids()
         if not ids:
-            notify(self, "Nothing checked",
-                   "Tick one or more backlog cards first.")
+            notify(self, "Nothing checked", "Tick one or more backlog cards first.")
             return
-        if not confirm(self, "Delete backlog cards",
-                       f"Permanently delete {len(ids)} backlog card(s)? This "
-                       f"cannot be undone.",
-                       "Delete", destructive=True):
+        if not confirm(
+            self,
+            "Delete backlog cards",
+            f"Permanently delete {len(ids)} backlog card(s)? This cannot be undone.",
+            "Delete",
+            destructive=True,
+        ):
             return
         for tid in ids:
             self.conn.execute("DELETE FROM issue_log WHERE task_id=?", (tid,))
@@ -1134,14 +1160,23 @@ class MainWindow(QMainWindow):
         except sqlite3.OperationalError:
             rows = []
         self.archive_results.set_rows(
-            ((_kind(rtype), (f"#{tid}", tid), title, _status_word(status),
-              (_fmt_dt(archived), archived or "")), (tid, "task"))
-            for tid, title, status, rtype, archived in rows)
+            (
+                (
+                    _kind(rtype),
+                    (f"#{tid}", tid),
+                    title,
+                    _status_word(status),
+                    (_fmt_dt(archived), archived or ""),
+                ),
+                (tid, "task"),
+            )
+            for tid, title, status, rtype, archived in rows
+        )
 
     def _open_record(self, record_id: int, mode: str) -> None:
         """Edit a record a results table was double-clicked on."""
         dlg = UnifiedRecordDialog(self, self.conn, mode=mode, record_id=record_id)
-        if dlg.exec() == QDialog.Accepted:
+        if dlg.exec() == QDialog.DialogCode.Accepted:
             dlg.save_data()
             self._refresh_board()
 
@@ -1150,10 +1185,15 @@ class MainWindow(QMainWindow):
         # (_stage_for_current_tab). The user can still change Stage in the
         # dialog.
         epic_id = self.filters.sole_epic()
-        dlg = UnifiedRecordDialog(self, self.conn, mode="task", initial_status="todo",
-                                  initial_stage=self._stage_for_current_tab(),
-                                  epic_id=epic_id)
-        if dlg.exec() == QDialog.Accepted:
+        dlg = UnifiedRecordDialog(
+            self,
+            self.conn,
+            mode="task",
+            initial_status="todo",
+            initial_stage=self._stage_for_current_tab(),
+            epic_id=epic_id,
+        )
+        if dlg.exec() == QDialog.DialogCode.Accepted:
             dlg.save_data(fallback_epic=epic_id)
             self._refresh_board()
 
@@ -1185,29 +1225,42 @@ class MainWindow(QMainWindow):
             task_query += " ORDER BY t.title COLLATE NOCASE LIMIT 50"
 
             for tid, title, status, rtype, closed in self.conn.execute(
-                    task_query, (term, term)).fetchall():
-                found_rows.append((
-                    (_kind(rtype), (f"#{tid}", tid), title, _status_word(status),
-                     (_fmt_dt(closed) if closed else "", closed or "")),
-                    (tid, "task")))
+                task_query, (term, term)
+            ).fetchall():
+                found_rows.append(
+                    (
+                        (
+                            _kind(rtype),
+                            (f"#{tid}", tid),
+                            title,
+                            _status_word(status),
+                            (_fmt_dt(closed) if closed else "", closed or ""),
+                        ),
+                        (tid, "task"),
+                    )
+                )
 
-            epic_query = "SELECT id, name, status FROM epic WHERE (name LIKE ? OR description LIKE ?)"
+            epic_query = (
+                "SELECT id, name, status FROM epic WHERE (name LIKE ? OR description LIKE ?)"
+            )
             if hide_closed:
                 epic_query += " AND status NOT IN ('completed', 'done', 'on hold')"
             epic_query += " ORDER BY name COLLATE NOCASE LIMIT 50"
 
-            for eid, name, status in self.conn.execute(
-                    epic_query, (term, term)).fetchall():
-                found_rows.append((
-                    ("Epic", (f"#{eid}", eid), name, _status_word(status),
-                     ("", "")), (eid, "epic")))
+            for eid, name, status in self.conn.execute(epic_query, (term, term)).fetchall():
+                found_rows.append(
+                    (
+                        ("Epic", (f"#{eid}", eid), name, _status_word(status), ("", "")),
+                        (eid, "epic"),
+                    )
+                )
         except sqlite3.OperationalError:
             pass
         self.search_results.set_rows(found_rows)
         found = self.search_results.count()
         self.search_count.setText(
-            "No results" if not found
-            else f"{found} result" + ("" if found == 1 else "s"))
+            "No results" if not found else f"{found} result" + ("" if found == 1 else "s")
+        )
 
     def _read_data_version(self) -> int | None:
         try:

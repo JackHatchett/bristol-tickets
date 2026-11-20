@@ -33,13 +33,16 @@ def design_system_dir() -> Path:
     """The design system folder config names."""
     value = subprocess.run(
         [sys.executable, str(READ_CONFIG), "markdown_notebook.design_system_dir"],
-        capture_output=True, text=True, check=True,
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout.strip()
     return Path(value).expanduser()
 
 
-def ratio_cell(foreground: str, background: str, palette: dict | None,
-               minimum: float) -> tuple[str, bool]:
+def ratio_cell(
+    foreground: str, background: str, palette: dict | None, minimum: float
+) -> tuple[str, bool]:
     """A pair's ratio as a table cell, and whether it is under its minimum."""
     if palette is None:
         return "—", False
@@ -69,16 +72,16 @@ def page(theme_id: str, name: str, frontmatter: str) -> str:
         roles.append("| --- | --- | --- | --- |")
         for key in keys:
             dark_value = f"`{dark[key]}`" if dark else "—"
-            roles.append(f"| `{key}` | {theme.key_caption(key)} | "
-                         f"`{light[key]}` | {dark_value} |")
+            roles.append(f"| `{key}` | {theme.key_caption(key)} | `{light[key]}` | {dark_value} |")
         roles.append("")
 
     under = 0
     total = 0
     tables = []
     for title, column, pairs, minimum in (
-            ("Text Contrast", "Text", theme.TEXT_PAIRS, theme.CONTRAST_MIN),
-            ("State Mark Contrast", "Mark", theme.MARK_PAIRS, theme.MARK_MIN)):
+        ("Text Contrast", "Text", theme.TEXT_PAIRS, theme.CONTRAST_MIN),
+        ("State Mark Contrast", "Mark", theme.MARK_PAIRS, theme.MARK_MIN),
+    ):
         tables.append(f"## {title}\n")
         tables.append(f"| {column} | On | Light | Dark |")
         tables.append("| --- | --- | --- | --- |")
@@ -90,12 +93,10 @@ def page(theme_id: str, name: str, frontmatter: str) -> str:
                 if palette is not None:
                     total += 1
                     under += short
-            tables.append(f"| `{foreground}` | `{background}` | "
-                          f"{cells[0]} | {cells[1]} |")
+            tables.append(f"| `{foreground}` | `{background}` | {cells[0]} | {cells[1]} |")
         tables.append("")
 
-    dark_line = (f"its dark scheme `{dark_scheme}`" if dark_scheme
-                 else "it has no dark scheme")
+    dark_line = f"its dark scheme `{dark_scheme}`" if dark_scheme else "it has no dark scheme"
     details = [
         f"- The theme's id is `{theme_id}`; its light scheme is "
         f"`{light_scheme}` and {dark_line}, in `SCHEMES` in "
@@ -105,8 +106,7 @@ def page(theme_id: str, name: str, frontmatter: str) -> str:
         "[[bristol_contrast_minimums|Bristol Contrast Minimums]].",
     ]
     if under:
-        details.append(f"- {under} of the {total} pairs below read under "
-                       "their minimum.")
+        details.append(f"- {under} of the {total} pairs below read under their minimum.")
 
     body = [
         frontmatter.rstrip("\n"),
@@ -137,23 +137,20 @@ def existing_frontmatter(path: Path, name: str) -> str:
         if text.startswith("---\n"):
             end = text.find("\n---\n", 4)
             if end != -1:
-                return text[:end + 5]
+                return text[: end + 5]
     created = datetime.now().strftime("%Y-%m-%d %H:%M")
-    return (f"---\naliases:\n  - {name} Theme\ntags:\n  - ai/answer\n"
-            f"created: {created}\n---\n")
+    return f"---\naliases:\n  - {name} Theme\ntags:\n  - ai/answer\ncreated: {created}\n---\n"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--out", type=Path,
-                        help="the design system folder; config's by default")
+    parser.add_argument("--out", type=Path, help="the design system folder; config's by default")
     args = parser.parse_args()
     folder = (args.out or design_system_dir()) / "themes"
     folder.mkdir(parents=True, exist_ok=True)
     for theme_id, name in theme.THEME_CHOICES:
         path = folder / f"bristol_theme_{theme_id}.md"
-        path.write_text(page(theme_id, name, existing_frontmatter(path, name)),
-                        encoding="utf-8")
+        path.write_text(page(theme_id, name, existing_frontmatter(path, name)), encoding="utf-8")
         print(f"wrote {path.name}")
     return 0
 

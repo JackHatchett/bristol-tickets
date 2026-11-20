@@ -131,7 +131,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import create_tickets  # noqa: E402  (owns the schema and first-use provisioning)
+import create_tickets
 
 
 def resolve_db_path() -> Path:
@@ -142,7 +142,9 @@ def resolve_db_path() -> Path:
 def connect(actor: str = "agent") -> sqlite3.Connection:
     conn = sqlite3.connect(resolve_db_path(), timeout=10)
     conn.execute("PRAGMA busy_timeout=5000")
-    conn.execute("PRAGMA journal_mode=MEMORY")  # avoid the on-disk journal that can wedge the DB over the mount
+    conn.execute(
+        "PRAGMA journal_mode=MEMORY"
+    )  # avoid the on-disk journal that can wedge the DB over the mount
     # Self-healing: the per-issue progress log (mirrors the viewer's
     # schema_guard). Agents append here via `add-issue-log` so a task's
     # progress is tracked on the card itself, without spawning new tasks.
@@ -173,9 +175,7 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
             FOREIGN KEY (task_id) REFERENCES task (id)
         );
     """)
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_task_event_task ON task_event (task_id, at)"
-    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_task_event_task ON task_event (task_id, at)")
     # Self-healing: a ticket's links (mirrors the viewer's schema_guard). An
     # issue link is ONE row read from either end and deleted once — normalized
     # to task_id=MIN / other_id=MAX when its dep_type is 'related', and carrying
@@ -220,8 +220,17 @@ def connect(actor: str = "agent") -> sqlite3.Connection:
 # Fields logged with their new value. A dependency is not among them: it lives
 # on a link now, and a link's own history is the row's presence or absence.
 CHANGE_LOG_FIELDS = (
-    "epic_id", "scope_id", "status", "stage", "tier", "estimate",
-    "assignee", "reporter", "story_points", "record_type", "block_reason",
+    "epic_id",
+    "scope_id",
+    "status",
+    "stage",
+    "tier",
+    "estimate",
+    "assignee",
+    "reporter",
+    "story_points",
+    "record_type",
+    "block_reason",
     "due_date",
 )
 
@@ -348,7 +357,7 @@ def _new_ticket_stage() -> str:
         import read_config
 
         choice = read_config.get("board.new_ticket_stage", "active")
-    except Exception:  # noqa: BLE001 — a missing or malformed config is a default, not a failure
+    except Exception:
         return "active"
     return choice if choice in ("active", "backlog") else "active"
 
@@ -381,8 +390,15 @@ def add_epic(args: argparse.Namespace) -> None:
         cur = conn.execute(
             """INSERT INTO epic (name, type, status, owner, description, next_action, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (args.name, args.type, args.status, args.owner, args.description,
-             args.next_action, now()),
+            (
+                args.name,
+                args.type,
+                args.status,
+                args.owner,
+                args.description,
+                args.next_action,
+                now(),
+            ),
         )
         conn.commit()
         print(f"OK: epic #{cur.lastrowid} added — {args.name} (owner: {args.owner})")
@@ -395,6 +411,7 @@ def _finishing():
     Bristol Tickets calls, so the transition means one thing on this board."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "bristol"))
     import finishing
+
     return finishing
 
 
@@ -417,6 +434,7 @@ def _attachment_store():
     there is."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "bristol"))
     import attachment_store
+
     return attachment_store
 
 
@@ -442,8 +460,10 @@ def add_attachment(args: argparse.Namespace) -> None:
         """)
         stored = _attachment_store().add_attachment(conn, args.task, str(source))
         if stored is None:
-            sys.exit(f"add-attachment: ERROR — {source} could not be copied "
-                     "into the board's images folder")
+            sys.exit(
+                f"add-attachment: ERROR — {source} could not be copied "
+                "into the board's images folder"
+            )
         print(f"OK: attachment {stored} added — task #{args.task}")
     finally:
         conn.close()
@@ -487,16 +507,16 @@ def update_epic(args: argparse.Namespace) -> None:
                 sys.exit(f"update-epic: ERROR — {clash}")
         closure, closing = None, False
         if "status" in given and given["status"] in create_tickets.EPIC_STATUS_FINISHED:
-            was = conn.execute("SELECT status FROM epic WHERE id=?",
-                               (args.id,)).fetchone()[0] or ""
+            was = conn.execute("SELECT status FROM epic WHERE id=?", (args.id,)).fetchone()[0] or ""
             closing = was not in create_tickets.EPIC_STATUS_FINISHED
             closure = _epic_closure()
             if closing and closure is not None:
                 refused = closure.refusal(conn, args.id)
                 if refused:
                     sys.exit(f"update-epic: ERROR — {refused}")
-            conn.execute("UPDATE epic SET closed_at = ? WHERE id = ? AND closed_at IS NULL",
-                         (now(), args.id))
+            conn.execute(
+                "UPDATE epic SET closed_at = ? WHERE id = ? AND closed_at IS NULL", (now(), args.id)
+            )
         conn.execute(
             f"UPDATE epic SET {', '.join(f'{k} = ?' for k in given)} WHERE id = ?",
             list(given.values()) + [args.id],
@@ -523,7 +543,8 @@ def add_task(args: argparse.Namespace) -> None:
         if record_type not in ("build", "fix"):
             sys.exit("add-task: ERROR — --record-type must be 'build' or 'fix'")
         stage, status = _normalize_stage_status(
-            args.stage, args.status, args.assignee, args.reporter)
+            args.stage, args.status, args.assignee, args.reporter
+        )
         if stage not in ("backlog", "active", "archive"):
             sys.exit("add-task: ERROR — --stage must be backlog|active|archive")
         if status not in ("todo", "doing", "done"):
@@ -535,13 +556,27 @@ def add_task(args: argparse.Namespace) -> None:
                    closed_at, assignee, reporter, story_points, record_type,
                    stage, sort_order)
                VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 0, ?, ?, ?)""",
-            (args.epic_id, args.title, args.description, status,
-             args.tier, args.estimate, ts, ts, args.assignee, args.reporter,
-             record_type, stage, sort_order),
+            (
+                args.epic_id,
+                args.title,
+                args.description,
+                status,
+                args.tier,
+                args.estimate,
+                ts,
+                ts,
+                args.assignee,
+                args.reporter,
+                record_type,
+                stage,
+                sort_order,
+            ),
         )
         conn.commit()
-        print(f"OK: {record_type} #{cur.lastrowid} added — {args.title} "
-              f"(stage={stage}, status={status})")
+        print(
+            f"OK: {record_type} #{cur.lastrowid} added — {args.title} "
+            f"(stage={stage}, status={status})"
+        )
     finally:
         conn.close()
 
@@ -585,8 +620,11 @@ def update_task(args: argparse.Namespace) -> None:
             given["tier"] = None
         if not given:
             sys.exit("update-task: ERROR — pass at least one field to change")
-        if "epic_id" in given and conn.execute(
-                "SELECT 1 FROM epic WHERE id=?", (given["epic_id"],)).fetchone() is None:
+        if (
+            "epic_id" in given
+            and conn.execute("SELECT 1 FROM epic WHERE id=?", (given["epic_id"],)).fetchone()
+            is None
+        ):
             sys.exit(f"update-task: ERROR — no epic with id {given['epic_id']}")
         # updated_at is not set here: the change log's triggers derive it from
         # the newest entry this write produces.
@@ -613,10 +651,8 @@ def update_task_status(args: argparse.Namespace) -> None:
             status = None  # leave the board column unchanged on a bare stage move
         if status is not None and status not in ("todo", "doing", "done"):
             sys.exit("update-task-status: ERROR — --status must be todo|doing|done")
-        if (args.block_reason not in (None, "none")
-                and (status or "").lower() == "done"):
-            sys.exit("update-task-status: ERROR — a done card cannot carry a "
-                     "block reason")
+        if args.block_reason not in (None, "none") and (status or "").lower() == "done":
+            sys.exit("update-task-status: ERROR — a done card cannot carry a block reason")
 
         row = conn.execute("SELECT stage, status FROM task WHERE id=?", (args.id,)).fetchone()
         if row is None:
@@ -630,25 +666,31 @@ def update_task_status(args: argparse.Namespace) -> None:
         # the newest entry this write produces.
         sets, vals = [], []
         if status is not None:
-            sets.append("status = ?"); vals.append(status)
+            sets.append("status = ?")
+            vals.append(status)
             # closed_at tracks the done transition; clear it if reopened.
-            sets.append("closed_at = ?"); vals.append(ts if status == "done" else None)
+            sets.append("closed_at = ?")
+            vals.append(ts if status == "done" else None)
         if stage is not None:
-            sets.append("stage = ?"); vals.append(new_stage)
+            sets.append("stage = ?")
+            vals.append(new_stage)
         # A stage or status move re-homes the task, so re-seat it at the bottom
         # of its (new) destination list. A call that names the column the card is
         # already in has moved nothing and keeps its position — the same test the
         # record dialog makes, so a queue is not silently reordered by a call
         # that came to set an assignee or a block reason.
         if new_stage != cur_stage or new_status != cur_status:
-            sets.append("sort_order = ?"); vals.append(_append_order(conn, new_stage, new_status))
+            sets.append("sort_order = ?")
+            vals.append(_append_order(conn, new_stage, new_status))
         if args.assignee is not None:
-            sets.append("assignee = ?"); vals.append(args.assignee)
+            sets.append("assignee = ?")
+            vals.append(args.assignee)
         # A finished card is not blocked, so `done` clears the reason whether or
         # not the call names one; an explicit --block-reason on the same call
         # would be a contradiction and is rejected above.
         if new_status == "done":
-            sets.append("block_reason = ?"); vals.append(None)
+            sets.append("block_reason = ?")
+            vals.append(None)
         elif args.block_reason is not None:
             sets.append("block_reason = ?")
             vals.append(None if args.block_reason == "none" else args.block_reason)
@@ -668,8 +710,7 @@ def update_task_status(args: argparse.Namespace) -> None:
         conn.commit()
         extras = []
         if left_the_board:
-            extras.append("archived: standing work leaves the board when it is "
-                          "finished")
+            extras.append("archived: standing work leaves the board when it is finished")
         if stage is not None:
             extras.append(f"stage {new_stage}")
         if args.assignee is not None:
@@ -677,8 +718,11 @@ def update_task_status(args: argparse.Namespace) -> None:
         if new_status == "done":
             extras.append("block reason cleared")
         elif args.block_reason is not None:
-            extras.append("block reason cleared" if args.block_reason == "none"
-                          else f"blocked: {args.block_reason}")
+            extras.append(
+                "block reason cleared"
+                if args.block_reason == "none"
+                else f"blocked: {args.block_reason}"
+            )
         tail = (" (" + ", ".join(extras) + ")") if extras else ""
         print(f"OK: task #{args.id} -> status {new_status}{tail}")
     finally:
@@ -722,8 +766,7 @@ def set_order(args: argparse.Namespace) -> None:
     scripts read sort_order, and nothing else sorts."""
     conn = connect(getattr(args, "actor", None) or "agent")
     try:
-        row = conn.execute(
-            "SELECT status, stage FROM task WHERE id=?", (args.id,)).fetchone()
+        row = conn.execute("SELECT status, stage FROM task WHERE id=?", (args.id,)).fetchone()
         if row is None:
             print(f"WARN: no task with id {args.id}")
             return
@@ -731,11 +774,13 @@ def set_order(args: argparse.Namespace) -> None:
         if stage == "active":
             siblings = conn.execute(
                 "SELECT id FROM task WHERE stage='active' AND status=? "
-                "ORDER BY sort_order ASC, id ASC", (status,)).fetchall()
+                "ORDER BY sort_order ASC, id ASC",
+                (status,),
+            ).fetchall()
         else:
             siblings = conn.execute(
-                "SELECT id FROM task WHERE stage=? ORDER BY sort_order ASC, id ASC",
-                (stage,)).fetchall()
+                "SELECT id FROM task WHERE stage=? ORDER BY sort_order ASC, id ASC", (stage,)
+            ).fetchall()
         ids = [r[0] for r in siblings if r[0] != args.id]
         target = max(1, min(args.position, len(ids) + 1))
         ids.insert(target - 1, args.id)
@@ -803,8 +848,7 @@ def link_add(args: argparse.Namespace) -> None:
         if args.to_task is not None:
             if args.to_task == args.task:
                 sys.exit("link-add: ERROR — a ticket cannot be linked to itself")
-            if conn.execute("SELECT 1 FROM task WHERE id=?",
-                            (args.to_task,)).fetchone() is None:
+            if conn.execute("SELECT 1 FROM task WHERE id=?", (args.to_task,)).fetchone() is None:
                 sys.exit(f"link-add: ERROR — no task with id {args.to_task}")
             a, b, dep_type = _link_ends(args.task, args.to_task, link_type)
             existing = conn.execute(
@@ -816,16 +860,17 @@ def link_add(args: argparse.Namespace) -> None:
             if existing:
                 link_id, cur_a, cur_b, cur_type = existing
                 if (cur_a, cur_b, cur_type) == (a, b, dep_type):
-                    print(f"OK: #{args.task} and #{args.to_task} were already "
-                          f"linked ({dep_type})")
+                    print(f"OK: #{args.task} and #{args.to_task} were already linked ({dep_type})")
                     return
                 conn.execute(
                     "UPDATE task_link SET task_id=?, other_id=?, dep_type=? WHERE id=?",
                     (a, b, dep_type, link_id),
                 )
                 conn.commit()
-                print(f"OK: link #{link_id} retyped {cur_type} -> {dep_type} "
-                      f"— #{a} {'blocks' if dep_type == 'blocks' else '<->'} #{b}")
+                print(
+                    f"OK: link #{link_id} retyped {cur_type} -> {dep_type} "
+                    f"— #{a} {'blocks' if dep_type == 'blocks' else '<->'} #{b}"
+                )
                 return
             cur = conn.execute(
                 "INSERT INTO task_link (kind, task_id, other_id, dep_type, author, created_at) "
@@ -871,8 +916,8 @@ def link_list(args: argparse.Namespace) -> None:
                 relation = "related   "
             print(f"  [{link_id}] {relation} -> #{far} {title or '(missing)'}")
         for link_id, uri, label in conn.execute(
-            "SELECT id, uri, label FROM task_link WHERE kind='uri' AND task_id=? "
-            "ORDER BY id", (args.task,)
+            "SELECT id, uri, label FROM task_link WHERE kind='uri' AND task_id=? ORDER BY id",
+            (args.task,),
         ).fetchall():
             print(f"  [{link_id}] uri   -> {uri}" + (f"  ({label})" if label else ""))
     finally:
@@ -884,8 +929,7 @@ def link_remove(args: argparse.Namespace) -> None:
     removes it from both tickets, because both were reading the same row."""
     conn = connect()
     try:
-        if conn.execute("SELECT 1 FROM task_link WHERE id=?",
-                        (args.id,)).fetchone() is None:
+        if conn.execute("SELECT 1 FROM task_link WHERE id=?", (args.id,)).fetchone() is None:
             sys.exit(f"link-remove: ERROR — no link with id {args.id}")
         conn.execute("DELETE FROM task_link WHERE id=?", (args.id,))
         conn.commit()
@@ -900,24 +944,28 @@ def main() -> None:
 
     pe = sub.add_parser("add-epic")
     pe.add_argument("--name", required=True)
-    pe.add_argument("--owner", required=True,
-                     help="agent slug that owns this epic (single agent), or a "
-                          "descriptive multi-agent string for genuinely shared work")
+    pe.add_argument(
+        "--owner",
+        required=True,
+        help="agent slug that owns this epic (single agent), or a "
+        "descriptive multi-agent string for genuinely shared work",
+    )
     pe.add_argument("--type", default=None)
     pe.add_argument("--description", default=None)
     pe.add_argument("--next-action", dest="next_action", default=None)
-    pe.add_argument("--status", default="not started",
-                    choices=list(create_tickets.EPIC_STATUS_CHOICES),
-                    help="the epic's status, in the vocabulary Bristol "
-                         "Tickets writes (default: not started)")
+    pe.add_argument(
+        "--status",
+        default="not started",
+        choices=list(create_tickets.EPIC_STATUS_CHOICES),
+        help="the epic's status, in the vocabulary Bristol Tickets writes (default: not started)",
+    )
     pe.set_defaults(func=add_epic)
 
     pue = sub.add_parser("update-epic")
     pue.add_argument("--id", type=int, required=True)
     pue.add_argument("--name", default=None)
     pue.add_argument("--type", default=None)
-    pue.add_argument("--status", default=None,
-                     choices=list(create_tickets.EPIC_STATUS_CHOICES))
+    pue.add_argument("--status", default=None, choices=list(create_tickets.EPIC_STATUS_CHOICES))
     pue.add_argument("--owner", default=None)
     pue.add_argument("--approver", default=None)
     pue.add_argument("--description", default=None)
@@ -935,150 +983,235 @@ def main() -> None:
     # default None, not 'active': _normalize_stage_status supplies the default,
     # so it can still tell an unset --stage from an explicit one when the legacy
     # --status backlog is redirected onto the stage axis.
-    pt.add_argument("--stage", default=None,
-                     help="which tab: backlog | active | archive (default "
-                          "board.new_ticket_stage, active unless the user chose "
-                          "otherwise). An agent files to the active board: the "
-                          "Backlog tab is the user's own.")
-    pt.add_argument("--status", default="todo",
-                     help="board column: todo | doing | done (default todo). "
-                          "'backlog' is accepted for back-compat and redirected to --stage backlog.")
-    pt.add_argument("--tier", default=None, choices=list(create_tickets.TIERS),
-                     help="max|standard — how much thinking this card needs, "
-                          "whatever its size. Chosen from the card by "
-                          "src/skills/manage-tickets/SKILL.md §Processing tier.")
-    pt.add_argument("--estimate", default=None,
-                     help="S|M|L|XL — how much of a full usage budget this "
-                          "card would take. Scale and anchors in "
-                          "src/skills/manage-tickets/SKILL.md (§Sizing); XL "
-                          "means split it, not start it.")
-    pt.add_argument("--reporter", default="agent",
-                     help="who originated this task — an agent slug, or 'user' "
-                          "(default: agent)")
-    pt.add_argument("--assignee", default=None,
-                     help="agent slug (or 'user') that owns this task. Set it to "
-                          "leave a cross-agent suggestion: a card assigned to "
-                          "that agent, reporter you.")
-    pt.add_argument("--record-type", dest="record_type", default="build",
-                     choices=["build", "fix"],
-                     help="'build' (a thing to build — Story + requirements + test criteria) "
-                          "or 'fix' (a broken thing — Expected/Observed). Default build. "
-                          "Write --description in that record type's format (see "
-                          "src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix).")
-    pt.add_argument("--actor", default=None,
-                     help="who is making this change, for the change log "
-                          "(your agent slug, e.g. chief_of_staff). "
-                          "Defaults to --reporter.")
+    pt.add_argument(
+        "--stage",
+        default=None,
+        help="which tab: backlog | active | archive (default "
+        "board.new_ticket_stage, active unless the user chose "
+        "otherwise). An agent files to the active board: the "
+        "Backlog tab is the user's own.",
+    )
+    pt.add_argument(
+        "--status",
+        default="todo",
+        help="board column: todo | doing | done (default todo). "
+        "'backlog' is accepted for back-compat and redirected to --stage backlog.",
+    )
+    pt.add_argument(
+        "--tier",
+        default=None,
+        choices=list(create_tickets.TIERS),
+        help="max|standard — how much thinking this card needs, "
+        "whatever its size. Chosen from the card by "
+        "src/skills/manage-tickets/SKILL.md §Processing tier.",
+    )
+    pt.add_argument(
+        "--estimate",
+        default=None,
+        help="S|M|L|XL — how much of a full usage budget this "
+        "card would take. Scale and anchors in "
+        "src/skills/manage-tickets/SKILL.md (§Sizing); XL "
+        "means split it, not start it.",
+    )
+    pt.add_argument(
+        "--reporter",
+        default="agent",
+        help="who originated this task — an agent slug, or 'user' (default: agent)",
+    )
+    pt.add_argument(
+        "--assignee",
+        default=None,
+        help="agent slug (or 'user') that owns this task. Set it to "
+        "leave a cross-agent suggestion: a card assigned to "
+        "that agent, reporter you.",
+    )
+    pt.add_argument(
+        "--record-type",
+        dest="record_type",
+        default="build",
+        choices=["build", "fix"],
+        help="'build' (a thing to build — Story + requirements + test criteria) "
+        "or 'fix' (a broken thing — Expected/Observed). Default build. "
+        "Write --description in that record type's format (see "
+        "src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix).",
+    )
+    pt.add_argument(
+        "--actor",
+        default=None,
+        help="who is making this change, for the change log "
+        "(your agent slug, e.g. chief_of_staff). "
+        "Defaults to --reporter.",
+    )
     pt.set_defaults(func=add_task)
 
     pct = sub.add_parser("update-task")
     pct.add_argument("--id", type=int, required=True)
     pct.add_argument("--title", default=None, help="replace the card's title")
-    pct.add_argument("--description", default=None,
-                      help="replace the card's description. Write it to the "
-                           "record type's skeleton — Story + Requirements + Test Criteria "
-                           "for a build, Expected + Observed for a fix (see "
-                           "src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix).")
-    pct.add_argument("--estimate", default=None,
-                      help="S|M|L|XL — how much of a full usage budget this card "
-                           "would take. Scale and anchors in "
-                           "src/skills/manage-tickets/SKILL.md (§Sizing).")
-    pct.add_argument("--tier", default=None,
-                      choices=list(create_tickets.TIERS) + ["none"],
-                      help="max|standard — how much thinking this card needs, "
-                           "whatever its size. Chosen from the card by "
-                           "src/skills/manage-tickets/SKILL.md §Processing tier; "
-                           "'none' clears it.")
-    pct.add_argument("--due-date", dest="due_date", default=None,
-                      help="YYYY-MM-DD, an outside deadline this card has to "
-                           "meet — a filing window, a renewal, a date somebody "
-                           "else set. Optional, and it orders nothing: board "
-                           "order is the queue. 'none' clears it.")
-    pct.add_argument("--record-type", dest="record_type", default=None,
-                      choices=["build", "fix"],
-                      help="retype the card: 'build' (a thing to build) or "
-                           "'fix' (a broken thing). Rewrite --description to match.")
-    pct.add_argument("--reporter", default=None,
-                      help="who/what originated this task")
-    pct.add_argument("--epic-id", dest="epic_id", type=int, default=None,
-                      help="move the card to another epic")
-    pct.add_argument("--actor", default=None,
-                      help="who is making this change, for the change log "
-                           "(your agent slug, e.g. chief_of_staff). "
-                           "Recorded against every field this call changes.")
+    pct.add_argument(
+        "--description",
+        default=None,
+        help="replace the card's description. Write it to the "
+        "record type's skeleton — Story + Requirements + Test Criteria "
+        "for a build, Expected + Observed for a fix (see "
+        "src/skills/manage-tickets/SKILL.md §Record types: Build vs Fix).",
+    )
+    pct.add_argument(
+        "--estimate",
+        default=None,
+        help="S|M|L|XL — how much of a full usage budget this card "
+        "would take. Scale and anchors in "
+        "src/skills/manage-tickets/SKILL.md (§Sizing).",
+    )
+    pct.add_argument(
+        "--tier",
+        default=None,
+        choices=list(create_tickets.TIERS) + ["none"],
+        help="max|standard — how much thinking this card needs, "
+        "whatever its size. Chosen from the card by "
+        "src/skills/manage-tickets/SKILL.md §Processing tier; "
+        "'none' clears it.",
+    )
+    pct.add_argument(
+        "--due-date",
+        dest="due_date",
+        default=None,
+        help="YYYY-MM-DD, an outside deadline this card has to "
+        "meet — a filing window, a renewal, a date somebody "
+        "else set. Optional, and it orders nothing: board "
+        "order is the queue. 'none' clears it.",
+    )
+    pct.add_argument(
+        "--record-type",
+        dest="record_type",
+        default=None,
+        choices=["build", "fix"],
+        help="retype the card: 'build' (a thing to build) or "
+        "'fix' (a broken thing). Rewrite --description to match.",
+    )
+    pct.add_argument("--reporter", default=None, help="who/what originated this task")
+    pct.add_argument(
+        "--epic-id", dest="epic_id", type=int, default=None, help="move the card to another epic"
+    )
+    pct.add_argument(
+        "--actor",
+        default=None,
+        help="who is making this change, for the change log "
+        "(your agent slug, e.g. chief_of_staff). "
+        "Recorded against every field this call changes.",
+    )
     pct.set_defaults(func=update_task)
 
     pu = sub.add_parser("update-task-status")
     pu.add_argument("--id", type=int, required=True)
-    pu.add_argument("--status", required=True, choices=["backlog", "todo", "doing", "done"],
-                     help="board column: todo|doing|done. 'backlog' is accepted for "
-                          "back-compat and redirected to a --stage backlog move.")
-    pu.add_argument("--stage", default=None, choices=["backlog", "active", "archive"],
-                     help="optionally move the task's tab in the same call")
-    pu.add_argument("--assignee", default=None,
-                     help="optionally set the task's assignee (an agent slug)")
-    pu.add_argument("--block-reason", dest="block_reason", default=None,
-                     choices=list(create_tickets.BLOCK_REASONS) + ["none"],
-                     help="what kind of thing has stopped the card: dependency "
-                          "(which card is the 'blocks' link's job), decision "
-                          "(the user's to make), capability (never granted) or "
-                          "transient. 'none' clears it; so does --status done. "
-                          "The prose goes in add-issue-log.")
-    pu.add_argument("--actor", default=None,
-                     help="who is making this change, for the change log "
-                          "(your agent slug, e.g. chief_of_staff). "
-                          "Recorded against every field this call changes.")
+    pu.add_argument(
+        "--status",
+        required=True,
+        choices=["backlog", "todo", "doing", "done"],
+        help="board column: todo|doing|done. 'backlog' is accepted for "
+        "back-compat and redirected to a --stage backlog move.",
+    )
+    pu.add_argument(
+        "--stage",
+        default=None,
+        choices=["backlog", "active", "archive"],
+        help="optionally move the task's tab in the same call",
+    )
+    pu.add_argument(
+        "--assignee", default=None, help="optionally set the task's assignee (an agent slug)"
+    )
+    pu.add_argument(
+        "--block-reason",
+        dest="block_reason",
+        default=None,
+        choices=list(create_tickets.BLOCK_REASONS) + ["none"],
+        help="what kind of thing has stopped the card: dependency "
+        "(which card is the 'blocks' link's job), decision "
+        "(the user's to make), capability (never granted) or "
+        "transient. 'none' clears it; so does --status done. "
+        "The prose goes in add-issue-log.",
+    )
+    pu.add_argument(
+        "--actor",
+        default=None,
+        help="who is making this change, for the change log "
+        "(your agent slug, e.g. chief_of_staff). "
+        "Recorded against every field this call changes.",
+    )
     pu.set_defaults(func=update_task_status)
 
     psg = sub.add_parser("set-stage")
     psg.add_argument("--id", type=int, required=True)
-    psg.add_argument("--stage", required=True, choices=["backlog", "active", "archive"],
-                      help="destination tab; task is appended to the bottom of its order")
-    psg.add_argument("--actor", default=None,
-                      help="who is making this change, for the change log "
-                           "(your agent slug, e.g. chief_of_staff). "
-                           "Recorded against every field this call changes.")
+    psg.add_argument(
+        "--stage",
+        required=True,
+        choices=["backlog", "active", "archive"],
+        help="destination tab; task is appended to the bottom of its order",
+    )
+    psg.add_argument(
+        "--actor",
+        default=None,
+        help="who is making this change, for the change log "
+        "(your agent slug, e.g. chief_of_staff). "
+        "Recorded against every field this call changes.",
+    )
     psg.set_defaults(func=set_stage)
 
     pso = sub.add_parser("set-order")
     pso.add_argument("--id", type=int, required=True)
-    pso.add_argument("--position", type=int, required=True,
-                      help="1 = top of the card's own list (its active-board "
-                           "status column, or the whole backlog). The list is "
-                           "renumbered contiguously. This is what reorders an "
-                           "agent's queue — nothing else does.")
-    pso.add_argument("--actor", default=None,
-                      help="who is making this change, for the change log "
-                           "(your agent slug, e.g. chief_of_staff).")
+    pso.add_argument(
+        "--position",
+        type=int,
+        required=True,
+        help="1 = top of the card's own list (its active-board "
+        "status column, or the whole backlog). The list is "
+        "renumbered contiguously. This is what reorders an "
+        "agent's queue — nothing else does.",
+    )
+    pso.add_argument(
+        "--actor",
+        default=None,
+        help="who is making this change, for the change log "
+        "(your agent slug, e.g. chief_of_staff).",
+    )
     pso.set_defaults(func=set_order)
 
     pil = sub.add_parser("add-issue-log")
     pil.add_argument("--task", type=int, required=True, help="task/issue id to log against")
-    pil.add_argument("--author", required=True,
-                      help="who is posting (agent slug, or 'user')")
+    pil.add_argument("--author", required=True, help="who is posting (agent slug, or 'user')")
     pil.add_argument("--body", required=True, help="brief progress note")
     pil.set_defaults(func=add_issue_log)
 
     pla = sub.add_parser("link-add")
     pla.add_argument("--task", type=int, required=True, help="the ticket the link hangs off")
-    pla.add_argument("--to-task", dest="to_task", type=int, default=None,
-                      help="link to another ticket. Stored once and symmetric, so it "
-                           "shows on BOTH tickets — do not also run the mirror call.")
-    pla.add_argument("--type", default="related",
-                      choices=["related", "blocks", "blocked-by"],
-                      help="what a ticket link means (default related). "
-                           "'blocks': --task must be done before --to-task can "
-                           "start. 'blocked-by': the reverse. A dependency is "
-                           "one directed row, so never add the mirror. Re-running "
-                           "link-add on an existing pair retypes it.")
-    pla.add_argument("--uri", default=None,
-                      help="link to an address: a web URL, a zotero:// citation, an "
-                           "obsidian:// note, or a file path. The viewer hands it to "
-                           "the OS, so any scheme the machine knows will open.")
-    pla.add_argument("--label", default=None,
-                      help="optional caption shown instead of the address")
-    pla.add_argument("--author", default="user",
-                      help="who added the link (your write signature, or 'user')")
+    pla.add_argument(
+        "--to-task",
+        dest="to_task",
+        type=int,
+        default=None,
+        help="link to another ticket. Stored once and symmetric, so it "
+        "shows on BOTH tickets — do not also run the mirror call.",
+    )
+    pla.add_argument(
+        "--type",
+        default="related",
+        choices=["related", "blocks", "blocked-by"],
+        help="what a ticket link means (default related). "
+        "'blocks': --task must be done before --to-task can "
+        "start. 'blocked-by': the reverse. A dependency is "
+        "one directed row, so never add the mirror. Re-running "
+        "link-add on an existing pair retypes it.",
+    )
+    pla.add_argument(
+        "--uri",
+        default=None,
+        help="link to an address: a web URL, a zotero:// citation, an "
+        "obsidian:// note, or a file path. The viewer hands it to "
+        "the OS, so any scheme the machine knows will open.",
+    )
+    pla.add_argument("--label", default=None, help="optional caption shown instead of the address")
+    pla.add_argument(
+        "--author", default="user", help="who added the link (your write signature, or 'user')"
+    )
     pla.set_defaults(func=link_add)
 
     pll = sub.add_parser("link-list")
@@ -1086,19 +1219,26 @@ def main() -> None:
     pll.set_defaults(func=link_list)
 
     plr = sub.add_parser("link-remove")
-    plr.add_argument("--id", type=int, required=True,
-                      help="link id from link-list. An issue link is removed from both "
-                           "tickets at once.")
+    plr.add_argument(
+        "--id",
+        type=int,
+        required=True,
+        help="link id from link-list. An issue link is removed from both tickets at once.",
+    )
     plr.set_defaults(func=link_remove)
 
     pat = sub.add_parser("add-attachment")
-    pat.add_argument("--task", type=int, required=True,
-                     help="the ticket the image belongs to")
-    pat.add_argument("--file", required=True,
-                     help="path of the image to attach; it is copied, and the "
-                          "original is left where it is")
-    pat.add_argument("--author", default="agent",
-                     help="who is attaching it, for the change log (your agent slug)")
+    pat.add_argument("--task", type=int, required=True, help="the ticket the image belongs to")
+    pat.add_argument(
+        "--file",
+        required=True,
+        help="path of the image to attach; it is copied, and the original is left where it is",
+    )
+    pat.add_argument(
+        "--author",
+        default="agent",
+        help="who is attaching it, for the change log (your agent slug)",
+    )
     pat.set_defaults(func=add_attachment)
 
     args = p.parse_args()

@@ -26,8 +26,7 @@ def _keyring():
     try:
         import keyring
     except ImportError:  # pragma: no cover - the install is the user's machine
-        raise SystemExit(
-            "this needs the keyring package: pip3 install keyring")
+        raise SystemExit("this needs the keyring package: pip3 install keyring") from None
     return keyring
 
 
@@ -46,7 +45,8 @@ def read(service: str, key: str) -> str | None:
     except keyring.errors.NoKeyringError as error:
         raise SystemExit(
             f"this machine has no keychain to read {service} / {key} from "
-            f"({error}). Run this on the machine that has the keychain.")
+            f"({error}). Run this on the machine that has the keychain."
+        ) from None
 
 
 def write(service: str, key: str, value: str) -> None:
@@ -74,7 +74,8 @@ def require(service: str, key: str, hint: str) -> str:
     raise SystemExit(
         f"no secret in the keychain under {service} / {key}.\n{hint}\n"
         f"store it with: python3 src/tools/_shared/keychain.py set "
-        f"{service} {key}")
+        f"{service} {key}"
+    )
 
 
 def main(argv=None) -> int:

@@ -43,7 +43,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import read_config  # noqa: E402
+import read_config
 
 ALWAYS_ALL = "chief_of_staff"
 
@@ -54,8 +54,7 @@ def _load() -> dict:
 
 def _save(data: dict) -> None:
     path = read_config.config_path()
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-                    encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def known(data: dict | None = None) -> list[dict]:
@@ -64,8 +63,13 @@ def known(data: dict | None = None) -> list[dict]:
     out = []
     for d in data.get("dashboards") or []:
         if isinstance(d, dict) and str(d.get("name", "")).strip():
-            out.append({"name": str(d["name"]).strip(), "url": d.get("url", ""),
-                        "paths": [p for p in d.get("paths") or [] if isinstance(p, str)]})
+            out.append(
+                {
+                    "name": str(d["name"]).strip(),
+                    "url": d.get("url", ""),
+                    "paths": [p for p in d.get("paths") or [] if isinstance(p, str)],
+                }
+            )
     return out
 
 
@@ -77,8 +81,10 @@ def normalised(entry, dashboards: list[str]) -> dict:
     """An agent's access, ignoring names that are not known dashboards."""
     entry = entry if isinstance(entry, dict) else {}
     chosen = entry.get("dashboards") if isinstance(entry.get("dashboards"), list) else []
-    return {"write_all": entry.get("write_all") is not False,
-            "dashboards": [n for n in dashboards if n in chosen]}
+    return {
+        "write_all": entry.get("write_all") is not False,
+        "dashboards": [n for n in dashboards if n in chosen],
+    }
 
 
 def writable(slug: str, entry, dashboards: list[str]) -> list[str]:
@@ -89,8 +95,7 @@ def writable(slug: str, entry, dashboards: list[str]) -> list[str]:
     return access["dashboards"]
 
 
-def add(name: str, url: str, paths: list[str] | None = None,
-        data: dict | None = None) -> dict:
+def add(name: str, url: str, paths: list[str] | None = None, data: dict | None = None) -> dict:
     data = _load() if data is None else data
     name = name.strip()
     if not name:
@@ -119,8 +124,9 @@ def remove(name: str, data: dict | None = None) -> bool:
     return True
 
 
-def set_access(slug: str, write_all: bool, chosen: list[str] | None,
-               data: dict | None = None) -> dict:
+def set_access(
+    slug: str, write_all: bool, chosen: list[str] | None, data: dict | None = None
+) -> dict:
     """Set an agent's toggle, and its list where one is given. A list not given
     is kept, so switching the toggle never loses it."""
     data = _load() if data is None else data
@@ -141,20 +147,32 @@ def set_access(slug: str, write_all: bool, chosen: list[str] | None,
 def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("show"); s.add_argument("--json", action="store_true")
-    a = sub.add_parser("access"); a.add_argument("agent")
+    s = sub.add_parser("show")
+    s.add_argument("--json", action="store_true")
+    a = sub.add_parser("access")
+    a.add_argument("agent")
     a.add_argument("--json", action="store_true")
-    ad = sub.add_parser("add"); ad.add_argument("--name", required=True)
+    ad = sub.add_parser("add")
+    ad.add_argument("--name", required=True)
     ad.add_argument("--url", default="")
-    ad.add_argument("--path", action="append", default=[],
-                    help="a file that produces the dashboard's data; repeatable")
+    ad.add_argument(
+        "--path",
+        action="append",
+        default=[],
+        help="a file that produces the dashboard's data; repeatable",
+    )
     sub.add_parser("remove").add_argument("name")
-    sa = sub.add_parser("set-access"); sa.add_argument("agent")
+    sa = sub.add_parser("set-access")
+    sa.add_argument("agent")
     which = sa.add_mutually_exclusive_group(required=True)
     which.add_argument("--all", dest="write_all", action="store_true")
     which.add_argument("--chosen", dest="write_all", action="store_false")
-    sa.add_argument("--dashboard", action="append", default=None,
-                    help="a dashboard this agent may write; repeatable")
+    sa.add_argument(
+        "--dashboard",
+        action="append",
+        default=None,
+        help="a dashboard this agent may write; repeatable",
+    )
     args = p.parse_args(argv)
 
     data = _load()
@@ -177,9 +195,11 @@ def main(argv: list[str]) -> int:
             return 1
         known_names = names(data)
         entry = agent.get("dashboard_access")
-        out = {**normalised(entry, known_names),
-               "writable": writable(args.agent, entry, known_names),
-               "always_all": args.agent == ALWAYS_ALL}
+        out = {
+            **normalised(entry, known_names),
+            "writable": writable(args.agent, entry, known_names),
+            "always_all": args.agent == ALWAYS_ALL,
+        }
         if args.json:
             print(json.dumps(out))
         else:
@@ -191,8 +211,7 @@ def main(argv: list[str]) -> int:
     if args.cmd == "add":
         print(json.dumps(add(args.name, args.url, args.path, data)))
     elif args.cmd == "remove":
-        print(f"removed {args.name}" if remove(args.name, data)
-              else f"{args.name} was not known")
+        print(f"removed {args.name}" if remove(args.name, data) else f"{args.name} was not known")
     elif args.cmd == "set-access":
         print(json.dumps(set_access(args.agent, args.write_all, args.dashboard, data)))
     _save(data)

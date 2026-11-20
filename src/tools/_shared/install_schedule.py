@@ -24,8 +24,9 @@ import subprocess
 from pathlib import Path
 
 
-def agent_plist(label: str, program: list[str], log: Path, hour: int,
-                minute: int, working_dir: Path) -> dict:
+def agent_plist(
+    label: str, program: list[str], log: Path, hour: int, minute: int, working_dir: Path
+) -> dict:
     """The launch agent, as macOS wants it.
 
     StartCalendarInterval runs the job at the next opportunity when the machine
@@ -43,8 +44,7 @@ def agent_plist(label: str, program: list[str], log: Path, hour: int,
     }
 
 
-def cron_line(program: list[str], log: Path, hour: int, minute: int,
-              working_dir: Path) -> str:
+def cron_line(program: list[str], log: Path, hour: int, minute: int, working_dir: Path) -> str:
     joined = " ".join(str(part) for part in program)
     return f"{minute} {hour} * * * cd {working_dir} && {joined} >> {log} 2>&1"
 
@@ -58,19 +58,26 @@ def install_macos(label: str, plist: dict, target: Path) -> None:
     with target.open("wb") as handle:
         plistlib.dump(plist, handle)
     uid = os.getuid()
-    subprocess.run(["launchctl", "bootout", f"gui/{uid}/{label}"],
-                   capture_output=True)
-    result = subprocess.run(["launchctl", "bootstrap", f"gui/{uid}", str(target)],
-                            capture_output=True, text=True)
+    subprocess.run(["launchctl", "bootout", f"gui/{uid}/{label}"], capture_output=True)
+    result = subprocess.run(
+        ["launchctl", "bootstrap", f"gui/{uid}", str(target)], capture_output=True, text=True
+    )
     if result.returncode != 0:
         raise SystemExit(f"launchctl refused the agent: {result.stderr.strip()}")
     print(f"installed {target}")
     print(f"run it now with: launchctl kickstart -p gui/{uid}/{label}")
 
 
-def schedule(label: str, program: list[str], log: Path, hour: int, minute: int,
-             working_dir: Path, install: bool = False,
-             installer: Path | None = None) -> None:
+def schedule(
+    label: str,
+    program: list[str],
+    log: Path,
+    hour: int,
+    minute: int,
+    working_dir: Path,
+    install: bool = False,
+    installer: Path | None = None,
+) -> None:
     """Install the job, or print what installing it would do.
 
     `installer` is the script a reader would run to do it for real, named in the

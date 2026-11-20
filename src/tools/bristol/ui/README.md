@@ -81,7 +81,9 @@ stylesheet.
 
 **A control is one of the variants the design system's Bristol Controls page
 gives, chosen by object name and never styled outside them.** That page gives
-every variant's name and the color role of each of its parts; the buttons are:
+every variant's name and the color role of each of its parts, and a page per
+component under the design system's hub gives its anatomy and states; the
+buttons are:
 
 | Variant | Object name | For |
 | --- | --- | --- |
@@ -90,7 +92,7 @@ every variant's name and the color role of each of its parts; the buttons are:
 | Danger | `deleteBtn` | An action that cannot be undone, and only inside the window of the thing it destroys. |
 | Quiet Icon | `quietIcon`, `paneToggle`, `paneReveal` | An icon beside what it acts on: a remove ✕, a folder picker, the pane's chevrons. |
 | Link | `link`, `exampleLink` | Words that act: a link row, Clear All, an example that opens its page. |
-| Segmented Control | `segment`, through `segmented.SegmentedControl` | One of two to five choices that filter one view. |
+| Segmented Control | `segment`, through `segmented.SegmentedControl` | One choice of two to five: a view's filter, and every pick-one choice in a form. |
 
 **A list of things a person opens is a list of cards**, drawn by
 `row_card.RowCardDelegate` from `card_list()`: the board card's surface, a
@@ -219,8 +221,8 @@ Two surfaces write a card, and each has its own job.
   screen now and is gone at the next launch; a setting changes how the app
   behaves and is written to `config/config.local.json`. Which surface a control
   belongs on follows from that: the Filter panel, or Settings.
-- **A view tab is text on the canvas**: `HOVER_BG` under the pointer, and the
-  selected one marked by weight and an `ACCENT` underline rather than a fill.
+- **A view tab is text on the canvas**: `INK_SOFT` at rest, an `ink_06` fill
+  under the pointer, and the open one `ACCENT_DK` on an `ink_10` fill.
 - **A combo box carries a chevron drawn by `chevron_image()`**, cached under the
   system temp folder in the colour it is asked for.
 

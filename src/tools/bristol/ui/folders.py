@@ -18,13 +18,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+import config_file  # bristol-local
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
     QFrame,
-    QInputDialog,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QListWidget,
     QListWidgetItem,
@@ -34,8 +35,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-import config_file  # bristol-local
 
 from . import dialogs
 from .theme import LAYOUT, space
@@ -53,8 +52,9 @@ def run(script: Path, *args: str) -> tuple[int, str, str]:
     found = root / script if root is not None else None
     if found is None or not found.is_file():
         return 1, "", f"This build cannot find {script.as_posix()}."
-    done = subprocess.run([sys.executable, str(found), *args],
-                          capture_output=True, text=True, cwd=str(root))
+    done = subprocess.run(
+        [sys.executable, str(found), *args], capture_output=True, text=True, cwd=str(root)
+    )
     return done.returncode, done.stdout, done.stderr
 
 
@@ -71,8 +71,7 @@ def notebook_missing(state: dict | None = None) -> bool:
     state = notebook_state() if state is None else state
     if not state:
         return False
-    return not state.get("root_exists") or \
-        any(not f["exists"] for f in state.get("folders", []))
+    return not state.get("root_exists") or any(not f["exists"] for f in state.get("folders", []))
 
 
 def locations() -> list[dict]:
@@ -95,7 +94,7 @@ def shortened(path: str) -> str:
     if path == home:
         return "~"
     if path.startswith(home + os.sep):
-        return "~" + path[len(home):]
+        return "~" + path[len(home) :]
     return path
 
 
@@ -109,7 +108,7 @@ class PathLabel(QLabel):
         self.setObjectName("pathRow")
         self._path = ""
         # Cut at the window's edge rather than widening it.
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.set_path(path)
 
     def set_path(self, path: str, full: str | None = None) -> None:
@@ -117,14 +116,17 @@ class PathLabel(QLabel):
         self.setToolTip(full or path or "")
         self._fit()
 
-    def resizeEvent(self, event):  # noqa: N802 (Qt override)
+    def resizeEvent(self, event):
         super().resizeEvent(event)
         self._fit()
 
     def _fit(self) -> None:
         width = self.contentsRect().width()
-        shown = self._path if width <= 0 else self.fontMetrics().elidedText(
-            self._path, Qt.ElideMiddle, width)
+        shown = (
+            self._path
+            if width <= 0
+            else self.fontMetrics().elidedText(self._path, Qt.TextElideMode.ElideMiddle, width)
+        )
         if shown != self.text():
             self.setText(shown)
 
@@ -156,7 +158,7 @@ class NotebookDialog(QDialog):
 
         self.list = QListWidget()
         self.list.setObjectName("textList")
-        self.list.setSelectionMode(QListWidget.NoSelection)
+        self.list.setSelectionMode(QListWidget.SelectionMode.NoSelection)
         self.add_btn = dialogs.add_button("Attach Folder", self._add)
 
         close = QPushButton("Close")
@@ -167,8 +169,7 @@ class NotebookDialog(QDialog):
         foot.addWidget(close)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("md"))
         column.addSpacing(space("sm"))
         column.addWidget(_caption("Notebook Folder"))
@@ -176,7 +177,7 @@ class NotebookDialog(QDialog):
         column.addSpacing(space("md"))
         column.addWidget(_caption("Attached Folders"))
         column.addWidget(self.list, 1)
-        column.addWidget(self.add_btn, 0, Qt.AlignLeft)
+        column.addWidget(self.add_btn, 0, Qt.AlignmentFlag.AlignLeft)
         column.addSpacing(space("lg"))
         column.addLayout(foot)
         self.reload()
@@ -191,12 +192,12 @@ class NotebookDialog(QDialog):
         self.root_label.style().polish(self.root_label)
         self.list.clear()
         for f in state.get("folders", []):
-            item = QListWidgetItem(f["folder"] if f["exists"]
-                                   else f"{f['folder']}   ·   {MISSING}")
-            item.setData(Qt.UserRole, f["folder"])
+            item = QListWidgetItem(f["folder"] if f["exists"] else f"{f['folder']}   ·   {MISSING}")
+            item.setData(Qt.ItemDataRole.UserRole, f["folder"])
             self.list.addItem(item)
-            dialogs.removable_item(self.list, item, "Detach this folder",
-                                   lambda name=f["folder"]: self._remove(name))
+            dialogs.removable_item(
+                self.list, item, "Detach this folder", lambda name=f["folder"]: self._remove(name)
+            )
         self.add_btn.setEnabled(bool(state.get("root_exists")))
 
     def _say(self, code: int, out: str, err: str, title: str) -> bool:
@@ -207,20 +208,24 @@ class NotebookDialog(QDialog):
 
     def _change(self) -> None:
         picked = QFileDialog.getExistingDirectory(
-            self, "Notebook Folder", self._state.get("root_path", ""))
+            self, "Notebook Folder", self._state.get("root_path", "")
+        )
         if not picked or picked == self._state.get("root_path"):
             return
         if self._state.get("folders") and not dialogs.confirm(
-                self, "Change Notebook?",
-                "Every attached folder is detached, and every agent's "
-                "per-folder choices are cleared.", "Change"):
+            self,
+            "Change Notebook?",
+            "Every attached folder is detached, and every agent's per-folder choices are cleared.",
+            "Change",
+        ):
             return
         if self._say(*run(NOTEBOOK_CLI, "repoint", picked), "Not Changed"):
             self.reload()
 
     def _add(self) -> None:
         picked = QFileDialog.getExistingDirectory(
-            self, "Attach a Folder", self._state.get("root_path", ""))
+            self, "Attach a Folder", self._state.get("root_path", "")
+        )
         if not picked:
             return
         if self._say(*run(NOTEBOOK_CLI, "attach", picked), "Not Attached"):
@@ -228,10 +233,12 @@ class NotebookDialog(QDialog):
 
     def _remove(self, folder: str) -> None:
         if not dialogs.confirm(
-                self, "Detach This Folder?",
-                f"{folder} leaves the notebook Bristol knows, and every agent's "
-                f"choice for it is dropped. Nothing on disk is touched.",
-                "Detach"):
+            self,
+            "Detach This Folder?",
+            f"{folder} leaves the notebook Bristol knows, and every agent's "
+            f"choice for it is dropped. Nothing on disk is touched.",
+            "Detach",
+        ):
             return
         if self._say(*run(NOTEBOOK_CLI, "detach", folder), "Not Detached"):
             self.reload()
@@ -258,7 +265,7 @@ class DashboardsDialog(QDialog):
 
         self.list = QListWidget()
         self.list.setObjectName("textList")
-        self.list.setSelectionMode(QListWidget.NoSelection)
+        self.list.setSelectionMode(QListWidget.SelectionMode.NoSelection)
         self.add_btn = dialogs.add_button("Add Dashboard", self._add)
 
         close = QPushButton("Close")
@@ -269,13 +276,12 @@ class DashboardsDialog(QDialog):
         foot.addWidget(close)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("md"))
         column.addSpacing(space("sm"))
         column.addWidget(_caption("Known Dashboards"))
         column.addWidget(self.list, 1)
-        column.addWidget(self.add_btn, 0, Qt.AlignLeft)
+        column.addWidget(self.add_btn, 0, Qt.AlignmentFlag.AlignLeft)
         column.addSpacing(space("lg"))
         column.addLayout(foot)
         self.reload()
@@ -285,22 +291,21 @@ class DashboardsDialog(QDialog):
         for d in known_dashboards():
             shown = d["name"] + (f"   ·   {d['url']}" if d.get("url") else "")
             item = QListWidgetItem(shown)
-            item.setData(Qt.UserRole, d["name"])
+            item.setData(Qt.ItemDataRole.UserRole, d["name"])
             item.setToolTip("\n".join(d.get("paths") or []))
             self.list.addItem(item)
-            dialogs.removable_item(self.list, item, "Remove this dashboard",
-                                   lambda name=d["name"]: self._remove(name))
+            dialogs.removable_item(
+                self.list, item, "Remove this dashboard", lambda name=d["name"]: self._remove(name)
+            )
 
     def _add(self) -> None:
         name, ok = QInputDialog.getText(self, "Add a Dashboard", "Name")
         if not ok or not name.strip():
             return
-        url, ok = QInputDialog.getText(self, "Add a Dashboard",
-                                       "Where it is published")
+        url, ok = QInputDialog.getText(self, "Add a Dashboard", "Where it is published")
         if not ok:
             return
-        code, out, err = run(DASHBOARDS_CLI, "add", "--name", name.strip(),
-                             "--url", url.strip())
+        code, out, err = run(DASHBOARDS_CLI, "add", "--name", name.strip(), "--url", url.strip())
         if code != 0:
             dialogs.notify(self, "Not Added", (err or out).strip() or "Nothing changed.")
             return
@@ -308,9 +313,12 @@ class DashboardsDialog(QDialog):
 
     def _remove(self, name: str) -> None:
         if not dialogs.confirm(
-                self, "Remove This Dashboard?",
-                f"{name} leaves the list, and every agent's choice for it is "
-                f"dropped. The dashboard itself is not touched.", "Remove"):
+            self,
+            "Remove This Dashboard?",
+            f"{name} leaves the list, and every agent's choice for it is "
+            f"dropped. The dashboard itself is not touched.",
+            "Remove",
+        ):
             return
         code, out, err = run(DASHBOARDS_CLI, "remove", name)
         if code != 0:
@@ -337,8 +345,8 @@ class LocationsDialog(QDialog):
         scroll = QScrollArea()
         scroll.setObjectName("filterScroll")
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setWidget(self.body)
 
         close = QPushButton("Close")
@@ -349,8 +357,7 @@ class LocationsDialog(QDialog):
         foot.addWidget(close)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("md"))
         column.addWidget(scroll, 1)
         column.addLayout(foot)
@@ -384,14 +391,15 @@ class LocationsDialog(QDialog):
         line.setSpacing(space("md"))
         # A missing location keeps where it is set in its name, since the
         # Missing section gathers rows from every group.
-        name = QLabel(row["label"] if not row["exists"]
-                      else row["label"].split(" › ", 1)[-1])
+        name = QLabel(row["label"] if not row["exists"] else row["label"].split(" › ", 1)[-1])
         name.setFixedWidth(LAYOUT["palette_caption_w"] + LAYOUT["env_name_w"])
         name.setWordWrap(True)
         line.addWidget(name)
         path = _path_label(row["value"], not row["exists"])
-        path.set_path(row["value"], row["resolved"] if row["exists"]
-                      else f"{row['resolved']}\nNot found on this computer.")
+        path.set_path(
+            row["value"],
+            row["resolved"] if row["exists"] else f"{row['resolved']}\nNot found on this computer.",
+        )
         line.addWidget(path, 1)
         change = QPushButton("Change…")
         change.clicked.connect(lambda _=False, r=row: self._change(r))
@@ -406,8 +414,7 @@ class LocationsDialog(QDialog):
             picked = QFileDialog.getExistingDirectory(self, row["label"], start)
         if not picked:
             return
-        code, out, err = run(LOCATIONS_CLI, "set", json.dumps(row["pointer"]),
-                             picked)
+        code, out, err = run(LOCATIONS_CLI, "set", json.dumps(row["pointer"]), picked)
         if code != 0:
             dialogs.notify(self, "Not Changed", (err or out).strip())
             return

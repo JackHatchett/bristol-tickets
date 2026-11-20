@@ -28,8 +28,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from bluesky import render, store, threads  # noqa: E402
-from config_tools import data_paths  # noqa: E402
+from bluesky import render, store, threads
+from config_tools import data_paths
 
 VERDICTS = ("keep", "prune", "unsure")
 
@@ -95,11 +95,11 @@ def pruned_uris(path=None):
     a notebook nobody has judged.
     """
     conn = connect(path)
-    return {row[0] for row in
-            conn.execute("SELECT uri FROM verdict WHERE verdict = 'prune'")}
+    return {row[0] for row in conn.execute("SELECT uri FROM verdict WHERE verdict = 'prune'")}
 
 
 # --- the corpus, in one fixed order ------------------------------------------
+
 
 def corpus(archive):
     """Every post the account made, oldest first, each with its conversation.
@@ -108,10 +108,10 @@ def corpus(archive):
     here, so two runs hand the same reader the same numbers.
     """
     posts = []
-    for row in archive.execute(
-            "SELECT uri, created_at, record FROM post ORDER BY created_at, uri"):
-        posts.append({"uri": row["uri"], "created": row["created_at"],
-                      "record": json.loads(row["record"])})
+    for row in archive.execute("SELECT uri, created_at, record FROM post ORDER BY created_at, uri"):
+        posts.append(
+            {"uri": row["uri"], "created": row["created_at"], "record": json.loads(row["record"])}
+        )
     for index, post in enumerate(posts):
         post["n"] = index
     return posts
@@ -130,8 +130,7 @@ def own_uris(archive):
 def thread_lines(archive, root, own):
     """One stored conversation as speaker-and-words lines, or none where it is
     not kept. The account's own posts come back keyed by their address."""
-    row = archive.execute("SELECT tree FROM thread WHERE root_uri = ?",
-                          (root,)).fetchone()
+    row = archive.execute("SELECT tree FROM thread WHERE root_uri = ?", (root,)).fetchone()
     if not row:
         return None
     node = threads.from_dict(json.loads(row["tree"]))
@@ -140,8 +139,7 @@ def thread_lines(archive, root, own):
         if item.kind != "post":
             lines.append(("", None))
             continue
-        text = render._one_line(render.resolve_links(
-            (item.record or {}).get("record") or {}))
+        text = render._one_line(render.resolve_links((item.record or {}).get("record") or {}))
         extra = attachments(item.record or {})
         if extra:
             text = f"{text} {extra}".strip()
@@ -226,6 +224,7 @@ def grouped(archive, posts):
 
 # --- commands ----------------------------------------------------------------
 
+
 def cmd_status(args):
     archive = store.connect()
     conn = connect(args.verdicts)
@@ -235,8 +234,9 @@ def cmd_status(args):
     print(f"judged   {judged}")
     print(f"left     {total - judged}")
     for name in VERDICTS:
-        count = conn.execute("SELECT COUNT(*) FROM verdict WHERE verdict = ?",
-                             (name,)).fetchone()[0]
+        count = conn.execute("SELECT COUNT(*) FROM verdict WHERE verdict = ?", (name,)).fetchone()[
+            0
+        ]
         print(f"  {name:<7}{count}")
     reviewed = conn.execute("SELECT COUNT(*) FROM review").fetchone()[0]
     if reviewed:
@@ -248,16 +248,21 @@ def cmd_batch(args):
     conn = connect(args.verdicts)
     posts = corpus(archive)
     judged = {row[0] for row in conn.execute("SELECT uri FROM verdict")}
-    pool = posts[args.start:] if not args.unjudged else \
-        [p for p in posts[args.start:] if p["uri"] not in judged]
+    pool = (
+        posts[args.start :]
+        if not args.unjudged
+        else [p for p in posts[args.start :] if p["uri"] not in judged]
+    )
     window = whole_conversations(pool, args.count)
     if not window:
         print("nothing left in that window")
         return
     if not args.bare:
         print(STANDARD)
-        print(f"Answer one line per numbered post: <number> <{'|'.join(VERDICTS)}>"
-              " [a few words, for prune and unsure]\n")
+        print(
+            f"Answer one line per numbered post: <number> <{'|'.join(VERDICTS)}>"
+            " [a few words, for prune and unsure]\n"
+        )
     own = own_uris(archive)
     for group in grouped(archive, window):
         print(block(archive, group, own))
@@ -280,13 +285,13 @@ def _read_verdicts(handle, posts):
             raise SystemExit(f"line {line!r}: {name} is not one of {VERDICTS}")
         if number not in by_number:
             raise SystemExit(f"line {line!r}: no post numbered {number}")
-        out.append((by_number[number]["uri"], name,
-                    parts[2].strip() if len(parts) > 2 else None))
+        out.append((by_number[number]["uri"], name, parts[2].strip() if len(parts) > 2 else None))
     return out
 
 
 def _write(conn, table, rows):
     from datetime import datetime, timezone
+
     moment = datetime.now(timezone.utc).isoformat()
     written = 0
     for uri, name, reason in rows:
@@ -295,7 +300,8 @@ def _write(conn, table, rows):
             "VALUES (?, ?, ?, ?) ON CONFLICT(uri) DO UPDATE SET "
             "verdict = excluded.verdict, reason = excluded.reason, "
             "decided_at = excluded.decided_at",
-            (uri, name, reason, moment))
+            (uri, name, reason, moment),
+        )
         written += 1
     conn.commit()
     return written
@@ -323,11 +329,12 @@ def cmd_sample(args):
     pool = [p for p in posts if p["uri"] in judged]
     if len(pool) < args.count:
         raise SystemExit(f"only {len(pool)} posts are judged")
-    picked = sorted(random.Random(args.seed).sample(pool, args.count),
-                    key=lambda p: p["n"])
+    picked = sorted(random.Random(args.seed).sample(pool, args.count), key=lambda p: p["n"])
     print(STANDARD)
-    print(f"Answer one line per numbered post: <number> <{'|'.join(VERDICTS)}>"
-          " [a few words, for prune and unsure]\n")
+    print(
+        f"Answer one line per numbered post: <number> <{'|'.join(VERDICTS)}>"
+        " [a few words, for prune and unsure]\n"
+    )
     own = own_uris(archive)
     for group in grouped(archive, picked):
         print(block(archive, group, own))
@@ -340,10 +347,8 @@ def cmd_compare(args):
     conn = connect(args.verdicts)
     posts = corpus(archive)
     by_uri = {post["uri"]: post for post in posts}
-    first = {row["uri"]: row["verdict"] for row in
-             conn.execute("SELECT uri, verdict FROM verdict")}
-    second = {row["uri"]: row["verdict"] for row in
-              conn.execute("SELECT uri, verdict FROM review")}
+    first = {row["uri"]: row["verdict"] for row in conn.execute("SELECT uri, verdict FROM verdict")}
+    second = {row["uri"]: row["verdict"] for row in conn.execute("SELECT uri, verdict FROM review")}
     shared = [uri for uri in second if uri in first]
     disagreed = [uri for uri in shared if first[uri] != second[uri]]
     print(f"compared   {len(shared)}")
@@ -362,6 +367,7 @@ NOTE_TITLE = "Bluesky Posts Awaiting Your Call"
 
 def _setting(key, default=None):
     from bluesky import sync
+
     return sync.setting(key, default)
 
 
@@ -390,22 +396,18 @@ def cmd_index(args):
     pages = data_paths.resolve(_setting("notes_folder"))
     from config_tools import read_config
 
-    target = data_paths.ensure_dir(
-        read_config.get("markdown_notebook.workspace_dir")) / NOTE_NAME
+    target = data_paths.ensure_dir(read_config.get("markdown_notebook.workspace_dir")) / NOTE_NAME
 
     undecided = collections.defaultdict(list)
     count = 0
-    for row in conn.execute(
-            "SELECT uri, reason FROM verdict WHERE verdict = 'unsure'"):
+    for row in conn.execute("SELECT uri, reason FROM verdict WHERE verdict = 'unsure'"):
         found = archive.execute(
-            "SELECT created_at, record FROM post WHERE uri = ?",
-            (row["uri"],)).fetchone()
+            "SELECT created_at, record FROM post WHERE uri = ?", (row["uri"],)
+        ).fetchone()
         if found is None:
             continue
-        day = datetime.datetime.fromisoformat(
-            found["created_at"]).astimezone(zone).date()
-        text = render._one_line(render.resolve_links(
-            json.loads(found["record"]).get("value", {})))
+        day = datetime.datetime.fromisoformat(found["created_at"]).astimezone(zone).date()
+        text = render._one_line(render.resolve_links(json.loads(found["record"]).get("value", {})))
         undecided[day].append((text, row["reason"] or "no reason recorded"))
         count += 1
 
@@ -422,61 +424,65 @@ def cmd_index(args):
         name = f"{prefix}{day:%Y-%m-%d}"
         page = pages / f"{day:%Y}" / f"{day:%m}" / f"{name}.md"
         alias = f"Bluesky, {day:%A}, {day:%B} {day.day}, {day:%Y}"
-        lines.append(f"- [[{name}|{alias}]]" if page.exists()
-                     else f"- {alias} — no page contains it")
+        lines.append(
+            f"- [[{name}|{alias}]]" if page.exists() else f"- {alias} — no page contains it"
+        )
         for text, reason in undecided[day]:
             lines.append(f"\t- {_quote(text)} — {reason}")
 
-    note = "\n".join([
-        "---",
-        "aliases:",
-        f"  - {NOTE_TITLE}",
-        "tags:",
-        "  - ai/advice",
-        "created: CREATED",
-        "---",
-        "",
-        f"# {NOTE_TITLE}",
-        "",
-        "Every post you made on Bluesky has been sorted for this notebook: "
-        f"kept, pruned, or left here. These {count} are the ones left here, "
-        f"across {len(undecided)} days. The question about each is whether the "
-        "notebook keeps it, and nothing else — the account is empty, so none "
-        "of this is about what anyone else can see.",
-        "",
-        "Two kinds are on the list. Most are jokes and asides about your own "
-        "death or your own harm, which read one way as dark humour pointed "
-        "outward and another way pointed at yourself, and a reader who is not "
-        "you cannot tell which. The rest are posts a reader could not judge at "
-        "all: an image with no words, a reply whose parent is gone, a line "
-        "with no context left around it.",
-        "",
-        "Each day below links to its page, where the post sits in the "
-        "conversation it came from. Decide a post by deciding whether you want "
-        "it in the notebook; this note goes when the list is empty.",
-        "",
-        "## Days With One",
-        "",
-        "\n".join(lines),
-        "",
-        "## Related Notes",
-        "",
-        "- [[ai_workspace_hub|AI Workspace Hub]] — the map of everything the "
-        "agents read or write in this notebook.",
-        "",
-    ])
+    note = "\n".join(
+        [
+            "---",
+            "aliases:",
+            f"  - {NOTE_TITLE}",
+            "tags:",
+            "  - ai/advice",
+            "created: CREATED",
+            "---",
+            "",
+            f"# {NOTE_TITLE}",
+            "",
+            "Every post you made on Bluesky has been sorted for this notebook: "
+            f"kept, pruned, or left here. These {count} are the ones left here, "
+            f"across {len(undecided)} days. The question about each is whether the "
+            "notebook keeps it, and nothing else — the account is empty, so none "
+            "of this is about what anyone else can see.",
+            "",
+            "Two kinds are on the list. Most are jokes and asides about your own "
+            "death or your own harm, which read one way as dark humour pointed "
+            "outward and another way pointed at yourself, and a reader who is not "
+            "you cannot tell which. The rest are posts a reader could not judge at "
+            "all: an image with no words, a reply whose parent is gone, a line "
+            "with no context left around it.",
+            "",
+            "Each day below links to its page, where the post sits in the "
+            "conversation it came from. Decide a post by deciding whether you want "
+            "it in the notebook; this note goes when the list is empty.",
+            "",
+            "## Days With One",
+            "",
+            "\n".join(lines),
+            "",
+            "## Related Notes",
+            "",
+            "- [[ai_workspace_hub|AI Workspace Hub]] — the map of everything the "
+            "agents read or write in this notebook.",
+            "",
+        ]
+    )
     # The note is written whole and only where it would differ, and the date
     # it carries is the date its contents last changed.
     existing = target.read_text(encoding="utf-8") if target.exists() else None
     born = datetime.datetime.now(zone).strftime("%Y-%m-%d %H:%M")
     if existing is not None:
-        was = "\n".join(line if not line.startswith("created: ") else
-                        "created: CREATED" for line in existing.splitlines())
+        was = "\n".join(
+            line if not line.startswith("created: ") else "created: CREATED"
+            for line in existing.splitlines()
+        )
         if was.rstrip("\n") == note.rstrip("\n"):
             print(f"{count} posts left undecided; {target} already says so")
             return
-    target.write_text(note.replace("created: CREATED", f"created: {born}"),
-                      encoding="utf-8")
+    target.write_text(note.replace("created: CREATED", f"created: {born}"), encoding="utf-8")
     print(f"{count} posts across {len(undecided)} days; wrote {target}")
 
 
@@ -490,10 +496,12 @@ def main():
     batch = subs.add_parser("batch")
     batch.add_argument("--from", dest="start", type=int, default=0)
     batch.add_argument("--count", type=int, default=100)
-    batch.add_argument("--unjudged", action="store_true",
-                       help="skip posts already judged, keeping their numbers")
-    batch.add_argument("--bare", action="store_true",
-                       help="leave out the standard and the instruction")
+    batch.add_argument(
+        "--unjudged", action="store_true", help="skip posts already judged, keeping their numbers"
+    )
+    batch.add_argument(
+        "--bare", action="store_true", help="leave out the standard and the instruction"
+    )
     batch.set_defaults(run=cmd_batch)
 
     record = subs.add_parser("record")

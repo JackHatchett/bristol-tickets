@@ -39,17 +39,17 @@ from pathlib import Path
 
 try:
     import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-    from openpyxl.worksheet.table import Table, TableStyleInfo
+    from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.table import Table, TableStyleInfo
 except ImportError:
     sys.exit("ERROR: openpyxl not installed — pip install openpyxl --break-system-packages")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "zotero"))
-import db_common as dbc  # noqa: E402
-import snapshot_archive as sa  # noqa: E402
-import zotero_export as ze  # noqa: E402
+import db_common as dbc
+import snapshot_archive as sa
+import zotero_export as ze
 
 HEADER_FILL = PatternFill("solid", fgColor="4F81BD")
 HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -69,13 +69,20 @@ SPECS = {
         "sheet": "Applications",
         "table": "Applications",
         "columns": [
-            ("Company", "company", 24), ("Role", "role", 34),
-            ("Fit Notes", "fit_notes", 40), ("Fit Verdict", "fit_verdict", 12),
-            ("Gaps", "gaps", 22), ("Location", "location", 14),
-            ("ATS Platform", "ats_platform", 14), ("Date Evaluated", "date_evaluated", 14),
-            ("Cover Letter", "cover_letter", 12), ("Status", "status", 16),
-            ("Contact", "contact", 16), ("Referral", "referral", 12),
-            ("JD Link", "jd_link", 30), ("Year", "year", 8),
+            ("Company", "company", 24),
+            ("Role", "role", 34),
+            ("Fit Notes", "fit_notes", 40),
+            ("Fit Verdict", "fit_verdict", 12),
+            ("Gaps", "gaps", 22),
+            ("Location", "location", 14),
+            ("ATS Platform", "ats_platform", 14),
+            ("Date Evaluated", "date_evaluated", 14),
+            ("Cover Letter", "cover_letter", 12),
+            ("Status", "status", 16),
+            ("Contact", "contact", 16),
+            ("Referral", "referral", 12),
+            ("JD Link", "jd_link", 30),
+            ("Year", "year", 8),
         ],
         "sql": """SELECT company, role, fit_notes, fit_verdict, gaps, location,
                          ats_platform, date_evaluated, cover_letter, status,
@@ -97,13 +104,18 @@ SPECS = {
         "sheet": "Contacts",
         "table": "Contacts",
         "columns": [
-            ("Name", "name", 26), ("Company", "company", 22),
-            ("Title", "title", 24), ("How Known", "how_known", 30),
+            ("Name", "name", 26),
+            ("Company", "company", 22),
+            ("Title", "title", 24),
+            ("How Known", "how_known", 30),
             ("Cadence (days)", "cadence_days", 14),
             ("Last Contact", "last_contact_on", 14),
-            ("Open Asks", "open_asks", 10), ("Next Due", "next_due", 14),
-            ("Friend", "is_friend", 8), ("Reference", "reference_status", 12),
-            ("Email", "email", 28), ("LinkedIn", "linkedin_url", 36),
+            ("Open Asks", "open_asks", 10),
+            ("Next Due", "next_due", 14),
+            ("Friend", "is_friend", 8),
+            ("Reference", "reference_status", 12),
+            ("Email", "email", 28),
+            ("LinkedIn", "linkedin_url", 36),
         ],
         # The sheet is one row per person with what is outstanding beside them,
         # since a reader opening it is asking who is owed something rather than
@@ -124,7 +136,7 @@ SPECS = {
             ("Contacts", "=COUNTA(Contacts!A2:A100000)"),
             ("Friends", '=COUNTIF(Contacts!I:I,"Y")'),
             ("With An Open Ask", '=COUNTIF(Contacts!G:G,">0")'),
-            ("Never Contacted", '=COUNTBLANK(Contacts!F2:F100000)'),
+            ("Never Contacted", "=COUNTBLANK(Contacts!F2:F100000)"),
         ],
     },
     "books": {
@@ -137,30 +149,48 @@ SPECS = {
         "sheet": "My Library",
         "table": "MyLibrary",
         "columns": [
-            ("Author", "author", 30), ("Title", "title", 45),
-            ("Publisher", "publisher", 25), ("Edition", "edition", 15),
-            ("Signed", "signed", 7), ("Genre", "genre", 20),
-            ("Pub Date", "pub_date", 9), ("Page Count", "page_count", 9),
-            ("Price Paid", "price_paid", 9), ("Read", "read", 6),
+            ("Author", "author", 30),
+            ("Title", "title", 45),
+            ("Publisher", "publisher", 25),
+            ("Edition", "edition", 15),
+            ("Signed", "signed", 7),
+            ("Genre", "genre", 20),
+            ("Pub Date", "pub_date", 9),
+            ("Page Count", "page_count", 9),
+            ("Price Paid", "price_paid", 9),
+            ("Read", "read", 6),
             ("Shelved", "shelved", 8),
         ],
         # H=Page Count, J=Read, K=Shelved
         "stats": [
             ("Total Pages Read", "=SUMIFS('My Library'!H:H,'My Library'!J:J,\"Y\")"),
             ("Total Titles Read", "=COUNTIF('My Library'!J:J,\"Y\")"),
-            ("Percent of Logged Read",
-             "=COUNTIF('My Library'!J:J,\"Y\")/(COUNTIF('My Library'!J:J,\"Y\")+COUNTIF('My Library'!J:J,\"N\"))"),
+            (
+                "Percent of Logged Read",
+                "=COUNTIF('My Library'!J:J,\"Y\")/(COUNTIF('My Library'!J:J,\"Y\")+COUNTIF('My Library'!J:J,\"N\"))",
+            ),
             ("Avg Length, Read Titles", "=AVERAGEIF('My Library'!J:J,\"Y\",'My Library'!H:H)"),
-            ("Avg Length, Read+Shelved",
-             "=AVERAGEIFS('My Library'!H:H,'My Library'!J:J,\"Y\",'My Library'!K:K,\"Y\")"),
+            (
+                "Avg Length, Read+Shelved",
+                "=AVERAGEIFS('My Library'!H:H,'My Library'!J:J,\"Y\",'My Library'!K:K,\"Y\")",
+            ),
             ("Avg Length, Unread Titles", "=AVERAGEIF('My Library'!J:J,\"N\",'My Library'!H:H)"),
-            ("Shelved Pages Read", "=SUMIFS('My Library'!H:H,'My Library'!J:J,\"Y\",'My Library'!K:K,\"Y\")"),
+            (
+                "Shelved Pages Read",
+                "=SUMIFS('My Library'!H:H,'My Library'!J:J,\"Y\",'My Library'!K:K,\"Y\")",
+            ),
             ("Shelved Titles Read", "=COUNTIFS('My Library'!J:J,\"Y\",'My Library'!K:K,\"Y\")"),
-            ("Unshelved Pages Read", "=SUMIFS('My Library'!H:H,'My Library'!J:J,\"Y\",'My Library'!K:K,\"N\")"),
+            (
+                "Unshelved Pages Read",
+                "=SUMIFS('My Library'!H:H,'My Library'!J:J,\"Y\",'My Library'!K:K,\"N\")",
+            ),
             ("Unshelved Titles Read", "=COUNTIFS('My Library'!J:J,\"Y\",'My Library'!K:K,\"N\")"),
             ("Total Shelved Pages", "=SUMIF('My Library'!K:K,\"Y\",'My Library'!H:H)"),
             ("Total Shelved Titles", "=COUNTIF('My Library'!K:K,\"Y\")"),
-            ("Shelved Pages Not Read", "=SUMIFS('My Library'!H:H,'My Library'!K:K,\"Y\",'My Library'!J:J,\"N\")"),
+            (
+                "Shelved Pages Not Read",
+                "=SUMIFS('My Library'!H:H,'My Library'!K:K,\"Y\",'My Library'!J:J,\"N\")",
+            ),
             ("Shelved Titles Not Read", "=COUNTIFS('My Library'!K:K,\"Y\",'My Library'!J:J,\"N\")"),
         ],
     },
@@ -188,8 +218,7 @@ def zotero_rows(spec) -> list[tuple]:
     which is the order zotero_export already returns."""
     fields = [f for _, f, _ in spec["columns"]]
     numeric = {"pub_date", "page_count", "price_paid"}
-    return [tuple(_num(r[f]) if f in numeric else r[f] for f in fields)
-            for r in ze.read_books()]
+    return [tuple(_num(r[f]) if f in numeric else r[f] for f in fields) for r in ze.read_books()]
 
 
 def render_domain(domain: str, conn, out_path: Path) -> int:
@@ -209,8 +238,7 @@ def render_domain(domain: str, conn, out_path: Path) -> int:
         ws.column_dimensions[get_column_letter(i)].width = w
     ws.freeze_panes = "A2"
 
-    rows = (zotero_rows(spec) if spec["source"] == "zotero"
-            else conn.execute(spec["sql"]).fetchall())
+    rows = zotero_rows(spec) if spec["source"] == "zotero" else conn.execute(spec["sql"]).fetchall()
     for ri, row in enumerate(rows, 2):
         for ci, val in enumerate(row, 1):
             ws.cell(row=ri, column=ci, value=val)
@@ -250,8 +278,9 @@ def main() -> None:
     keep_history = "--no-archive" not in sys.argv
 
     conn = dbc.connect()
-    domains = {r["name"]: r for r in conn.execute(
-        "SELECT name, snapshot_file FROM domains WHERE active=1")}
+    domains = {
+        r["name"]: r for r in conn.execute("SELECT name, snapshot_file FROM domains WHERE active=1")
+    }
     base = dbc.snapshot_base()
     todo = list(domains) if target == "all" else [target]
 
@@ -264,8 +293,7 @@ def main() -> None:
         print(f"[render_snapshot] {d:14s} {n:5d} rows -> {out}")
         if keep_history and SPECS[d].get("archive"):
             dest, dropped = sa.archive_and_prune(out)
-            print(f"[render_snapshot] {'':14s} history -> {dest.name}"
-                  f" ({len(dropped)} pruned)")
+            print(f"[render_snapshot] {'':14s} history -> {dest.name} ({len(dropped)} pruned)")
     conn.close()
 
 

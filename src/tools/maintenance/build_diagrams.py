@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
+import json
 import os
 import sys
-import json
 from pathlib import Path
-
 
 
 def _instance_dir() -> Path:
@@ -13,9 +12,7 @@ def _instance_dir() -> Path:
     data_root = _project_root() / "data"
     candidates = sorted(p for p in data_root.glob("*") if p.is_dir())
     if not candidates:
-        raise SystemExit(
-            f"no instance folder under {data_root} — run create_tickets.py first"
-        )
+        raise SystemExit(f"no instance folder under {data_root} — run create_tickets.py first")
     return candidates[0]
 
 
@@ -28,9 +25,7 @@ def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 # ---------------------------------------------------------------------------
@@ -64,20 +59,21 @@ DIAGRAMS_DIR = str(_instance_dir() / "system" / "diagrams")
 # Helpers
 # ---------------------------------------------------------------------------
 
-HEADER = (
-    "%% GENERATED — DO NOT EDIT.\n"
-    "%% Source: config.local.json\n"
-)
+HEADER = "%% GENERATED — DO NOT EDIT.\n%% Source: config.local.json\n"
+
 
 def safe_id(name):
     return "".join(ch for ch in name if ch.isalnum())
 
+
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
+
 
 # ---------------------------------------------------------------------------
 # Agents & Knowledge System Diagram
 # ---------------------------------------------------------------------------
+
 
 def build_agents_diagram(index):
     agents = index.get("agents", {})
@@ -122,9 +118,11 @@ def build_agents_diagram(index):
 
     return "\n".join(lines) + "\n"
 
+
 # ---------------------------------------------------------------------------
 # Infrastructure Diagram
 # ---------------------------------------------------------------------------
+
 
 def _stack_item_names(items):
     """Yield display names from a stack category, tolerant of schema shape.
@@ -172,9 +170,11 @@ def build_infrastructure_diagram(index):
 
     return "\n".join(lines) + "\n"
 
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main():
     check = "--check" in sys.argv
@@ -211,6 +211,7 @@ def main():
         print("diagrams up to date.")
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

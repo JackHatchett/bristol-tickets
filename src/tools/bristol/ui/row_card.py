@@ -58,8 +58,7 @@ class RowCardDelegate(CardDelegate):
         if not self._inline(data):
             return content_w
         font = self._small_font()
-        taken = sum(self._pill_width(p, font) + space("sm")
-                    for p in self._pills(data))
+        taken = sum(self._pill_width(p, font) + space("sm") for p in self._pills(data))
         return max(40, content_w - taken)
 
     def _footer_height(self, data: dict, content_w: int) -> int:
@@ -77,9 +76,16 @@ class RowCardDelegate(CardDelegate):
             for text in reversed(self._pills(data)):
                 width = self._pill_width(text, font)
                 x -= width
-                self._draw_pill(painter, x, self._title_top, text,
-                                C["NEUTRAL_BG"], C["NEUTRAL_TX"], font,
-                                width=width)
+                self._draw_pill(
+                    painter,
+                    x,
+                    self._title_top,
+                    text,
+                    C["NEUTRAL_BG"],
+                    C["NEUTRAL_TX"],
+                    font,
+                    width=width,
+                )
                 x -= space("sm")
             return
         if not self._has_footer(data):
@@ -100,15 +106,16 @@ class RowCardDelegate(CardDelegate):
 
         painter.setFont(sfont)
         painter.setPen(QColor(C["INK_SOFT"]))
-        painter.drawText(QRectF(cx, y, meta_w, self.FOOT_H),
-                         int(Qt.AlignLeft | Qt.AlignVCenter),
-                         fm.elidedText(meta, Qt.ElideRight, max(0, meta_w)))
+        painter.drawText(
+            QRectF(cx, y, meta_w, self.FOOT_H),
+            int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+            fm.elidedText(meta, Qt.TextElideMode.ElideRight, max(0, meta_w)),
+        )
 
         x = cx + cw
-        for text, w in zip(reversed(pills), reversed(widths)):
+        for text, w in zip(reversed(pills), reversed(widths), strict=False):
             x -= w
-            self._draw_pill(painter, x, y, text, C["NEUTRAL_BG"],
-                            C["NEUTRAL_TX"], sfont, width=w)
+            self._draw_pill(painter, x, y, text, C["NEUTRAL_BG"], C["NEUTRAL_TX"], sfont, width=w)
             x -= gap
 
 
@@ -120,9 +127,9 @@ def card_list() -> QListWidget:
     view.setObjectName("columnCards")
     view.setItemDelegate(RowCardDelegate(view))
     view.setMouseTracking(True)
-    view.viewport().setCursor(Qt.PointingHandCursor)
+    view.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
     view.setUniformItemSizes(False)
     view.setSpacing(0)
-    view.setResizeMode(QListWidget.Adjust)
-    view.setVerticalScrollMode(QListWidget.ScrollPerPixel)
+    view.setResizeMode(QListWidget.ResizeMode.Adjust)
+    view.setVerticalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
     return view

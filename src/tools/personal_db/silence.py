@@ -20,8 +20,7 @@ import re
 
 WINDOW_DAYS = {"applied": 30, "interview": 21, "intro": 30}
 
-CLOSED = re.compile(r"^(rejected|withdrawn|abandoned|no response|offer declined|closed)",
-                    re.I)
+CLOSED = re.compile(r"^(rejected|withdrawn|abandoned|no response|offer declined|closed)", re.I)
 INTERVIEW = re.compile(r"interview|screen|recruiter call|assignment|in progress", re.I)
 APPLIED = re.compile(r"^applied", re.I)
 REFERRAL_GATED = re.compile(r"referral", re.I)
@@ -69,29 +68,35 @@ def kind(app):
 def matching_asks(app, asks):
     """The asks that are about this application: its id or its company in the
     subject. `asks` are the asks of the people linked to it."""
-    subj = lambda a: a.get("subject") or ""
-    return [a for a in asks
-            if f"app {app['id']}" in subj(a)
-            or str(app["id"]) in re.findall(r"\d+", subj(a))
-            or (app.get("company") or "~").lower() in subj(a).lower()]
+
+    def subj(a):
+        return a.get("subject") or ""
+
+    return [
+        a
+        for a in asks
+        if f"app {app['id']}" in subj(a)
+        or str(app["id"]) in re.findall(r"\d+", subj(a))
+        or (app.get("company") or "~").lower() in subj(a).lower()
+    ]
 
 
 def last_touch(app, asks=()):
     """The latest recorded exchange on an application: the day it was
     evaluated, the last touch recorded on it, the day its introduction stage
     was set, and the last touch of every ask about it."""
-    touches = [parse_date(app.get("date_evaluated"), end=True)
-               or parse_date(app.get("year"), end=True),
-               parse_date(app.get("last_touch_on")),
-               parse_date(app.get("intro_stage_on"))]
-    touches += [parse_date(a.get("last_touch")) or parse_date(a.get("opened_on"))
-                for a in asks]
+    touches = [
+        parse_date(app.get("date_evaluated"), end=True) or parse_date(app.get("year"), end=True),
+        parse_date(app.get("last_touch_on")),
+        parse_date(app.get("intro_stage_on")),
+    ]
+    touches += [parse_date(a.get("last_touch")) or parse_date(a.get("opened_on")) for a in asks]
     return max([t for t in touches if t], default=None)
 
 
 def days_silent(app, asks=(), today=None):
     t = last_touch(app, asks)
-    return (( today or dt.date.today()) - t).days if t else None
+    return ((today or dt.date.today()) - t).days if t else None
 
 
 def is_stale(app, asks=(), today=None):

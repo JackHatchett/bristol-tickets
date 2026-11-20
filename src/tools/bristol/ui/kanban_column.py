@@ -30,6 +30,7 @@ The parent (MainWindow) is expected to expose ``_refresh_board`` and
 
 from __future__ import annotations
 
+import finishing  # bristol-local: what done means for the board, one rule
 from PySide6.QtCore import QEvent, Qt, QTimer
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -37,14 +38,12 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QListWidget,
     QListView,
+    QListWidget,
     QListWidgetItem,
     QVBoxLayout,
     QWidget,
 )
-
-import finishing  # bristol-local: what done means for the board, one rule
 
 from .card_delegate import CardDelegate
 from .record_dialog import UnifiedRecordDialog
@@ -58,27 +57,28 @@ class _DndListWidget(QListWidget):
     cross-column move (rewrite status, append to the bottom). Without this an
     inter-list drag would only rearrange cards visually and be lost on refresh."""
 
-    def __init__(self, column: "KanbanColumn"):
+    def __init__(self, column: KanbanColumn):
         super().__init__()
         self._column = column
 
-    def dropEvent(self, event):  # noqa: N802 (Qt override)
+    def dropEvent(self, event):
         self._column._handle_drop(event)
 
     # A card's height is measured in the theme's fonts. A change of theme or
     # font re-measures every card without changing the list's width, so the
     # cards are laid out again here as they are on a resize.
-    _RELAYOUT_ON = (QEvent.StyleChange, QEvent.FontChange, QEvent.PaletteChange)
+    _RELAYOUT_ON = (QEvent.Type.StyleChange, QEvent.Type.FontChange, QEvent.Type.PaletteChange)
 
-    def changeEvent(self, event):  # noqa: N802 (Qt override)
+    def changeEvent(self, event):
         super().changeEvent(event)
         if event.type() in self._RELAYOUT_ON:
             self.scheduleDelayedItemsLayout()
 
 
 class KanbanColumn(QFrame):
-    def __init__(self, parent, conn, status_key: str | None, display_name: str,
-                 is_backlog: bool = False):
+    def __init__(
+        self, parent, conn, status_key: str | None, display_name: str, is_backlog: bool = False
+    ):
         super().__init__(parent)
         self.conn = conn
         self.status_key = status_key
@@ -89,7 +89,7 @@ class KanbanColumn(QFrame):
         # last card, so the column reads as one stack and a card scrolling up
         # passes under the header inside it.
         self.setObjectName("boardColumn")
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         root = QVBoxLayout(self)
         root.setContentsMargins(space("sm"), space("md"), space("sm"), 0)
         root.setSpacing(space("sm"))
@@ -101,17 +101,16 @@ class KanbanColumn(QFrame):
         # Its right end is the cards' right edge: past it is the gutter the
         # scroll bar runs in, a card's margin and the bar's own width.
         self._header = QHBoxLayout(header_line)
-        self._header.setContentsMargins(space("md"), 0,
-                                        space("sm") + space("lg"), 0)
+        self._header.setContentsMargins(space("md"), 0, space("sm") + space("lg"), 0)
         self._header.setSpacing(space("md"))
 
         self.header_label = QLabel(display_name)
         self.header_label.setObjectName("columnName")
-        self._header.addWidget(self.header_label, 0, Qt.AlignVCenter)
+        self._header.addWidget(self.header_label, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self.count_label = QLabel("")
         self.count_label.setObjectName("columnCount")
-        self._header.addWidget(self.count_label, 0, Qt.AlignVCenter)
+        self._header.addWidget(self.count_label, 0, Qt.AlignmentFlag.AlignVCenter)
         self._header.addStretch(1)
         root.addWidget(header_line)
 
@@ -120,9 +119,9 @@ class KanbanColumn(QFrame):
         self.list_widget.setDragEnabled(True)
         self.list_widget.setAcceptDrops(True)
         self.list_widget.setDropIndicatorShown(True)
-        self.list_widget.setDefaultDropAction(Qt.MoveAction)
-        self.list_widget.setDragDropMode(QAbstractItemView.DragDrop)
-        self.list_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.list_widget.setDefaultDropAction(Qt.DropAction.MoveAction)
+        self.list_widget.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+        self.list_widget.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.list_widget.setMouseTracking(True)
         self.list_widget.setUniformItemSizes(False)
         self.list_widget.setSpacing(0)
@@ -133,12 +132,11 @@ class KanbanColumn(QFrame):
         # painted at. A top-to-bottom list re-lays out on a change of width
         # only when it wraps its text, so wrapping is on; the delegate draws
         # every card's text itself, so it changes nothing else.
-        self.list_widget.setResizeMode(QListView.Adjust)
+        self.list_widget.setResizeMode(QListView.ResizeMode.Adjust)
         self.list_widget.setWordWrap(True)
         # A card is sized to the viewport, so the column never scrolls sideways.
-        self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.list_widget.setItemDelegate(
-            CardDelegate(self.list_widget, show_checkbox=is_backlog))
+        self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.list_widget.setItemDelegate(CardDelegate(self.list_widget, show_checkbox=is_backlog))
         self.list_widget.itemDoubleClicked.connect(self._edit_task_modal)
         self.list_widget.itemClicked.connect(self._inspect_task)
         root.addWidget(self.list_widget)
@@ -146,7 +144,7 @@ class KanbanColumn(QFrame):
 
     def add_to_header(self, widget: QWidget) -> None:
         """Seat a control at the right end of this column's header line."""
-        self._header.addWidget(widget, 0, Qt.AlignVCenter)
+        self._header.addWidget(widget, 0, Qt.AlignmentFlag.AlignVCenter)
 
     def _set_count(self) -> None:
         self.count_label.setText(str(self.list_widget.count()))
@@ -186,49 +184,66 @@ class KanbanColumn(QFrame):
         the same view brought up to date, rather than a reset of it."""
         view = self.list_widget
         scrolled = view.verticalScrollBar().value()
-        chosen = {item.data(Qt.UserRole) for item in view.selectedItems()}
+        chosen = {item.data(Qt.ItemDataRole.UserRole) for item in view.selectedItems()}
         ticked = set(self.checked_ids()) if self.is_backlog else set()
         view.clear()
         for row in rows:
             self._add_item(*row)
         for index in range(view.count()):
             item = view.item(index)
-            task_id = item.data(Qt.UserRole)
+            task_id = item.data(Qt.ItemDataRole.UserRole)
             if task_id in ticked:
-                item.setData(Qt.CheckStateRole, Qt.Checked)
+                item.setData(Qt.ItemDataRole.CheckStateRole, Qt.CheckState.Checked)
             if task_id in chosen:
                 item.setSelected(True)
         view.verticalScrollBar().setValue(scrolled)
         self._set_count()
 
-    def _add_item(self, task_id, title, tier, epic_name, epic_id, _status,
-                  owner, estimate, record_type, description, due_date=None):
+    def _add_item(
+        self,
+        task_id,
+        title,
+        tier,
+        epic_name,
+        epic_id,
+        _status,
+        owner,
+        estimate,
+        record_type,
+        description,
+        due_date=None,
+    ):
         item = QListWidgetItem()
-        item.setData(Qt.UserRole, task_id)
-        item.setData(CARD_ROLE, {
-            "issue_id": task_id,
-            "title": title or "",
-            "tier": (tier or "").lower(),
-            "epic_name": (epic_name or "") if epic_id else "",
-            "untriaged": epic_id is None,
-            # A date the card has to meet, and whether it has already gone by
-            # on a card nobody has finished. It says nothing about order.
-            "due_date": due_date or "",
-            "overdue": bool(due_date and _status != "done"
-                            and due_date < _today()),
-            "owner": owner or "user",
-            "estimate": (estimate or "").upper(),
-            "record_type": (record_type or "build").lower(),
-            "description": description or "",
-        })
+        item.setData(Qt.ItemDataRole.UserRole, task_id)
+        item.setData(
+            CARD_ROLE,
+            {
+                "issue_id": task_id,
+                "title": title or "",
+                "tier": (tier or "").lower(),
+                "epic_name": (epic_name or "") if epic_id else "",
+                "untriaged": epic_id is None,
+                # A date the card has to meet, and whether it has already gone by
+                # on a card nobody has finished. It says nothing about order.
+                "due_date": due_date or "",
+                "overdue": bool(due_date and _status != "done" and due_date < _today()),
+                "owner": owner or "user",
+                "estimate": (estimate or "").upper(),
+                "record_type": (record_type or "build").lower(),
+                "description": description or "",
+            },
+        )
         if self.is_backlog:
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setData(Qt.CheckStateRole, Qt.Unchecked)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setData(Qt.ItemDataRole.CheckStateRole, Qt.CheckState.Unchecked)
         item.setToolTip(
             f"{title}\n\nThe dot marks a card with no epic yet. Open it and "
             "choose one, or the "
             "standing workstream for a card that is the whole of its own "
-            "subject." if epic_id is None else title)
+            "subject."
+            if epic_id is None
+            else title
+        )
         self.list_widget.addItem(item)
 
     # ----- bulk-select checkbox helpers (backlog) --------------------------
@@ -237,15 +252,18 @@ class KanbanColumn(QFrame):
         ids = []
         for i in range(self.list_widget.count()):
             it = self.list_widget.item(i)
-            if _is_checked(it.data(Qt.CheckStateRole)):
-                tid = it.data(Qt.UserRole)
+            if _is_checked(it.data(Qt.ItemDataRole.CheckStateRole)):
+                tid = it.data(Qt.ItemDataRole.UserRole)
                 if tid is not None:
                     ids.append(tid)
         return ids
 
     def selected_ids(self) -> list[int]:
-        return [it.data(Qt.UserRole) for it in self.list_widget.selectedItems()
-                if it.data(Qt.UserRole) is not None]
+        return [
+            it.data(Qt.ItemDataRole.UserRole)
+            for it in self.list_widget.selectedItems()
+            if it.data(Qt.ItemDataRole.UserRole) is not None
+        ]
 
     def set_checkbox_mode(self, enabled: bool) -> None:
         """Show/hide the per-card bulk-select checkboxes at runtime (Backlog
@@ -255,11 +273,13 @@ class KanbanColumn(QFrame):
         state survives back into read mode. Relayout is required because the
         checkbox gutter changes each card's width/height."""
         delegate = self.list_widget.itemDelegate()
-        if hasattr(delegate, "show_checkbox"):
+        if isinstance(delegate, CardDelegate):
             delegate.show_checkbox = enabled
         if not enabled:
             for i in range(self.list_widget.count()):
-                self.list_widget.item(i).setData(Qt.CheckStateRole, Qt.Unchecked)
+                self.list_widget.item(i).setData(
+                    Qt.ItemDataRole.CheckStateRole, Qt.CheckState.Unchecked
+                )
         self.list_widget.doItemsLayout()
         self.list_widget.viewport().update()
 
@@ -267,8 +287,10 @@ class KanbanColumn(QFrame):
 
     def _ordered_ids(self) -> list[int]:
         """This column's task ids in current visual (== DB sort_order) order."""
-        return [self.list_widget.item(i).data(Qt.UserRole)
-                for i in range(self.list_widget.count())]
+        return [
+            self.list_widget.item(i).data(Qt.ItemDataRole.UserRole)
+            for i in range(self.list_widget.count())
+        ]
 
     def _drop_row(self, event) -> int:
         """The insertion row implied by the drop point, accounting for whether
@@ -278,7 +300,10 @@ class KanbanColumn(QFrame):
         row = idx.row()
         if row < 0:
             return self.list_widget.count()
-        if self.list_widget.dropIndicatorPosition() == QAbstractItemView.BelowItem:
+        if (
+            self.list_widget.dropIndicatorPosition()
+            == QAbstractItemView.DropIndicatorPosition.BelowItem
+        ):
             row += 1
         return row
 
@@ -287,12 +312,15 @@ class KanbanColumn(QFrame):
         dragged = []
         sel = getattr(source, "selectedItems", None)
         if callable(sel):
-            dragged = [it.data(Qt.UserRole) for it in sel()
-                       if it.data(Qt.UserRole) is not None]
+            dragged = [
+                it.data(Qt.ItemDataRole.UserRole)
+                for it in sel()
+                if it.data(Qt.ItemDataRole.UserRole) is not None
+            ]
         if not dragged:
             cur = getattr(source, "currentItem", lambda: None)()
-            if cur is not None and cur.data(Qt.UserRole) is not None:
-                dragged = [cur.data(Qt.UserRole)]
+            if cur is not None and cur.data(Qt.ItemDataRole.UserRole) is not None:
+                dragged = [cur.data(Qt.ItemDataRole.UserRole)]
         if not dragged:
             event.ignore()
             return
@@ -335,16 +363,15 @@ class KanbanColumn(QFrame):
         ts = _utcnow()
         closed = ts if self.status_key == "done" else None
         base = self.conn.execute(
-            "SELECT COALESCE(MAX(sort_order), -1) FROM task "
-            "WHERE stage='active' AND status=?", (self.status_key,)
+            "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage='active' AND status=?",
+            (self.status_key,),
         ).fetchone()[0]
         for offset, tid in enumerate(dragged, start=1):
             # The change log records this drag by itself — the database triggers
             # installed on this connection append one entry per changed field,
             # and updated_at is derived from the newest of them.
             self.conn.execute(
-                "UPDATE task SET status=?, stage='active', sort_order=?, "
-                "closed_at=? WHERE id=?",
+                "UPDATE task SET status=?, stage='active', sort_order=?, closed_at=? WHERE id=?",
                 (self.status_key, base + offset, closed, tid),
             )
             # A cross-column drop is a status transition, so what done means for
@@ -358,16 +385,16 @@ class KanbanColumn(QFrame):
     # ----- click / edit ----------------------------------------------------
 
     def _edit_task_modal(self, item: QListWidgetItem):
-        task_id = item.data(Qt.UserRole)
+        task_id = item.data(Qt.ItemDataRole.UserRole)
         if task_id is None:
             return
         dlg = UnifiedRecordDialog(self, self.conn, mode="task", record_id=task_id)
-        if dlg.exec() == QDialog.Accepted:
+        if dlg.exec() == QDialog.DialogCode.Accepted:
             dlg.save_data()
             if hasattr(self._main_window_ref, "_refresh_board"):
                 self._main_window_ref._refresh_board()
 
     def _inspect_task(self, item: QListWidgetItem):
-        task_id = item.data(Qt.UserRole)
+        task_id = item.data(Qt.ItemDataRole.UserRole)
         if task_id and hasattr(self._main_window_ref, "_update_inspector"):
             self._main_window_ref._update_inspector(task_id, "task")

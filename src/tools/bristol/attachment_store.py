@@ -58,8 +58,7 @@ def list_attachments(conn: sqlite3.Connection, task_id: int | None):
         return []
     try:
         return conn.execute(
-            "SELECT id, filename, original_name FROM attachment "
-            "WHERE task_id=? ORDER BY id",
+            "SELECT id, filename, original_name FROM attachment WHERE task_id=? ORDER BY id",
             (task_id,),
         ).fetchall()
     except sqlite3.OperationalError:
@@ -89,8 +88,7 @@ def add_attachment(conn: sqlite3.Connection, task_id: int | None, source_path: s
     except OSError:
         return None
     conn.execute(
-        "INSERT INTO attachment (task_id, filename, original_name, created_at) "
-        "VALUES (?,?,?,?)",
+        "INSERT INTO attachment (task_id, filename, original_name, created_at) VALUES (?,?,?,?)",
         (task_id, dest.name, src.name, datetime.now(timezone.utc).isoformat()),
     )
     conn.commit()
@@ -101,9 +99,7 @@ def remove_attachment(conn: sqlite3.Connection, attachment_id: int) -> None:
     """Drop the attachment record and move its file into ``images/_trash/`` (a
     recoverable soft-delete). If the move fails, the DB link is still removed so
     the UI never shows a dangling entry."""
-    row = conn.execute(
-        "SELECT filename FROM attachment WHERE id=?", (attachment_id,)
-    ).fetchone()
+    row = conn.execute("SELECT filename FROM attachment WHERE id=?", (attachment_id,)).fetchone()
     if row:
         d = images_dir(conn)
         if d is not None:

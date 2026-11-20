@@ -121,8 +121,7 @@ def kept_images(conn):
     """The file each kept picture sits in, by the blob it is."""
     folder = images_folder()
     with _LOCK:
-        rows = conn.execute(
-            "SELECT cid, filename FROM image WHERE filename IS NOT NULL").fetchall()
+        rows = conn.execute("SELECT cid, filename FROM image WHERE filename IS NOT NULL").fetchall()
     return {row["cid"]: folder / row["filename"] for row in rows}
 
 
@@ -132,8 +131,7 @@ def keep_image(conn, cid, post_uri, mime, alt, data):
     The file is named for the blob it is, so a picture two posts carry is one
     file and a second run recognises it without reading it.
     """
-    suffix = {"image/png": ".png", "image/gif": ".gif",
-              "image/webp": ".webp"}.get(mime, ".jpg")
+    suffix = {"image/png": ".png", "image/gif": ".gif", "image/webp": ".webp"}.get(mime, ".jpg")
     filename = f"{cid}{suffix}"
     (images_folder() / filename).write_bytes(data)
     with _LOCK:
@@ -142,8 +140,8 @@ def keep_image(conn, cid, post_uri, mime, alt, data):
             "VALUES (?,?,?,?,?,?,?) ON CONFLICT(cid) DO UPDATE SET "
             "bytes=excluded.bytes, filename=excluded.filename, "
             "kept_at=excluded.kept_at, missing_at=NULL",
-            (cid, post_uri, mime, alt, len(data), filename,
-             datetime.now(timezone.utc).isoformat()))
+            (cid, post_uri, mime, alt, len(data), filename, datetime.now(timezone.utc).isoformat()),
+        )
         conn.commit()
     return images_folder() / filename
 
@@ -156,8 +154,8 @@ def note_image_gone(conn, cid, post_uri, mime, alt):
             "INSERT INTO image (cid, post_uri, mime, alt, missing_at) "
             "VALUES (?,?,?,?,?) ON CONFLICT(cid) DO UPDATE SET "
             "missing_at=excluded.missing_at",
-            (cid, post_uri, mime, alt,
-             datetime.now(timezone.utc).isoformat()))
+            (cid, post_uri, mime, alt, datetime.now(timezone.utc).isoformat()),
+        )
         conn.commit()
 
 
@@ -168,10 +166,9 @@ def image_totals(conn):
     unremarked."""
     with _LOCK:
         kept, size = conn.execute(
-            "SELECT COUNT(*), COALESCE(SUM(bytes),0) FROM image "
-            "WHERE filename IS NOT NULL").fetchone()
-        gone = conn.execute(
-            "SELECT COUNT(*) FROM image WHERE filename IS NULL").fetchone()[0]
+            "SELECT COUNT(*), COALESCE(SUM(bytes),0) FROM image WHERE filename IS NOT NULL"
+        ).fetchone()
+        gone = conn.execute("SELECT COUNT(*) FROM image WHERE filename IS NULL").fetchone()[0]
     return kept, gone, size
 
 
@@ -193,8 +190,8 @@ def keep_posts(conn, records):
                 "INSERT INTO post (uri, created_at, record) VALUES (?, ?, ?) "
                 "ON CONFLICT(uri) DO UPDATE SET created_at = excluded.created_at, "
                 "record = excluded.record",
-                (uri, client.created_at(record).isoformat(),
-                 json.dumps(record, sort_keys=True)))
+                (uri, client.created_at(record).isoformat(), json.dumps(record, sort_keys=True)),
+            )
         conn.commit()
     return added
 
@@ -214,8 +211,7 @@ def thread_count(conn):
 def records_with_images(conn):
     """Every kept post record carrying at least one picture, newest first."""
     with _LOCK:
-        rows = conn.execute(
-            "SELECT uri, record FROM post ORDER BY created_at DESC").fetchall()
+        rows = conn.execute("SELECT uri, record FROM post ORDER BY created_at DESC").fetchall()
     carrying = []
     for row in rows:
         record = json.loads(row["record"])
@@ -254,8 +250,7 @@ def records_by_day(conn, zone, since=None):
 def load_thread(conn, root_uri):
     """One kept conversation, or None where the store has never contained it."""
     with _LOCK:
-        row = conn.execute("SELECT tree FROM thread WHERE root_uri = ?",
-                           (root_uri,)).fetchone()
+        row = conn.execute("SELECT tree FROM thread WHERE root_uri = ?", (root_uri,)).fetchone()
     if row is None:
         return None
     return threads.from_dict(json.loads(row["tree"]))
@@ -270,8 +265,7 @@ def keep_thread(conn, root_uri, tree):
     store contains rather than what the network returned.
     """
     with _LOCK:
-        row = conn.execute("SELECT covers FROM thread WHERE root_uri = ?",
-                           (root_uri,)).fetchone()
+        row = conn.execute("SELECT covers FROM thread WHERE root_uri = ?", (root_uri,)).fetchone()
         held = set(json.loads(row["covers"])) if row is not None else set()
         if tree is not None:
             covers = threads.mine_uris(tree)
@@ -280,8 +274,8 @@ def keep_thread(conn, root_uri, tree):
                     "INSERT INTO thread (root_uri, covers, tree) VALUES (?, ?, ?) "
                     "ON CONFLICT(root_uri) DO UPDATE SET covers = excluded.covers, "
                     "tree = excluded.tree",
-                    (root_uri, json.dumps(sorted(covers)),
-                     json.dumps(threads.to_dict(tree))))
+                    (root_uri, json.dumps(sorted(covers)), json.dumps(threads.to_dict(tree))),
+                )
                 conn.commit()
     return load_thread(conn, root_uri)
 
@@ -299,16 +293,20 @@ def keep_other_records(conn, collection, records):
             uri = record.get("uri")
             if not uri:
                 continue
-            if conn.execute("SELECT 1 FROM other_record WHERE uri = ?",
-                            (uri,)).fetchone() is None:
+            if conn.execute("SELECT 1 FROM other_record WHERE uri = ?", (uri,)).fetchone() is None:
                 added += 1
             conn.execute(
                 "INSERT INTO other_record (uri, collection, created_at, record) "
                 "VALUES (?, ?, ?, ?) ON CONFLICT(uri) DO UPDATE SET "
                 "collection = excluded.collection, created_at = excluded.created_at, "
                 "record = excluded.record",
-                (uri, collection, client.created_at(record).isoformat(),
-                 json.dumps(record, sort_keys=True)))
+                (
+                    uri,
+                    collection,
+                    client.created_at(record).isoformat(),
+                    json.dumps(record, sort_keys=True),
+                ),
+            )
         conn.commit()
     return added
 
@@ -323,17 +321,18 @@ def mark_delete_sent(conn, uris, moment=None):
     with _LOCK:
         for uri in uris:
             conn.execute("UPDATE post SET delete_sent_at = ? WHERE uri = ?", (stamp, uri))
-            conn.execute("UPDATE other_record SET delete_sent_at = ? WHERE uri = ?",
-                         (stamp, uri))
+            conn.execute("UPDATE other_record SET delete_sent_at = ? WHERE uri = ?", (stamp, uri))
         conn.commit()
 
 
 def delete_sent(conn):
     """Every address a delete has already been sent for."""
     with _LOCK:
-        sent = {row[0] for row in
-                conn.execute("SELECT uri FROM post WHERE delete_sent_at IS NOT NULL")}
-        sent |= {row[0] for row in
-                 conn.execute("SELECT uri FROM other_record "
-                              "WHERE delete_sent_at IS NOT NULL")}
+        sent = {
+            row[0] for row in conn.execute("SELECT uri FROM post WHERE delete_sent_at IS NOT NULL")
+        }
+        sent |= {
+            row[0]
+            for row in conn.execute("SELECT uri FROM other_record WHERE delete_sent_at IS NOT NULL")
+        }
     return sent

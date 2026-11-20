@@ -30,17 +30,17 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parents[0] / "ticket_tools"))
 sys.path.insert(0, str(HERE.parents[0]))
-import skills  # noqa: E402
 import create_tickets  # noqa: E402
 from config_tools import data_paths  # noqa: E402
+
+import skills  # noqa: E402
 
 TICKET_WRITE = HERE.parents[0] / "ticket_tools" / "ticket_write.py"
 OPEN_STAGES = ("active", "backlog")
 
 
 def board() -> sqlite3.Connection:
-    """A read connection to the shared board.
-    """
+    """A read connection to the shared board."""
     conn = sqlite3.connect(str(create_tickets.locate_or_provision()), timeout=10)
     conn.execute("PRAGMA busy_timeout=5000")
     conn.execute("PRAGMA journal_mode=MEMORY")
@@ -48,8 +48,7 @@ def board() -> sqlite3.Connection:
     return conn
 
 
-def existing_proposal(conn: sqlite3.Connection, title: str,
-                      description: str) -> sqlite3.Row | None:
+def existing_proposal(conn: sqlite3.Connection, title: str, description: str) -> sqlite3.Row | None:
     """An open card already carrying this proposal.
 
     Two cards count as the same proposal: one with this title, and one whose
@@ -58,44 +57,52 @@ def existing_proposal(conn: sqlite3.Connection, title: str,
     proposal.
     """
     rows = conn.execute(
-        "SELECT id, title, status, stage FROM task "
-        "WHERE stage IN (?, ?) AND status != 'done'", OPEN_STAGES).fetchall()
+        "SELECT id, title, status, stage FROM task WHERE stage IN (?, ?) AND status != 'done'",
+        OPEN_STAGES,
+    ).fetchall()
     for row in rows:
         if row["title"] == title:
             return row
     for row in conn.execute(
-            "SELECT id, title, status, stage FROM task "
-            "WHERE stage IN (?, ?) AND status != 'done' AND description = ?",
-            (*OPEN_STAGES, description)):
+        "SELECT id, title, status, stage FROM task "
+        "WHERE stage IN (?, ?) AND status != 'done' AND description = ?",
+        (*OPEN_STAGES, description),
+    ):
         return row
     return None
 
 
 def ticket(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, str(TICKET_WRITE), *args],
-                          capture_output=True, text=True)
+    return subprocess.run(
+        [sys.executable, str(TICKET_WRITE), *args], capture_output=True, text=True
+    )
 
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
-    ap.add_argument("--skill", required=True,
-                    help="the skill this proposes to add or patch")
-    ap.add_argument("--reporter", required=True,
-                    help="the agent whose session produced the lesson")
-    ap.add_argument("--change", required=True,
-                    help="what changes, in a few words, for the title")
-    ap.add_argument("--body-file", required=True, type=Path,
-                    help="the proposed text in full; - reads standard input")
-    ap.add_argument("--from-task", type=int,
-                    help="the card the lesson came from")
-    ap.add_argument("--attach-to", default=None,
-                    help="the agent the skill would serve, or 'none' "
-                         "(default: the reporter)")
+    ap.add_argument("--skill", required=True, help="the skill this proposes to add or patch")
+    ap.add_argument("--reporter", required=True, help="the agent whose session produced the lesson")
+    ap.add_argument("--change", required=True, help="what changes, in a few words, for the title")
+    ap.add_argument(
+        "--body-file",
+        required=True,
+        type=Path,
+        help="the proposed text in full; - reads standard input",
+    )
+    ap.add_argument("--from-task", type=int, help="the card the lesson came from")
+    ap.add_argument(
+        "--attach-to",
+        default=None,
+        help="the agent the skill would serve, or 'none' (default: the reporter)",
+    )
     ap.add_argument("--estimate", default="S", help="S|M|L|XL (default S)")
     args = ap.parse_args(argv)
 
-    text = (sys.stdin.read() if str(args.body_file) == "-"
-            else args.body_file.read_text(encoding="utf-8"))
+    text = (
+        sys.stdin.read()
+        if str(args.body_file) == "-"
+        else args.body_file.read_text(encoding="utf-8")
+    )
     if not text.strip():
         print("propose_skill: the proposed text is empty.", file=sys.stderr)
         return 1
@@ -110,16 +117,32 @@ def main(argv: list[str]) -> int:
     finally:
         conn.close()
     if clash is not None:
-        print(f"propose_skill: #{clash['id']} already carries this proposal "
-              f"({clash['stage']}/{clash['status']}) — \"{clash['title']}\".")
+        print(
+            f"propose_skill: #{clash['id']} already carries this proposal "
+            f'({clash["stage"]}/{clash["status"]}) — "{clash["title"]}".'
+        )
         print("Add to that card rather than filing a second one.")
         return 1
 
-    made = ticket("add-task", "--title", title, "--record-type", "build",
-                  "--assignee", "chief_of_staff", "--reporter", args.reporter,
-                  "--actor", args.reporter, "--estimate", args.estimate,
-                  "--tier", "max",
-                  "--description", text)
+    made = ticket(
+        "add-task",
+        "--title",
+        title,
+        "--record-type",
+        "build",
+        "--assignee",
+        "chief_of_staff",
+        "--reporter",
+        args.reporter,
+        "--actor",
+        args.reporter,
+        "--estimate",
+        args.estimate,
+        "--tier",
+        "max",
+        "--description",
+        text,
+    )
     sys.stdout.write(made.stdout)
     if made.returncode != 0:
         sys.stderr.write(made.stderr)
@@ -128,8 +151,8 @@ def main(argv: list[str]) -> int:
     conn = board()
     try:
         new_id = conn.execute(
-            "SELECT id FROM task WHERE title = ? ORDER BY id DESC LIMIT 1",
-            (title,)).fetchone()["id"]
+            "SELECT id FROM task WHERE title = ? ORDER BY id DESC LIMIT 1", (title,)
+        ).fetchone()["id"]
     finally:
         conn.close()
 
@@ -142,24 +165,48 @@ def main(argv: list[str]) -> int:
             skill_md = skill_md.relative_to(data_paths.project_root())
         except ValueError:
             pass
-        out = ticket("link-add", "--task", str(new_id), "--uri", str(skill_md),
-                     "--label", f"The skill this patches ({found[1]})",
-                     "--type", "related", "--author", args.reporter)
+        out = ticket(
+            "link-add",
+            "--task",
+            str(new_id),
+            "--uri",
+            str(skill_md),
+            "--label",
+            f"The skill this patches ({found[1]})",
+            "--type",
+            "related",
+            "--author",
+            args.reporter,
+        )
         sys.stdout.write(out.stdout or out.stderr)
 
     if args.from_task:
-        out = ticket("link-add", "--task", str(new_id),
-                     "--to-task", str(args.from_task), "--type", "related",
-                     "--author", args.reporter)
+        out = ticket(
+            "link-add",
+            "--task",
+            str(new_id),
+            "--to-task",
+            str(args.from_task),
+            "--type",
+            "related",
+            "--author",
+            args.reporter,
+        )
         sys.stdout.write(out.stdout or out.stderr)
 
     attach = args.reporter if args.attach_to is None else args.attach_to
     if attach and attach != "none":
-        out = ticket("add-issue-log", "--task", str(new_id),
-                     "--author", args.reporter,
-                     "--body", f"Proposed attachment: {attach}, whose work "
-                               f"produced this. Attaching is a decision, not "
-                               f"part of the proposal.")
+        out = ticket(
+            "add-issue-log",
+            "--task",
+            str(new_id),
+            "--author",
+            args.reporter,
+            "--body",
+            f"Proposed attachment: {attach}, whose work "
+            f"produced this. Attaching is a decision, not "
+            f"part of the proposal.",
+        )
         sys.stdout.write(out.stdout or out.stderr)
 
     print(f"Filed #{new_id} — {title}")

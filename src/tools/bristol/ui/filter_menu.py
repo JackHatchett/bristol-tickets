@@ -149,6 +149,7 @@ class FilterState:
 # The options a board offers, and what each one would show
 # ---------------------------------------------------------------------------
 
+
 def _rows(conn: sqlite3.Connection, query: str, params=()) -> list:
     try:
         return conn.execute(query, params).fetchall()
@@ -163,9 +164,12 @@ def assignee_options(conn: sqlite3.Connection, state: FilterState) -> list[tuple
     claims it. An option that is ticked is offered even where the board no
     longer contains a card for it, so it can be un-ticked.
     """
-    present = {row[0] for row in _rows(
-        conn, "SELECT DISTINCT COALESCE(assignee, 'user') FROM task "
-              "WHERE stage='active'")}
+    present = {
+        row[0]
+        for row in _rows(
+            conn, "SELECT DISTINCT COALESCE(assignee, 'user') FROM task WHERE stage='active'"
+        )
+    }
     present.update({"user"}, state.assignees)
     rest = sorted(name for name in present if name != "user")
     return [(name, agent_caption(name)) for name in ["user", *rest]]
@@ -178,18 +182,18 @@ def epic_options(conn: sqlite3.Connection, state: FilterState) -> list[tuple]:
     built. The no-epic option is offered where the board contains a card with no
     epic, or where it is already ticked.
     """
-    options = [(eid, name) for eid, name, status in _rows(
-        conn, "SELECT id, name, status FROM epic ORDER BY id")
-        if (status or "").lower() not in FINISHED_EPICS]
-    orphans = _rows(
-        conn, "SELECT COUNT(*) FROM task WHERE stage='active' AND epic_id IS NULL")
+    options = [
+        (eid, name)
+        for eid, name, status in _rows(conn, "SELECT id, name, status FROM epic ORDER BY id")
+        if (status or "").lower() not in FINISHED_EPICS
+    ]
+    orphans = _rows(conn, "SELECT COUNT(*) FROM task WHERE stage='active' AND epic_id IS NULL")
     if (orphans and orphans[0][0]) or None in state.epics:
         options.append((None, NO_EPIC_LABEL))
     return options
 
 
-def option_count(conn: sqlite3.Connection, state: FilterState,
-                 kind: str, value) -> int:
+def option_count(conn: sqlite3.Connection, state: FilterState, kind: str, value) -> int:
     """How many board cards this one option matches, under the other sections."""
     probe = FilterState()
     probe.assignees = {value} if kind == ASSIGNEE else set(state.assignees)
@@ -201,12 +205,16 @@ def option_count(conn: sqlite3.Connection, state: FilterState,
 
 def applied(conn: sqlite3.Connection, state: FilterState) -> list[tuple]:
     """Each ticked option as ``(kind, value, label)``, in the panel's order."""
-    chips = [(ASSIGNEE, value, label)
-             for value, label in assignee_options(conn, state)
-             if state.holds(ASSIGNEE, value)]
-    chips += [(EPIC, value, label)
-              for value, label in epic_options(conn, state)
-              if state.holds(EPIC, value)]
+    chips = [
+        (ASSIGNEE, value, label)
+        for value, label in assignee_options(conn, state)
+        if state.holds(ASSIGNEE, value)
+    ]
+    chips += [
+        (EPIC, value, label)
+        for value, label in epic_options(conn, state)
+        if state.holds(EPIC, value)
+    ]
     return chips
 
 
@@ -214,27 +222,29 @@ def applied(conn: sqlite3.Connection, state: FilterState) -> list[tuple]:
 # The panel
 # ---------------------------------------------------------------------------
 
+
 class _FacetRow(QWidget):
     """One option: a box, its name, and its count — the whole row a click."""
 
     def __init__(self, label: str, checked: bool, on_toggle) -> None:
         super().__init__()
         self.setObjectName("facetRow")
-        self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip(label)
 
         self.box = QCheckBox()
         self.box.setChecked(checked)
         room = name_width()
-        self.box.setText(QFontMetrics(self.box.font()).elidedText(
-            label, Qt.ElideRight, room))
+        self.box.setText(
+            QFontMetrics(self.box.font()).elidedText(label, Qt.TextElideMode.ElideRight, room)
+        )
         self.box.setMaximumWidth(room + space("2xl"))
         self.box.toggled.connect(lambda _checked: on_toggle())
 
         self.count = QLabel("")
         self.count.setObjectName("metaText")
-        self.count.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.count.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self.count.setMinimumWidth(space("2xl"))
 
         row = QHBoxLayout(self)
@@ -247,7 +257,7 @@ class _FacetRow(QWidget):
     def set_count(self, found: int) -> None:
         self.count.setText(str(found))
 
-    def mousePressEvent(self, event):  # noqa: N802 (Qt override)
+    def mousePressEvent(self, event):
         """A click anywhere on the row is a click on its box."""
         self.box.toggle()
 
@@ -258,7 +268,7 @@ class FilterMenu(QWidget):
     changed = Signal()
 
     def __init__(self, parent, conn: sqlite3.Connection, state: FilterState) -> None:
-        super().__init__(parent, Qt.Popup)
+        super().__init__(parent, Qt.WindowType.Popup)
         self.conn = conn
         self.state = state
         self._rows: list[tuple[str, object, _FacetRow]] = []
@@ -266,7 +276,7 @@ class FilterMenu(QWidget):
         # The popup is a transparent frame containing one panel, so the panel's
         # rounded corners are drawn against nothing rather than against the
         # square corners of a window.
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
 
@@ -283,7 +293,7 @@ class FilterMenu(QWidget):
         title.setObjectName("dialogHeading")
         self.clear_btn = QPushButton("Clear All")
         self.clear_btn.setObjectName("link")
-        self.clear_btn.setCursor(Qt.PointingHandCursor)
+        self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.clear_btn.clicked.connect(self._clear)
 
         head = QHBoxLayout()
@@ -302,11 +312,10 @@ class FilterMenu(QWidget):
         scroll = QScrollArea()
         scroll.setObjectName("filterScroll")
         scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setMaximumHeight(LAYOUT["filter_menu_max_h"])
         scroll.setWidget(holder)
         body.addWidget(scroll)
-
 
     # ----- opening ----------------------------------------------------------
 
@@ -324,8 +333,8 @@ class FilterMenu(QWidget):
         self.move(left, top)
         self.show()
 
-    def keyPressEvent(self, event):  # noqa: N802 (Qt override)
-        if event.key() == Qt.Key_Escape:
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
             self.close()
             return
         super().keyPressEvent(event)
@@ -358,8 +367,9 @@ class FilterMenu(QWidget):
         column.addWidget(label)
 
         for value, caption in options:
-            row = _FacetRow(caption, self.state.holds(kind, value),
-                            lambda k=kind, v=value: self._toggled(k, v))
+            row = _FacetRow(
+                caption, self.state.holds(kind, value), lambda k=kind, v=value: self._toggled(k, v)
+            )
             column.addWidget(row)
             self._rows.append((kind, value, row))
         return section

@@ -28,6 +28,7 @@ sys.path.insert(0, str(HERE.parents[0] / "config_tools"))
 sys.path.insert(0, str(HERE.parents[0] / "skill_tools"))
 import data_paths  # noqa: E402
 import read_config  # noqa: E402
+
 import skills  # noqa: E402
 
 FORMAT = 1
@@ -100,7 +101,8 @@ def build(slug: str) -> dict:
 
     config_entry = {
         key: generalise(value, instance, notebook)
-        for key, value in entry.items() if key not in REGENERATED
+        for key, value in entry.items()
+        if key not in REGENERATED
     }
     if isinstance(config_entry.get("env"), dict):
         config_entry["env"] = {k: SUPPLY for k in config_entry["env"]}
@@ -117,37 +119,39 @@ def build(slug: str) -> dict:
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("slug", help="the agent to export")
-    ap.add_argument("--out", type=Path, help="where to write it "
-                                             "(default: <slug>.agent.json here)")
+    ap.add_argument("--out", type=Path, help="where to write it (default: <slug>.agent.json here)")
     args = ap.parse_args(argv)
 
     if args.slug not in read_config.get("agents", {}):
-        print(f"'{args.slug}' is not an agent. `read_config.py --keys agents` "
-              f"names the ones that are.", file=sys.stderr)
+        print(
+            f"'{args.slug}' is not an agent. `read_config.py --keys agents` "
+            f"names the ones that are.",
+            file=sys.stderr,
+        )
         return 1
 
     document = build(args.slug)
     out = args.out or Path.cwd() / f"{args.slug}.agent.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n",
-                   encoding="utf-8")
+    out.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    supplied = [k for k, v in document["entry"].items()
-                if json.dumps(v).find(SUPPLY) != -1]
+    supplied = [k for k, v in document["entry"].items() if json.dumps(v).find(SUPPLY) != -1]
     print(f"Wrote {out}")
     print(f"  charter   {len(document['charter'].splitlines())} lines")
     print(f"  entry     {', '.join(document['entry']) or 'no keys'}")
     named = document["skills"]
-    print(f"  skills    {len(named)} named"
-          + (f" — {', '.join(s['name'] for s in named)}" if named else ""))
-    unaddressed = [s["name"] for s in named
-                   if s["source"] in {"unknown", "unrecorded"}]
+    print(
+        f"  skills    {len(named)} named"
+        + (f" — {', '.join(s['name'] for s in named)}" if named else "")
+    )
+    unaddressed = [s["name"] for s in named if s["source"] in {"unknown", "unrecorded"}]
     if unaddressed:
-        print(f"            carries no address, so an importer cannot fetch it: "
-              f"{', '.join(unaddressed)}")
+        print(
+            f"            carries no address, so an importer cannot fetch it: "
+            f"{', '.join(unaddressed)}"
+        )
     if supplied:
-        print(f"  placeholders in {', '.join(supplied)} — the importer's values, "
-              f"not yours")
+        print(f"  placeholders in {', '.join(supplied)} — the importer's values, not yours")
     return 0
 
 

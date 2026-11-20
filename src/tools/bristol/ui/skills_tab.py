@@ -28,6 +28,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import config_file  # bristol-local; see module docstring
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
@@ -43,16 +44,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-import config_file  # bristol-local; see module docstring
-
 from . import dialogs
-from .segmented import SegmentedControl
-from .toggle_list import ToggleList
-from .links import open_uri
 from .growing_edit import GrowingTextEdit
-from .row_card import card_list
+from .links import open_uri
 from .results_table import magnifier_icon
-from .theme import C, CARD_ROLE, LAYOUT, agent_caption, fill_agents, space
+from .row_card import card_list
+from .segmented import SegmentedControl
+from .theme import CARD_ROLE, LAYOUT, C, agent_caption, fill_agents, space
+from .toggle_list import ToggleList
 
 TICKETS_CLI = Path("src") / "tools" / "ticket_tools" / "ticket_write.py"
 STANDING_KIND = "standing"  # create_tickets.EPIC_KIND_STANDING
@@ -63,8 +62,7 @@ SKILLS_CLI = Path("src") / "tools" / "skill_tools" / "skills.py"
 # skills ship from.
 # It is the New Skill window's example: well formed, and live, so following it
 # lands on a page whose address can be pasted straight back.
-EXAMPLE_SKILL = ("https://github.com/JackHatchett/bristol-career-coach/"
-                 "tree/main/jd-evaluation")
+EXAMPLE_SKILL = "https://github.com/JackHatchett/bristol-career-coach/tree/main/jd-evaluation"
 
 # The three ways the list narrows. Each is one control on the top row, and the
 # picker's own name is the option that turns it off.
@@ -87,8 +85,7 @@ def _leave_for(parent, url: str) -> None:
         open_uri(url)
 
 
-NEW_SKILL_ROUTES = [("request", "Request From Chief of Staff"),
-                    ("import", "Import From GitHub")]
+NEW_SKILL_ROUTES = [("request", "Request From Chief of Staff"), ("import", "Import From GitHub")]
 
 
 class NewSkillDialog(QDialog):
@@ -125,8 +122,7 @@ class NewSkillDialog(QDialog):
         rf.setSpacing(space("sm"))
         self.title = QLineEdit()
         self.title.textChanged.connect(self._sync)
-        self.request = GrowingTextEdit(min_lines=4, max_lines=10,
-                                       newline_on_return=True)
+        self.request = GrowingTextEdit(min_lines=4, max_lines=10, newline_on_return=True)
         self.request.textChanged.connect(self._sync)
         rf.addWidget(self._caption("Title"))
         rf.addWidget(self.title)
@@ -144,12 +140,12 @@ class NewSkillDialog(QDialog):
         self.address.returnPressed.connect(self._go)
         self.example = QPushButton(f"Example: {EXAMPLE_SKILL}")
         self.example.setObjectName("exampleLink")
-        self.example.setCursor(Qt.PointingHandCursor)
+        self.example.setCursor(Qt.CursorShape.PointingHandCursor)
         self.example.setToolTip(EXAMPLE_SKILL)
         self.example.clicked.connect(lambda: _leave_for(self, EXAMPLE_SKILL))
         imf.addWidget(self._caption("Skill Folder on GitHub"))
         imf.addWidget(self.address)
-        imf.addWidget(self.example, 0, Qt.AlignLeft)
+        imf.addWidget(self.example, 0, Qt.AlignmentFlag.AlignLeft)
 
         cancel = QPushButton("Cancel")
         cancel.setAutoDefault(False)
@@ -166,10 +162,9 @@ class NewSkillDialog(QDialog):
         row.addWidget(self.go_btn)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("md"))
-        column.addWidget(self.choice, 0, Qt.AlignLeft)
+        column.addWidget(self.choice, 0, Qt.AlignmentFlag.AlignLeft)
         column.addWidget(self.request_fields)
         column.addWidget(self.import_fields)
         column.addSpacing(space("lg"))
@@ -191,8 +186,7 @@ class NewSkillDialog(QDialog):
         self.import_fields.setVisible(importing)
         self.go_btn.setText("Import Skill" if importing else "Request Skill")
         if requesting:
-            ready = bool(self.title.text().strip()
-                         and self.request.toPlainText().strip())
+            ready = bool(self.title.text().strip() and self.request.toPlainText().strip())
         elif importing:
             ready = bool(self.address.text().strip())
         else:
@@ -210,8 +204,7 @@ class NewSkillDialog(QDialog):
 
     def _request(self) -> None:
         """File the request as a card for chief_of_staff."""
-        problem = self._file_request(self.title.text().strip(),
-                                     self.request.toPlainText().strip())
+        problem = self._file_request(self.title.text().strip(), self.request.toPlainText().strip())
         if problem:
             dialogs.notify(self, "Not Sent", problem)
             return
@@ -230,8 +223,7 @@ class NewSkillDialog(QDialog):
         finally:
             self._sync()
         if code != 0:
-            dialogs.notify(self, "Not Imported",
-                           err.strip() or "The fetch failed.")
+            dialogs.notify(self, "Not Imported", err.strip() or "The fetch failed.")
             return
         self.imported = True
         self.accept()
@@ -247,8 +239,7 @@ class SkillDialog(QDialog):
     edit them.
     """
 
-    def __init__(self, parent, record: dict, agents: list[str], body: str,
-                 run) -> None:
+    def __init__(self, parent, record: dict, agents: list[str], body: str, run) -> None:
         super().__init__(parent)
         self._record = record
         self._run = run
@@ -272,15 +263,23 @@ class SkillDialog(QDialog):
         description.setObjectName("metaText")
         description.setWordWrap(True)
 
-        facts = QLabel("   ·   ".join(part for part in (
-            record["name"], record["said_origin"], record["said_contents"],
-            record.get("said_scan", "")) if part))
+        facts = QLabel(
+            "   ·   ".join(
+                part
+                for part in (
+                    record["name"],
+                    record["said_origin"],
+                    record["said_contents"],
+                    record.get("said_scan", ""),
+                )
+                if part
+            )
+        )
         facts.setObjectName("metaText")
         facts.setWordWrap(True)
 
         column = QVBoxLayout(self)
-        column.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                  space("xl"))
+        column.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         column.setSpacing(space("md"))
         column.addWidget(heading)
         column.addWidget(subtitle)
@@ -294,9 +293,8 @@ class SkillDialog(QDialog):
             self.source_btn = QPushButton("Source on GitHub")
             self.source_btn.setObjectName("link")
             self.source_btn.setToolTip(record["source_url"])
-            self.source_btn.clicked.connect(
-                lambda: _leave_for(self, record["source_url"]))
-            column.addWidget(self.source_btn, 0, Qt.AlignLeft)
+            self.source_btn.clicked.connect(lambda: _leave_for(self, record["source_url"]))
+            column.addWidget(self.source_btn, 0, Qt.AlignmentFlag.AlignLeft)
 
         column.addSpacing(space("md"))
         column.addWidget(self._section("Attached To"))
@@ -350,19 +348,23 @@ class SkillDialog(QDialog):
         """Delete a downloaded skill, after a confirmation that says what goes
         with it."""
         record = self._record
-        held = (f" It is attached to {', '.join(record['holders'])}, and removing "
-                f"it detaches it." if record.get("holders") else "")
+        held = (
+            f" It is attached to {', '.join(record['holders'])}, and removing it detaches it."
+            if record.get("holders")
+            else ""
+        )
         if not dialogs.confirm(
-            self, "Remove This Skill?",
+            self,
+            "Remove This Skill?",
             f"{_title(record)} will be deleted from disk and no session will "
             f"be able to load it.{held} This cannot be undone.",
-            "Remove", destructive=True,
+            "Remove",
+            destructive=True,
         ):
             return
         code, out, err = self._run("remove", record["name"])
         if code != 0:
-            dialogs.notify(self, "Not Removed",
-                           (err or out).strip() or "The loader refused.")
+            dialogs.notify(self, "Not Removed", (err or out).strip() or "The loader refused.")
             return
         self.removed = True
         self.accept()
@@ -371,11 +373,9 @@ class SkillDialog(QDialog):
         """A chosen row is an attachment, written where the command line
         writes it."""
         command = "attach" if attached else "detach"
-        code, out, err = self._run(command, self._record["name"],
-                                   "--agent", slug)
+        code, out, err = self._run(command, self._record["name"], "--agent", slug)
         if code != 0:
-            dialogs.notify(self, "Not Changed",
-                           (err or out).strip() or "The loader refused.")
+            dialogs.notify(self, "Not Changed", (err or out).strip() or "The loader refused.")
             # The write did not land, so the row goes back to what is true.
             self.holders.set_chosen(slug, not attached, quietly=True)
 
@@ -395,8 +395,9 @@ class SkillsTab(QWidget):
         self.search = QLineEdit()
         self.search.setPlaceholderText("Filter")
         self.search.setClearButtonEnabled(True)
-        self.search.addAction(magnifier_icon(C["INK_SOFT"]),
-                              QLineEdit.LeadingPosition)
+        self.search.addAction(
+            magnifier_icon(C["INK_SOFT"]), QLineEdit.ActionPosition.LeadingPosition
+        )
         self.search.textChanged.connect(self._fill_list)
         self.source = QComboBox()
         self.source.addItems([ANY_SOURCE, CAME_WITH, DOWNLOADED])
@@ -404,7 +405,7 @@ class SkillsTab(QWidget):
         self.holder = QComboBox()
         self.holder.currentIndexChanged.connect(self._fill_list)
         for picker in (self.source, self.holder):
-            picker.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+            picker.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.new_btn = QPushButton("New Skill")
         self.new_btn.setObjectName("globalCreateBtn")
         self.new_btn.clicked.connect(self._new_skill)
@@ -450,11 +451,17 @@ class SkillsTab(QWidget):
         """
         script = self._cli()
         if script is None:
-            return 1, "", ("No skill loader here — this build cannot find "
-                           "src/tools/skill_tools/skills.py.")
+            return (
+                1,
+                "",
+                ("No skill loader here — this build cannot find src/tools/skill_tools/skills.py."),
+            )
         done = subprocess.run(
             [sys.executable, str(script), *args],
-            capture_output=True, text=True, cwd=str(script.parents[3]))
+            capture_output=True,
+            text=True,
+            cwd=str(script.parents[3]),
+        )
         return done.returncode, done.stdout, done.stderr
 
     def reload(self) -> None:
@@ -501,9 +508,14 @@ class SkillsTab(QWidget):
         """Whether the top row's three controls leave this skill on the list.
         They narrow together: a skill has to pass all three."""
         text = self.search.text().strip().lower()
-        haystack = " ".join((record["name"], _title(record),
-                             record.get("subtitle", ""),
-                             record.get("description", ""))).lower()
+        haystack = " ".join(
+            (
+                record["name"],
+                _title(record),
+                record.get("subtitle", ""),
+                record.get("description", ""),
+            )
+        ).lower()
         if text and text not in haystack:
             return False
         source = self.source.currentText()
@@ -522,16 +534,20 @@ class SkillsTab(QWidget):
     def _add_skill(self, record: dict) -> None:
         """One card: the name, the subtitle, where it came from, and a pill per
         agent attached to it."""
-        meta = "   ·   ".join(part for part in (
-            record["said_origin"], record.get("said_scan", "")) if part)
+        meta = "   ·   ".join(
+            part for part in (record["said_origin"], record.get("said_scan", "")) if part
+        )
         item = QListWidgetItem()
-        item.setData(Qt.UserRole, record)
-        item.setData(CARD_ROLE, {
-            "title": _title(record),
-            "description": record.get("subtitle", ""),
-            "meta": meta,
-            "pills": [agent_caption(h) for h in record.get("holders", [])],
-        })
+        item.setData(Qt.ItemDataRole.UserRole, record)
+        item.setData(
+            CARD_ROLE,
+            {
+                "title": _title(record),
+                "description": record.get("subtitle", ""),
+                "meta": meta,
+                "pills": [agent_caption(h) for h in record.get("holders", [])],
+            },
+        )
         item.setToolTip(record.get("description", ""))
         self.list.addItem(item)
 
@@ -556,8 +572,7 @@ class SkillsTab(QWidget):
         if not dialog.imported:
             return
         self.reload()
-        new = [s for s in self._listing.get("skills", [])
-               if s["name"] not in before]
+        new = [s for s in self._listing.get("skills", []) if s["name"] not in before]
         if len(new) == 1:
             self._show(new[0])
 
@@ -569,16 +584,31 @@ class SkillsTab(QWidget):
         script = root / TICKETS_CLI if root is not None else None
         if script is None or not script.is_file():
             return "This build cannot find the ticket writer."
-        args = [sys.executable, str(script), "add-task",
-                "--title", f"New Skill: {title}", "--description", body,
-                "--stage", "active", "--status", "todo",
-                "--assignee", "chief_of_staff", "--reporter", "user",
-                "--actor", "user", "--record-type", "build"]
+        args = [
+            sys.executable,
+            str(script),
+            "add-task",
+            "--title",
+            f"New Skill: {title}",
+            "--description",
+            body,
+            "--stage",
+            "active",
+            "--status",
+            "todo",
+            "--assignee",
+            "chief_of_staff",
+            "--reporter",
+            "user",
+            "--actor",
+            "user",
+            "--record-type",
+            "build",
+        ]
         epic = self._standing_epic()
         if epic is not None:
             args += ["--epic-id", str(epic)]
-        done = subprocess.run(args, capture_output=True, text=True,
-                              cwd=str(root))
+        done = subprocess.run(args, capture_output=True, text=True, cwd=str(root))
         if done.returncode != 0:
             return (done.stderr or done.stdout).strip() or "The card was not filed."
         return ""
@@ -589,24 +619,28 @@ class SkillsTab(QWidget):
             return None
         try:
             row = self.conn.execute(
-                "SELECT id FROM epic WHERE type=? ORDER BY id LIMIT 1",
-                (STANDING_KIND,)).fetchone()
-        except Exception:  # noqa: BLE001 - a board without the column files unfiled
+                "SELECT id FROM epic WHERE type=? ORDER BY id LIMIT 1", (STANDING_KIND,)
+            ).fetchone()
+        except Exception:
             return None
         return row[0] if row else None
 
     def _open(self) -> None:
         """Open the clicked skill's own window."""
         item = self.list.currentItem()
-        record = item.data(Qt.UserRole) if item is not None else None
+        record = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
         if isinstance(record, dict):
             self._show(record)
 
     def _show(self, record: dict) -> None:
         code, out, err = self._run("view", record["name"])
-        dialog = SkillDialog(self, record, sorted(self._listing.get("agents", {})),
-                             out if code == 0 else (err.strip() or "Unreadable."),
-                             self._run)
+        dialog = SkillDialog(
+            self,
+            record,
+            sorted(self._listing.get("agents", {})),
+            out if code == 0 else (err.strip() or "Unreadable."),
+            self._run,
+        )
         dialog.exec()
         self.list.clearSelection()
         self.reload()

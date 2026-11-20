@@ -22,13 +22,13 @@ The procedure that reads this out to a person is
 `src/skills/briefing-the-board/SKILL.md`.
 """
 
-from pathlib import Path
 import sqlite3
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import create_tickets  # noqa: E402  (owns the schema and the status vocabularies)
-import status_common as sc  # noqa: E402
+import create_tickets
+import status_common as sc
 
 # An epic's own description, cut to the length that still says what the epic is
 # for. The whole of it is on the epic.
@@ -73,8 +73,10 @@ def line(row: sqlite3.Row, blockers: dict) -> str:
     if reason and reason != "dependency":
         flag += f" [blocked: {reason}]"
     who = (row["assignee"] or "").strip() or f"(epic:{row['epic_owner']})"
-    return (f"     #{row['id']:<4} {row['status']:5} {row['estimate'] or '-':>3} "
-            f"{sc.tier_word(row['tier']):8}  {row['title']}  <{who}>{flag}")
+    return (
+        f"     #{row['id']:<4} {row['status']:5} {row['estimate'] or '-':>3} "
+        f"{sc.tier_word(row['tier']):8}  {row['title']}  <{who}>{flag}"
+    )
 
 
 def about(text: str | None) -> list[str]:
@@ -111,11 +113,9 @@ def main() -> None:
         by_epic.setdefault(r["epic_id"], []).append(r)
 
     epics = in_flight_epics(cur)
-    standing = [e for e in epics
-                if (e["type"] or "") == create_tickets.EPIC_KIND_STANDING]
+    standing = [e for e in epics if (e["type"] or "") == create_tickets.EPIC_KIND_STANDING]
     projects = [e for e in epics if e not in standing]
-    live = [e for e in projects
-            if any(is_open(r) for r in by_epic.get(e["id"], []))]
+    live = [e for e in projects if any(is_open(r) for r in by_epic.get(e["id"], []))]
     idle = [e for e in projects if e not in live]
 
     print(f"\n{'=' * 72}\nEPICS IN FLIGHT, WITH CARDS OPEN ({len(live)})\n{'=' * 72}")
@@ -127,16 +127,17 @@ def main() -> None:
         back = [r for r in held if r["stage"] == "backlog"]
         yours = " [yours]" if me in (e["owner"] or "") else ""
         print(f"\n  #{e['id']} {e['name']}{yours}")
-        print(f"     owner {e['owner'] or '(none)'} · {e['status']} · "
-              f"{len(opens)} open ({len(doing)} doing) · {len(done)} done · "
-              f"{len(back)} in backlog")
+        print(
+            f"     owner {e['owner'] or '(none)'} · {e['status']} · "
+            f"{len(opens)} open ({len(doing)} doing) · {len(done)} done · "
+            f"{len(back)} in backlog"
+        )
         for extra in about(e["description"]):
             print(extra)
         print("     open cards, the first one its next step")
         print_group(opens, blockers)
 
-    print(f"\n{'=' * 72}\nEPICS IN FLIGHT WITH NOTHING ON THE BOARD ({len(idle)})"
-          f"\n{'=' * 72}\n")
+    print(f"\n{'=' * 72}\nEPICS IN FLIGHT WITH NOTHING ON THE BOARD ({len(idle)})\n{'=' * 72}\n")
     if idle:
         for e in idle:
             held = by_epic.get(e["id"], [])
@@ -144,17 +145,26 @@ def main() -> None:
             back = [r for r in held if r["stage"] == "backlog"]
             yours = " [yours]" if me in (e["owner"] or "") else ""
             print(f"  #{e['id']} {e['name']}{yours}")
-            print(f"     owner {e['owner'] or '(none)'} · {len(done)} done · "
-                  f"{len(back)} in backlog · nothing open")
+            print(
+                f"     owner {e['owner'] or '(none)'} · {len(done)} done · "
+                f"{len(back)} in backlog · nothing open"
+            )
     else:
         print("     (none)")
 
     live = {e["id"] for e in epics}
-    stranded = sorted({r["epic_id"] for r in board if is_open(r)
-                       and r["epic_id"] is not None and r["epic_id"] not in live})
+    stranded = sorted(
+        {
+            r["epic_id"]
+            for r in board
+            if is_open(r) and r["epic_id"] is not None and r["epic_id"] not in live
+        }
+    )
     if stranded:
-        print(f"\n{'=' * 72}\nOPEN CARDS UNDER AN EPIC THAT IS NOT IN FLIGHT "
-              f"({len(stranded)})\n{'=' * 72}")
+        print(
+            f"\n{'=' * 72}\nOPEN CARDS UNDER AN EPIC THAT IS NOT IN FLIGHT "
+            f"({len(stranded)})\n{'=' * 72}"
+        )
         for eid in stranded:
             group = [r for r in by_epic.get(eid, []) if is_open(r)]
             print(f"\n  #{eid} {group[0]['epic']}")
@@ -165,16 +175,15 @@ def main() -> None:
         opens = [r for r in held if is_open(r)]
         done = [r for r in held if r["status"] == "done"]
         back = [r for r in held if r["stage"] == "backlog"]
-        print(f"\n{'=' * 72}\nSTANDING WORK — #{e['id']} {e['name']} "
-              f"({len(opens)} open)\n{'=' * 72}")
+        print(
+            f"\n{'=' * 72}\nSTANDING WORK — #{e['id']} {e['name']} ({len(opens)} open)\n{'=' * 72}"
+        )
         print(f"\n     never closes · {len(done)} done · {len(back)} in backlog")
         if opens:
             print_group(opens, blockers)
 
-    loose = [r for r in rows if r["epic_id"] is None
-             and (is_open(r) or r["stage"] == "backlog")]
-    print(f"\n{'=' * 72}\nUNTRIAGED — NO EPIC, NOT STANDING ({len(loose)})"
-          f"\n{'=' * 72}\n")
+    loose = [r for r in rows if r["epic_id"] is None and (is_open(r) or r["stage"] == "backlog")]
+    print(f"\n{'=' * 72}\nUNTRIAGED — NO EPIC, NOT STANDING ({len(loose)})\n{'=' * 72}\n")
     if loose:
         print("     each of these needs an epic or the standing workstream")
         print_group(loose, blockers)
@@ -198,15 +207,20 @@ def main() -> None:
         "       COALESCE(e.name, '(no epic)') AS epic "
         "FROM task t LEFT JOIN epic e ON t.epic_id = e.id "
         "WHERE t.status = 'done' AND t.closed_at IS NOT NULL "
-        "ORDER BY t.closed_at DESC LIMIT ?", (RECENT_CARDS,)).fetchall()
+        "ORDER BY t.closed_at DESC LIMIT ?",
+        (RECENT_CARDS,),
+    ).fetchall()
     print(f"\n{'=' * 72}\nFINISHED MOST RECENTLY ({len(recent)})\n{'=' * 72}\n")
     for r in recent:
         who = (r["assignee"] or "").strip() or "(unassigned)"
-        print(f"     #{r['id']:<4} {(r['closed_at'] or '')[:10]}  {r['title']}  "
-              f"<{who}>  [{r['epic']}]")
+        print(
+            f"     #{r['id']:<4} {(r['closed_at'] or '')[:10]}  {r['title']}  "
+            f"<{who}>  [{r['epic']}]"
+        )
 
-    mine_q = sc.queue_sort([r for r in board if sc.owned_by(r, me)
-                            and r["status"] in sc.STATUS_RANK])
+    mine_q = sc.queue_sort(
+        [r for r in board if sc.owned_by(r, me) and r["status"] in sc.STATUS_RANK]
+    )
     print(f"\n{'=' * 72}\nWHERE THE QUEUE WOULD START ({me})\n{'=' * 72}\n")
     if mine_q:
         nxt, _, waiting = sc.next_action(conn, board, mine_q)
@@ -214,8 +228,11 @@ def main() -> None:
             print(f"  #{nxt['id']} {nxt['title']}  [{nxt['epic']}]")
             print(f"  {len(mine_q)} card(s) in this agent's queue, this one first.")
         else:
-            print("  none — every card in this agent's queue is waiting on "
-                  + ", ".join(f"#{b}" for b in waiting) + ".")
+            print(
+                "  none — every card in this agent's queue is waiting on "
+                + ", ".join(f"#{b}" for b in waiting)
+                + "."
+            )
     else:
         print(f"  nothing on the active board for {me}.")
 

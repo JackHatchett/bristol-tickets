@@ -33,7 +33,8 @@ from pathlib import Path
 
 if __package__ in (None, ""):  # allow `python3 generate.py` from the folder
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from reports import metrics, render as render_mod  # type: ignore
+    from reports import metrics  # type: ignore
+    from reports import render as render_mod
     from reports.paths import resolve_reports_dir  # type: ignore
 else:
     from . import metrics
@@ -49,9 +50,9 @@ class ReportResult:
     """What happened, in a form both the GUI and the CLI can act on."""
 
     def __init__(self, written=None, skipped=None, error=None, facts=None):
-        self.written = written      # Path, when a report was produced
-        self.skipped = skipped      # str reason, when there was nothing to do
-        self.error = error          # str, when something went wrong
+        self.written = written  # Path, when a report was produced
+        self.skipped = skipped  # str reason, when there was nothing to do
+        self.error = error  # str, when something went wrong
         self.facts = facts
 
     @property
@@ -69,6 +70,7 @@ class ReportResult:
 # ---------------------------------------------------------------------------
 # previous-report lookup
 # ---------------------------------------------------------------------------
+
 
 def _parse_frontmatter(text):
     """Read the leading `---` block as a flat dict, numbers coerced.
@@ -129,8 +131,10 @@ def _period_start(prior_frontmatter, batch_facts_fallback=None):
 # entry point
 # ---------------------------------------------------------------------------
 
-def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True,
-                    period_start=None, period_end=None):
+
+def generate_report(
+    conn, task_ids, out_dir=None, now=None, write_index=True, period_start=None, period_end=None
+):
     """Write one report for `task_ids` and return a ReportResult.
 
     `conn`      an open sqlite3 connection to tickets.db.
@@ -154,17 +158,21 @@ def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True,
     if reports_dir is None:
         return ReportResult(
             skipped="no reports folder configured or reachable "
-                    "(set markdown_notebook.reports_dir in config.local.json, "
-                    "or the BRISTOL_REPORTS_DIR env var)")
+            "(set markdown_notebook.reports_dir in config.local.json, "
+            "or the BRISTOL_REPORTS_DIR env var)"
+        )
 
     now = now or datetime.now(timezone.utc).isoformat()
     previous_slug, prior = _previous_report(reports_dir)
 
     try:
         facts = metrics.collect(
-            conn, task_ids, now=now,
+            conn,
+            task_ids,
+            now=now,
             period_start=period_start or _period_start(prior),
-            period_end=period_end, prior=prior or None,
+            period_end=period_end,
+            prior=prior or None,
         )
     except sqlite3.Error as exc:
         return ReportResult(error=f"could not read the board: {exc}")
@@ -182,8 +190,7 @@ def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True,
 
     try:
         target.write_text(
-            render_mod.render(facts, slug, previous_slug,
-                              source_note="src/tools/bristol/reports/"),
+            render_mod.render(facts, slug, previous_slug, source_note="src/tools/bristol/reports/"),
             encoding="utf-8",
         )
     except OSError as exc:
@@ -191,8 +198,7 @@ def generate_report(conn, task_ids, out_dir=None, now=None, write_index=True,
 
     if write_index:
         try:
-            (reports_dir / INDEX_NAME).write_text(
-                render_mod.render_index(), encoding="utf-8")
+            (reports_dir / INDEX_NAME).write_text(render_mod.render_index(), encoding="utf-8")
         except OSError:
             pass  # the report itself succeeded; the index is a convenience
 
@@ -208,13 +214,14 @@ def generate_report_safe(conn, task_ids, **kwargs):
     """
     try:
         return generate_report(conn, task_ids, **kwargs)
-    except Exception as exc:  # noqa: BLE001 — see docstring
+    except Exception as exc:
         return ReportResult(error=f"{type(exc).__name__}: {exc}")
 
 
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def _resolve_db(explicit=None):
     if explicit:
@@ -238,49 +245,67 @@ def _select_ids(conn, args):
         # second. closed_at is not what says this — it is when a card finished,
         # which across one batch is many different moments.
         row = conn.execute(
-            "SELECT MAX(at) FROM task_event "
-            "WHERE field='stage' AND to_value='archive'"
+            "SELECT MAX(at) FROM task_event WHERE field='stage' AND to_value='archive'"
         ).fetchone()
         if not row or not row[0]:
             return []
-        return [r[0] for r in conn.execute(
-            "SELECT DISTINCT task_id FROM task_event "
-            "WHERE field='stage' AND to_value='archive' AND at >= ?",
-            (row[0][:19],),
-        ).fetchall()]
+        return [
+            r[0]
+            for r in conn.execute(
+                "SELECT DISTINCT task_id FROM task_event "
+                "WHERE field='stage' AND to_value='archive' AND at >= ?",
+                (row[0][:19],),
+            ).fetchall()
+        ]
     # Default: preview what is finished and still on the board.
-    return [r[0] for r in conn.execute(
-        "SELECT id FROM task WHERE stage='active' AND status='done'").fetchall()]
+    return [
+        r[0]
+        for r in conn.execute(
+            "SELECT id FROM task WHERE stage='active' AND status='done'"
+        ).fetchall()
+    ]
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="bristol-report",
-        description=(
-            "Write the analytic report Bristol Tickets writes when a period "
-            "ends."))
+        description=("Write the analytic report Bristol Tickets writes when a period ends."),
+    )
     parser.add_argument("--db", default=None, help="path to tickets.db")
-    parser.add_argument("--out-dir", default=None,
-                        help="override the notebook folder reports are written to")
-    parser.add_argument("--ids", default=None,
-                        help="comma/space separated task ids to report on")
-    parser.add_argument("--last-batch", action="store_true",
-                        help="report on the cards that left the board together "
-                             "most recently")
-    parser.add_argument("--stdout", action="store_true",
-                        help="print the Markdown instead of writing a file")
-    parser.add_argument("--no-index", action="store_true",
-                        help="do not rewrite the folder's _index.md")
-    parser.add_argument("--standing", action="store_true",
-                        help="report on a window instead of on a set of cards: "
-                             "what the projects cost over it and what upkeep "
-                             "cost beside them")
-    parser.add_argument("--from", dest="since", default=None,
-                        help="YYYY-MM-DD, the first day of a --standing window "
-                             "(default: thirty days back)")
-    parser.add_argument("--to", dest="until", default=None,
-                        help="YYYY-MM-DD, the last day of a --standing window "
-                             "(default: today)")
+    parser.add_argument(
+        "--out-dir", default=None, help="override the notebook folder reports are written to"
+    )
+    parser.add_argument("--ids", default=None, help="comma/space separated task ids to report on")
+    parser.add_argument(
+        "--last-batch",
+        action="store_true",
+        help="report on the cards that left the board together most recently",
+    )
+    parser.add_argument(
+        "--stdout", action="store_true", help="print the Markdown instead of writing a file"
+    )
+    parser.add_argument(
+        "--no-index", action="store_true", help="do not rewrite the folder's _index.md"
+    )
+    parser.add_argument(
+        "--standing",
+        action="store_true",
+        help="report on a window instead of on a set of cards: "
+        "what the projects cost over it and what upkeep "
+        "cost beside them",
+    )
+    parser.add_argument(
+        "--from",
+        dest="since",
+        default=None,
+        help="YYYY-MM-DD, the first day of a --standing window (default: thirty days back)",
+    )
+    parser.add_argument(
+        "--to",
+        dest="until",
+        default=None,
+        help="YYYY-MM-DD, the last day of a --standing window (default: today)",
+    )
     args = parser.parse_args(argv)
 
     conn = sqlite3.connect(_resolve_db(args.db))
@@ -300,29 +325,32 @@ def main(argv=None):
                     from .standing import collect as collect_standing
                     from .standing import default_window
                 since, until = default_window()
-                print(render_standing(collect_standing(
-                    conn, args.since or since, args.until or until)))
+                print(
+                    render_standing(
+                        collect_standing(conn, args.since or since, args.until or until)
+                    )
+                )
                 return 0
-            result = standing_report(conn, args.since, args.until,
-                                     out_dir=args.out_dir)
+            result = standing_report(conn, args.since, args.until, out_dir=args.out_dir)
             print(f"bristol-report: {result}")
             return 0 if result.ok or result.skipped else 1
         ids = _select_ids(conn, args)
         if not ids:
-            print("bristol-report: nothing to report on "
-                  "(Done column empty and no --ids given).")
+            print("bristol-report: nothing to report on (Done column empty and no --ids given).")
             return 0
         if args.stdout:
             now = datetime.now(timezone.utc).isoformat()
             _, prior = _previous_report(resolve_reports_dir(args.out_dir))
-            facts = metrics.collect(conn, ids, now=now,
-                                    period_start=_period_start(prior),
-                                    prior=prior or None)
-            print(render_mod.render(facts, "bristol_report_preview", None,
-                                    source_note="src/tools/bristol/reports/"))
+            facts = metrics.collect(
+                conn, ids, now=now, period_start=_period_start(prior), prior=prior or None
+            )
+            print(
+                render_mod.render(
+                    facts, "bristol_report_preview", None, source_note="src/tools/bristol/reports/"
+                )
+            )
             return 0
-        result = generate_report(conn, ids, out_dir=args.out_dir,
-                                 write_index=not args.no_index)
+        result = generate_report(conn, ids, out_dir=args.out_dir, write_index=not args.no_index)
         print(f"bristol-report: {result}")
         return 0 if result.ok or result.skipped else 1
     finally:

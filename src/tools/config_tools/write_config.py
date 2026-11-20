@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import read_config  # noqa: E402  (runs as a script as well as a module)
+import read_config
 
 
 def set_key(dotted: str, value) -> Path:
@@ -49,8 +49,7 @@ def set_key(dotted: str, value) -> Path:
             node[part] = child
         node = child
     node[parts[-1]] = value
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-                    encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return path
 
 
@@ -74,8 +73,7 @@ def del_key(dotted: str) -> bool:
     if parts[-1] not in node:
         return False
     del node[parts[-1]]
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-                    encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return True
 
 
@@ -96,8 +94,11 @@ def main(argv: list[str]) -> int:
         print(f"{dotted} removed" if del_key(dotted) else f"{dotted} was not there")
         return 0
     if len(argv) != 2:
-        print("usage: write_config.py <dotted.key> <json-value>\n"
-              "       write_config.py --delete <dotted.key>", file=sys.stderr)
+        print(
+            "usage: write_config.py <dotted.key> <json-value>\n"
+            "       write_config.py --delete <dotted.key>",
+            file=sys.stderr,
+        )
         return 2
     dotted, raw = argv
     written = set_key(dotted, parse_value(raw))

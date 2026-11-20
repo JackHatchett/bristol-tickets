@@ -32,7 +32,7 @@ from pathlib import Path
 ENTRY_NAME = "bristol-tickets.desktop"
 DISPLAY_NAME = "Bristol Tickets"
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parents[2]          # src/tools/bristol -> src/tools -> src -> repo
+REPO_ROOT = HERE.parents[2]  # src/tools/bristol -> src/tools -> src -> repo
 
 
 def entry_path() -> Path:
@@ -51,8 +51,9 @@ def find_python() -> str:
         if not exe:
             continue
         try:
-            subprocess.run([exe, "-c", "import PySide6"], check=True,
-                           capture_output=True, timeout=60)
+            subprocess.run(
+                [exe, "-c", "import PySide6"], check=True, capture_output=True, timeout=60
+            )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
             continue
         return exe
@@ -102,10 +103,8 @@ def build() -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--where", action="store_true",
-                        help="print where the entry lives and exit")
-    parser.add_argument("--remove", action="store_true",
-                        help="delete the entry and exit")
+    parser.add_argument("--where", action="store_true", help="print where the entry lives and exit")
+    parser.add_argument("--remove", action="store_true", help="delete the entry and exit")
     args = parser.parse_args()
 
     if args.where:
@@ -118,14 +117,18 @@ def main() -> None:
         return
 
     if not sys.platform.startswith("linux"):
-        sys.exit("make_launcher_linux: ERROR — a desktop entry is a Linux "
-                 "artifact. On macOS, run make_launcher.py.")
+        sys.exit(
+            "make_launcher_linux: ERROR — a desktop entry is a Linux "
+            "artifact. On macOS, run make_launcher.py."
+        )
 
     target = build()
     print(f"OK: {target}")
     print(f"    runs: {HERE / 'app.py'}")
-    print(f"    {DISPLAY_NAME} is in the application menu. If it is not there "
-          "yet, log out and back in.")
+    print(
+        f"    {DISPLAY_NAME} is in the application menu. If it is not there "
+        "yet, log out and back in."
+    )
 
 
 if __name__ == "__main__":

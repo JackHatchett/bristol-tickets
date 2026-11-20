@@ -47,8 +47,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import re
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -57,9 +57,9 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
-import data_paths  # noqa: E402
-import read_config  # noqa: E402
-import write_config  # noqa: E402
+import data_paths
+import read_config
+import write_config
 
 # What an installed skill carries about where it came from, written beside its
 # SKILL.md so the record moves with the directory and can never orphan. Dotted, so a client reading the skill by the
@@ -68,8 +68,16 @@ ORIGIN_FILE = ".origin.json"
 
 # Where a repository states its licence. Read in this order, and the first that
 # exists is the one recorded.
-LICENCE_FILENAMES = ("LICENSE", "LICENSE.md", "LICENSE.txt", "LICENCE",
-                     "LICENCE.md", "LICENCE.txt", "COPYING", "COPYING.md")
+LICENCE_FILENAMES = (
+    "LICENSE",
+    "LICENSE.md",
+    "LICENSE.txt",
+    "LICENCE",
+    "LICENCE.md",
+    "LICENCE.txt",
+    "COPYING",
+    "COPYING.md",
+)
 
 # What a record says instead of leaving a licence field blank. A skill whose
 # source states no licence has been read and found to state none, which is a
@@ -155,31 +163,28 @@ FOREIGN_GATES = {
 # rather than a guess about the skill.
 TOOLSET_GROUND = {
     "kanban": "the board — ticket_tools/ticket_write.py writes it and "
-              "ticket_tools/status_common.py reads it",
+    "ticket_tools/status_common.py reads it",
     "tasks": "the board — ticket_tools/ticket_write.py writes it and "
-             "ticket_tools/status_common.py reads it",
-    "skills": "the loader — skill_tools/skills.py, which lists, installs, "
-              "audits and attaches",
+    "ticket_tools/status_common.py reads it",
+    "skills": "the loader — skill_tools/skills.py, which lists, installs, audits and attaches",
     "memory": "nothing, deliberately: a session's memory is the board — "
-              "src/app.md §The board is the only channel",
+    "src/app.md §The board is the only channel",
 }
 
 GATE_CONSEQUENCE = {
-    "credentials":
-        "This skill expects credentials from a mechanism Bristol does not "
-        "have, so whatever needs them will not run here",
-    "toolsets":
-        "This skill is gated on Hermes toolsets, which a Bristol session has "
-        "none of, so the gate has no reader here",
-    "fallback":
-        "This skill offers itself as the fallback for Hermes toolsets, which "
-        "a Bristol session has none of, so it is never chosen that way",
+    "credentials": "This skill expects credentials from a mechanism Bristol does not "
+    "have, so whatever needs them will not run here",
+    "toolsets": "This skill is gated on Hermes toolsets, which a Bristol session has "
+    "none of, so the gate has no reader here",
+    "fallback": "This skill offers itself as the fallback for Hermes toolsets, which "
+    "a Bristol session has none of, so it is never chosen that way",
 }
 
 
 # ---------------------------------------------------------------------------
 # Roots
 # ---------------------------------------------------------------------------
+
 
 def native_root() -> Path:
     return data_paths.project_root() / "src" / "skills"
@@ -197,7 +202,8 @@ def _skill_dirs(root: Path | None) -> list[Path]:
     if root is None or not root.is_dir():
         return []
     return sorted(
-        d for d in root.iterdir()
+        d
+        for d in root.iterdir()
         if d.is_dir() and not d.name.startswith(".") and (d / "SKILL.md").is_file()
     )
 
@@ -215,6 +221,7 @@ def find_skill(name: str) -> tuple[Path, str] | None:
 # Frontmatter — read without loading the body
 # ---------------------------------------------------------------------------
 
+
 def read_frontmatter(skill_md: Path) -> dict[str, str]:
     """Parse the top-level scalar fields of a SKILL.md, reading no further than
     the frontmatter's closing delimiter. Nested blocks are skipped rather than
@@ -229,8 +236,7 @@ def read_frontmatter(skill_md: Path) -> dict[str, str]:
         for line in fh:
             if line.rstrip() == "---":
                 break
-            if line[:1] in {" ", "\t"} and line.strip().startswith("bristol.") \
-                    and ":" in line:
+            if line[:1] in {" ", "\t"} and line.strip().startswith("bristol.") and ":" in line:
                 key, _, value = line.strip().partition(":")
                 fields[key.strip()] = value.strip().strip('"').strip("'")
                 continue
@@ -324,6 +330,7 @@ def _is_script(rel: Path) -> bool:
 # Commands
 # ---------------------------------------------------------------------------
 
+
 def _origin_column(skill_dir: Path, root_name: str) -> str:
     """What a skill's origin reads as in a listing. A native skill has no
     repository and says so; an installed one names the repository and the commit
@@ -359,8 +366,7 @@ def _agent_slugs() -> list[str]:
 def _require_agent(slug: str) -> None:
     known = _agent_slugs()
     if slug not in known:
-        raise SystemExit(
-            f"no agent '{slug}' in config. Configured: {', '.join(known) or 'none'}")
+        raise SystemExit(f"no agent '{slug}' in config. Configured: {', '.join(known) or 'none'}")
 
 
 def _all_skills() -> list[tuple[str, str, str]]:
@@ -369,8 +375,9 @@ def _all_skills() -> list[tuple[str, str, str]]:
     for root, root_name in ((native_root(), "native"), (installed_root(), "installed")):
         for d in _skill_dirs(root):
             fm = read_frontmatter(d / "SKILL.md")
-            rows.append((fm.get("name", d.name), _origin_column(d, root_name),
-                         fm.get("description", "")))
+            rows.append(
+                (fm.get("name", d.name), _origin_column(d, root_name), fm.get("description", ""))
+            )
     return rows
 
 
@@ -398,8 +405,10 @@ def cmd_list(args) -> int:
         prefix = f"{'yours' if name in attached else '':<{mark_width}}  " if attached else ""
         print(f"{prefix}{name:<{width}}  {origin:<{origin_width}}  {desc}")
     if slug:
-        print(f"\nWhat is marked yours is attached to {slug} and matched first; "
-              f"every other skill listed is reachable the same way.")
+        print(
+            f"\nWhat is marked yours is attached to {slug} and matched first; "
+            f"every other skill listed is reachable the same way."
+        )
     return 0
 
 
@@ -412,8 +421,21 @@ def cmd_list(args) -> int:
 # that shows a skill says them in these words, so the app, a detail view and an
 # import report never teach the same fact twice.
 
-_NUMBER_WORDS = ("no", "one", "two", "three", "four", "five", "six", "seven",
-                 "eight", "nine", "ten", "eleven", "twelve")
+_NUMBER_WORDS = (
+    "no",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+)
 
 
 def _spell(count: int) -> str:
@@ -468,21 +490,41 @@ def scan_phrase(record: dict) -> str:
     if record.get("root") == "native" or not record.get("scripts"):
         return ""
     scan_record = record.get("scan") or {}
-    if not scan_record.get("scanners") or scan_record.get("unread") \
-            or not scan_record.get("ran"):
+    if not scan_record.get("scanners") or scan_record.get("unread") or not scan_record.get("ran"):
         return "Code not fully scanned"
     found = len(scan_record.get("findings", []))
     if not found:
         return "Scanned, nothing found"
-    return (f"Scanned, {_spell(found)} low-severity note"
-            + ("" if found == 1 else "s"))
+    return f"Scanned, {_spell(found)} low-severity note" + ("" if found == 1 else "s")
 
 
 # Words a title leaves lowercase unless they open it: articles, conjunctions
 # and short prepositions.
-TITLE_SMALL = {"a", "an", "the", "and", "but", "or", "nor", "for", "so", "yet",
-               "as", "at", "by", "in", "of", "on", "to", "per", "via", "vs",
-               "with", "from", "into"}
+TITLE_SMALL = {
+    "a",
+    "an",
+    "the",
+    "and",
+    "but",
+    "or",
+    "nor",
+    "for",
+    "so",
+    "yet",
+    "as",
+    "at",
+    "by",
+    "in",
+    "of",
+    "on",
+    "to",
+    "per",
+    "via",
+    "vs",
+    "with",
+    "from",
+    "into",
+}
 # Words a title writes in capitals, because that is how they are read.
 TITLE_UPPER = {"ai", "api", "csv", "html", "jd", "pdf", "qa", "ui", "url"}
 
@@ -564,14 +606,12 @@ def _listing() -> dict:
     the same sentence rather than composing its own.
     """
     skills = []
-    for root, root_name in ((native_root(), "native"),
-                            (installed_root(), "installed")):
+    for root, root_name in ((native_root(), "native"), (installed_root(), "installed")):
         for d in _skill_dirs(root):
             skills.append(_skill_record(d, root_name))
     agents = {slug: attached_to(slug) for slug in _agent_slugs()}
     for record in skills:
-        holders = sorted(slug for slug, names in agents.items()
-                         if record["name"] in names)
+        holders = sorted(slug for slug, names in agents.items() if record["name"] in names)
         record["holders"] = holders
         record["said_holders"] = holders_phrase(holders)
     return {
@@ -587,8 +627,7 @@ def _known_skill(name: str) -> bool:
 def cmd_attach(args) -> int:
     _require_agent(args.agent)
     if not _known_skill(args.name):
-        raise SystemExit(
-            f"no skill '{args.name}'. `list` gives every skill there is.")
+        raise SystemExit(f"no skill '{args.name}'. `list` gives every skill there is.")
     attached = attached_to(args.agent)
     if args.name in attached:
         print(f"{args.name} is already attached to {args.agent}")
@@ -604,8 +643,9 @@ def cmd_detach(args) -> int:
     if args.name not in attached:
         print(f"{args.name} is not attached to {args.agent}")
         return 0
-    write_config.set_key(ATTACHMENTS.format(slug=args.agent),
-                         [n for n in attached if n != args.name])
+    write_config.set_key(
+        ATTACHMENTS.format(slug=args.agent), [n for n in attached if n != args.name]
+    )
     print(f"{args.name} detached from {args.agent}. It stays loadable by every agent.")
     return 0
 
@@ -637,7 +677,8 @@ def resolve_address(address: str) -> tuple[str, str, str | None]:
         raise AddressError(
             f"'{address}' is not a URL. Pass a repository URL and the path "
             f"inside it as two arguments, or paste the address of the skill's "
-            f"folder.")
+            f"folder."
+        )
     scheme, _, rest = trimmed.partition("://")
     host, _, tail = rest.partition("/")
     parts = [p for p in tail.split("/") if p]
@@ -658,10 +699,10 @@ def resolve_address(address: str) -> tuple[str, str, str | None]:
             f"'{address}' has no /tree/ or /blob/ segment, so the ref and the "
             f"path inside {owner}/{repo} cannot be told apart. Paste the "
             f"address the repository shows while you are looking at the skill's "
-            f"folder.")
+            f"folder."
+        )
     if len(remainder) < 2:
-        raise AddressError(
-            f"'{address}' has no ref after /{view}/ in {owner}/{repo}.")
+        raise AddressError(f"'{address}' has no ref after /{view}/ in {owner}/{repo}.")
     ref = remainder[1]
     inside = remainder[2:]
     if view == "blob":
@@ -689,7 +730,8 @@ def cmd_install(args) -> int:
         clone = Path(tmp) / "repo"
         result = subprocess.run(
             ["git", "clone", "--depth", "1", repo, str(clone)],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         if result.returncode != 0:
             print(result.stderr.strip() or "clone failed", file=sys.stderr)
@@ -699,21 +741,25 @@ def cmd_install(args) -> int:
             # branch that already is the ref makes it a no-op.
             fetched = subprocess.run(
                 ["git", "-C", str(clone), "fetch", "--depth", "1", "origin", ref],
-                capture_output=True, text=True,
+                capture_output=True,
+                text=True,
             )
             if fetched.returncode == 0:
                 subprocess.run(
                     ["git", "-C", str(clone), "checkout", "--detach", "FETCH_HEAD"],
-                    capture_output=True, text=True,
+                    capture_output=True,
+                    text=True,
                 )
             else:
-                print(f"'{ref}' could not be fetched; reading the default branch.",
-                      file=sys.stderr)
+                print(f"'{ref}' could not be fetched; reading the default branch.", file=sys.stderr)
         source = clone / path
         if not (source / "SKILL.md").is_file():
             where = path or "The top level of the repository"
-            print(f"{where} contains no SKILL.md in {repo}. Open the skill's own "
-                  f"folder and paste that address.", file=sys.stderr)
+            print(
+                f"{where} contains no SKILL.md in {repo}. Open the skill's own "
+                f"folder and paste that address.",
+                file=sys.stderr,
+            )
             return 1
         name = args.name or read_frontmatter(source / "SKILL.md").get("name") or source.name
         if find_skill(name) is not None:
@@ -726,24 +772,32 @@ def cmd_install(args) -> int:
         checked = scan_record(staged)
         why = refusal(checked)
         if why:
-            lines = "\n".join(f"  {line}" for line in
-                              scan_report_lines(checked)[1:])
-            print(f"Not imported: {name}, because {why}. Nothing was added.\n"
-                  f"{lines}", file=sys.stderr)
+            lines = "\n".join(f"  {line}" for line in scan_report_lines(checked)[1:])
+            print(
+                f"Not imported: {name}, because {why}. Nothing was added.\n{lines}", file=sys.stderr
+            )
             return 1
         target = data_paths.ensure_dir(root) / name
         shutil.copytree(staged, target)
         rows = _inventory(target)
-        commit = subprocess.run(
-            ["git", "-C", str(clone), "rev-parse", "HEAD"],
-            capture_output=True, text=True,
-        ).stdout.strip() or ABSENT
+        commit = (
+            subprocess.run(
+                ["git", "-C", str(clone), "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            or ABSENT
+        )
         licence, licence_source = find_licence(clone, source)
-        record = {"repo": repo, "path": path, "commit": commit,
-                  "license": licence, "license_source": licence_source,
-                  "scan": checked}
-        (target / ORIGIN_FILE).write_text(
-            json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        record = {
+            "repo": repo,
+            "path": path,
+            "commit": commit,
+            "license": licence,
+            "license_source": licence_source,
+            "scan": checked,
+        }
+        (target / ORIGIN_FILE).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
     total = sum(r[1] for r in rows)
     print(f"Installed at {target}, listed and loadable now")
@@ -777,7 +831,7 @@ def split_frontmatter(path: Path) -> tuple[dict[str, str], str]:
     fields: dict[str, str] = {}
     for index in range(1, len(lines)):
         if lines[index].rstrip() == "---":
-            return fields, "".join(lines[index + 1:])
+            return fields, "".join(lines[index + 1 :])
         line = lines[index]
         if line[:1] in {" ", "\t", "#", "\n"} or ":" not in line:
             continue
@@ -805,7 +859,7 @@ def declared_dependencies(path: Path) -> list[str]:
         stripped = line.strip()
         if collecting:
             if stripped.startswith("- "):
-                found.append(stripped[2:].strip().strip('"').strip("\''"))
+                found.append(stripped[2:].strip().strip('"').strip("'"))
                 continue
             collecting = False
         if line[:1] in {" ", "\t", "#"} or ":" not in line:
@@ -815,8 +869,9 @@ def declared_dependencies(path: Path) -> list[str]:
             continue
         inline = value.strip().strip("[]")
         if inline:
-            found.extend(part.strip().strip('"').strip("\''")
-                         for part in inline.split(",") if part.strip())
+            found.extend(
+                part.strip().strip('"').strip("'") for part in inline.split(",") if part.strip()
+            )
         else:
             collecting = True
     seen: set[str] = set()
@@ -855,8 +910,9 @@ def foreign_gates(path: Path) -> list[tuple[str, list[str]]]:
                 if stripped.startswith("- "):
                     item = stripped[2:].strip()
                     name, sep, value = item.partition(":")
-                    found[group].append(clean(value) if sep and name.strip() == "name"
-                                        else clean(item))
+                    found[group].append(
+                        clean(value) if sep and name.strip() == "name" else clean(item)
+                    )
                 continue
             group = None
         if not stripped or stripped.startswith("#") or ":" not in stripped:
@@ -904,11 +960,12 @@ def print_compatibility(source: Path) -> None:
         if group in {"toolsets", "fallback"}:
             for name in values:
                 ground = TOOLSET_GROUND.get(name.strip().lower())
-                print(f"    {name}: {ground}." if ground
-                      else f"    {name}: nothing here is declared as covering "
-                           f"that ground.")
-    print("  It installs either way; this is what to expect from it, "
-          "not a refusal.")
+                print(
+                    f"    {name}: {ground}."
+                    if ground
+                    else f"    {name}: nothing here is declared as covering that ground."
+                )
+    print("  It installs either way; this is what to expect from it, not a refusal.")
 
 
 def normalise_name(raw: str) -> str:
@@ -934,17 +991,18 @@ def cmd_convert(args) -> int:
         return 1
     root = installed_root()
     if root is None:
-        print("config declares no skills.install_dir; nowhere to convert into.",
-              file=sys.stderr)
+        print("config declares no skills.install_dir; nowhere to convert into.", file=sys.stderr)
         return 1
 
     fields, body = split_frontmatter(source)
     description = args.description or fields.get("description", "")
     if not description:
-        print(f"{source} carries no description, and a skill without one states "
-              f"no trigger and never routes.\n"
-              f"Supply it: python3 skills.py convert {source} --description \"...\"",
-              file=sys.stderr)
+        print(
+            f"{source} carries no description, and a skill without one states "
+            f"no trigger and never routes.\n"
+            f'Supply it: python3 skills.py convert {source} --description "..."',
+            file=sys.stderr,
+        )
         return 1
 
     name = normalise_name(args.name or fields.get("name", "") or source.stem)
@@ -961,8 +1019,7 @@ def cmd_convert(args) -> int:
     if fields.get("license"):
         kept["license"] = fields["license"]
     header = "".join(f"{k}: {v}\n" for k, v in kept.items())
-    (target / "SKILL.md").write_text(
-        f"---\n{header}---\n{body.lstrip(chr(10))}", encoding="utf-8")
+    (target / "SKILL.md").write_text(f"---\n{header}---\n{body.lstrip(chr(10))}", encoding="utf-8")
 
     dropped = [k for k in fields if k not in CONVERT_KEEPS]
     print(f"Installed at {target}, listed and loadable now")
@@ -970,16 +1027,19 @@ def cmd_convert(args) -> int:
         print(f"Dropped, no reader in Bristol: {', '.join(sorted(dropped))}")
     needs = declared_dependencies(source)
     if needs:
-        print(f"Names the skills it depends on: {', '.join(needs)}\n"
-              f"    install each one before this skill is of any use:\n"
-              f"    python3 skills.py install <repo-url> <path-in-repo>")
+        print(
+            f"Names the skills it depends on: {', '.join(needs)}\n"
+            f"    install each one before this skill is of any use:\n"
+            f"    python3 skills.py install <repo-url> <path-in-repo>"
+        )
     else:
-        print("Declares no skills it depends on. One stated in the body alone is "
-              "not read here.")
+        print("Declares no skills it depends on. One stated in the body alone is not read here.")
     if len(description) > DESCRIPTION_ROUTING_LIMIT:
-        print(f"description is {len(description)} characters; past "
-              f"{DESCRIPTION_ROUTING_LIMIT} a client's index truncates it and the "
-              f"routing signal is what is lost. Rewrite it in {target / 'SKILL.md'}.")
+        print(
+            f"description is {len(description)} characters; past "
+            f"{DESCRIPTION_ROUTING_LIMIT} a client's index truncates it and the "
+            f"routing signal is what is lost. Rewrite it in {target / 'SKILL.md'}."
+        )
     return 0
 
 
@@ -1000,7 +1060,8 @@ def scanner_env() -> dict[str, str]:
     carried = carried_scanners()
     if carried is not None:
         env["PYTHONPATH"] = os.pathsep.join(
-            p for p in (str(carried), env.get("PYTHONPATH", "")) if p)
+            p for p in (str(carried), env.get("PYTHONPATH", "")) if p
+        )
     return env
 
 
@@ -1010,7 +1071,9 @@ def scan(skill_dir: Path) -> dict | None:
     taken from what it printed rather than from its status."""
     proc = subprocess.run(
         [sys.executable, "-m", SCANNER, "-q", "-f", "json", "-r", str(skill_dir)],
-        capture_output=True, text=True, env=scanner_env(),
+        capture_output=True,
+        text=True,
+        env=scanner_env(),
     )
     try:
         report = json.loads(proc.stdout)
@@ -1040,15 +1103,17 @@ def polyglot_scan(skill_dir: Path) -> dict | None:
     args = [*command, "--json", "--quiet", "--metrics=off"]
     for config in POLYGLOT_CONFIGS:
         args += ["--config", config]
-    proc = subprocess.run(args + [str(skill_dir)], capture_output=True,
-                          text=True, env=scanner_env())
+    proc = subprocess.run(
+        args + [str(skill_dir)], capture_output=True, text=True, env=scanner_env()
+    )
     try:
         report = json.loads(proc.stdout)
     except json.JSONDecodeError:
         return None
     if not isinstance(report, dict) or any(
-            e.get("level") == "error" and "config" in e.get("message", "").lower()
-            for e in report.get("errors", [])):
+        e.get("level") == "error" and "config" in e.get("message", "").lower()
+        for e in report.get("errors", [])
+    ):
         return None
     return report
 
@@ -1067,8 +1132,7 @@ def scan_record(skill_dir: Path) -> dict:
     severity scale, and the code files no scanner read. A skill with no code
     records a scan with nothing to read."""
     scripts = [str(rel) for rel, _, _ in _inventory(skill_dir) if _is_script(rel)]
-    record = {"scanners": [], "ran": True, "missing": [], "findings": [],
-              "unread": []}
+    record = {"scanners": [], "ran": True, "missing": [], "findings": [], "unread": []}
     if not scripts:
         return record
     read: set[str] = set()
@@ -1081,42 +1145,52 @@ def scan_record(skill_dir: Path) -> dict:
             record["scanners"].append(SCANNER)
             read |= {n for n in scripts if n.endswith(SCANNER_READS)}
             for issue in report.get("results", []):
-                record["findings"].append({
-                    "scanner": SCANNER,
-                    "severity": str(issue.get("issue_severity", "?")).upper(),
-                    "test": issue.get("test_id", "?"),
-                    "text": issue.get("issue_text", ""),
-                    "file": _relative(issue.get("filename", ""), skill_dir),
-                    "line": issue.get("line_number", "?"),
-                })
+                record["findings"].append(
+                    {
+                        "scanner": SCANNER,
+                        "severity": str(issue.get("issue_severity", "?")).upper(),
+                        "test": issue.get("test_id", "?"),
+                        "text": issue.get("issue_text", ""),
+                        "file": _relative(issue.get("filename", ""), skill_dir),
+                        "line": issue.get("line_number", "?"),
+                    }
+                )
     report = polyglot_scan(skill_dir)
     if report is None:
         record["ran"] = False
         record["missing"].append(POLYGLOT)
     else:
         record["scanners"].append(POLYGLOT)
-        read |= {_relative(n, skill_dir)
-                 for n in report.get("paths", {}).get("scanned", [])
-                 if Path(n).suffix.lower() in POLYGLOT_READS}
+        read |= {
+            _relative(n, skill_dir)
+            for n in report.get("paths", {}).get("scanned", [])
+            if Path(n).suffix.lower() in POLYGLOT_READS
+        }
         for issue in report.get("results", []):
             extra = issue.get("extra", {})
-            record["findings"].append({
-                "scanner": POLYGLOT,
-                "severity": POLYGLOT_SEVERITY.get(
-                    str(extra.get("severity", "")).upper(), "HIGH"),
-                "test": str(issue.get("check_id", "?")).rsplit(".", 1)[-1],
-                "text": " ".join(str(extra.get("message", "")).split())[:200],
-                "file": _relative(issue.get("path", ""), skill_dir),
-                "line": issue.get("start", {}).get("line", "?"),
-            })
+            record["findings"].append(
+                {
+                    "scanner": POLYGLOT,
+                    "severity": POLYGLOT_SEVERITY.get(
+                        str(extra.get("severity", "")).upper(), "HIGH"
+                    ),
+                    "test": str(issue.get("check_id", "?")).rsplit(".", 1)[-1],
+                    "text": " ".join(str(extra.get("message", "")).split())[:200],
+                    "file": _relative(issue.get("path", ""), skill_dir),
+                    "line": issue.get("start", {}).get("line", "?"),
+                }
+            )
     record["unread"] = sorted(n for n in scripts if n not in read)
     return record
 
 
 def blocking(record: dict) -> list[dict]:
     """The findings in a scan record that stop an import."""
-    return [f for f in record.get("findings", [])
-            if str(f.get("severity", "")).upper() in BLOCKING_SEVERITIES]
+    return [
+        f
+        for f in record.get("findings", [])
+        if str(f.get("severity", "")).upper() in BLOCKING_SEVERITIES
+    ]
 
 
 def scan_report_lines(record: dict) -> list[str]:
@@ -1124,17 +1198,17 @@ def scan_report_lines(record: dict) -> list[str]:
     and a line."""
     out = [f"=== scan ({', '.join(record.get('scanners', [])) or 'none'}) ==="]
     for name in record.get("missing", []):
-        out.append(f"Not scanned: {name} is not installed for this interpreter, "
-                   f"or its rules could not be fetched.")
+        out.append(
+            f"Not scanned: {name} is not installed for this interpreter, "
+            f"or its rules could not be fetched."
+        )
         out.append(f"    {Path(sys.executable).name} -m pip install {name}")
     for f in record.get("findings", []):
-        out.append(f"{f['severity']:<8} {f['test']} {f['text']} "
-                   f"— {f['file']}:{f['line']}")
+        out.append(f"{f['severity']:<8} {f['test']} {f['text']} — {f['file']}:{f['line']}")
     if record.get("unread"):
         out.append("No scanner reads these: " + ", ".join(record["unread"]))
     if len(out) == 1:
-        out.append("Nothing found." if record.get("scanners")
-                   else "No code to scan.")
+        out.append("Nothing found." if record.get("scanners") else "No code to scan.")
     return out
 
 
@@ -1198,14 +1272,16 @@ def cmd_package(args) -> int:
     else:
         declared = read_config.get("bristol_data.folders.staging", None)
         if not declared:
-            print("No output directory: pass --out, or declare "
-                  "bristol_data.folders.staging in config.", file=sys.stderr)
+            print(
+                "No output directory: pass --out, or declare "
+                "bristol_data.folders.staging in config.",
+                file=sys.stderr,
+            )
             return 1
         out_dir = data_paths.ensure_dir(declared)
 
     archive = out_dir / f"{args.name}.zip"
-    inventory = [entry for entry in _inventory(skill_dir)
-                 if str(entry[0]) != ORIGIN_FILE]
+    inventory = [entry for entry in _inventory(skill_dir) if str(entry[0]) != ORIGIN_FILE]
     record = read_origin(skill_dir)
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
         for rel, _, _ in inventory:
@@ -1215,27 +1291,35 @@ def cmd_package(args) -> int:
 
     fields = read_frontmatter(skill_dir / "SKILL.md")
     print(f"Packaged at {archive}")
-    print(f"Root of the archive: {args.name}/, containing {_spell(len(inventory))} "
-          f"file{'' if len(inventory) == 1 else 's'}.")
+    print(
+        f"Root of the archive: {args.name}/, containing {_spell(len(inventory))} "
+        f"file{'' if len(inventory) == 1 else 's'}."
+    )
     if record:
-        print(f"Written by {record.get('repo', ABSENT)} at "
-              f"{record.get('path', ABSENT)}, commit "
-              f"{record.get('commit', ABSENT)[:12]}. Bristol installed it and "
-              f"is not its source.")
-        print(f"Licence: {record.get('license', ABSENT)} "
-              f"(from {record.get('license_source', ABSENT)}). It travels under "
-              f"that source's own terms.")
+        print(
+            f"Written by {record.get('repo', ABSENT)} at "
+            f"{record.get('path', ABSENT)}, commit "
+            f"{record.get('commit', ABSENT)[:12]}. Bristol installed it and "
+            f"is not its source."
+        )
+        print(
+            f"Licence: {record.get('license', ABSENT)} "
+            f"(from {record.get('license_source', ABSENT)}). It travels under "
+            f"that source's own terms."
+        )
     elif origin == "native":
         print("Written for Bristol and published with it.")
-        print(f"Licence: {fields.get('license', ABSENT)}, from the skill's own "
-              f"frontmatter.")
+        print(f"Licence: {fields.get('license', ABSENT)}, from the skill's own frontmatter.")
     else:
-        print("Installed before origins were recorded, so where it came from is "
-              "not known here. Say so to whoever receives it.")
-        print(f"Licence: {fields.get('license', ABSENT)}, from the skill's own "
-              f"frontmatter.")
-    print("A person loads this in the receiving host themselves. Nothing here "
-          "reaches that host, and nothing here can tell you it arrived.")
+        print(
+            "Installed before origins were recorded, so where it came from is "
+            "not known here. Say so to whoever receives it."
+        )
+        print(f"Licence: {fields.get('license', ABSENT)}, from the skill's own frontmatter.")
+    print(
+        "A person loads this in the receiving host themselves. Nothing here "
+        "reaches that host, and nothing here can tell you it arrived."
+    )
     return 0
 
 
@@ -1252,8 +1336,11 @@ def cmd_remove(args) -> int:
         return 1
     skill_dir, origin = found
     if origin == "native":
-        print(f"'{args.name}' is a native skill under src/skills/. Remove it by "
-              f"editing the repository, not from here.", file=sys.stderr)
+        print(
+            f"'{args.name}' is a native skill under src/skills/. Remove it by "
+            f"editing the repository, not from here.",
+            file=sys.stderr,
+        )
         return 1
     # The directory goes first: a detachment recorded against a skill still on
     # disk is a skill no agent has, which is recoverable, and the reverse is an
@@ -1261,13 +1348,16 @@ def cmd_remove(args) -> int:
     try:
         shutil.rmtree(skill_dir)
     except OSError as exc:
-        print(f"Could not remove {skill_dir}: {exc.strerror or exc}. Nothing was "
-              f"detached.", file=sys.stderr)
+        print(
+            f"Could not remove {skill_dir}: {exc.strerror or exc}. Nothing was detached.",
+            file=sys.stderr,
+        )
         return 1
     holders = [slug for slug in _agent_slugs() if args.name in attached_to(slug)]
     for slug in holders:
-        write_config.set_key(ATTACHMENTS.format(slug=slug),
-                             [n for n in attached_to(slug) if n != args.name])
+        write_config.set_key(
+            ATTACHMENTS.format(slug=slug), [n for n in attached_to(slug) if n != args.name]
+        )
     held = f" It was attached to {', '.join(holders)}." if holders else ""
     print(f"Removed {args.name} from the install root.{held}")
     return 0
@@ -1277,32 +1367,35 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_list = sub.add_parser(
-        "list", help="every loadable skill: name and description only")
+    p_list = sub.add_parser("list", help="every loadable skill: name and description only")
     p_list.add_argument("--agent", help="put this agent's attached skills first")
     p_list.add_argument(
-        "--json", action="store_true",
-        help="every skill, with its scan, and each agent's attachments, as data")
+        "--json",
+        action="store_true",
+        help="every skill, with its scan, and each agent's attachments, as data",
+    )
 
     p_view = sub.add_parser("view", help="load one skill's body")
     p_view.add_argument("name")
 
     p_install = sub.add_parser("install", help="fetch a skill, scan it and make it loadable")
     p_install.add_argument(
-        "repo", metavar="address",
-        help="the address of the skill's folder, or the repository's git URL")
+        "repo",
+        metavar="address",
+        help="the address of the skill's folder, or the repository's git URL",
+    )
     p_install.add_argument(
-        "path", nargs="?",
+        "path",
+        nargs="?",
         help="the skill's directory inside that repository, where the first "
-             "argument is a bare repository URL")
+        "argument is a bare repository URL",
+    )
     p_install.add_argument("--name", help="override the installed directory name")
 
-    p_convert = sub.add_parser(
-        "convert", help="write a foreign markdown definition in as a skill")
+    p_convert = sub.add_parser("convert", help="write a foreign markdown definition in as a skill")
     p_convert.add_argument("source", help="the markdown file to convert")
     p_convert.add_argument("--name", help="override the skill and directory name")
-    p_convert.add_argument("--description",
-                           help="the trigger, where the source states none")
+    p_convert.add_argument("--description", help="the trigger, where the source states none")
 
     p_audit = sub.add_parser("audit", help="print a skill's SKILL.md and every script it carries")
     p_audit.add_argument("name")
@@ -1315,22 +1408,27 @@ def main(argv: list[str]) -> int:
     p_detach.add_argument("name")
     p_detach.add_argument("--agent", required=True)
 
-    p_remove = sub.add_parser(
-        "remove", help="delete an installed skill and detach it")
+    p_remove = sub.add_parser("remove", help="delete an installed skill and detach it")
     p_remove.add_argument("name")
 
     p_package = sub.add_parser(
-        "package", help="write a loadable skill out as a zip another host can take")
+        "package", help="write a loadable skill out as a zip another host can take"
+    )
     p_package.add_argument("name")
     p_package.add_argument(
-        "--out", help="where to write the archive (default: the declared "
-                      "staging location)")
+        "--out", help="where to write the archive (default: the declared staging location)"
+    )
 
     args = parser.parse_args(argv)
     return {
-        "list": cmd_list, "view": cmd_view, "install": cmd_install,
-        "convert": cmd_convert, "audit": cmd_audit,
-        "attach": cmd_attach, "detach": cmd_detach, "remove": cmd_remove,
+        "list": cmd_list,
+        "view": cmd_view,
+        "install": cmd_install,
+        "convert": cmd_convert,
+        "audit": cmd_audit,
+        "attach": cmd_attach,
+        "detach": cmd_detach,
+        "remove": cmd_remove,
         "package": cmd_package,
     }[args.command](args)
 

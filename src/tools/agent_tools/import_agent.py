@@ -30,6 +30,7 @@ sys.path.insert(0, str(HERE.parents[0] / "skill_tools"))
 import data_paths  # noqa: E402
 import read_config  # noqa: E402
 import write_config  # noqa: E402
+
 import skills  # noqa: E402
 
 FORMAT = 1
@@ -41,18 +42,22 @@ GUARDRAIL_WORDS = ("guardrail", "bright-line", "bright line")
 
 # ── Reading the file ──────────────────────────────────────────────────────────
 
+
 def load(path: Path) -> dict:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as failure:
-        raise SystemExit(f"import_agent: {path} could not be read ({failure}).")
+        raise SystemExit(f"import_agent: {path} could not be read ({failure}).") from None
     if not isinstance(document, dict) or "bristol_agent" not in document:
-        raise SystemExit(f"import_agent: {path} is not an agent file — it "
-                         f"declares no bristol_agent format.")
+        raise SystemExit(
+            f"import_agent: {path} is not an agent file — it declares no bristol_agent format."
+        )
     if document["bristol_agent"] != FORMAT:
-        raise SystemExit(f"import_agent: {path} is format "
-                         f"{document['bristol_agent']}; this build reads "
-                         f"format {FORMAT}.")
+        raise SystemExit(
+            f"import_agent: {path} is format "
+            f"{document['bristol_agent']}; this build reads "
+            f"format {FORMAT}."
+        )
     for key in ("slug", "charter", "entry"):
         if not document.get(key):
             raise SystemExit(f"import_agent: {path} carries no {key}.")
@@ -79,15 +84,20 @@ def mandate_and_guardrails(charter: str) -> str:
     """What a person has to read before granting an agent authority: what it is
     for, and what stops it. A charter shaped differently is shown whole rather
     than filtered down to nothing."""
-    found = [(h, b) for h, b in sections(charter)
-             if "identity" in h.lower() or "mandate" in h.lower()
-             or any(word in h.lower() for word in GUARDRAIL_WORDS)]
+    found = [
+        (h, b)
+        for h, b in sections(charter)
+        if "identity" in h.lower()
+        or "mandate" in h.lower()
+        or any(word in h.lower() for word in GUARDRAIL_WORDS)
+    ]
     if not found:
         return charter.strip()
     return "\n\n".join(f"## {h}\n\n{b}" for h, b in found if b)
 
 
 # ── Skills ────────────────────────────────────────────────────────────────────
+
 
 def fetch_skills(named: list[dict]) -> list[str]:
     """Install every addressed skill through skill_tools' own command, so an
@@ -99,22 +109,26 @@ def fetch_skills(named: list[dict]) -> list[str]:
         name = record.get("name", "?")
         source = record.get("source")
         if source == "native":
-            state = "here" if skills._known_skill(name) else "MISSING — this build ships no such skill"
+            state = (
+                "here" if skills._known_skill(name) else "MISSING — this build ships no such skill"
+            )
             lines.append(f"  {name}: ships with Bristol, {state}")
             continue
         if source != "address" or not record.get("address"):
-            lines.append(f"  {name}: MISSING — the file records no address, so "
-                         f"it cannot be fetched")
+            lines.append(
+                f"  {name}: MISSING — the file records no address, so it cannot be fetched"
+            )
             continue
         if skills.find_skill(name):
             lines.append(f"  {name}: already here, left as it is")
             continue
         done = subprocess.run(
             [sys.executable, str(installer), "install", record["address"]],
-            capture_output=True, text=True)
+            capture_output=True,
+            text=True,
+        )
         if done.returncode == 0:
-            lines.append(f"  {name}: fetched and loadable, from "
-                         f"{record['address']}")
+            lines.append(f"  {name}: fetched and loadable, from {record['address']}")
         else:
             why = (done.stderr or done.stdout).strip().splitlines()
             lines.append(f"  {name}: MISSING — {why[-1] if why else 'install failed'}")
@@ -122,6 +136,7 @@ def fetch_skills(named: list[dict]) -> list[str]:
 
 
 # ── Writing the agent ─────────────────────────────────────────────────────────
+
 
 def localise(value, instance: str, notebook: str | None):
     """The exporter's tokens resolved to this installation's own names."""
@@ -167,13 +182,18 @@ def accept(document: dict) -> int:
     slug = document["slug"]
 
     if slug in read_config.get("agents", {}):
-        print(f"'{slug}' is already an agent here. Rename the one in the file, "
-              f"or extend the one you have.", file=sys.stderr)
+        print(
+            f"'{slug}' is already an agent here. Rename the one in the file, "
+            f"or extend the one you have.",
+            file=sys.stderr,
+        )
         return 1
     home = charter_home(slug)
     if home is None:
-        print("config declares no imported_agents.install_dir; nowhere to "
-              "write the charter.", file=sys.stderr)
+        print(
+            "config declares no imported_agents.install_dir; nowhere to write the charter.",
+            file=sys.stderr,
+        )
         return 1
     charter_path, identity = home
     if charter_path.exists():
@@ -181,8 +201,9 @@ def accept(document: dict) -> int:
         return 1
 
     notebook = data_paths.notebook_root()
-    entry = localise(document["entry"], data_paths.instance_slug(),
-                     notebook.name if notebook else None)
+    entry = localise(
+        document["entry"], data_paths.instance_slug(), notebook.name if notebook else None
+    )
     entry = {"identity": identity, **entry}
 
     charter_path.parent.mkdir(parents=True, exist_ok=True)
@@ -202,27 +223,39 @@ def accept(document: dict) -> int:
 
     writer = HERE.parents[0] / "ticket_tools" / "ticket_write.py"
     made = subprocess.run(
-        [sys.executable, str(writer), "add-epic",
-         "--name", f"{slug} — initial setup", "--owner", slug],
-        capture_output=True, text=True)
+        [
+            sys.executable,
+            str(writer),
+            "add-epic",
+            "--name",
+            f"{slug} — initial setup",
+            "--owner",
+            slug,
+        ],
+        capture_output=True,
+        text=True,
+    )
     epic = (made.stdout or made.stderr).strip().splitlines()
 
     print(f"Charter   {identity}")
     print(f"Config    agents.{slug}")
     print(f"Skills    attached: {', '.join(attached) or 'none'}")
     if held:
-        print(f"          not attached, because they are not installed: "
-              f"{', '.join(held)}")
-        print(f"          `skills.py install <address>`, then "
-              f"`skills.py attach <name> --agent {slug}`")
+        print(f"          not attached, because they are not installed: {', '.join(held)}")
+        print(
+            f"          `skills.py install <address>`, then "
+            f"`skills.py attach <name> --agent {slug}`"
+        )
     print(f"Epic      {epic[-1] if epic else 'add-epic produced no output'}")
 
     outstanding = placeholders(entry)
     if outstanding:
         print("\nValues that are yours to supply — the exporter's never crossed:")
         for dotted in outstanding:
-            print(f"  python3 src/tools/config_tools/write_config.py "
-                  f"agents.{slug}.{dotted} '<your value>'")
+            print(
+                f"  python3 src/tools/config_tools/write_config.py "
+                f"agents.{slug}.{dotted} '<your value>'"
+            )
     print(f"\n{slug} is selectable as the active agent.")
     return 0
 
@@ -230,8 +263,7 @@ def accept(document: dict) -> int:
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("file", type=Path, help="the .agent.json file")
-    ap.add_argument("--accept", action="store_true",
-                    help="write the charter and the config entry")
+    ap.add_argument("--accept", action="store_true", help="write the charter and the config entry")
     args = ap.parse_args(argv)
 
     document = load(args.file)
@@ -251,8 +283,10 @@ def main(argv: list[str]) -> int:
     print("SKILLS IT NAMES")
     for line in fetch_skills(document.get("skills", [])):
         print(line)
-    print("\nEach fetched skill is loadable now, with its scan shown by "
-          "`skills.py audit <name>` — src/skills/importing-a-skill/SKILL.md.")
+    print(
+        "\nEach fetched skill is loadable now, with its scan shown by "
+        "`skills.py audit <name>` — src/skills/importing-a-skill/SKILL.md."
+    )
     print(f"\nRead the mandate and the guardrails above. To adopt {slug}:")
     print(f"  python3 src/tools/agent_tools/import_agent.py {args.file} --accept")
     return 0

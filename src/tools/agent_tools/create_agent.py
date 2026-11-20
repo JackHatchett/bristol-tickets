@@ -40,6 +40,7 @@ sys.path.insert(0, str(HERE.parents[0] / "skill_tools"))
 import data_paths  # noqa: E402
 import read_config  # noqa: E402
 import write_config  # noqa: E402
+
 import skills  # noqa: E402
 
 SLUG = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -79,27 +80,34 @@ def wrap(text: str, indent: str = "") -> str:
     """One paragraph per blank line, wrapped to the governing-doc width."""
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text.strip()) if p.strip()]
     return "\n\n".join(
-        textwrap.fill(p, width=WIDTH, initial_indent=indent,
-                      subsequent_indent=indent, break_on_hyphens=False,
-                      break_long_words=False)
+        textwrap.fill(
+            p,
+            width=WIDTH,
+            initial_indent=indent,
+            subsequent_indent=indent,
+            break_on_hyphens=False,
+            break_long_words=False,
+        )
         for p in paragraphs
     )
 
 
-def charter_text(slug: str, role: str, guardrails: list[str],
-                 owns: list[str]) -> str:
+def charter_text(slug: str, role: str, guardrails: list[str], owns: list[str]) -> str:
     bullets = "\n".join(
-        textwrap.fill(f"- **{g.strip().rstrip('.')}.**", width=WIDTH,
-                      subsequent_indent="  ", break_on_hyphens=False,
-                      break_long_words=False)
+        textwrap.fill(
+            f"- **{g.strip().rstrip('.')}.**",
+            width=WIDTH,
+            subsequent_indent="  ",
+            break_on_hyphens=False,
+            break_long_words=False,
+        )
         for g in guardrails
     )
     owned = ""
     if owns:
         named = ", ".join(f"`{o}`" for o in owns)
         owned = "\n" + textwrap.fill(f"Owns {named}.", width=WIDTH) + "\n"
-    return CHARTER.format(slug=slug, role=wrap(role), guardrails=bullets,
-                          owns=owned)
+    return CHARTER.format(slug=slug, role=wrap(role), guardrails=bullets, owns=owned)
 
 
 def notebook_access(choice: str) -> dict:
@@ -129,59 +137,93 @@ class _Grant(argparse.Action):
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("slug", help="the agent's name, in snake_case")
-    parser.add_argument("--description", required=True,
-                        help="the one line the agent picker and docs show")
-    parser.add_argument("--role",
-                        help="what this agent is for, written for a stranger")
-    parser.add_argument("--guardrail", action="append", default=[],
-                        help="one rule that halts execution; repeatable")
-    parser.add_argument("--charter-file",
-                        help="a file containing the whole charter document, "
-                             "instead of --role and --guardrail")
-    parser.add_argument("--env", action="append", default=[],
-                        metavar="NAME=VALUE",
-                        help="an environment variable this agent runs with; "
-                             "repeatable")
-    parser.add_argument("--data-path", action=_Grant, metavar="PATH",
-                        help="a folder this agent may write in; repeatable")
-    parser.add_argument("--read-path", action=_Grant, metavar="PATH",
-                        help="a folder this agent may read and not write; "
-                             "repeatable")
+    parser.add_argument(
+        "--description", required=True, help="the one line the agent picker and docs show"
+    )
+    parser.add_argument("--role", help="what this agent is for, written for a stranger")
+    parser.add_argument(
+        "--guardrail", action="append", default=[], help="one rule that halts execution; repeatable"
+    )
+    parser.add_argument(
+        "--charter-file",
+        help="a file containing the whole charter document, instead of --role and --guardrail",
+    )
+    parser.add_argument(
+        "--env",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="an environment variable this agent runs with; repeatable",
+    )
+    parser.add_argument(
+        "--data-path",
+        action=_Grant,
+        metavar="PATH",
+        help="a folder this agent may write in; repeatable",
+    )
+    parser.add_argument(
+        "--read-path",
+        action=_Grant,
+        metavar="PATH",
+        help="a folder this agent may read and not write; repeatable",
+    )
     parser.set_defaults(grants=[])
-    parser.add_argument("--context-file", action="append", default=[],
-                        help="a file this agent reads on sight; repeatable")
-    parser.add_argument("--skill", action="append", default=[],
-                        help="a skill to attach; repeatable")
-    parser.add_argument("--owns", action="append", default=[],
-                        help="a folder this agent maintains; repeatable")
-    parser.add_argument("--notebook", choices=("read", "write", "none"),
-                        default="none",
-                        help="notebook access as a whole; default none")
-    parser.add_argument("--notebook-mode",
-                        choices=("per_folder", "read_all", "write_all"),
-                        help="overrides --notebook")
-    parser.add_argument("--notebook-folder", action="append", default=[],
-                        metavar="FOLDER=ACCESS",
-                        help="read, write or hide for one attached folder; "
-                             "repeatable")
-    parser.add_argument("--no-epic", action="store_true",
-                        help="skip the board epic, where one already exists")
+    parser.add_argument(
+        "--context-file",
+        action="append",
+        default=[],
+        help="a file this agent reads on sight; repeatable",
+    )
+    parser.add_argument(
+        "--skill", action="append", default=[], help="a skill to attach; repeatable"
+    )
+    parser.add_argument(
+        "--owns", action="append", default=[], help="a folder this agent maintains; repeatable"
+    )
+    parser.add_argument(
+        "--notebook",
+        choices=("read", "write", "none"),
+        default="none",
+        help="notebook access as a whole; default none",
+    )
+    parser.add_argument(
+        "--notebook-mode",
+        choices=("per_folder", "read_all", "write_all"),
+        help="overrides --notebook",
+    )
+    parser.add_argument(
+        "--notebook-folder",
+        action="append",
+        default=[],
+        metavar="FOLDER=ACCESS",
+        help="read, write or hide for one attached folder; repeatable",
+    )
+    parser.add_argument(
+        "--no-epic", action="store_true", help="skip the board epic, where one already exists"
+    )
     args = parser.parse_args(argv)
 
     slug = args.slug
     if not args.charter_file and not (args.role and args.guardrail):
-        print("supply the charter: --charter-file, or --role with at least one "
-              "--guardrail.", file=sys.stderr)
+        print(
+            "supply the charter: --charter-file, or --role with at least one --guardrail.",
+            file=sys.stderr,
+        )
         return 1
     if not SLUG.match(slug):
-        print(f"'{slug}' is not a slug: lower case, digits and underscores, "
-              f"starting with a letter.", file=sys.stderr)
+        print(
+            f"'{slug}' is not a slug: lower case, digits and underscores, starting with a letter.",
+            file=sys.stderr,
+        )
         return 1
 
     configured = read_config.get("agents", {})
     if slug in configured:
-        print(f"'{slug}' is already an agent. Extend its charter and config "
-              f"entry rather than creating a second one.", file=sys.stderr)
+        print(
+            f"'{slug}' is already an agent. Extend its charter and config "
+            f"entry rather than creating a second one.",
+            file=sys.stderr,
+        )
         return 1
 
     root = data_paths.project_root()
@@ -194,9 +236,10 @@ def main(argv: list[str]) -> int:
     # not leave an agent half-created.
     unknown = [s for s in args.skill if not skills._known_skill(s)]
     if unknown:
-        print(f"no such skill: {', '.join(unknown)}. `skills.py list` gives "
-              f"every skill there is.",
-              file=sys.stderr)
+        print(
+            f"no such skill: {', '.join(unknown)}. `skills.py list` gives every skill there is.",
+            file=sys.stderr,
+        )
         return 1
 
     if args.charter_file:
@@ -217,8 +260,7 @@ def main(argv: list[str]) -> int:
     for item in args.env:
         name, sep, value = item.partition("=")
         if not sep or not name.strip():
-            print(f"an environment entry is NAME=value: '{item}' is not.",
-                  file=sys.stderr)
+            print(f"an environment entry is NAME=value: '{item}' is not.", file=sys.stderr)
             return 1
         env[name.strip()] = value
 
@@ -239,8 +281,7 @@ def main(argv: list[str]) -> int:
     for item in args.notebook_folder:
         folder, _, access = item.rpartition("=")
         if access not in ("read", "write", "hide") or not folder:
-            print(f"--notebook-folder takes FOLDER=read|write|hide: {item}",
-                  file=sys.stderr)
+            print(f"--notebook-folder takes FOLDER=read|write|hide: {item}", file=sys.stderr)
             return 1
         entry["notebook_access"]["folders"][folder] = access
     if env:
@@ -265,15 +306,22 @@ def main(argv: list[str]) -> int:
         # created here and an agent created by hand reach the board identically.
         writer = HERE.parents[0] / "ticket_tools" / "ticket_write.py"
         made = subprocess.run(
-            [sys.executable, str(writer), "add-epic",
-             "--name", f"{slug} — initial setup", "--owner", slug],
-            capture_output=True, text=True,
+            [
+                sys.executable,
+                str(writer),
+                "add-epic",
+                "--name",
+                f"{slug} — initial setup",
+                "--owner",
+                slug,
+            ],
+            capture_output=True,
+            text=True,
         )
         line = (made.stdout or made.stderr).strip().splitlines()
         print(f"Epic      {line[-1] if line else 'add-epic produced no output'}")
 
-    print(f"\n{slug} is selectable as the active agent. Nothing else needs "
-          f"editing.")
+    print(f"\n{slug} is selectable as the active agent. Nothing else needs editing.")
     return 0
 
 

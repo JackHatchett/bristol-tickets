@@ -16,6 +16,10 @@ from __future__ import annotations
 
 import os
 import sys
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QApplication
 from pathlib import Path
 
 
@@ -28,9 +32,7 @@ def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 PROJECT_ROOT = _project_root()
@@ -53,11 +55,11 @@ def tool_on_path(tool_name: str) -> Path:
     return tool_dir
 
 
-def offscreen_app():
+def offscreen_app() -> QApplication:
     """Return a QApplication bound to the offscreen platform (created once).
     Sets QT_QPA_PLATFORM defensively in case the caller didn't go through
     run_smoke.sh."""
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QApplication
 
-    return QApplication.instance() or QApplication([])
+    return cast("QApplication", QApplication.instance() or QApplication([]))

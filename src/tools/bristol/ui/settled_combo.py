@@ -13,8 +13,12 @@ from PySide6.QtWidgets import QComboBox
 
 # Keys a closed combo would otherwise step through its list with.
 _STEPPING_KEYS = (
-    Qt.Key_Up, Qt.Key_Down, Qt.Key_PageUp, Qt.Key_PageDown,
-    Qt.Key_Home, Qt.Key_End,
+    Qt.Key.Key_Up,
+    Qt.Key.Key_Down,
+    Qt.Key.Key_PageUp,
+    Qt.Key.Key_PageDown,
+    Qt.Key.Key_Home,
+    Qt.Key.Key_End,
 )
 
 
@@ -28,7 +32,7 @@ def fill_words(combo: QComboBox, choices, *, hint: str | None = None) -> QComboB
     """
     for value, caption in choices:
         combo.addItem(caption, value)
-    combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+    combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
     if hint:
         combo.setToolTip(hint)
     return combo

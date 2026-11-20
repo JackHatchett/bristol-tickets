@@ -39,10 +39,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
 
-import data_paths as dp  # noqa: E402  (the shared declared-path resolver)
-import zotero_common as zc  # noqa: E402
+import data_paths as dp
+import zotero_common as zc
 
 READ_COLLECTION = "Books I've Read"
+
 
 # Payload directory lives in the git-ignored data tree, resolved the same way
 # the personal_db tools resolve theirs. A directory that does not exist yet is
@@ -72,7 +73,7 @@ def norm_title(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     for art in _ARTICLES:
         if text.startswith(art):
-            text = text[len(art):]
+            text = text[len(art) :]
             break
     return text
 
@@ -144,9 +145,7 @@ def load_library_index(conn):
             exact.setdefault((norm_title(r["title"]), surname), r["itemID"])
             stem.setdefault((title_stem(r["title"]), surname), r["itemID"])
             if surname:
-                by_author.setdefault(surname, []).append(
-                    (norm_title(r["title"]), r["itemID"])
-                )
+                by_author.setdefault(surname, []).append((norm_title(r["title"]), r["itemID"]))
     return exact, stem, by_author
 
 
@@ -260,10 +259,13 @@ def build_one(conn, payload, ids, keys, exact, stem, by_author, dry_run):
     collection_id, created = (None, True)
     if not dry_run:
         collection_id, created = get_or_create_collection(conn, name, keys)
-        start = conn.execute(
-            "SELECT COALESCE(MAX(orderIndex), -1) FROM collectionItems WHERE collectionID=?",
-            (collection_id,),
-        ).fetchone()[0] + 1
+        start = (
+            conn.execute(
+                "SELECT COALESCE(MAX(orderIndex), -1) FROM collectionItems WHERE collectionID=?",
+                (collection_id,),
+            ).fetchone()[0]
+            + 1
+        )
     else:
         start = 0
 
@@ -281,9 +283,7 @@ def build_one(conn, payload, ids, keys, exact, stem, by_author, dry_run):
             exact.setdefault((norm_title(entry["title"]), surname), item_id)
             stem.setdefault((title_stem(entry["title"]), surname), item_id)
             if surname:
-                by_author.setdefault(surname, []).append(
-                    (norm_title(entry["title"]), item_id)
-                )
+                by_author.setdefault(surname, []).append((norm_title(entry["title"]), item_id))
         if not dry_run:
             add_to_collection(conn, collection_id, item_id, start + offset)
 
@@ -327,10 +327,10 @@ def main():
         for path in paths:
             payload = json.loads(Path(path).read_text())
             if payload["collection"] == READ_COLLECTION:
-                raise SystemExit(
-                    f"{path}: refusing to write into {READ_COLLECTION!r}."
-                )
-            reports.append(build_one(conn, payload, ids, keys, exact, stem, by_author, args.dry_run))
+                raise SystemExit(f"{path}: refusing to write into {READ_COLLECTION!r}.")
+            reports.append(
+                build_one(conn, payload, ids, keys, exact, stem, by_author, args.dry_run)
+            )
         if not args.dry_run:
             conn.commit()
     except Exception:

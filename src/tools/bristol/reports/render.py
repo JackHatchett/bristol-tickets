@@ -36,6 +36,7 @@ BAR_WIDTH = 24
 # formatting helpers
 # ---------------------------------------------------------------------------
 
+
 def _date(value, fmt="%Y-%m-%d"):
     dt = _parse_ts(value)
     return dt.strftime(fmt) if dt else "—"
@@ -103,6 +104,7 @@ def _truncate(text, limit=64):
 # executive summary — deterministic prose, no model call
 # ---------------------------------------------------------------------------
 
+
 def _summary(f):
     """Assemble the opening paragraph from the computed facts.
 
@@ -120,8 +122,11 @@ def _summary(f):
     span = f"over {period:.0f} days" if period >= 1 else "in under a day"
     sentences.append(
         f"This period closed {n} card{'s' if n != 1 else ''} {span}"
-        + (f", a rate of {f['throughput']['per_week']:.1f} per week"
-           if f["throughput"]["per_week"] else "")
+        + (
+            f", a rate of {f['throughput']['per_week']:.1f} per week"
+            if f["throughput"]["per_week"]
+            else ""
+        )
         + "."
     )
 
@@ -189,6 +194,7 @@ def _summary(f):
 # sections
 # ---------------------------------------------------------------------------
 
+
 def _frontmatter(f, slug, previous_slug):
     lead, cycle, backlog = f["lead_time"], f["cycle_time"], f["backlog"]
     wip_oldest = max((w["age_days"] or 0 for w in f["wip"]), default=0)
@@ -198,31 +204,31 @@ def _frontmatter(f, slug, previous_slug):
 
     lines = [
         "---",
-        f'created: {_date(f["generated_at"], "%Y-%m-%d %H:%M")}',
+        f"created: {_date(f['generated_at'], '%Y-%m-%d %H:%M')}",
         "tags:",
         "  - bristol/report",
         "type: bristol-report",
-        f'date: {_date(f["generated_at"])}',
+        f"date: {_date(f['generated_at'])}",
         f"slug: {slug}",
-        f'period_start: {_date(f["period_start"])}',
-        f'period_end: {_date(f["period_end"])}',
-        f'period_days: {f["period_days"]}',
-        f'cards_closed: {f["throughput"]["count"]}',
-        f'throughput_per_week: {num(f["throughput"]["per_week"])}',
-        f'lead_time_median_days: {num(lead["median"])}',
-        f'lead_time_p85_days: {num(lead["p85"])}',
-        f'cycle_time_median_days: {num(cycle["median"])}',
-        f'cycle_time_coverage: {cycle["coverage"]}',
-        f'builds: {f["mix"]["build"]}',
-        f'fixes: {f["mix"]["fix"]}',
-        f'fix_ratio: {f["mix"]["fix_ratio"]}',
-        f'wip_count: {len(f["wip"])}',
+        f"period_start: {_date(f['period_start'])}",
+        f"period_end: {_date(f['period_end'])}",
+        f"period_days: {f['period_days']}",
+        f"cards_closed: {f['throughput']['count']}",
+        f"throughput_per_week: {num(f['throughput']['per_week'])}",
+        f"lead_time_median_days: {num(lead['median'])}",
+        f"lead_time_p85_days: {num(lead['p85'])}",
+        f"cycle_time_median_days: {num(cycle['median'])}",
+        f"cycle_time_coverage: {cycle['coverage']}",
+        f"builds: {f['mix']['build']}",
+        f"fixes: {f['mix']['fix']}",
+        f"fix_ratio: {f['mix']['fix_ratio']}",
+        f"wip_count: {len(f['wip'])}",
         f"wip_oldest_days: {round(wip_oldest, 2)}",
-        f'queue_size: {f["queue"]["size"]}',
-        f'backlog_size: {backlog["size"]}',
-        f'backlog_oldest_days: {num(backlog["oldest_days"])}',
-        f'signals: {len(f["signals"])}',
-        f'signals_attention: {sum(1 for s in f["signals"] if s["severity"] == "attention")}',
+        f"queue_size: {f['queue']['size']}",
+        f"backlog_size: {backlog['size']}",
+        f"backlog_oldest_days: {num(backlog['oldest_days'])}",
+        f"signals: {len(f['signals'])}",
+        f"signals_attention: {sum(1 for s in f['signals'] if s['severity'] == 'attention')}",
     ]
     if previous_slug:
         lines.append(f"previous: {previous_slug}")
@@ -234,35 +240,63 @@ def _headline_table(f):
     prior = f["prior"] or {}
     lead, cycle = f["lead_time"], f["cycle_time"]
     rows = [
-        ("Cards closed", str(f["throughput"]["count"]),
-         _delta(f["throughput"]["count"], prior.get("cards_closed"))),
-        ("Throughput / week",
-         f'{f["throughput"]["per_week"]:.1f}' if f["throughput"]["per_week"] else "—",
-         _delta(f["throughput"]["per_week"], prior.get("throughput_per_week"))),
-        ("Lead time (median)", _days(lead["median"]),
-         _delta(lead["median"], prior.get("lead_time_median_days"),
-                lower_is_better=True, unit="d")),
-        ("Lead time (85th pct)", _days(lead["p85"]),
-         _delta(lead["p85"], prior.get("lead_time_p85_days"),
-                lower_is_better=True, unit="d")),
-        ("Cycle time (median)",
-         _days(cycle["median"]) + (f' · {_pct(cycle["coverage"])} coverage'
-                                   if cycle["n"] else ""),
-         _delta(cycle["median"], prior.get("cycle_time_median_days"),
-                lower_is_better=True, unit="d")),
-        ("Fix ratio", _pct(f["mix"]["fix_ratio"]),
-         _delta(f["mix"]["fix_ratio"] * 100,
+        (
+            "Cards closed",
+            str(f["throughput"]["count"]),
+            _delta(f["throughput"]["count"], prior.get("cards_closed")),
+        ),
+        (
+            "Throughput / week",
+            f"{f['throughput']['per_week']:.1f}" if f["throughput"]["per_week"] else "—",
+            _delta(f["throughput"]["per_week"], prior.get("throughput_per_week")),
+        ),
+        (
+            "Lead time (median)",
+            _days(lead["median"]),
+            _delta(
+                lead["median"], prior.get("lead_time_median_days"), lower_is_better=True, unit="d"
+            ),
+        ),
+        (
+            "Lead time (85th pct)",
+            _days(lead["p85"]),
+            _delta(lead["p85"], prior.get("lead_time_p85_days"), lower_is_better=True, unit="d"),
+        ),
+        (
+            "Cycle time (median)",
+            _days(cycle["median"])
+            + (f" · {_pct(cycle['coverage'])} coverage" if cycle["n"] else ""),
+            _delta(
+                cycle["median"], prior.get("cycle_time_median_days"), lower_is_better=True, unit="d"
+            ),
+        ),
+        (
+            "Fix ratio",
+            _pct(f["mix"]["fix_ratio"]),
+            _delta(
+                f["mix"]["fix_ratio"] * 100,
                 (prior.get("fix_ratio") or 0) * 100 if prior.get("fix_ratio") is not None else None,
-                lower_is_better=True, unit="pp")),
-        ("In progress now", str(len(f["wip"])),
-         _delta(len(f["wip"]), prior.get("wip_count"), lower_is_better=True)),
-        ("Queued (Todo)", str(f["queue"]["size"]),
-         _delta(f["queue"]["size"], prior.get("queue_size"))),
-        ("Backlog", str(f["backlog"]["size"]),
-         _delta(f["backlog"]["size"], prior.get("backlog_size"), lower_is_better=True)),
+                lower_is_better=True,
+                unit="pp",
+            ),
+        ),
+        (
+            "In progress now",
+            str(len(f["wip"])),
+            _delta(len(f["wip"]), prior.get("wip_count"), lower_is_better=True),
+        ),
+        (
+            "Queued (Todo)",
+            str(f["queue"]["size"]),
+            _delta(f["queue"]["size"], prior.get("queue_size")),
+        ),
+        (
+            "Backlog",
+            str(f["backlog"]["size"]),
+            _delta(f["backlog"]["size"], prior.get("backlog_size"), lower_is_better=True),
+        ),
     ]
-    out = ["| Metric | This period | vs. previous report |",
-           "| --- | --- | --- |"]
+    out = ["| Metric | This period | vs. previous report |", "| --- | --- | --- |"]
     out += [f"| {label} | {value} | {change} |" for label, value, change in rows]
     if not f["prior"]:
         out.append("")
@@ -285,14 +319,14 @@ def _shipped(f):
         out.append(f"{epic} — {len(cards)} card{'s' if len(cards) != 1 else ''}")
         out.append("")
         for card in cards:
-            bits = [card["record_type"].title(),
-                    card["assignee"] or "unassigned",
-                    _days(card["lead_days"])]
+            bits = [
+                card["record_type"].title(),
+                card["assignee"] or "unassigned",
+                _days(card["lead_days"]),
+            ]
             if card["comments"]:
-                bits.append(f"{card['comments']} comment"
-                            f"{'s' if card['comments'] != 1 else ''}")
-            out.append(f"- #{card['id']} {_escape(card['title'])}  \n"
-                       f"  _{' · '.join(bits)}_")
+                bits.append(f"{card['comments']} comment{'s' if card['comments'] != 1 else ''}")
+            out.append(f"- #{card['id']} {_escape(card['title'])}  \n  _{' · '.join(bits)}_")
         out.append("")
     return "\n".join(out).rstrip()
 
@@ -311,8 +345,9 @@ def _delivery_profile(f):
     ]
     width = max(len(b["label"]) for b in lead["distribution"])
     for bucket in lead["distribution"]:
-        out.append(f"{bucket['label']:<{width}}  {_bar(bucket['count'], biggest)}  "
-                   f"{bucket['count']}")
+        out.append(
+            f"{bucket['label']:<{width}}  {_bar(bucket['count'], biggest)}  {bucket['count']}"
+        )
     out.append("```")
     out += [
         "",
@@ -372,14 +407,22 @@ def _flow_health(f):
 
     queue, backlog = f["queue"], f["backlog"]
     out.append("")
-    out.append(f"Queue — {queue['size']} card"
-               f"{'s' if queue['size'] != 1 else ''} in Todo"
-               + (f", median age {_days(queue['median_age_days'], 0)}"
-                  if queue["median_age_days"] is not None else "") + ".")
+    out.append(
+        f"Queue — {queue['size']} card"
+        f"{'s' if queue['size'] != 1 else ''} in Todo"
+        + (
+            f", median age {_days(queue['median_age_days'], 0)}"
+            if queue["median_age_days"] is not None
+            else ""
+        )
+        + "."
+    )
     rate = f["throughput"]["per_week"]
     if rate and queue["size"]:
-        out.append(f"  At this period's rate of {rate:.1f} cards a week, the current "
-                   f"queue would drain in about {queue['size'] / rate:.1f} weeks.")
+        out.append(
+            f"  At this period's rate of {rate:.1f} cards a week, the current "
+            f"queue would drain in about {queue['size'] / rate:.1f} weeks."
+        )
 
     out.append("")
     line = f"Backlog — {backlog['size']} card{'s' if backlog['size'] != 1 else ''}"
@@ -389,21 +432,24 @@ def _flow_health(f):
         line += f", oldest {_days(backlog['oldest_days'], 0)}"
     out.append(line + ".")
     if backlog["stale_count"]:
-        out.append(f"  {backlog['stale_count']} of them "
-                   f"({_pct(backlog['stale_share'])}) have not been touched in 30 days.")
+        out.append(
+            f"  {backlog['stale_count']} of them "
+            f"({_pct(backlog['stale_share'])}) have not been touched in 30 days."
+        )
 
     trailing = f["throughput"]["trailing_weeks"]
     if any(trailing):
         biggest = max(trailing)
-        out += ["", "Cards closed per week, trailing eight weeks (oldest first):",
-                "", "```"]
+        out += ["", "Cards closed per week, trailing eight weeks (oldest first):", "", "```"]
         for index, count in enumerate(trailing):
             label = "this week" if index == len(trailing) - 1 else f"-{len(trailing) - 1 - index}w"
             out.append(f"{label:>10}  {_bar(count, biggest)}  {count}")
         out.append("```")
         out.append("")
-        out.append("_Counts every card closed, including those archived in earlier "
-                   "periods, so it reads across reports rather than within one._")
+        out.append(
+            "_Counts every card closed, including those archived in earlier "
+            "periods, so it reads across reports rather than within one._"
+        )
     return "\n".join(out)
 
 
@@ -411,30 +457,40 @@ def _composition(f):
     out = ["By owner", ""]
     biggest = max((row["count"] for row in f["by_assignee"]), default=0)
     for row in f["by_assignee"]:
-        out.append(f"- `{_bar(row['count'], biggest, 16)}` {row['name']} — "
-                   f"{row['count']} ({_pct(row['share'])})")
+        out.append(
+            f"- `{_bar(row['count'], biggest, 16)}` {row['name']} — "
+            f"{row['count']} ({_pct(row['share'])})"
+        )
 
     out += ["", "By originator", ""]
     biggest = max((row["count"] for row in f["by_reporter"]), default=0)
     for row in f["by_reporter"]:
-        out.append(f"- `{_bar(row['count'], biggest, 16)}` {row['name']} — "
-                   f"{row['count']} ({_pct(row['share'])})")
+        out.append(
+            f"- `{_bar(row['count'], biggest, 16)}` {row['name']} — "
+            f"{row['count']} ({_pct(row['share'])})"
+        )
 
     mix = f["mix"]
-    out += ["", f"Record type — {mix['build']} Build"
-            f"{'s' if mix['build'] != 1 else ''}, {mix['fix']} Fix"
-            f"{'es' if mix['fix'] != 1 else ''} ({_pct(mix['fix_ratio'])} rework)."]
+    out += [
+        "",
+        f"Record type — {mix['build']} Build"
+        f"{'s' if mix['build'] != 1 else ''}, {mix['fix']} Fix"
+        f"{'es' if mix['fix'] != 1 else ''} ({_pct(mix['fix_ratio'])} rework).",
+    ]
 
     discussion = f["discussion"]
-    line = (f"Discussion — {discussion['total']} comment"
-            f"{'s' if discussion['total'] != 1 else ''} across the batch; "
-            f"{discussion['silent']} card"
-            f"{'s' if discussion['silent'] != 1 else ''} closed with none.")
+    line = (
+        f"Discussion — {discussion['total']} comment"
+        f"{'s' if discussion['total'] != 1 else ''} across the batch; "
+        f"{discussion['silent']} card"
+        f"{'s' if discussion['silent'] != 1 else ''} closed with none."
+    )
     out += ["", line]
     most = discussion["most_discussed"]
     if most and most["comments"]:
-        out.append(f"  Most discussed: #{most['id']} {_escape(most['title'])} "
-                   f"({most['comments']}).")
+        out.append(
+            f"  Most discussed: #{most['id']} {_escape(most['title'])} ({most['comments']})."
+        )
     return "\n".join(out)
 
 
@@ -465,39 +521,52 @@ def _data_quality(f):
     ]
     if quality["has_event_log"]:
         coverage = f["cycle_time"]["coverage"]
-        out.append(f"- Transition log present. Cycle time covered "
-                   f"{_pct(coverage)} of the batch.")
+        out.append(f"- Transition log present. Cycle time covered {_pct(coverage)} of the batch.")
     else:
         out.append("- Transition log absent — lead time only.")
     sized = quality["estimates_used"]
-    out.append(f"- Sizes on {quality['estimates_used']} of {n} cards. "
-               + ("Too sparse to compute velocity or forecast accuracy from."
-                  if not n or sized / n < SIZING_COVERAGE_FLOOR
-                  else "Dense enough to reason about sizing."))
+    out.append(
+        f"- Sizes on {quality['estimates_used']} of {n} cards. "
+        + (
+            "Too sparse to compute velocity or forecast accuracy from."
+            if not n or sized / n < SIZING_COVERAGE_FLOOR
+            else "Dense enough to reason about sizing."
+        )
+    )
     if quality["missing_closed_at"]:
-        out.append(f"- {quality['missing_closed_at']} card(s) had no close "
-                   "timestamp; their updated_at was used instead.")
+        out.append(
+            f"- {quality['missing_closed_at']} card(s) had no close "
+            "timestamp; their updated_at was used instead."
+        )
     if quality["missing_created_at"]:
-        out.append(f"- {quality['missing_created_at']} card(s) had no creation "
-                   "timestamp and are excluded from every duration.")
+        out.append(
+            f"- {quality['missing_created_at']} card(s) had no creation "
+            "timestamp and are excluded from every duration."
+        )
     if quality["instant_closes"]:
-        out.append(f"- {quality['instant_closes']} card(s) were created and closed "
-                   "within an hour — logged after the fact, so they pull the "
-                   "median down without representing any forecastable work.")
+        out.append(
+            f"- {quality['instant_closes']} card(s) were created and closed "
+            "within an hour — logged after the fact, so they pull the "
+            "median down without representing any forecastable work."
+        )
     groups = f["batch_close_groups"]
     if groups:
-        out.append(f"- {sum(len(g) for g in groups)} card(s) across "
-                   f"{len(groups)} group(s) share a close timestamp, meaning they "
-                   "were closed in bulk. Their individual durations are "
-                   "approximate.")
+        out.append(
+            f"- {sum(len(g) for g in groups)} card(s) across "
+            f"{len(groups)} group(s) share a close timestamp, meaning they "
+            "were closed in bulk. Their individual durations are "
+            "approximate."
+        )
     return "\n".join(out)
 
 
 def _ledger(f):
     if not f["batch"]:
         return "_Nothing archived._"
-    out = ["| # | Card | Type | Owner | Raised | Closed | Lead | Cycle |",
-           "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+    out = [
+        "| # | Card | Type | Owner | Raised | Closed | Lead | Cycle |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
     for card in sorted(f["batch"], key=lambda c: c["id"]):
         out.append(
             f"| {card['id']} | {_truncate(card['title'], 52)} "
@@ -512,13 +581,14 @@ def _ledger(f):
 # assembly
 # ---------------------------------------------------------------------------
 
+
 def render(f, slug, previous_slug=None, source_note=None):
     """Return the full Markdown note for one report."""
     header = (
-        f'_Period {_date(f["period_start"])} → {_date(f["period_end"])} '
-        f'({f["period_days"]:.0f} days) · '
-        f'{f["throughput"]["count"]} card'
-        f'{"s" if f["throughput"]["count"] != 1 else ""} archived._'
+        f"_Period {_date(f['period_start'])} → {_date(f['period_end'])} "
+        f"({f['period_days']:.0f} days) · "
+        f"{f['throughput']['count']} card"
+        f"{'s' if f['throughput']['count'] != 1 else ''} archived._"
     )
     if previous_slug:
         header += f"\n\n← [[{previous_slug}|Previous report]] · [[_index|All reports]]"
@@ -528,7 +598,7 @@ def render(f, slug, previous_slug=None, source_note=None):
     sections = [
         _frontmatter(f, slug, previous_slug),
         "",
-        f'# Bristol Tickets Report — {_date(f["generated_at"])}',
+        f"# Bristol Tickets Report — {_date(f['generated_at'])}",
         "",
         header,
         "",

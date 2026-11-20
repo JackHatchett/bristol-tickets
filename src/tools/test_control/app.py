@@ -20,10 +20,9 @@ ticket_tools (see its README, item 1).
 """
 
 import os
-import sys
 import sqlite3
+import sys
 from pathlib import Path
-
 
 
 def _project_root() -> Path:
@@ -35,14 +34,13 @@ def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 # ---------------------------------------------------------------------------
 # DB PATH RESOLUTION (mirrors ticket_tools' canonical rule)
 # ---------------------------------------------------------------------------
+
 
 def _resolve_db_path() -> Path:
     env_db = os.environ.get("TEST_CONTROL_DB")
@@ -130,12 +128,18 @@ CREATE TABLE IF NOT EXISTS control_run_step_item (
 """
 
 DEFAULT_CASES = [
-    ("General", "App launches and connects to its database",
-     "Verify the app opens cleanly and the SQLite connection is live.",
-     "Clean config, no stale lock files."),
-    ("General", "Session data persists across restarts",
-     "Verify pass/fail status and notes survive an app restart.",
-     "At least one cloned session exists."),
+    (
+        "General",
+        "App launches and connects to its database",
+        "Verify the app opens cleanly and the SQLite connection is live.",
+        "Clean config, no stale lock files.",
+    ),
+    (
+        "General",
+        "Session data persists across restarts",
+        "Verify pass/fail status and notes survive an app restart.",
+        "At least one cloned session exists.",
+    ),
 ]
 
 
@@ -211,6 +215,7 @@ def setup_and_provision_workspace() -> sqlite3.Connection:
 # ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     script_directory = Path(__file__).resolve().parent

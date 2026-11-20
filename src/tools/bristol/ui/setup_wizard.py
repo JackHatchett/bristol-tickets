@@ -38,6 +38,9 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
+import config_file  # bristol-local; see module docstring
+import instance
+import payload
 from PySide6.QtCore import QRegularExpression, Qt
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtWidgets import (
@@ -53,14 +56,10 @@ from PySide6.QtWidgets import (
     QWizardPage,
 )
 
-import config_file  # bristol-local; see module docstring
-import instance
-import payload
-
-from .switch import Switch
-from .toggle_list import ToggleList
 from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
+from .switch import Switch
 from .theme import LAYOUT, space, type_size
+from .toggle_list import ToggleList
 
 
 def page_title(text: str) -> str:
@@ -98,7 +97,7 @@ class HeadedPage(QWizardPage):
         super().__init__()
         self.heading = QLabel()
         self.heading.setObjectName("dialogHeading")
-        self.heading.setTextFormat(Qt.RichText)
+        self.heading.setTextFormat(Qt.TextFormat.RichText)
         self.subheading = QLabel()
         self.subheading.setObjectName("formCaption")
         self.subheading.setWordWrap(True)
@@ -110,6 +109,7 @@ class HeadedPage(QWizardPage):
     def setSubTitle(self, text: str) -> None:  # noqa: N802 (Qt name)
         self.subheading.setText(text)
         self.subheading.setVisible(bool(text))
+
 
 SLUG_PATTERN = r"[a-z0-9][a-z0-9_-]*"
 REQUIRED_AGENT = "chief_of_staff"
@@ -154,9 +154,7 @@ def needs_setup(discovered_db: Path | None) -> bool:
 def _shipped_agents(root: Path) -> list[tuple[str, str]]:
     """Every agent in the example config, as (slug, one-line description)."""
     try:
-        example = json.loads(
-            (root / "config" / "config.example.json").read_text(encoding="utf-8")
-        )
+        example = json.loads((root / "config" / "config.example.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return []
     agents = example.get("agents", {})
@@ -172,6 +170,7 @@ def _shipped_agents(root: Path) -> list[tuple[str, str]]:
 # ---------------------------------------------------------------------------
 # A labelled folder picker, used on three pages
 # ---------------------------------------------------------------------------
+
 
 class FolderRow(QWidget):
     def __init__(self, caption: str, clearable: bool = False) -> None:
@@ -209,6 +208,7 @@ class FolderRow(QWidget):
 # ---------------------------------------------------------------------------
 # Pages
 # ---------------------------------------------------------------------------
+
 
 def default_slug() -> str:
     """The operating system's short user name, reduced to the allowed shape."""
@@ -277,9 +277,7 @@ class InstancePage(HeadedPage):
         opening_slug = existing.name if existing is not None else default_slug()
 
         self.slug_edit = QLineEdit(opening_slug)
-        self.slug_edit.setValidator(
-            QRegularExpressionValidator(QRegularExpression(SLUG_PATTERN))
-        )
+        self.slug_edit.setValidator(QRegularExpressionValidator(QRegularExpression(SLUG_PATTERN)))
         self.slug_edit.textChanged.connect(self._on_slug_changed)
         self.slug_edit.inputRejected.connect(self._on_input_rejected)
 
@@ -321,8 +319,7 @@ class InstancePage(HeadedPage):
         )
 
     def _on_input_rejected(self) -> None:
-        """Show what the field will accept, once a key has been refused.
-        """
+        """Show what the field will accept, once a key has been refused."""
         self.rejected_hint.setVisible(True)
 
     def _on_slug_changed(self) -> None:
@@ -357,17 +354,19 @@ class InstancePage(HeadedPage):
         """Say the folder contains an installation, and offer to adopt it."""
         if not self.adopting():
             return True
-        return bool(choose(
-            self, "This folder already contains an installation",
-            f"{self.instance_dir()} already contains a board:\n\n"
-            f"{board_path(self.instance_dir())}\n\n"
-            "Setup can adopt it. Nothing inside it is read or changed, no "
-            "schema runs against that board, and its configuration is left as "
-            "it stands.",
-            [("Choose another folder", ORDINARY, False),
-             ("Adopt it", PRIMARY, True)],
-            default_index=1,
-        ))
+        return bool(
+            choose(
+                self,
+                "This folder already contains an installation",
+                f"{self.instance_dir()} already contains a board:\n\n"
+                f"{board_path(self.instance_dir())}\n\n"
+                "Setup can adopt it. Nothing inside it is read or changed, no "
+                "schema runs against that board, and its configuration is left as "
+                "it stands.",
+                [("Choose another folder", ORDINARY, False), ("Adopt it", PRIMARY, True)],
+                default_index=1,
+            )
+        )
 
 
 class AgentsPage(HeadedPage):
@@ -393,12 +392,16 @@ class AgentsPage(HeadedPage):
         for slug, description in _shipped_agents(root):
             required = slug == REQUIRED_AGENT
             if required:
-                description = " ".join(part for part in (
-                    description,
-                    "Always installed: it is the only agent allowed to change "
-                    "how any of them work.") if part)
-            self.agents.add(slug, True, detail=description or "",
-                            locked=required)
+                description = " ".join(
+                    part
+                    for part in (
+                        description,
+                        "Always installed: it is the only agent allowed to change "
+                        "how any of them work.",
+                    )
+                    if part
+                )
+            self.agents.add(slug, True, detail=description or "", locked=required)
         self.agents.turned.connect(lambda *_: self.completeChanged.emit())
 
         layout = page_layout(self)
@@ -426,8 +429,7 @@ class IntegrationsPage(HeadedPage):
         self.zotero = FolderRow("Choose your Zotero data folder", clearable=True)
 
         zotero_label = QLabel(
-            "Zotero data folder — your reference library. Skip this if you do "
-            "not use Zotero."
+            "Zotero data folder — your reference library. Skip this if you do not use Zotero."
         )
         zotero_label.setWordWrap(True)
 
@@ -443,20 +445,20 @@ class IntegrationsPage(HeadedPage):
 class SummaryPage(HeadedPage):
     """What Finish will write, and which installation the app opens after it."""
 
-    def __init__(self, wizard: "SetupWizard") -> None:
+    def __init__(self, wizard: SetupWizard) -> None:
         super().__init__()
         self._wizard = wizard
         self.setTitle(page_title("Ready to set up"))
         self.body = QLabel()
         self.body.setWordWrap(True)
-        self.body.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.body.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         self.take_over = Switch("Open this installation when Bristol Tickets starts")
         self.take_over.setChecked(True)
         self.take_over.toggled.connect(lambda _on: self._render())
         self.pointer_note = QLabel()
         self.pointer_note.setWordWrap(True)
-        self.pointer_note.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.pointer_note.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         layout = page_layout(self)
         layout.addWidget(self.body)
@@ -475,20 +477,16 @@ class SummaryPage(HeadedPage):
         taking_over = self.take_over.isChecked()
 
         if w.instance_page.adopting():
-            self.setSubTitle(
-                "This installation already exists. Nothing in it is changed."
-            )
+            self.setSubTitle("This installation already exists. Nothing in it is changed.")
             lines = [
                 f"Installation: {slug}",
                 f"Data folder: {instance_dir}",
-                f"Board: {board_path(instance_dir)} — already there, and left "
-                f"as it is",
-                f"Configuration: {config_local_path(w.root)} — left as it "
-                f"stands",
+                f"Board: {board_path(instance_dir)} — already there, and left as it is",
+                f"Configuration: {config_local_path(w.root)} — left as it stands",
                 "",
                 "The only file Finish writes is the pointer below."
-                if taking_over else
-                "Finish writes nothing: the installation is already set up and "
+                if taking_over
+                else "Finish writes nothing: the installation is already set up and "
                 "the pointer is being left alone.",
             ]
         else:
@@ -507,11 +505,9 @@ class SummaryPage(HeadedPage):
                 "the configuration. Cancel writes nothing.",
             ]
         self.body.setText("\n".join(lines))
-        self.pointer_note.setText("\n".join(self._pointer_lines(slug, instance_dir,
-                                                                taking_over)))
+        self.pointer_note.setText("\n".join(self._pointer_lines(slug, instance_dir, taking_over)))
 
-    def _pointer_lines(self, slug: str, instance_dir: Path,
-                       taking_over: bool) -> list[str]:
+    def _pointer_lines(self, slug: str, instance_dir: Path, taking_over: bool) -> list[str]:
         """Which installation the app opens afterwards, and which it stops opening.
 
         Both sides are named as an installation folder, the same shape the
@@ -520,26 +516,25 @@ class SummaryPage(HeadedPage):
         """
         current_slug = str(instance.read().get("instance_slug") or "").strip()
         current_dir = pointed_instance_dir()
-        current_name = (f"{current_slug} ({current_dir})" if current_dir
-                        else current_slug)
+        current_name = f"{current_slug} ({current_dir})" if current_dir else current_slug
         same = current_dir is not None and current_dir == instance_dir
 
         if taking_over:
             if same:
-                head = (f"Bristol Tickets already opens {current_name}, and "
-                        f"goes on opening it.")
+                head = f"Bristol Tickets already opens {current_name}, and goes on opening it."
             elif not current_slug:
                 head = f"Bristol Tickets opens {slug} ({instance_dir}) from now on."
             else:
-                head = (f"Bristol Tickets opens {current_name} today. After "
-                        f"Finish it opens {slug} ({instance_dir}) instead, and "
-                        f"stops opening {current_name}.")
+                head = (
+                    f"Bristol Tickets opens {current_name} today. After "
+                    f"Finish it opens {slug} ({instance_dir}) instead, and "
+                    f"stops opening {current_name}."
+                )
             return [head, f"Written to: {instance.pointer_path()}"]
 
         if same:
             return [
-                f"Bristol Tickets goes on opening {current_name}, which is this "
-                f"installation.",
+                f"Bristol Tickets goes on opening {current_name}, which is this installation.",
                 f"Left as it is: {instance.pointer_path()}",
             ]
         if current_slug:
@@ -561,23 +556,30 @@ class SummaryPage(HeadedPage):
 # The wizard
 # ---------------------------------------------------------------------------
 
+
 class SetupWizard(QWizard):
     def __init__(self, root: Path, parent=None) -> None:
         super().__init__(parent)
         self.root = root
         self.db_path: Path | None = None
         self.setWindowTitle("Bristol Tickets — Setup")
-        self.setWizardStyle(QWizard.ModernStyle)
-        self.setOption(QWizard.NoBackButtonOnStartPage, True)
+        self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
+        self.setOption(QWizard.WizardOption.NoBackButtonOnStartPage, True)
         # A Mac assistant's words and order, whatever wizard style draws it:
         # Cancel, then Go Back, then the button that carries the run forward.
-        self.setButtonText(QWizard.CancelButton, "Cancel")
-        self.setButtonText(QWizard.BackButton, "Go Back")
-        self.setButtonText(QWizard.NextButton, "Continue")
-        self.setButtonText(QWizard.FinishButton, "Finish")
-        self.setButtonLayout([QWizard.Stretch, QWizard.CancelButton,
-                              QWizard.BackButton, QWizard.NextButton,
-                              QWizard.FinishButton])
+        self.setButtonText(QWizard.WizardButton.CancelButton, "Cancel")
+        self.setButtonText(QWizard.WizardButton.BackButton, "Go Back")
+        self.setButtonText(QWizard.WizardButton.NextButton, "Continue")
+        self.setButtonText(QWizard.WizardButton.FinishButton, "Finish")
+        self.setButtonLayout(
+            [
+                QWizard.WizardButton.Stretch,
+                QWizard.WizardButton.CancelButton,
+                QWizard.WizardButton.BackButton,
+                QWizard.WizardButton.NextButton,
+                QWizard.WizardButton.FinishButton,
+            ]
+        )
         self.setMinimumSize(LAYOUT["wizard_min_w"], LAYOUT["wizard_min_h"])
 
         self.instance_page = InstancePage(root)
@@ -591,7 +593,7 @@ class SetupWizard(QWizard):
 
         # The button that carries the run forward takes the app's primary rank;
         # the rest keep the ordinary one.
-        for role in (QWizard.NextButton, QWizard.FinishButton):
+        for role in (QWizard.WizardButton.NextButton, QWizard.WizardButton.FinishButton):
             button = self.button(role)
             if button is not None:
                 button.setObjectName("globalCreateBtn")
@@ -623,10 +625,11 @@ class SetupWizard(QWizard):
         config_path = config_local_path(self.root)
         if config_path.exists():
             if not confirm(
-                self, "Replace your configuration",
-                f"{config_path} already exists.\n\n"
-                f"Finishing setup replaces it with your answers.",
-                "Replace it", destructive=True,
+                self,
+                "Replace your configuration",
+                f"{config_path} already exists.\n\nFinishing setup replaces it with your answers.",
+                "Replace it",
+                destructive=True,
             ):
                 return
 
@@ -645,9 +648,10 @@ class SetupWizard(QWizard):
             return
         super().accept()
 
-    def _report(self, exc: "SetupStepError") -> None:
+    def _report(self, exc: SetupStepError) -> None:
         notify(
-            self, "Setup failed",
+            self,
+            "Setup failed",
             f"Setup could not {exc.step}.\n\n{exc.remedy}\n\n"
             f"Nothing this run created was left behind.\n\n"
             f"Details: {exc.cause}",
@@ -657,6 +661,7 @@ class SetupWizard(QWizard):
 # ---------------------------------------------------------------------------
 # Writing the installation
 # ---------------------------------------------------------------------------
+
 
 def _substitute(value, mapping: list[tuple[str, str]]):
     """Every placeholder in the example config, replaced throughout."""
@@ -682,12 +687,11 @@ def _drop_env_values_containing(config: dict, token: str) -> None:
                 del env[key]
 
 
-def build_config(root: Path, instance_dir: Path, slug: str, agents: list[str],
-                 notebook: str, zotero: str) -> dict:
+def build_config(
+    root: Path, instance_dir: Path, slug: str, agents: list[str], notebook: str, zotero: str
+) -> dict:
     """The example config with this installation's answers filled in."""
-    example = json.loads(
-        (root / "config" / "config.example.json").read_text(encoding="utf-8")
-    )
+    example = json.loads((root / "config" / "config.example.json").read_text(encoding="utf-8"))
 
     inside_repo = instance_dir == root / "data" / slug
     data_token = f"data/{slug}" if inside_repo else str(instance_dir)
@@ -709,11 +713,12 @@ def build_config(root: Path, instance_dir: Path, slug: str, agents: list[str],
     if zotero:
         mapping.append((ZOTERO_TOKEN, zotero))
 
-    config = _substitute(example, mapping)
+    config: dict = _substitute(example, mapping)
 
     config["active_agent"] = "chief_of_staff" if "chief_of_staff" in agents else agents[0]
     config["agents"] = {
-        key: body for key, body in config.get("agents", {}).items()
+        key: body
+        for key, body in config.get("agents", {}).items()
         if key == "_notes" or key in agents
     }
 
@@ -743,8 +748,7 @@ def _declared_dirs(root: Path, config: dict, instance_dir: Path) -> list[Path]:
     # and the folders attached to it.
     nb = config.get("markdown_notebook") or {}
     notes = Path(str(nb.get("notes_dir", ""))).expanduser()
-    if nb.get("notes_dir") and notes.is_absolute() and \
-            instance_dir in notes.parents:
+    if nb.get("notes_dir") and notes.is_absolute() and instance_dir in notes.parents:
         dirs.append(notes)
         dirs += [notes / f for f in nb.get("folders") or []]
     for body in config.get("agents", {}).values():
@@ -780,8 +784,7 @@ def _step(step: str, remedy: str):
         raise SetupStepError(step, remedy, exc) from exc
 
 
-def adopt_setup(root: Path, instance_dir: Path, slug: str,
-                write_pointer: bool) -> Path:
+def adopt_setup(root: Path, instance_dir: Path, slug: str, write_pointer: bool) -> Path:
     """Take on an installation that already exists.
 
     Writes the instance pointer and nothing else: no folder is created, no
@@ -789,44 +792,52 @@ def adopt_setup(root: Path, instance_dir: Path, slug: str,
     Returns the path of the adopted board.
     """
     if write_pointer:
-        with _step("write the instance pointer",
-                   "Check that you can write to your user Application Support "
-                   "folder."):
-            instance.write(root, instance_dir.parent, slug,
-                           config_local_path(root))
+        with _step(
+            "write the instance pointer",
+            "Check that you can write to your user Application Support folder.",
+        ):
+            instance.write(root, instance_dir.parent, slug, config_local_path(root))
     return board_path(instance_dir)
 
 
-def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
-                notebook: str, zotero: str, write_pointer: bool = True) -> Path:
+def apply_setup(
+    root: Path,
+    instance_dir: Path,
+    slug: str,
+    agents: list[str],
+    notebook: str,
+    zotero: str,
+    write_pointer: bool = True,
+) -> Path:
     """Create the folders, the database, the configuration and the pointer.
 
     Returns the path of the provisioned board.
     """
-    with _step("read the shipped configuration template",
-               "Check that config/config.example.json is present in your clone "
-               "and is valid JSON."):
-        config = build_config(root, instance_dir, slug, agents, notebook,
-                              zotero)
+    with _step(
+        "read the shipped configuration template",
+        "Check that config/config.example.json is present in your clone and is valid JSON.",
+    ):
+        config = build_config(root, instance_dir, slug, agents, notebook, zotero)
 
     created: list[Path] = []
     placed: list[Path] = []
     db_path = board_path(instance_dir)
     try:
-        with _step("create your data folders",
-                   "Choose a data folder you can write to, then run setup "
-                   "again."):
-            payload.make_dirs(_declared_dirs(root, config, instance_dir),
-                              created)
+        with _step(
+            "create your data folders",
+            "Choose a data folder you can write to, then run setup again.",
+        ):
+            payload.make_dirs(_declared_dirs(root, config, instance_dir), created)
 
-        with _step("provision the board",
-                   "A file at that path may already be open or may not be a "
-                   "database. Close the app using it, or choose another data "
-                   "folder."):
+        with _step(
+            "provision the board",
+            "A file at that path may already be open or may not be a "
+            "database. Close the app using it, or choose another data "
+            "folder.",
+        ):
             schema_file = payload.schema_path(Path(__file__))
             if schema_file is None:
-                raise FileNotFoundError(
-                    "schema.sql is missing, so a board cannot be provisioned")
+                raise FileNotFoundError("schema.sql is missing, so a board cannot be provisioned")
             schema = schema_file.read_text(encoding="utf-8")
             if not db_path.exists():
                 placed.append(db_path)
@@ -841,18 +852,20 @@ def apply_setup(root: Path, instance_dir: Path, slug: str, agents: list[str],
             finally:
                 conn.close()
 
-        with _step("write your configuration",
-                   "Check that you can write to the config/ folder in your "
-                   "clone."):
+        with _step(
+            "write your configuration",
+            "Check that you can write to the config/ folder in your clone.",
+        ):
             target = config_local_path(root)
             if not target.exists():
                 placed.append(target)
             config_path = config_file.write(config, target)
 
         if write_pointer:
-            with _step("write the instance pointer",
-                       "Check that you can write to your user Application "
-                       "Support folder."):
+            with _step(
+                "write the instance pointer",
+                "Check that you can write to your user Application Support folder.",
+            ):
                 instance.write(root, instance_dir.parent, slug, config_path)
     except SetupStepError:
         payload.unmake(created, placed)
@@ -931,10 +944,13 @@ class PlacementDialog(QDialog):
             payload.stage(source, target)
             self.placed = True
         except OSError as exc:
-            notify(self, "Setup failed",
-                   f"Bristol could not be written to {target}.\n\n"
-                   f"Choose a folder you can write to, then try again.\n\n"
-                   f"Details: {exc}")
+            notify(
+                self,
+                "Setup failed",
+                f"Bristol could not be written to {target}.\n\n"
+                f"Choose a folder you can write to, then try again.\n\n"
+                f"Details: {exc}",
+            )
             return
         self.chosen = target
         self.accept()
@@ -953,7 +969,7 @@ def place_project(parent=None) -> tuple[Path | None, bool]:
     if payload.bundled() is None:
         return None, False
     dialog = PlacementDialog(parent)
-    if dialog.exec() != QDialog.Accepted:
+    if dialog.exec() != QDialog.DialogCode.Accepted:
         return None, False
     return dialog.chosen, dialog.placed
 
@@ -983,7 +999,7 @@ class ConnectDialog(QDialog):
         self.instructions = QLabel(payload.connect_instructions(root))
         self.instructions.setWordWrap(True)
         self.instructions.setObjectName("formCaption")
-        self.instructions.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.instructions.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         self.copied = QLabel()
         self.copied.setObjectName("formCaption")
@@ -1013,6 +1029,7 @@ class ConnectDialog(QDialog):
 
     def _copy(self) -> None:
         from PySide6.QtWidgets import QApplication
+
         QApplication.clipboard().setText(self.instructions.text())
         self.copied.setText("Copied.")
 
@@ -1030,7 +1047,7 @@ def run_setup(parent=None) -> Path | None:
             )
         return None
     wizard = SetupWizard(root, parent)
-    if wizard.exec() != QWizard.Accepted:
+    if wizard.exec() != QWizard.DialogCode.Accepted:
         if placed:
             payload.unstage(root)
         return None

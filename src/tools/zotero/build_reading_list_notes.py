@@ -40,7 +40,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import zotero_common as zc  # noqa: E402
+import zotero_common as zc
 
 READ_COLLECTION = "Books I've Read"
 OWNED_COLLECTION = "Owned"
@@ -207,9 +207,7 @@ def render(name, coll_key, entries, read_ids, ticks) -> str:
         done = ticks[key] if key in ticks else item_id in read_ids
         box = "x" if done else " "
         who = f" — {author}" if author else ""
-        lines.append(
-            f"- [{box}] **{title}**{who} · [Zotero](zotero://select/library/items/{key})"
-        )
+        lines.append(f"- [{box}] **{title}**{who} · [Zotero](zotero://select/library/items/{key})")
     lines.append("")
     return "\n".join(lines)
 
@@ -239,8 +237,15 @@ def main():
             ticked = body.count("- [x]")
             if not args.dry_run:
                 path.write_text(body, encoding="utf-8")
-            reports.append((row["collectionName"], len(entries), ticked, path.name,
-                            "updated" if ticks else "new"))
+            reports.append(
+                (
+                    row["collectionName"],
+                    len(entries),
+                    ticked,
+                    path.name,
+                    "updated" if ticks else "new",
+                )
+            )
     finally:
         conn.close()
 

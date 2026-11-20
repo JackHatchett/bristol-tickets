@@ -44,10 +44,12 @@ Mechanism only — no personal paths, no agent behaviour.
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
-from PySide6.QtCore import QUrl, Qt
+import config_file  # bristol-local: the one config.local.json reader/writer
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QComboBox,
@@ -62,15 +64,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-import config_file  # bristol-local: the one config.local.json reader/writer
-
-from .segmented import SegmentedControl
 from .dialogs import RowList, add_button, as_sheet, confirm, notify
 from .growing_edit import GrowingTextEdit
+from .segmented import SegmentedControl
 from .theme import LAYOUT, space
 
 MAX_LABEL_CHARS = 72  # where a long URI is shortened in a confirm message;
-                      # on-screen rows elide at the width they are given instead
+# on-screen rows elide at the width they are given instead
 
 # How a ticket link opens its row. A plain relation says nothing and leads with
 # the ticket number; a dependency has to say which way it runs before anything
@@ -118,8 +118,13 @@ def _issue_ends(near: int, far: int, relation: str) -> tuple[int, int, str]:
     return lo, hi, "related"
 
 
-def add_issue_link(conn: sqlite3.Connection, task_id: int, other_id: int,
-                   author: str = "user", relation: str = "related") -> str | None:
+def add_issue_link(
+    conn: sqlite3.Connection,
+    task_id: int,
+    other_id: int,
+    author: str = "user",
+    relation: str = "related",
+) -> str | None:
     """Link two tickets. Returns None on success, or a message explaining the
     refusal (self-link, missing ticket, already linked in the same way).
 
@@ -158,8 +163,9 @@ def add_issue_link(conn: sqlite3.Connection, task_id: int, other_id: int,
     return None
 
 
-def add_uri_link(conn: sqlite3.Connection, task_id: int, uri: str,
-                 label: str | None = None, author: str = "user") -> str | None:
+def add_uri_link(
+    conn: sqlite3.Connection, task_id: int, uri: str, label: str | None = None, author: str = "user"
+) -> str | None:
     """Attach an address to a ticket. Returns None on success, else a message."""
     uri = (uri or "").strip()
     if not uri:
@@ -204,25 +210,36 @@ def list_links(conn: sqlite3.Connection, task_id: int | None) -> list[dict]:
             relation = "blocks" if near_is_first else "blocked-by"
         else:
             relation = "related"
-        out.append({
-            "id": link_id, "kind": "issue", "relation": relation,
-            "other_id": far_id,
-            "other_title": far_title or "(missing ticket)",
-            "uri": None, "label": None,
-        })
+        out.append(
+            {
+                "id": link_id,
+                "kind": "issue",
+                "relation": relation,
+                "other_id": far_id,
+                "other_title": far_title or "(missing ticket)",
+                "uri": None,
+                "label": None,
+            }
+        )
     try:
         rows = conn.execute(
-            "SELECT id, uri, label FROM task_link "
-            "WHERE kind='uri' AND task_id=? ORDER BY id",
+            "SELECT id, uri, label FROM task_link WHERE kind='uri' AND task_id=? ORDER BY id",
             (task_id,),
         ).fetchall()
     except sqlite3.OperationalError:
         rows = []
     for link_id, uri, label in rows:
-        out.append({
-            "id": link_id, "kind": "uri", "relation": None, "other_id": None,
-            "other_title": None, "uri": uri, "label": label,
-        })
+        out.append(
+            {
+                "id": link_id,
+                "kind": "uri",
+                "relation": None,
+                "other_id": None,
+                "other_title": None,
+                "uri": uri,
+                "label": label,
+            }
+        )
     return out
 
 
@@ -259,14 +276,16 @@ def carried_summaries(conn: sqlite3.Connection, task_id: int | None) -> list[dic
         ).fetchone()
         if last is None or not (last[1] or "").strip():
             continue
-        out.append({
-            "id": blocker_id,
-            "title": title or "(missing ticket)",
-            "closed_at": closed_at,
-            "author": last[0] or "",
-            "body": last[1],
-            "at": last[2],
-        })
+        out.append(
+            {
+                "id": blocker_id,
+                "title": title or "(missing ticket)",
+                "closed_at": closed_at,
+                "author": last[0] or "",
+                "body": last[1],
+                "at": last[2],
+            }
+        )
     return out
 
 
@@ -281,9 +300,7 @@ def remove_links_for_task(conn: sqlite3.Connection, task_id: int) -> None:
     """Drop every link touching a task — called when the task itself is deleted,
     so no link is left pointing at a ticket that no longer exists."""
     try:
-        conn.execute(
-            "DELETE FROM task_link WHERE task_id=? OR other_id=?", (task_id, task_id)
-        )
+        conn.execute("DELETE FROM task_link WHERE task_id=? OR other_id=?", (task_id, task_id))
     except sqlite3.OperationalError:
         pass
 
@@ -325,12 +342,13 @@ class _ElideLabel(QLabel):
     def __init__(self, text: str, parent=None) -> None:
         super().__init__(parent)
         self._full = text
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
 
-    def resizeEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        self.setText(self.fontMetrics().elidedText(
-            self._full, Qt.ElideRight, self.width()))
+        self.setText(
+            self.fontMetrics().elidedText(self._full, Qt.TextElideMode.ElideRight, self.width())
+        )
 
 
 class _ElideButton(QPushButton):
@@ -340,12 +358,13 @@ class _ElideButton(QPushButton):
     def __init__(self, text: str, parent=None) -> None:
         super().__init__(parent)
         self._full = text
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
 
-    def resizeEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        self.setText(self.fontMetrics().elidedText(
-            self._full, Qt.ElideRight, self.width()))
+        self.setText(
+            self.fontMetrics().elidedText(self._full, Qt.TextElideMode.ElideRight, self.width())
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -374,7 +393,7 @@ class AddLinkDialog(QDialog):
 
         self.kind = SegmentedControl(LINK_KINDS, "issue")
         self.kind.setAccessibleName("What to link to")
-        v.addWidget(self.kind, 0, Qt.AlignLeft)
+        v.addWidget(self.kind, 0, Qt.AlignmentFlag.AlignLeft)
 
         self.issue_fields = QWidget()
         issue_column = QVBoxLayout(self.issue_fields)
@@ -403,9 +422,7 @@ class AddLinkDialog(QDialog):
         uri_row = QHBoxLayout()
         uri_row.addWidget(QLabel("Address"))
         self.uri_input = GrowingTextEdit(max_lines=4)
-        self.uri_input.setPlaceholderText(
-            "https://…   zotero://…   obsidian://…   or a file path"
-        )
+        self.uri_input.setPlaceholderText("https://…   zotero://…   obsidian://…   or a file path")
         uri_row.addWidget(self.uri_input, 1)
         uri_column.addLayout(uri_row)
         label_row = QHBoxLayout()
@@ -416,8 +433,10 @@ class AddLinkDialog(QDialog):
         uri_column.addLayout(label_row)
         v.addWidget(self.uri_fields)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.add_button = buttons.button(QDialogButtonBox.Ok)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        self.add_button = buttons.button(QDialogButtonBox.StandardButton.Ok)
         self.add_button.setText("Add Link")
         self.add_button.setObjectName("globalCreateBtn")
         buttons.accepted.connect(self.accept)
@@ -445,13 +464,19 @@ class AddLinkDialog(QDialog):
                 return ("issue", int(raw), "", "", relation)
             except ValueError:
                 return ("issue", None, "", "", relation)
-        return ("uri", None, self.uri_input.text().strip(),
-                self.label_input.text().strip(), "related")
+        return (
+            "uri",
+            None,
+            self.uri_input.text().strip(),
+            self.label_input.text().strip(),
+            "related",
+        )
 
 
 # ---------------------------------------------------------------------------
 # Reusable widget — embedded by both the record dialog and the inspector
 # ---------------------------------------------------------------------------
+
 
 class LinkBar(QWidget):
     """One full-width row per link in one rounded list, and an Add Link button
@@ -469,14 +494,19 @@ class LinkBar(QWidget):
     it, issue rows are plain text.
     """
 
-    def __init__(self, conn: sqlite3.Connection, parent=None,
-                 allow_pending: bool = False, author: str = "user") -> None:
+    def __init__(
+        self,
+        conn: sqlite3.Connection,
+        parent=None,
+        allow_pending: bool = False,
+        author: str = "user",
+    ) -> None:
         super().__init__(parent)
         self.conn = conn
         self.task_id: int | None = None
         self.author = author
         self.allow_pending = allow_pending
-        self.on_open_issue = None
+        self.on_open_issue: Callable[[int], object] | None = None
         # Links entered before the ticket exists:
         # (kind, other_id, uri, label, relation).
         self._pending: list[tuple[str, int | None, str, str, str]] = []
@@ -493,9 +523,9 @@ class LinkBar(QWidget):
         layout.addWidget(self.rows)
 
         self.add_btn = add_button(
-            "Add Link", self._prompt,
-            "Link this ticket to another ticket, or to an address")
-        layout.addWidget(self.add_btn, 0, Qt.AlignLeft)
+            "Add Link", self._prompt, "Link this ticket to another ticket, or to an address"
+        )
+        layout.addWidget(self.add_btn, 0, Qt.AlignmentFlag.AlignLeft)
 
     # ----- host API ---------------------------------------------------------
 
@@ -530,24 +560,25 @@ class LinkBar(QWidget):
 
     def _prompt(self) -> None:
         dlg = AddLinkDialog(self)
-        if dlg.exec() != QDialog.Accepted:
+        if dlg.exec() != QDialog.DialogCode.Accepted:
             return
         kind, issue_id, uri, label, relation = dlg.result_values()
 
         if kind == "issue":
             if issue_id is None:
-                notify(self, "Add link",
-                       "A ticket link needs a ticket number.")
+                notify(self, "Add link", "A ticket link needs a ticket number.")
                 return
             if self.task_id is None:
-                if issue_id == 0 or self.conn.execute(
-                        "SELECT 1 FROM task WHERE id=?", (issue_id,)).fetchone() is None:
+                if (
+                    issue_id == 0
+                    or self.conn.execute("SELECT 1 FROM task WHERE id=?", (issue_id,)).fetchone()
+                    is None
+                ):
                     notify(self, "Add link", f"There is no ticket #{issue_id}.")
                     return
                 self._pending.append(("issue", issue_id, "", "", relation))
             else:
-                problem = add_issue_link(self.conn, self.task_id, issue_id,
-                                         self.author, relation)
+                problem = add_issue_link(self.conn, self.task_id, issue_id, self.author, relation)
                 if problem:
                     notify(self, "Add link", problem)
                     return
@@ -565,16 +596,16 @@ class LinkBar(QWidget):
         self._refresh()
 
     def _confirm_remove(self, link_id: int, description: str) -> None:
-        if confirm(self, "Delete link",
-                   f"Remove the link to {description}?",
-                   "Remove", destructive=True):
+        if confirm(
+            self, "Delete link", f"Remove the link to {description}?", "Remove", destructive=True
+        ):
             remove_link(self.conn, link_id)
             self._refresh()
 
     def _confirm_remove_pending(self, index: int, description: str) -> None:
-        if confirm(self, "Delete link",
-                   f"Remove the link to {description}?",
-                   "Remove", destructive=True):
+        if confirm(
+            self, "Delete link", f"Remove the link to {description}?", "Remove", destructive=True
+        ):
             if 0 <= index < len(self._pending):
                 self._pending.pop(index)
             self._refresh()
@@ -589,7 +620,7 @@ class LinkBar(QWidget):
             body = _ElideButton(text)
             body.setObjectName("link")
             body.setFlat(True)
-            body.setCursor(Qt.PointingHandCursor)
+            body.setCursor(Qt.CursorShape.PointingHandCursor)
             body.clicked.connect(lambda _=False: on_click())
         body.setToolTip(tooltip)
         return self.rows.add_row(body, "Remove this link", on_remove)
@@ -604,25 +635,40 @@ class LinkBar(QWidget):
                 text = f"{prefix}#{other} — {link['other_title']}"
                 click = None
                 if callable(self.on_open_issue):
-                    click = (lambda o=other: self.on_open_issue(o))
+
+                    def click(o=other):
+                        return self.on_open_issue(o)
+
                 self._row(
-                    text, f"Ticket #{other}", click,
+                    text,
+                    f"Ticket #{other}",
+                    click,
                     (lambda i=link["id"], d=f"#{other}": self._confirm_remove(i, d)),
                 )
             else:
                 uri = link["uri"] or ""
                 text = link["label"] or uri
                 self._row(
-                    text, uri, (lambda u=uri: open_uri(u)),
-                    (lambda i=link["id"], d=_elide(link["label"] or uri):
-                     self._confirm_remove(i, d)),
+                    text,
+                    uri,
+                    (lambda u=uri: open_uri(u)),
+                    (
+                        lambda i=link["id"], d=_elide(link["label"] or uri): self._confirm_remove(  # noqa: B008 (binds the label as the row is built)
+                            i, d
+                        )
+                    ),
                 )
 
         for idx, (kind, other_id, uri, label, relation) in enumerate(self._pending):
-            text = (f"{_ROW_PREFIX.get(relation, '')}#{other_id} (on save)"
-                    if kind == "issue" else f"{label or uri} (on save)")
+            text = (
+                f"{_ROW_PREFIX.get(relation, '')}#{other_id} (on save)"
+                if kind == "issue"
+                else f"{label or uri} (on save)"
+            )
             desc = f"#{other_id}" if kind == "issue" else _elide(label or uri)
             self._row(
-                text, "Written when this ticket is saved", None,
+                text,
+                "Written when this ticket is saved",
+                None,
                 (lambda i=idx, d=desc: self._confirm_remove_pending(i, d)),
             )

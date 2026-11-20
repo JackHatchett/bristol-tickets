@@ -30,25 +30,25 @@ class Switch(QAbstractButton):
         super().__init__(parent)
         self.setText(text)
         self.setCheckable(True)
-        self.setCursor(Qt.PointingHandCursor)
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setAccessibleName(text)
-        self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
 
-    def sizeHint(self) -> QSize:  # noqa: N802 (Qt override)
+    def sizeHint(self) -> QSize:
         text = self.fontMetrics().horizontalAdvance(self.text())
         gap = space("md") if self.text() else 0
         return QSize(TRACK_W + gap + text + 2, max(control_height(), TRACK_H))
 
-    def minimumSizeHint(self) -> QSize:  # noqa: N802 (Qt override)
+    def minimumSizeHint(self) -> QSize:
         return self.sizeHint()
 
-    def hitButton(self, pos) -> bool:  # noqa: N802 (Qt override)
+    def hitButton(self, pos) -> bool:
         return self.rect().contains(pos)
 
-    def paintEvent(self, _event) -> None:  # noqa: N802 (Qt override)
+    def paintEvent(self, _event) -> None:
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         on = self.isChecked()
         enabled = self.isEnabled()
         top = (self.height() - TRACK_H) / 2
@@ -69,13 +69,13 @@ class Switch(QAbstractButton):
 
         size = TRACK_H - 2 * KNOB_INSET
         x = (TRACK_W - KNOB_INSET - size) if on else KNOB_INSET
-        painter.setPen(Qt.NoPen)
+        painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(knob))
         painter.drawEllipse(QRectF(x, top + KNOB_INSET, size, size))
 
         if self.hasFocus():
             painter.setPen(QPen(QColor(C["ACCENT"]), 1))
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
             ring = track.adjusted(-2, -2, 2, 2)
             painter.drawRoundedRect(ring, ring.height() / 2, ring.height() / 2)
 
@@ -83,14 +83,17 @@ class Switch(QAbstractButton):
             painter.setPen(QColor(C["INK"] if enabled else C["DISABLED_TX"]))
             painter.setFont(self.font())
             left = TRACK_W + space("md")
-            painter.drawText(QRectF(left, 0, self.width() - left, self.height()),
-                             Qt.AlignVCenter | Qt.AlignLeft, self.text())
+            painter.drawText(
+                QRectF(left, 0, self.width() - left, self.height()),
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+                self.text(),
+            )
         painter.end()
 
-    def enterEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def enterEvent(self, event) -> None:
         self.update()
         super().enterEvent(event)
 
-    def leaveEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def leaveEvent(self, event) -> None:
         self.update()
         super().leaveEvent(event)

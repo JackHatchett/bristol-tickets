@@ -76,15 +76,14 @@ class WriteBudget:
 def _post(url, body, token=None):
     """One authenticated call, returning parsed JSON."""
     data = json.dumps(body).encode("utf-8")
-    headers = {"Content-Type": "application/json",
-               "User-Agent": client.USER_AGENT}
+    headers = {"Content-Type": "application/json", "User-Agent": client.USER_AGENT}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     request = urllib.request.Request(url, data=data, headers=headers, method="POST")
     try:
         with urllib.request.urlopen(
-                request, timeout=60,
-                context=client.certificate_authorities()) as response:
+            request, timeout=60, context=client.certificate_authorities()
+        ) as response:
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         detail = error.read().decode("utf-8", "replace")[:300]
@@ -93,8 +92,10 @@ def _post(url, body, token=None):
 
 def sign_in(pds, identifier, password):
     """A session on the account's own data server, from an app password."""
-    payload = _post(f"{pds}/xrpc/com.atproto.server.createSession",
-                    {"identifier": identifier, "password": password})
+    payload = _post(
+        f"{pds}/xrpc/com.atproto.server.createSession",
+        {"identifier": identifier, "password": password},
+    )
     token = payload.get("accessJwt")
     if not token:
         raise client.BlueskyError("the data server returned no session")
@@ -108,10 +109,15 @@ def rkey(uri):
 
 def send_deletes(pds, token, did, collection, uris):
     """One batch of deletes, as one call."""
-    writes = [{"$type": "com.atproto.repo.applyWrites#delete",
-               "collection": collection, "rkey": rkey(uri)} for uri in uris]
-    _post(f"{pds}/xrpc/com.atproto.repo.applyWrites",
-          {"repo": did, "writes": writes}, token=token)
+    writes = [
+        {
+            "$type": "com.atproto.repo.applyWrites#delete",
+            "collection": collection,
+            "rkey": rkey(uri),
+        }
+        for uri in uris
+    ]
+    _post(f"{pds}/xrpc/com.atproto.repo.applyWrites", {"repo": did, "writes": writes}, token=token)
 
 
 def gather(conn, did, pds):
@@ -130,8 +136,7 @@ def gather(conn, did, pds):
         else:
             store.keep_other_records(conn, collection, records)
         waiting = [r["uri"] for r in records]
-        print(f"{collection}: {len(records)} on the account, "
-              f"{len(waiting)} still to remove")
+        print(f"{collection}: {len(records)} on the account, {len(waiting)} still to remove")
         plan.append((collection, waiting))
     return plan
 
@@ -144,10 +149,14 @@ def run(delete=False, budget=None):
     conn = store.connect()
 
     before = client.profile(did)
-    print(f"{handle}: {before.get('followersCount')} followers, "
-          f"{before.get('postsCount')} posts on the profile")
-    print(f"the store contains {store.post_count(conn)} posts and "
-          f"{store.thread_count(conn)} conversations")
+    print(
+        f"{handle}: {before.get('followersCount')} followers, "
+        f"{before.get('postsCount')} posts on the profile"
+    )
+    print(
+        f"the store contains {store.post_count(conn)} posts and "
+        f"{store.thread_count(conn)} conversations"
+    )
 
     plan = gather(conn, did, pds)
     waiting = sum(len(uris) for _, uris in plan)
@@ -160,9 +169,11 @@ def run(delete=False, budget=None):
         return verify(did, pds, before)
 
     password = keychain.require(
-        KEYCHAIN_SERVICE, "app_password",
+        KEYCHAIN_SERVICE,
+        "app_password",
         "Make an app password in the account's settings — it is revocable on "
-        "its own and is never the account password.")
+        "its own and is never the account password.",
+    )
     token = sign_in(pds, handle, password)
     allowance = WriteBudget()
     started = time.monotonic()
@@ -174,7 +185,7 @@ def run(delete=False, budget=None):
             if budget is not None and time.monotonic() - started > budget:
                 stopped_at = f"{collection} with {len(uris) - index} left"
                 break
-            batch = uris[index:index + BATCH]
+            batch = uris[index : index + BATCH]
             allowance.take(len(batch))
             # Written down before it is sent, so an interrupted pass knows.
             store.mark_delete_sent(conn, batch)
@@ -208,21 +219,24 @@ def verify(did, pds, before):
         if attempt < ROUNDS - 1:
             time.sleep(20)
     after = client.profile(did)
-    print(f"followers: {before.get('followersCount')} before, "
-          f"{after.get('followersCount')} after")
+    print(f"followers: {before.get('followersCount')} before, {after.get('followersCount')} after")
     if feed:
-        print("the public view is still serving posts the account no longer "
-              "contains; it catches up on its own, and a later run says whether "
-              "it has.")
+        print(
+            "the public view is still serving posts the account no longer "
+            "contains; it catches up on its own, and a later run says whether "
+            "it has."
+        )
     return 0
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--delete", action="store_true",
-                        help="remove the records rather than listing them")
-    parser.add_argument("--budget", type=float,
-                        help="stop after this many seconds and say what is left")
+    parser.add_argument(
+        "--delete", action="store_true", help="remove the records rather than listing them"
+    )
+    parser.add_argument(
+        "--budget", type=float, help="stop after this many seconds and say what is left"
+    )
     args = parser.parse_args()
     sys.exit(run(delete=args.delete, budget=args.budget))
 

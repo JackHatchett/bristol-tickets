@@ -37,15 +37,15 @@ SOURCE: resolved from config.local.json's `drives.external1` root + "Photos"
   (all year subfolders; runs on your Mac) — never hardcoded.
 """
 
+import argparse
+import csv
+import hashlib
+import json
 import os
 import sys
-import csv
-import json
-import hashlib
-import argparse
-from pathlib import Path
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
 
 
 def _resolve_data_path(relative: str) -> Path:
@@ -73,28 +73,38 @@ def _resolve_external1_path(subfolder: str) -> Path:
         raise SystemExit(f"ERROR: config.local.json not found at {config_path}")
     index = json.loads(config_path.read_text())
     if "external1" not in index.get("drives", {}):
-        raise SystemExit(
-            "ERROR: config.local.json has no 'external1' drive entry."
-        )
+        raise SystemExit("ERROR: config.local.json has no 'external1' drive entry.")
     return Path(os.path.expanduser(index["drives"]["external1"]["path"])) / subfolder
 
 
 # ── CONFIG ──────────────────────────────────────────────────────────────────
-SOURCE        = _resolve_external1_path("Photos")
+SOURCE = _resolve_external1_path("Photos")
 MANIFEST_FILE = _resolve_data_path("system/photo_tools/_dedupe_photos_manifest.csv")
 
 # Files we consider for dedupe. (Exact dupes are exact dupes regardless of type,
 # but we restrict to media so we never touch sidecars/system files by accident.)
-MEDIA_EXTS = {'.heic', '.heif', '.jpg', '.jpeg', '.png', '.gif', '.tiff', '.bmp',
-              '.webp', '.mov', '.mp4', '.m4v'}
-EXT_PRIORITY = {'.heic': 0, '.heif': 1, '.jpg': 2, '.jpeg': 3, '.png': 4}
-DUP_SUFFIX_HINTS = (' copy', ' 1', ' 2', ' 3', '(1)', '(2)', '(3)')
+MEDIA_EXTS = {
+    ".heic",
+    ".heif",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".tiff",
+    ".bmp",
+    ".webp",
+    ".mov",
+    ".mp4",
+    ".m4v",
+}
+EXT_PRIORITY = {".heic": 0, ".heif": 1, ".jpg": 2, ".jpeg": 3, ".png": 4}
+DUP_SUFFIX_HINTS = (" copy", " 1", " 2", " 3", "(1)", "(2)", "(3)")
 
 
 def md5(path: Path) -> str:
     h = hashlib.md5()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(1 << 20), b''):
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
 
@@ -110,7 +120,7 @@ def keeper_score(p: Path):
 def iter_media(root: Path):
     for dirpath, _dirs, files in os.walk(root):
         for name in files:
-            if name.startswith('.'):
+            if name.startswith("."):
                 continue
             p = Path(dirpath) / name
             if p.suffix.lower() in MEDIA_EXTS:
@@ -119,9 +129,12 @@ def iter_media(root: Path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--execute', action='store_true',
-                    help='actually delete the duplicate copies (default: dry-run)')
-    ap.add_argument('--source', default=str(SOURCE))
+    ap.add_argument(
+        "--execute",
+        action="store_true",
+        help="actually delete the duplicate copies (default: dry-run)",
+    )
+    ap.add_argument("--source", default=str(SOURCE))
     args = ap.parse_args()
     root = Path(args.source)
     dry = not args.execute
@@ -130,7 +143,7 @@ def main():
         print(f"ERROR: source not found: {root}  (is the Seagate mounted?)")
         sys.exit(1)
 
-    print(f"\n=== dedupe_photos ===")
+    print("\n=== dedupe_photos ===")
     print(f"Mode:   {'DRY RUN' if dry else 'EXECUTE (delete dups)'}")
     print(f"Source: {root}\n")
 
@@ -143,11 +156,13 @@ def main():
         except OSError:
             continue
         n += 1
-    print(f"Scanned {n} media files; {sum(1 for v in by_size.values() if len(v) > 1)} "
-          f"size-collision groups to hash.")
+    print(
+        f"Scanned {n} media files; {sum(1 for v in by_size.values() if len(v) > 1)} "
+        f"size-collision groups to hash."
+    )
 
     # Pass 2: hash only files that share a size; group by md5.
-    groups = defaultdict(list)   # md5 -> [paths]
+    groups = defaultdict(list)  # md5 -> [paths]
     for size, paths in by_size.items():
         if len(paths) < 2:
             continue
@@ -161,17 +176,17 @@ def main():
 
     removed = kept = 0
     MANIFEST_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(MANIFEST_FILE, 'w', newline='') as fh:
+    with open(MANIFEST_FILE, "w", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(['group', 'action', 'path', 'size_bytes', 'md5', 'timestamp'])
+        w.writerow(["group", "action", "path", "size_bytes", "md5", "timestamp"])
         for gid, ((size, digest), paths) in enumerate(sorted(dup_groups.items()), 1):
             paths_sorted = sorted(paths, key=keeper_score)
             keeper, dups = paths_sorted[0], paths_sorted[1:]
-            ts = datetime.now().isoformat(timespec='seconds')
-            w.writerow([gid, 'KEEP', keeper, size, digest, ts])
+            ts = datetime.now().isoformat(timespec="seconds")
+            w.writerow([gid, "KEEP", keeper, size, digest, ts])
             kept += 1
             for d in dups:
-                w.writerow([gid, 'REMOVE', d, size, digest, ts])
+                w.writerow([gid, "REMOVE", d, size, digest, ts])
                 removed += 1
                 if not dry:
                     try:
@@ -182,11 +197,11 @@ def main():
     freed = sum(size for (size, _), paths in dup_groups.items() for _ in paths[1:])
     print(f"\nDuplicate groups: {len(dup_groups)}")
     print(f"Files to {'remove' if dry else 'removed'}: {removed}  (keepers: {kept})")
-    print(f"Space {'recoverable' if dry else 'freed'}: {freed/1e9:.2f} GB")
+    print(f"Space {'recoverable' if dry else 'freed'}: {freed / 1e9:.2f} GB")
     print(f"Manifest: {MANIFEST_FILE}")
     if dry:
         print("\nDry-run only — nothing deleted. Review the manifest, then --execute.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

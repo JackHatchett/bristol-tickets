@@ -16,14 +16,13 @@ DB discovery, the Kanban model, the next-action precedence and the reason a
 """
 
 import os
-import textwrap
-import sys
 import sqlite3
+import sys
+import textwrap
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import create_tickets  # noqa: E402  (owns the schema and first-use provisioning)
-
+import create_tickets
 
 STATUS_RANK = {"doing": 0, "todo": 1}
 
@@ -31,6 +30,7 @@ STATUS_RANK = {"doing": 0, "todo": 1}
 # ---------------------------------------------------------------------------
 # DB PATH RESOLUTION (canonical)
 # ---------------------------------------------------------------------------
+
 
 def resolve_db_path() -> Path:
     """The shared tickets.db, created empty on first use if it is not there."""
@@ -40,6 +40,7 @@ def resolve_db_path() -> Path:
 # ---------------------------------------------------------------------------
 # Ownership + active-board helpers
 # ---------------------------------------------------------------------------
+
 
 def owned_by(task_row: sqlite3.Row, me: str) -> bool:
     """A task is 'mine' if its assignee is me, or — when it has no explicit
@@ -53,7 +54,6 @@ def owned_by(task_row: sqlite3.Row, me: str) -> bool:
 
 # Under this much free space, a session is told before it starts choosing work.
 LOW_SPACE_BYTES = 500_000_000
-
 
 
 def warn_if_low_on_space() -> None:
@@ -74,10 +74,12 @@ def warn_if_low_on_space() -> None:
     total = stat.f_blocks * stat.f_frsize
     if total <= 0 or free >= LOW_SPACE_BYTES:
         return
-    print(f"!! LOW DISK: {free / 1_000_000:.0f} MB free of "
-          f"{total / 1_000_000_000:.1f} GB on the filesystem this session runs "
-          f"on.\n   At zero, every board write fails and the failure does not "
-          f"mention disk. Clear space before working.\n")
+    print(
+        f"!! LOW DISK: {free / 1_000_000:.0f} MB free of "
+        f"{total / 1_000_000_000:.1f} GB on the filesystem this session runs "
+        f"on.\n   At zero, every board write fails and the failure does not "
+        f"mention disk. Clear space before working.\n"
+    )
 
 
 def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
@@ -94,8 +96,7 @@ def board_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     ).fetchall()
 
 
-def unmet_blockers(conn: sqlite3.Connection,
-                   rows: list[sqlite3.Row]) -> dict[int, list[int]]:
+def unmet_blockers(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> dict[int, list[int]]:
     """{blocked task id -> the ids still blocking it}.
 
     A dependency is a `blocks` link: its task_id must be `done` before its
@@ -117,6 +118,7 @@ def unmet_blockers(conn: sqlite3.Connection,
     ):
         out.setdefault(blocked_id, []).append(blocker_id)
     return out
+
 
 def queue_sort(rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
     """Every `doing` card first, then every `todo` card, each in the board's own
@@ -151,16 +153,18 @@ def my_backlog(conn: sqlite3.Connection, me: str) -> list[sqlite3.Row]:
         "       e.name AS epic, e.owner AS epic_owner "
         "FROM task t LEFT JOIN epic e ON t.epic_id = e.id "
         "WHERE t.stage = 'backlog' "
-        "  AND (e.id IS NULL OR e.status NOT IN (%s))"
-        % ",".join("?" * len(create_tickets.EPIC_STATUS_FINISHED)),
+        "  AND (e.id IS NULL OR e.status NOT IN ({}))".format(
+            ",".join("?" * len(create_tickets.EPIC_STATUS_FINISHED))
+        ),
         tuple(create_tickets.EPIC_STATUS_FINISHED),
     ).fetchall()
     mine = [r for r in rows if owned_by(r, me)]
     return sorted(mine, key=lambda r: (r["sort_order"], r["id"]))
 
 
-def latest_comment_per_task(conn: sqlite3.Connection,
-                            task_ids: list[int]) -> dict[int, sqlite3.Row]:
+def latest_comment_per_task(
+    conn: sqlite3.Connection, task_ids: list[int]
+) -> dict[int, sqlite3.Row]:
     """Most recent issue_log row per task id. issue_log is where task-level
     comments live (both agent notes and USER decisions/direction); nothing
     else in this snapshot reads it, so a user's on-ticket comment is otherwise
@@ -177,14 +181,14 @@ def latest_comment_per_task(conn: sqlite3.Connection,
     except sqlite3.OperationalError:
         return {}
     latest: dict[int, sqlite3.Row] = {}
-    for r in rows:                       # ascending, so last write wins
+    for r in rows:  # ascending, so last write wins
         latest[r["task_id"]] = r
     return latest
 
 
-def print_comments(conn: sqlite3.Connection,
-                   tasks: list[sqlite3.Row],
-                   already: set[int] | None = None) -> set[int]:
+def print_comments(
+    conn: sqlite3.Connection, tasks: list[sqlite3.Row], already: set[int] | None = None
+) -> set[int]:
     """Surface the latest comment on each of `tasks` that has one. User-authored
     latest comments are flagged ⚠ as context to read — they are NOT a priority
     signal and never reroute which task is next (board order decides that).
@@ -195,7 +199,9 @@ def print_comments(conn: sqlite3.Connection,
     if not latest:
         return set()
     shown: set[int] = set()
-    print("\n--- COMMENTS on your active-board tasks (⚠ = user; context to read, NOT a priority signal) ---")
+    print(
+        "\n--- COMMENTS on your active-board tasks (⚠ = user; context to read, NOT a priority signal) ---"
+    )
     for t in tasks:
         c = latest.get(t["id"])
         if not c:
@@ -212,8 +218,7 @@ def print_comments(conn: sqlite3.Connection,
     return shown
 
 
-def print_needs_you(rows: list[sqlite3.Row],
-                    conn: sqlite3.Connection | None = None) -> set[int]:
+def print_needs_you(rows: list[sqlite3.Row], conn: sqlite3.Connection | None = None) -> set[int]:
     """The cards only the user can clear, named rather than left in the queue.
 
     A decision block and a capability block are the two reasons no agent can
@@ -229,8 +234,9 @@ def print_needs_you(rows: list[sqlite3.Row],
     user for a decision), and a question he has to open a card to read is one
     he was not asked.
     """
-    held = [r for r in rows
-            if (r["block_reason"] or "") in create_tickets.BLOCK_REASONS_NEEDING_USER]
+    held = [
+        r for r in rows if (r["block_reason"] or "") in create_tickets.BLOCK_REASONS_NEEDING_USER
+    ]
     if not held:
         return set()
     print("\n--- NEEDS YOU (blocked on something no agent can clear) ---")
@@ -238,20 +244,23 @@ def print_needs_you(rows: list[sqlite3.Row],
     for r in held:
         print(f"  #{r['id']} [{r['block_reason']}] {r['title']}")
         if r["id"] in asked:
-            for line in textwrap.wrap(" ".join(asked[r["id"]]["body"].split()),
-                                      76):
+            for line in textwrap.wrap(" ".join(asked[r["id"]]["body"].split()), 76):
                 print(f"      {line}")
     return set(asked)
 
 
 def tier_word(tier: str | None) -> str:
     """A card's tier as the word a reader sees; a card not yet rated says so."""
-    return {"max": "Max", "standard": "Standard"}.get((tier or "").lower(),
-                                                      tier or "no tier")
+    return {"max": "Max", "standard": "Standard"}.get((tier or "").lower(), tier or "no tier")
 
 
-def fmt(r: sqlite3.Row, blockers: dict | None = None,
-        position: int | None = None, *, show_owner: bool = False) -> str:
+def fmt(
+    r: sqlite3.Row,
+    blockers: dict | None = None,
+    position: int | None = None,
+    *,
+    show_owner: bool = False,
+) -> str:
     # A blocker is named on the card so the agent sees it before it acts, and it
     # is a stop rather than a warning: the card keeps its place in the queue, and
     # the agent that reaches it says what would clear it instead of starting it,
@@ -271,8 +280,10 @@ def fmt(r: sqlite3.Row, blockers: dict | None = None,
         who = (r["assignee"] or "").strip() or f"(epic:{r['epic_owner']})"
         flag = f"  <{who}>{flag}"
     pos = f"{position:>2}." if position is not None else "   "
-    return (f"  {pos} {r['status']:5} {tier_word(r['tier']):8} {r['estimate'] or '-':>2}  "
-            f"[{r['epic']}] {r['title']}{flag}")
+    return (
+        f"  {pos} {r['status']:5} {tier_word(r['tier']):8} {r['estimate'] or '-':>2}  "
+        f"[{r['epic']}] {r['title']}{flag}"
+    )
 
 
 def task_image_paths(conn: sqlite3.Connection, task_id: int, db_path) -> list[str]:
@@ -367,13 +378,11 @@ def carried_summaries(conn: sqlite3.Connection, task_id: int) -> list[tuple]:
         ).fetchone()
         if last is None or not (last[1] or "").strip():
             continue
-        out.append((blocker_id, title or "(missing)", last[0] or "",
-                    last[2] or "", last[1]))
+        out.append((blocker_id, title or "(missing)", last[0] or "", last[2] or "", last[1]))
     return out
 
 
-def print_carried_summaries(conn: sqlite3.Connection,
-                            tasks: list[sqlite3.Row]) -> set[int]:
+def print_carried_summaries(conn: sqlite3.Connection, tasks: list[sqlite3.Row]) -> set[int]:
     """What the tickets each task waited on said as they finished, whole.
 
     The other sections point at something to go and read; this one is the
@@ -385,8 +394,10 @@ def print_carried_summaries(conn: sqlite3.Connection,
     if not hits:
         return set()
     shown: set[int] = set()
-    print("\n--- CARRIED SUMMARIES (how each finished blocker closed; "
-          "you need not open those tickets) ---")
+    print(
+        "\n--- CARRIED SUMMARIES (how each finished blocker closed; "
+        "you need not open those tickets) ---"
+    )
     for t, rows in hits:
         print(f"  #{t['id']} {t['title']}")
         for blocker_id, title, author, at, body in rows:
@@ -408,8 +419,7 @@ ROLE_HISTORY_CARDS = 3
 ROLE_HISTORY_CHARS = 400
 
 
-def role_history(conn: sqlite3.Connection, me: str,
-                 limit: int = ROLE_HISTORY_CARDS) -> list[tuple]:
+def role_history(conn: sqlite3.Connection, me: str, limit: int = ROLE_HISTORY_CARDS) -> list[tuple]:
     """This agent's most recently finished cards, and how each one closed.
 
     A read-time join over `task` and `issue_log` across every epic and both the
@@ -442,13 +452,13 @@ def role_history(conn: sqlite3.Connection, me: str,
             (r["id"],),
         ).fetchone()
         body = " ".join(((last[0] if last else "") or "").split())
-        out.append((r["id"], r["title"] or "(missing)", r["epic"],
-                    (r["closed_at"] or "")[:10], body))
+        out.append(
+            (r["id"], r["title"] or "(missing)", r["epic"], (r["closed_at"] or "")[:10], body)
+        )
     return out
 
 
-def print_role_history(conn: sqlite3.Connection, me: str,
-                       already_shown: set[int]) -> None:
+def print_role_history(conn: sqlite3.Connection, me: str, already_shown: set[int]) -> None:
     """What this agent last finished, so a session starts inside its role.
 
     Printed last, after the queue and everything the queue points at, because it
@@ -461,8 +471,10 @@ def print_role_history(conn: sqlite3.Connection, me: str,
     rows = role_history(conn, me)
     if not rows:
         return
-    print(f"\n--- LAST FINISHED by {me} ({len(rows)} most recent, any epic; "
-          f"continuity, not a queue) ---")
+    print(
+        f"\n--- LAST FINISHED by {me} ({len(rows)} most recent, any epic; "
+        f"continuity, not a queue) ---"
+    )
     for tid, title, epic, closed, body in rows:
         print(f"  #{tid} [{epic}] {title}  (closed {closed})")
         if not body:
@@ -471,7 +483,7 @@ def print_role_history(conn: sqlite3.Connection, me: str,
             print("      (its closing comment is printed above)")
             continue
         if len(body) > ROLE_HISTORY_CHARS:
-            body = body[:ROLE_HISTORY_CHARS - 3] + "..."
+            body = body[: ROLE_HISTORY_CHARS - 3] + "..."
         print(f"      {body}")
 
 
@@ -494,6 +506,7 @@ def print_links(conn: sqlite3.Connection, tasks: list[sqlite3.Row]) -> None:
 # ---------------------------------------------------------------------------
 # The snapshot's shared body
 # ---------------------------------------------------------------------------
+
 
 def open_board() -> tuple[Path, sqlite3.Connection, sqlite3.Cursor]:
     """The board, ready to read: connected, journalled and brought current."""
@@ -527,17 +540,17 @@ def active_epic_names(cur: sqlite3.Cursor, owner: str | None = None) -> str:
     if owner is None:
         rows = cur.execute(
             f"SELECT name FROM epic WHERE status IN ({placeholders}) ORDER BY id",
-            tuple(create_tickets.EPIC_STATUS_IN_FLIGHT)).fetchall()
+            tuple(create_tickets.EPIC_STATUS_IN_FLIGHT),
+        ).fetchall()
     else:
         rows = cur.execute(
-            f"SELECT name FROM epic WHERE status IN ({placeholders}) "
-            f"AND owner LIKE ? ORDER BY id",
-            (*create_tickets.EPIC_STATUS_IN_FLIGHT, f"%{owner}%")).fetchall()
+            f"SELECT name FROM epic WHERE status IN ({placeholders}) AND owner LIKE ? ORDER BY id",
+            (*create_tickets.EPIC_STATUS_IN_FLIGHT, f"%{owner}%"),
+        ).fetchall()
     return ", ".join(e["name"] for e in rows) or "(none)"
 
 
-def next_action(conn: sqlite3.Connection, board: list,
-                mine_q: list) -> tuple:
+def next_action(conn: sqlite3.Connection, board: list, mine_q: list) -> tuple:
     """The card at the top of a queue, as `src/app.md` Phase 3.2 selects it.
 
     Returns (row or None, {blocked id -> blocker ids}, [ids blocking the whole
@@ -554,8 +567,9 @@ def next_action(conn: sqlite3.Connection, board: list,
     return None, blockers, waiting
 
 
-def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
-                *, label: str, show_owner: bool) -> None:
+def print_queue(
+    conn: sqlite3.Connection, board: list, mine_q: list, me: str, *, label: str, show_owner: bool
+) -> None:
     """The next action and the queue under it, or the backlog fallback.
 
     The precedence is `src/app.md` Phase 3.2 and is computed in `queue_sort`;
@@ -570,11 +584,15 @@ def print_queue(conn: sqlite3.Connection, board: list, mine_q: list, me: str,
     if mine_q:
         nxt, blockers, waiting = next_action(conn, board, mine_q)
         if nxt is not None:
-            print(f"▶ {label} ({me}, active board): "
-                  f"[{nxt['epic']}] {nxt['title']}  (tier {tier_word(nxt['tier'])}, size {nxt['estimate'] or '?'})")
+            print(
+                f"▶ {label} ({me}, active board): "
+                f"[{nxt['epic']}] {nxt['title']}  (tier {tier_word(nxt['tier'])}, size {nxt['estimate'] or '?'})"
+            )
         else:
-            print(f"▶ {label} ({me}, active board): none — every card in your "
-                  f"queue is waiting on {', '.join(f'#{b}' for b in waiting)}.")
+            print(
+                f"▶ {label} ({me}, active board): none — every card in your "
+                f"queue is waiting on {', '.join(f'#{b}' for b in waiting)}."
+            )
         print("\nYOUR QUEUE (active board, doing→todo, board order):")
         print("  Work it top to bottom, passing over a card with an unmet blocker.")
         for n, r in enumerate(mine_q, start=1):
@@ -623,8 +641,7 @@ def blocking_others(conn: sqlite3.Connection, me: str) -> list[tuple]:
     return out
 
 
-def print_blocking_others(conn: sqlite3.Connection, me: str,
-                          mine_q: list) -> None:
+def print_blocking_others(conn: sqlite3.Connection, me: str, mine_q: list) -> None:
     """The cards of this agent's that another agent's cards wait on.
 
     Context rather than order: the queue above stays the order these are
@@ -637,15 +654,19 @@ def print_blocking_others(conn: sqlite3.Connection, me: str,
     pos = {r["id"]: n for n, r in enumerate(mine_q, start=1)}
     print("\n--- YOUR CARDS OTHER AGENTS WAIT ON (context, NOT a priority signal) ---")
     for r, other in rows:
-        where = (f"queue #{pos[r['bid']]}" if r["bid"] in pos
-                 else r["bstage"])
+        where = f"queue #{pos[r['bid']]}" if r["bid"] in pos else r["bstage"]
         print(f"  #{r['bid']} ({where}, {r['bstatus']}) {r['btitle']}")
         print(f"      blocks #{r['wid']} <{other}> {r['wtitle']}")
 
 
-def print_body(conn: sqlite3.Connection, db_path, me: str,
-               mine_all: list, mine_q: list,
-               asked: set[int] | None = None) -> None:
+def print_body(
+    conn: sqlite3.Connection,
+    db_path,
+    me: str,
+    mine_all: list,
+    mine_q: list,
+    asked: set[int] | None = None,
+) -> None:
     """Everything under the queue, in the one order both front ends print it."""
     print_blocking_others(conn, me, mine_q)
     shown = print_comments(conn, mine_all, asked)

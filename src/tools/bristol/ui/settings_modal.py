@@ -49,15 +49,15 @@ FLEET_TABS = ["Agents", "Skills"]
 class _DialogWatch(QObject):
     """Hides the panel while a window one of its pages opened is shown."""
 
-    def __init__(self, modal: "SettingsModal") -> None:
+    def __init__(self, modal: SettingsModal) -> None:
         super().__init__(modal)
         self._modal = modal
         self._open: set[int] = set()
 
-    def eventFilter(self, obj, event):  # noqa: N802 — Qt's name
+    def eventFilter(self, obj, event):
         kind = event.type()
-        if kind in (QEvent.Show, QEvent.Hide) and self._takes_place(obj):
-            if kind == QEvent.Show:
+        if kind in (QEvent.Type.Show, QEvent.Type.Hide) and self._takes_place(obj):
+            if kind == QEvent.Type.Show:
                 self._open.add(id(obj))
             else:
                 self._open.discard(id(obj))
@@ -67,8 +67,7 @@ class _DialogWatch(QObject):
     def _takes_place(self, obj) -> bool:
         """A window opened from a page of the panel, other than a question the
         page asks over it."""
-        if not isinstance(obj, QDialog) \
-                or isinstance(obj, (Modal, QFileDialog)):
+        if not isinstance(obj, QDialog) or isinstance(obj, (Modal, QFileDialog)):
             return False
         parent = obj.parentWidget()
         while parent is not None:
@@ -81,22 +80,32 @@ class _DialogWatch(QObject):
 class SettingsModal(QWidget):
     """The scrim over the window, and the Settings panel centred on it."""
 
-    def __init__(self, window: QWidget, agents: QWidget, skills: QWidget,
-                 settings: SettingsTab, on_closed=None) -> None:
-        super().__init__(window, Qt.Window | Qt.FramelessWindowHint
-                         | Qt.NoDropShadowWindowHint)
+    def __init__(
+        self,
+        window: QWidget,
+        agents: QWidget,
+        skills: QWidget,
+        settings: SettingsTab,
+        on_closed=None,
+    ) -> None:
+        super().__init__(
+            window,
+            Qt.WindowType.Window
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.NoDropShadowWindowHint,
+        )
         self._window = window
         self._settings = settings
         self._on_closed = on_closed
-        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setWindowTitle("Settings")
         # The scrim is painted, translucent, over the window behind.
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setAttribute(Qt.WA_StyledBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, False)
 
         self.panel = QFrame(self)
         self.panel.setObjectName("settingsModal")
-        self.panel.setAttribute(Qt.WA_StyledBackground, True)
+        self.panel.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         # The side nav: one checkable row per tab, exactly one of them open.
         nav = QWidget()
@@ -112,10 +121,9 @@ class SettingsModal(QWidget):
             button.setObjectName("settingsNav")
             button.setAccessibleName(name)
             button.setCheckable(True)
-            button.setFocusPolicy(Qt.TabFocus)
+            button.setFocusPolicy(Qt.FocusPolicy.TabFocus)
             # Toggled rather than clicked, so an accessibility press opens it.
-            button.toggled.connect(
-                lambda checked, n=name: checked and self.show_tab(n))
+            button.toggled.connect(lambda checked, n=name: checked and self.show_tab(n))
             self._group.addButton(button)
             nav_layout.addWidget(button)
             self.tabs[name] = button
@@ -132,8 +140,8 @@ class SettingsModal(QWidget):
         self.close_btn.clicked.connect(lambda _checked=False: self.close_modal())
         head = QHBoxLayout()
         head.setContentsMargins(0, 0, 0, 0)
-        head.addWidget(self.heading, 1, Qt.AlignVCenter)
-        head.addWidget(self.close_btn, 0, Qt.AlignVCenter)
+        head.addWidget(self.heading, 1, Qt.AlignmentFlag.AlignVCenter)
+        head.addWidget(self.close_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self.pages = QStackedWidget()
         self._page_for = {"Agents": agents, "Skills": skills}
@@ -149,15 +157,14 @@ class SettingsModal(QWidget):
         content.addWidget(self.pages, 1)
 
         body = QHBoxLayout(self.panel)
-        body.setContentsMargins(space("xl"), space("xl"), space("xl"),
-                                space("xl"))
+        body.setContentsMargins(space("xl"), space("xl"), space("xl"), space("xl"))
         body.setSpacing(space("2xl"))
         body.addWidget(nav)
         body.addLayout(content, 1)
 
         self._watch = _DialogWatch(self)
-        escape = QShortcut(QKeySequence(Qt.Key_Escape), self)
-        escape.setContext(Qt.WindowShortcut)
+        escape = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        escape.setContext(Qt.ShortcutContext.WindowShortcut)
         escape.activated.connect(self.close_modal)
 
         window.installEventFilter(self)
@@ -216,23 +223,28 @@ class SettingsModal(QWidget):
         inset = space("2xl")
         width = min(LAYOUT["settings_w"], self.width() - 2 * inset)
         height = min(LAYOUT["settings_h"], self.height() - 2 * inset)
-        self.panel.setGeometry((self.width() - width) // 2,
-                               (self.height() - height) // 2, width, height)
+        self.panel.setGeometry(
+            (self.width() - width) // 2, (self.height() - height) // 2, width, height
+        )
 
-    def eventFilter(self, obj, event):  # noqa: N802 — Qt's name
-        if obj is self._window and event.type() in (QEvent.Resize, QEvent.Move) \
-                and not self.isHidden():
+    def eventFilter(self, obj, event):
+        if (
+            obj is self._window
+            and event.type() in (QEvent.Type.Resize, QEvent.Type.Move)
+            and not self.isHidden()
+        ):
             self._fit()
         return False
 
-    def paintEvent(self, event) -> None:  # noqa: N802 — Qt's name
+    def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(scrim()))
 
-    def mousePressEvent(self, event) -> None:  # noqa: N802 — Qt's name
+    def mousePressEvent(self, event) -> None:
         """A click on the scrim, outside the panel, closes the modal."""
-        if self.panel.isVisible() \
-                and not self.panel.geometry().contains(event.position().toPoint()):
+        if self.panel.isVisible() and not self.panel.geometry().contains(
+            event.position().toPoint()
+        ):
             self.close_modal()
             return
         super().mousePressEvent(event)

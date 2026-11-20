@@ -30,9 +30,12 @@ back is the difference from what this build ships, stored under one key.
 
 from __future__ import annotations
 
+from typing import cast
+
+import config_file  # bristol-local; see module docstring
 from PySide6.QtCore import QDate, Qt
+from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QDateEdit,
     QFormLayout,
@@ -44,8 +47,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-import config_file  # bristol-local; see module docstring
 
 try:  # a stripped bundle may carry no reports package at all
     from reports.standing import default_window, standing_report
@@ -65,9 +66,9 @@ from .theme import (
     MODE_CHOICES,
     NO_DARK_HALF,
     appearance_choice,
+    collection_differences,
     control_height,
     fill_agents,
-    collection_differences,
     install_collection,
     register_collection,
     space,
@@ -104,13 +105,13 @@ def _label(text: str) -> QLabel:
     height, so the words sit on the control's centre line."""
     label = QLabel(text)
     label.setMinimumHeight(control_height())
-    label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+    label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
     return label
 
 
 def _fit(button: QPushButton) -> QPushButton:
     """A button as wide as its whole name, so no word of it is cut off."""
-    button.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+    button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
     return button
 
 
@@ -121,17 +122,18 @@ SECTIONS = ["Appearance", "Folders", "Sessions", "Reports"]
 def _form() -> QFormLayout:
     """One section's form: labels at one left edge and controls at another."""
     form = QFormLayout()
-    form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-    form.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-    form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
+    form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+    form.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+    form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint)
     form.setHorizontalSpacing(space("xl"))
     form.setVerticalSpacing(space("lg"))
     return form
 
 
 class SettingsTab(QWidget):
-    def __init__(self, parent=None, on_appearance_changed=None, conn=None,
-                 on_board_changed=None) -> None:
+    def __init__(
+        self, parent=None, on_appearance_changed=None, conn=None, on_board_changed=None
+    ) -> None:
         super().__init__(parent)
 
         # The board this page reports on. Absent in a bare construction (the
@@ -150,18 +152,19 @@ class SettingsTab(QWidget):
 
         self.new_ticket = fill_words(QComboBox(), NEW_TICKET_CHOICES)
         self.new_ticket.currentIndexChanged.connect(
-            lambda _i: self._write(config_file.NEW_TICKET_STAGE,
-                                   self.new_ticket.currentData(),
-                                   "Ticket Destination"))
-        self.new_ticket.setToolTip(
-            "Where a new card lands when the agent filing it names no tab.")
+            lambda _i: self._write(
+                config_file.NEW_TICKET_STAGE, self.new_ticket.currentData(), "Ticket Destination"
+            )
+        )
+        self.new_ticket.setToolTip("Where a new card lands when the agent filing it names no tab.")
 
         # The collection this installation offers, as it currently stands. The
         # picker is filled from it rather than from what the build ships, so a
         # theme added, renamed or deleted is in the list the moment it is.
         self._collection = register_collection(
             config_file.get(config_file.APPEARANCE_THEMES),
-            config_file.get(config_file.APPEARANCE_CUSTOM))
+            config_file.get(config_file.APPEARANCE_CUSTOM),
+        )
 
         self.theme = fill_words(QComboBox(), theme_choices(self._collection))
         self.theme.currentIndexChanged.connect(self._theme_chosen)
@@ -170,44 +173,49 @@ class SettingsTab(QWidget):
         self.manage = QPushButton("Themes")
         self.manage.setToolTip(
             "Add a theme, rename one, change any theme's colors, or delete "
-            "the ones you do not want.")
+            "the ones you do not want."
+        )
         self.manage.clicked.connect(self._manage_themes)
 
         self.mode = fill_words(QComboBox(), MODE_CHOICES)
         self.mode.currentIndexChanged.connect(self._mode_chosen)
-        self.mode.setToolTip(
-            "Which half of the theme is drawn, or the one the OS is set to.")
+        self.mode.setToolTip("Which half of the theme is drawn, or the one the OS is set to.")
 
         # Which agent the next session runs as: the one field here that decides
         # what a session is rather than how it behaves. It is a settled combo
         # because a wheel gesture aimed past the page must not move it.
         self.next_agent = SettledComboBox()
-        self.next_agent.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.next_agent.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         # `picked` fires only on a deliberate choice from an open list, so the
         # one control that decides what the next session IS cannot be written by
         # a gesture aimed past the page.
-        self.next_agent.picked.connect(
-            lambda slug: self._write("active_agent", slug, "Agent"))
+        self.next_agent.picked.connect(lambda slug: self._write("active_agent", slug, "Agent"))
         self.next_agent.setToolTip(
             "The agent the next session starts as. Choosing one writes "
-            "active_agent into the configuration and nothing else.")
+            "active_agent into the configuration and nothing else."
+        )
 
         self.work_scope = fill_words(QComboBox(), WORK_SCOPE_CHOICES)
         self.work_scope.currentIndexChanged.connect(
-            lambda _i: self._write(config_file.WORK_WHOLE_QUEUE,
-                                   self.work_scope.currentData(), "Work Scope"))
-        self.work_scope.setToolTip(
-            "How far a session goes when you say continue.")
+            lambda _i: self._write(
+                config_file.WORK_WHOLE_QUEUE, self.work_scope.currentData(), "Work Scope"
+            )
+        )
+        self.work_scope.setToolTip("How far a session goes when you say continue.")
 
         self.suggested_commit = fill_words(QComboBox(), GIT_CHOICES)
         self.suggested_commit.currentIndexChanged.connect(
-            lambda _i: self._write(config_file.SUGGESTED_COMMIT,
-                                   self.suggested_commit.currentData(),
-                                   "Git on Session Close"))
+            lambda _i: self._write(
+                config_file.SUGGESTED_COMMIT,
+                self.suggested_commit.currentData(),
+                "Git on Session Close",
+            )
+        )
         self.suggested_commit.setToolTip(
             "What a session that changed files in a git repository does as it "
             "ends: commits them, gives you a commit block to paste, or leaves "
-            "git alone.")
+            "git alone."
+        )
 
         forms = {name: _form() for name in SECTIONS}
         form = forms["Appearance"]
@@ -221,10 +229,12 @@ class SettingsTab(QWidget):
         # is the user's to name. The dates open on the last thirty days, so the
         # button answers something the moment it is pressed.
         since, until = default_window() if default_window else (None, None)
-        self.report_from = QDateEdit(QDate.fromString(since, "yyyy-MM-dd")
-                                     if since else QDate.currentDate())
-        self.report_to = QDateEdit(QDate.fromString(until, "yyyy-MM-dd")
-                                   if until else QDate.currentDate())
+        self.report_from = QDateEdit(
+            QDate.fromString(since, "yyyy-MM-dd") if since else QDate.currentDate()
+        )
+        self.report_to = QDateEdit(
+            QDate.fromString(until, "yyyy-MM-dd") if until else QDate.currentDate()
+        )
         for field in (self.report_from, self.report_to):
             field.setDisplayFormat("yyyy-MM-dd")
             field.setCalendarPopup(True)
@@ -234,7 +244,8 @@ class SettingsTab(QWidget):
         self.report_btn = QPushButton("Write Report")
         self.report_btn.setToolTip(
             "What the projects cost over this window, and what upkeep cost "
-            "beside them, written into your notebook.")
+            "beside them, written into your notebook."
+        )
         self.report_btn.setEnabled(standing_report is not None)
         self.report_btn.clicked.connect(self._write_standing_report)
 
@@ -251,7 +262,8 @@ class SettingsTab(QWidget):
         self.clear_done_btn = QPushButton("Clear Done")
         self.clear_done_btn.setToolTip(
             "Move every card in the Done column to the Archive, and write one "
-            "report covering them, from the first of them opened to now.")
+            "report covering them, from the first of them opened to now."
+        )
         self.clear_done_btn.setEnabled(clear_done is not None)
         self.clear_done_btn.clicked.connect(self._clear_done)
         clear_row = QHBoxLayout()
@@ -262,19 +274,16 @@ class SettingsTab(QWidget):
         # Where things are. Each button opens the window that repoints them,
         # and carries the missing mark while anything it contains is not on disk.
         self.notebook_btn = QPushButton("Notebook")
-        self.notebook_btn.clicked.connect(
-            lambda: self._open_folders(NotebookDialog))
+        self.notebook_btn.clicked.connect(lambda: self._open_folders(NotebookDialog))
         self.dashboards_btn = QPushButton("Dashboards")
         self.dashboards_btn.setToolTip(
             "The dashboards agents keep up for you. Which ones each agent may "
-            "write is set in its profile on the Agents tab.")
-        self.dashboards_btn.clicked.connect(
-            lambda: self._open_folders(DashboardsDialog))
+            "write is set in its profile on the Agents tab."
+        )
+        self.dashboards_btn.clicked.connect(lambda: self._open_folders(DashboardsDialog))
         self.locations_btn = QPushButton("Locations")
-        self.locations_btn.clicked.connect(
-            lambda: self._open_folders(LocationsDialog))
-        for button in (self.notebook_btn, self.dashboards_btn,
-                       self.locations_btn):
+        self.locations_btn.clicked.connect(lambda: self._open_folders(LocationsDialog))
+        for button in (self.notebook_btn, self.dashboards_btn, self.locations_btn):
             forms["Folders"].addRow(_label(""), _fit(button))
 
         form = forms["Sessions"]
@@ -317,10 +326,9 @@ class SettingsTab(QWidget):
         that is not on disk."""
         try:
             notebook, located = any_missing()
-        except Exception:  # noqa: BLE001 - a bare build has no tools to ask
+        except Exception:
             notebook = located = False
-        for button, missing in ((self.notebook_btn, notebook),
-                                (self.locations_btn, located)):
+        for button, missing in ((self.notebook_btn, notebook), (self.locations_btn, located)):
             button.setProperty("missing", missing)
             button.style().unpolish(button)
             button.style().polish(button)
@@ -332,14 +340,17 @@ class SettingsTab(QWidget):
         file is written and the page says so.
         """
         if self.conn is None or standing_report is None:
-            notify(self, "No board open",
-                   "This page was opened without a board, so there is nothing "
-                   "to report on.")
+            notify(
+                self,
+                "No board open",
+                "This page was opened without a board, so there is nothing to report on.",
+            )
             return
         result = standing_report(
             self.conn,
             self.report_from.date().toString("yyyy-MM-dd"),
-            self.report_to.date().toString("yyyy-MM-dd"))
+            self.report_to.date().toString("yyyy-MM-dd"),
+        )
         if result.ok:
             notify(self, "Report written", str(result.written))
         elif result.skipped:
@@ -351,38 +362,54 @@ class SettingsTab(QWidget):
         """Archive the Done column after a confirmation giving the count, and
         say where its report went."""
         if self.conn is None or clear_done is None:
-            notify(self, "No board open",
-                   "This page was opened without a board, so there is nothing "
-                   "to clear.")
+            notify(
+                self,
+                "No board open",
+                "This page was opened without a board, so there is nothing to clear.",
+            )
             return
         count = len(clear_done.done_cards(self.conn))
         if not count:
             notify(self, "Nothing to clear", "The Done column is empty.")
             return
-        if not confirm(self, "Clear Done",
-                       f"Move {count} done card(s) to the Archive and write a "
-                       "report covering them?", "Move to Archive"):
+        if not confirm(
+            self,
+            "Clear Done",
+            f"Move {count} done card(s) to the Archive and write a report covering them?",
+            "Move to Archive",
+        ):
             return
         result = clear_done.clear_done(self.conn)
         if self._on_board_changed is not None:
             self._on_board_changed()
         report = result.report
         if report is None:
-            notify(self, "Cards archived",
-                   f"{len(result.archived)} card(s) moved to the Archive. This "
-                   "build carries no reports package, so no report was written.")
+            notify(
+                self,
+                "Cards archived",
+                f"{len(result.archived)} card(s) moved to the Archive. This "
+                "build carries no reports package, so no report was written.",
+            )
         elif report.ok:
-            notify(self, "Cards archived",
-                   f"{len(result.archived)} card(s) moved to the Archive.\n\n"
-                   f"Report written: {report.written}")
+            notify(
+                self,
+                "Cards archived",
+                f"{len(result.archived)} card(s) moved to the Archive.\n\n"
+                f"Report written: {report.written}",
+            )
         elif report.skipped:
-            notify(self, "Cards archived",
-                   f"{len(result.archived)} card(s) moved to the Archive. No "
-                   f"report: {report.skipped}")
+            notify(
+                self,
+                "Cards archived",
+                f"{len(result.archived)} card(s) moved to the Archive. No report: {report.skipped}",
+            )
         else:
-            notify(self, "Report not written",
-                   f"{len(result.archived)} card(s) moved to the Archive, but "
-                   f"the report could not be written.\n\n{report.error}")
+            notify(
+                self,
+                "Report not written",
+                f"{len(result.archived)} card(s) moved to the Archive, but "
+                f"the report could not be written.\n\n{report.error}",
+            )
 
     def _theme_chosen(self) -> None:
         """Offer the modes the new theme can draw, re-theme, and keep the
@@ -392,8 +419,7 @@ class SettingsTab(QWidget):
             return
         self._seat_modes()
         self._redraw()
-        self._write(config_file.APPEARANCE_THEME,
-                    self.theme.currentData(), "Theme")
+        self._write(config_file.APPEARANCE_THEME, self.theme.currentData(), "Theme")
 
     def _mode_chosen(self) -> None:
         """Re-theme the running app, then keep the mode. A mode seated by a
@@ -401,14 +427,12 @@ class SettingsTab(QWidget):
         if self._loading:
             return
         self._redraw()
-        self._write(config_file.APPEARANCE_MODE,
-                    self.mode.currentData(), "Light & Dark")
+        self._write(config_file.APPEARANCE_MODE, self.mode.currentData(), "Light & Dark")
 
     def _redraw(self) -> None:
         """Draw the running app in the theme and mode the page is showing."""
         if self._on_appearance_changed is not None:
-            self._on_appearance_changed(self.theme.currentData(),
-                                        self.mode.currentData())
+            self._on_appearance_changed(self.theme.currentData(), self.mode.currentData())
 
     def _seat_modes(self) -> None:
         """Offer only the modes the theme in force can draw.
@@ -419,12 +443,13 @@ class SettingsTab(QWidget):
         alone, so returning to a theme that has both halves returns to it.
         """
         has_dark = theme_has_dark(self.theme.currentData())
-        model = self.mode.model()
+        model = cast(QStandardItemModel, self.mode.model())
         for index in range(self.mode.count()):
             allowed = has_dark or self.mode.itemData(index) == LIGHT_MODE
             model.item(index).setEnabled(allowed)
-            self.mode.setItemData(index, "" if allowed else NO_DARK_HALF,
-                                  Qt.ToolTipRole)
+            self.mode.setItemData(
+                index, "" if allowed else NO_DARK_HALF, Qt.ItemDataRole.ToolTipRole
+            )
         if not has_dark:
             self._seat(self.mode, LIGHT_MODE)
         else:
@@ -439,8 +464,9 @@ class SettingsTab(QWidget):
         behind.
         """
         was_theme, _was_mode = self._stored_appearance()
-        dialog = ThemeManagerDialog(self._collection, was_theme, parent=self,
-                                    on_preview=self._preview_themes)
+        dialog = ThemeManagerDialog(
+            self._collection, was_theme, parent=self, on_preview=self._preview_themes
+        )
         if not dialog.exec():
             install_collection(self._collection)
             self._seat(self.theme, was_theme)
@@ -450,9 +476,11 @@ class SettingsTab(QWidget):
         self._collection = install_collection(dialog.themes())
         self._write(
             config_file.APPEARANCE_THEMES,
-            collection_differences(self._collection,
-                                   config_file.get(config_file.APPEARANCE_CUSTOM)),
-            "Themes")
+            collection_differences(
+                self._collection, config_file.get(config_file.APPEARANCE_CUSTOM)
+            ),
+            "Themes",
+        )
         self._offer_themes()
         theme = dialog.theme_in_force()
         if theme != was_theme:
@@ -473,8 +501,7 @@ class SettingsTab(QWidget):
             self._loading = seating
         self._seat(self.theme, was)
 
-    def _preview_themes(self, theme: str, collection: dict,
-                        half: str | None = None) -> None:
+    def _preview_themes(self, theme: str, collection: dict, half: str | None = None) -> None:
         """Draw the running app in a theme the manage-themes window is still
         editing, in the half it is showing.
 
@@ -492,7 +519,8 @@ class SettingsTab(QWidget):
         return appearance_choice(
             config_file.get(config_file.APPEARANCE_THEME),
             config_file.get(config_file.APPEARANCE_MODE),
-            config_file.get(config_file.APPEARANCE_SCHEME))
+            config_file.get(config_file.APPEARANCE_SCHEME),
+        )
 
     def _seat(self, combo: QComboBox, value) -> None:
         """Put a picker on a value without it reading as a choice made."""
@@ -560,20 +588,25 @@ class SettingsTab(QWidget):
         placed = target is not None and target.exists()
         self._collection = register_collection(
             config_file.get(config_file.APPEARANCE_THEMES),
-            config_file.get(config_file.APPEARANCE_CUSTOM))
+            config_file.get(config_file.APPEARANCE_CUSTOM),
+        )
         self._offer_themes()
         self._load_agents()
-        stored = config_file.get(
-            config_file.NEW_TICKET_STAGE, config_file.NEW_TICKET_STAGE_DEFAULT
-        )
+        stored = config_file.get(config_file.NEW_TICKET_STAGE, config_file.NEW_TICKET_STAGE_DEFAULT)
         index = self.new_ticket.findData(stored)
         self.new_ticket.setCurrentIndex(index if index >= 0 else 0)
-        scope = self.work_scope.findData(bool(config_file.get(
-            config_file.WORK_WHOLE_QUEUE, config_file.WORK_WHOLE_QUEUE_DEFAULT
-        )))
+        scope = self.work_scope.findData(
+            bool(
+                config_file.get(config_file.WORK_WHOLE_QUEUE, config_file.WORK_WHOLE_QUEUE_DEFAULT)
+            )
+        )
         self.work_scope.setCurrentIndex(scope if scope >= 0 else 0)
-        self._seat(self.suggested_commit, config_file.git_on_close(config_file.get(
-            config_file.SUGGESTED_COMMIT, config_file.SUGGESTED_COMMIT_DEFAULT)))
+        self._seat(
+            self.suggested_commit,
+            config_file.git_on_close(
+                config_file.get(config_file.SUGGESTED_COMMIT, config_file.SUGGESTED_COMMIT_DEFAULT)
+            ),
+        )
         theme, mode = self._stored_appearance()
         self._seat(self.theme, theme)
         self._seat(self.mode, mode)

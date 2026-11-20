@@ -61,6 +61,7 @@ DATE_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
 @dataclass(frozen=True)
 class Retention:
     """0 means unlimited; a negative number is not meaningful."""
+
     daily: int = 7
     weekly: int = 5
     monthly: int = 12
@@ -93,17 +94,23 @@ def _buckets(d: date) -> dict[str, tuple]:
     }
 
 
-def plan(paths: list[Path], retention: Retention = DEFAULT_RETENTION
-         ) -> tuple[list[tuple[Path, str]], list[Path]]:
+def plan(
+    paths: list[Path], retention: Retention = DEFAULT_RETENTION
+) -> tuple[list[tuple[Path, str]], list[Path]]:
     """Split paths into (kept, deleted). Returns each kept file with the rule
     that saved it, so a dry run can explain itself.
 
     Newest first; a file is kept when it opens a bucket the policy still has
     room for. Identical to restic's `forget` semantics."""
-    limits = {"daily": retention.daily, "weekly": retention.weekly,
-              "monthly": retention.monthly, "yearly": retention.yearly}
-    dated = sorted(((_file_date(p), p) for p in paths),
-                   key=lambda t: (t[0], t[1].name), reverse=True)
+    limits = {
+        "daily": retention.daily,
+        "weekly": retention.weekly,
+        "monthly": retention.monthly,
+        "yearly": retention.yearly,
+    }
+    dated = sorted(
+        ((_file_date(p), p) for p in paths), key=lambda t: (t[0], t[1].name), reverse=True
+    )
 
     seen: dict[str, list] = {k: [] for k in limits}
     kept: list[tuple[Path, str]] = []
@@ -138,8 +145,7 @@ def series(snapshot_dir: Path, stem: str) -> list[Path]:
     ad = archive_dir(snapshot_dir)
     if not ad.is_dir():
         return []
-    return sorted(p for p in ad.glob(f"{stem}_*")
-                  if p.is_file() and not p.name.startswith("."))
+    return sorted(p for p in ad.glob(f"{stem}_*") if p.is_file() and not p.name.startswith("."))
 
 
 def archive(live: Path, on: date | None = None) -> Path:
@@ -154,8 +160,9 @@ def archive(live: Path, on: date | None = None) -> Path:
     return dest
 
 
-def archive_and_prune(live: Path, retention: Retention = DEFAULT_RETENTION,
-                      apply: bool = True) -> tuple[Path, list[Path]]:
+def archive_and_prune(
+    live: Path, retention: Retention = DEFAULT_RETENTION, apply: bool = True
+) -> tuple[Path, list[Path]]:
     """Add today's copy to the series, then enforce the policy. Returns the
     new archive file and the files removed."""
     dest = archive(live)
@@ -196,14 +203,21 @@ def main() -> None:
     kept, dropped = plan(files, retention)
 
     if "--json" in args:
-        print(json.dumps({
-            "kept": [{"file": str(p), "rule": r} for p, r in kept],
-            "delete": [str(p) for p in dropped],
-            "applied": apply_now,
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    "kept": [{"file": str(p), "rule": r} for p, r in kept],
+                    "delete": [str(p) for p in dropped],
+                    "applied": apply_now,
+                },
+                indent=2,
+            )
+        )
     else:
-        print(f"[snapshot_archive] {snapshot_dir}/{ARCHIVE_DIRNAME} — "
-              f"{len(files)} file(s): keep {len(kept)}, delete {len(dropped)}")
+        print(
+            f"[snapshot_archive] {snapshot_dir}/{ARCHIVE_DIRNAME} — "
+            f"{len(files)} file(s): keep {len(kept)}, delete {len(dropped)}"
+        )
         for p, r in kept:
             print(f"  keep   [{r:7s}] {p.name}")
         for p in dropped:

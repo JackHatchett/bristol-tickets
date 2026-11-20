@@ -17,14 +17,12 @@ Usage:
     python3 create_tickets.py --instance <name>
 """
 
-import sys
 import sqlite3
+import sys
 from pathlib import Path
 
-sys.path.insert(
-    0, str(Path(__file__).resolve().parents[1] / "config_tools")
-)
-import data_paths  # noqa: E402  (the shared declared-path resolver)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
+import data_paths
 
 
 def _project_root() -> Path:
@@ -36,14 +34,13 @@ def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 # ---------------------------------------------------------------------------
 # DB PATH RESOLUTION (canonical)
 # ---------------------------------------------------------------------------
+
 
 def resolve_output_path(instance: str) -> Path:
     """
@@ -245,6 +242,7 @@ CREATE INDEX IF NOT EXISTS idx_task_link_other ON task_link (other_id);
 # PROVISIONING (schema only — the shape every reader of this DB relies on)
 # ---------------------------------------------------------------------------
 
+
 def provision(db_path: Path) -> Path:
     """Apply SCHEMA to `db_path`, creating the file and its folder if absent.
 
@@ -279,6 +277,7 @@ def locate_or_provision() -> Path:
 # MIGRATION (bring a live DB up to the schema above; idempotent)
 # ---------------------------------------------------------------------------
 
+
 def migrate(conn: sqlite3.Connection) -> None:
     """Apply the schema changes an existing database is missing.
 
@@ -301,9 +300,7 @@ def _ensure_link_dep_type(conn: sqlite3.Connection) -> None:
     existed meant."""
     cols = [r[1] for r in conn.execute("PRAGMA table_info(task_link)").fetchall()]
     if cols and "dep_type" not in cols:
-        conn.execute(
-            "ALTER TABLE task_link ADD COLUMN dep_type TEXT NOT NULL DEFAULT 'related'"
-        )
+        conn.execute("ALTER TABLE task_link ADD COLUMN dep_type TEXT NOT NULL DEFAULT 'related'")
 
 
 def _ensure_block_reason(conn: sqlite3.Connection) -> None:
@@ -344,8 +341,9 @@ def _retire_pressure(conn: sqlite3.Connection) -> None:
         if column not in cols:
             continue
         for (name,) in conn.execute(
-                "SELECT name FROM sqlite_temp_master WHERE type='trigger' "
-                "AND sql LIKE ?", (f"%{column}%",)).fetchall():
+            "SELECT name FROM sqlite_temp_master WHERE type='trigger' AND sql LIKE ?",
+            (f"%{column}%",),
+        ).fetchall():
             conn.execute(f"DROP TRIGGER IF EXISTS temp.{name}")
         try:
             conn.execute(f"ALTER TABLE task DROP COLUMN {column}")
@@ -382,8 +380,7 @@ def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
             ).fetchone()
             if row:
                 conn.execute(
-                    "UPDATE task_link SET dep_type='blocks', task_id=?, other_id=? "
-                    "WHERE id=?",
+                    "UPDATE task_link SET dep_type='blocks', task_id=?, other_id=? WHERE id=?",
                     (blocker_id, task_id, row[0]),
                 )
             else:
@@ -406,6 +403,7 @@ def _retire_blocked_columns(conn: sqlite3.Connection) -> None:
 # ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     if "--instance" not in sys.argv:
@@ -432,7 +430,7 @@ def main() -> None:
     conn.close()
 
     print("Done. Launch agent with:")
-    print(f"  python3 <agent entrypoint>  # DB auto-discovered via relative structure")
+    print("  python3 <agent entrypoint>  # DB auto-discovered via relative structure")
 
 
 if __name__ == "__main__":

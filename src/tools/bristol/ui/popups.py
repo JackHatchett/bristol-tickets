@@ -25,20 +25,29 @@ _CONTAINER = "QComboBoxPrivateContainer"
 
 
 class _PopupStyler(QObject):
-    def eventFilter(self, obj, event):  # noqa: N802 (Qt override)
+    def eventFilter(self, obj, event):
         kind = event.type()
-        if kind == QEvent.Polish and isinstance(obj, QWidget) \
-                and obj.metaObject().className() == _CONTAINER:
-            obj.setWindowFlag(Qt.FramelessWindowHint, True)
-            obj.setWindowFlag(Qt.NoDropShadowWindowHint, True)
-            obj.setAttribute(Qt.WA_TranslucentBackground, True)
-        elif kind == QEvent.Show and isinstance(obj, QWidget) \
-                and obj.metaObject().className() == _CONTAINER:
+        if (
+            kind == QEvent.Type.Polish
+            and isinstance(obj, QWidget)
+            and obj.metaObject().className() == _CONTAINER
+        ):
+            obj.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
+            obj.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
+            obj.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        elif (
+            kind == QEvent.Type.Show
+            and isinstance(obj, QWidget)
+            and obj.metaObject().className() == _CONTAINER
+        ):
             combo = obj.parentWidget()
             if isinstance(combo, QComboBox):
                 view = combo.view()
-                wanted = (view.sizeHintForColumn(0) + 4 * space("lg")
-                          + view.verticalScrollBar().sizeHint().width())
+                wanted = (
+                    view.sizeHintForColumn(0)
+                    + 4 * space("lg")
+                    + view.verticalScrollBar().sizeHint().width()
+                )
                 if obj.width() < wanted:
                     obj.resize(wanted, obj.height())
         return False

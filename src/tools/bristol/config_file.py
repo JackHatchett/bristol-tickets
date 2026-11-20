@@ -41,6 +41,7 @@ def git_on_close(value) -> str:
         return "off"
     return value if value in GIT_ON_CLOSE else SUGGESTED_COMMIT_DEFAULT
 
+
 # How far a session runs when it is told to continue. On, it works its queue
 # down and halts on room; off, it works the next card and stops there. Read by
 # the agent at the moment the scope decision is made, never by the app.

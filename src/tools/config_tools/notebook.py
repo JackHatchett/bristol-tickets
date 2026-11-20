@@ -48,8 +48,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import data_paths  # noqa: E402
-import read_config  # noqa: E402
+import data_paths
+import read_config
 
 MODES = ("per_folder", "read_all", "write_all")
 ACCESS = ("read", "write", "hide")
@@ -60,19 +60,18 @@ DEFAULT_FOLDERS = ["inbox", "ai_workspace", "archive"]
 
 # ── reading ──────────────────────────────────────────────────────────────────
 
+
 def _load() -> dict:
     return read_config.load()
 
 
 def _save(data: dict) -> None:
     path = read_config.config_path()
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-                    encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def _clean(folder: str) -> str:
-    return "/".join(p for p in str(folder).replace("\\", "/").split("/")
-                    if p and p != ".")
+    return "/".join(p for p in str(folder).replace("\\", "/").split("/") if p and p != ".")
 
 
 def attached(data: dict | None = None) -> list[str]:
@@ -124,6 +123,7 @@ def may(entry, folders: list[str], relative: str) -> str:
 
 # ── writing ──────────────────────────────────────────────────────────────────
 
+
 def _inside(path: Path, base: Path) -> str | None:
     """`path` written from `base` down, or None where it is not inside it."""
     try:
@@ -161,7 +161,7 @@ def detach(folder: str, data: dict | None = None) -> bool:
         return False
     folders.remove(rel)
     data.setdefault("markdown_notebook", {})["folders"] = folders
-    for slug, agent in (data.get("agents") or {}).items():
+    for _slug, agent in (data.get("agents") or {}).items():
         if isinstance(agent, dict) and isinstance(agent.get("notebook_access"), dict):
             chosen = agent["notebook_access"].get("folders")
             if isinstance(chosen, dict):
@@ -181,8 +181,9 @@ def repoint(path: str, data: dict | None = None) -> None:
             agent["notebook_access"]["folders"] = {}
 
 
-def set_access(slug: str, mode: str, folders: dict[str, str] | None,
-               data: dict | None = None) -> dict:
+def set_access(
+    slug: str, mode: str, folders: dict[str, str] | None, data: dict | None = None
+) -> dict:
     """Set an agent's mode, and its per-folder choices where given. Choices not
     given are kept, so switching mode never loses them."""
     data = _load() if data is None else data
@@ -192,8 +193,11 @@ def set_access(slug: str, mode: str, folders: dict[str, str] | None,
     if mode not in MODES:
         raise SystemExit(f"notebook: mode is one of {', '.join(MODES)}")
     current = agent.get("notebook_access")
-    kept = dict(current.get("folders") or {}) if isinstance(current, dict) \
-        and "mode" in current else {}
+    kept = (
+        dict(current.get("folders") or {})
+        if isinstance(current, dict) and "mode" in current
+        else {}
+    )
     for folder, access in (folders or {}).items():
         if access not in ACCESS:
             raise SystemExit(f"notebook: access is one of {', '.join(ACCESS)}")
@@ -220,9 +224,11 @@ def migrate(data: dict | None = None) -> list[str]:
     if not isinstance(nb, dict) or base is None:
         return said
     if "folders" not in nb:
-        nb["folders"] = sorted(p.name for p in base.iterdir()
-                               if p.is_dir() and not p.name.startswith(".")) \
-            if base.is_dir() else []
+        nb["folders"] = (
+            sorted(p.name for p in base.iterdir() if p.is_dir() and not p.name.startswith("."))
+            if base.is_dir()
+            else []
+        )
         said.append(f"attached {len(nb['folders'])} folders")
     folders = attached(data)
 
@@ -256,8 +262,7 @@ def migrate(data: dict | None = None) -> list[str]:
         for grant in agent.get("key_data_paths") or []:
             declared = grant.get("path") if isinstance(grant, dict) else grant
             access = grant.get("access", "write") if isinstance(grant, dict) else "write"
-            rel = _inside(data_paths.resolve(declared), base) \
-                if isinstance(declared, str) else None
+            rel = _inside(data_paths.resolve(declared), base) if isinstance(declared, str) else None
             if rel == "":
                 mode = "write_all" if access == "write" else "read_all"
             elif rel in folders:
@@ -273,31 +278,36 @@ def migrate(data: dict | None = None) -> list[str]:
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
+
 def _show(data: dict) -> dict:
     base = root()
     return {
         "root": (data.get("markdown_notebook") or {}).get("notes_dir", ""),
         "root_path": str(base) if base else "",
         "root_exists": bool(base and base.is_dir()),
-        "folders": [{"folder": f,
-                     "exists": bool(base and (base / f).is_dir())}
-                    for f in attached(data)],
+        "folders": [
+            {"folder": f, "exists": bool(base and (base / f).is_dir())} for f in attached(data)
+        ],
     }
 
 
 def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("show"); s.add_argument("--json", action="store_true")
-    a = sub.add_parser("access"); a.add_argument("agent")
+    s = sub.add_parser("show")
+    s.add_argument("--json", action="store_true")
+    a = sub.add_parser("access")
+    a.add_argument("agent")
     a.add_argument("--json", action="store_true")
     sub.add_parser("attach").add_argument("folder")
     sub.add_parser("detach").add_argument("folder")
     sub.add_parser("repoint").add_argument("path")
-    sa = sub.add_parser("set-access"); sa.add_argument("agent")
+    sa = sub.add_parser("set-access")
+    sa.add_argument("agent")
     sa.add_argument("--mode", required=True, choices=MODES)
-    sa.add_argument("--folder", action="append", default=[],
-                    help="FOLDER=read|write|hide; repeatable")
+    sa.add_argument(
+        "--folder", action="append", default=[], help="FOLDER=read|write|hide; repeatable"
+    )
     sub.add_parser("migrate")
     args = p.parse_args(argv)
 
@@ -307,8 +317,10 @@ def main(argv: list[str]) -> int:
         if args.json:
             print(json.dumps(shown))
         else:
-            print(f"notebook  {shown['root'] or '(none)'}"
-                  + ("" if shown["root_exists"] else "  (missing)"))
+            print(
+                f"notebook  {shown['root'] or '(none)'}"
+                + ("" if shown["root_exists"] else "  (missing)")
+            )
             for f in shown["folders"]:
                 print(f"  {f['folder']}" + ("" if f["exists"] else "  (missing)"))
         return 0
@@ -333,8 +345,11 @@ def main(argv: list[str]) -> int:
     if args.cmd == "attach":
         print(f"attached {attach(args.folder, data)}")
     elif args.cmd == "detach":
-        print(f"detached {args.folder}" if detach(args.folder, data)
-              else f"{args.folder} was not attached")
+        print(
+            f"detached {args.folder}"
+            if detach(args.folder, data)
+            else f"{args.folder} was not attached"
+        )
     elif args.cmd == "repoint":
         repoint(args.path, data)
         print(f"notebook is {args.path}; no folder attached")

@@ -41,8 +41,15 @@ PUBLISHED_FILES = (
 
 # Build leavings and caches that live under src/ but belong to nobody's install.
 EXCLUDED = shutil.ignore_patterns(
-    "__pycache__", "*.pyc", "*.pyo", "build", "dist", ".eggs", ".DS_Store",
-    "*.local", "tickets_db.local",
+    "__pycache__",
+    "*.pyc",
+    "*.pyo",
+    "build",
+    "dist",
+    ".eggs",
+    ".DS_Store",
+    "*.local",
+    "tickets_db.local",
 )
 
 

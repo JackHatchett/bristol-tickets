@@ -37,9 +37,7 @@ from .theme import LAYOUT, space
 
 THUMB_MAX = 160  # longest edge of an inline thumbnail, in px
 
-IMAGE_FILTER = (
-    "Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp *.tiff *.tif *.heic);;All files (*)"
-)
+IMAGE_FILTER = "Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp *.tiff *.tif *.heic);;All files (*)"
 
 
 # Storage is ``attachment_store``, which the command line shares.
@@ -51,10 +49,10 @@ from attachment_store import (  # noqa: E402,F401  (bristol-local)
     remove_attachment,
 )
 
-
 # ---------------------------------------------------------------------------
 # Clickable thumbnail + enlarged-preview modal
 # ---------------------------------------------------------------------------
+
 
 class _ClickableThumb(QLabel):
     """A QLabel that shows a scaled pixmap and emits ``clicked`` on release."""
@@ -64,11 +62,13 @@ class _ClickableThumb(QLabel):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setObjectName("attachThumb")
-        self.setCursor(Qt.PointingHandCursor)
-        self.setAlignment(Qt.AlignCenter)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    def mouseReleaseEvent(self, event) -> None:  # noqa: N802 (Qt override)
-        if event.button() == Qt.LeftButton and self.rect().contains(event.position().toPoint()):
+    def mouseReleaseEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(
+            event.position().toPoint()
+        ):
             self.clicked.emit()
         super().mouseReleaseEvent(event)
 
@@ -89,7 +89,7 @@ class ImagePreviewDialog(QDialog):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         img_label = QLabel()
-        img_label.setAlignment(Qt.AlignCenter)
+        img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         pix = QPixmap(str(image_path)) if image_path and image_path.exists() else QPixmap()
         if pix.isNull():
             img_label.setText(
@@ -119,10 +119,12 @@ class ImagePreviewDialog(QDialog):
 
     def _confirm_delete(self) -> None:
         if confirm(
-            self, "Delete image",
+            self,
+            "Delete image",
             "Remove this attachment? The file moves to images/_trash "
             "(recoverable), and the link is dropped.",
-            "Remove", destructive=True,
+            "Remove",
+            destructive=True,
         ):
             self._deleted = True
             self.accept()
@@ -131,6 +133,7 @@ class ImagePreviewDialog(QDialog):
 # ---------------------------------------------------------------------------
 # Reusable widget — embedded by both the record dialog and the inspector
 # ---------------------------------------------------------------------------
+
 
 class AttachmentBar(QWidget):
     """An 'Attach image' button over a list of the current task's attachments,
@@ -150,9 +153,8 @@ class AttachmentBar(QWidget):
         self.rows = RowList()
         layout.addWidget(self.rows)
 
-        self.attach_btn = add_button("Add Image", self._pick,
-                                     "Attach an image file to this card")
-        layout.addWidget(self.attach_btn, 0, Qt.AlignLeft)
+        self.attach_btn = add_button("Add Image", self._pick, "Attach an image file to this card")
+        layout.addWidget(self.attach_btn, 0, Qt.AlignmentFlag.AlignLeft)
 
     def set_task(self, task_id: int | None) -> None:
         self.task_id = task_id
@@ -162,9 +164,7 @@ class AttachmentBar(QWidget):
     def _pick(self) -> None:
         if self.task_id is None:
             return
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Choose an image to attach", "", IMAGE_FILTER
-        )
+        path, _ = QFileDialog.getOpenFileName(self, "Choose an image to attach", "", IMAGE_FILTER)
         if not path:
             return
         if add_attachment(self.conn, self.task_id, path) is None:
@@ -188,30 +188,32 @@ class AttachmentBar(QWidget):
             if pix.isNull():
                 thumb.setText("(image unavailable)")
                 thumb.setObjectName("metaText")
-                thumb.setCursor(Qt.ArrowCursor)
+                thumb.setCursor(Qt.CursorShape.ArrowCursor)
             else:
                 thumb.setPixmap(
                     pix.scaled(
                         THUMB_MAX,
                         THUMB_MAX,
-                        Qt.KeepAspectRatio,
-                        Qt.SmoothTransformation,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
                     )
                 )
                 thumb.setToolTip("Click to view full size")
                 thumb.clicked.connect(
                     lambda a=att_id, p=path, d=display: self._open_preview(a, p, d)
                 )
-            col.addWidget(thumb, 0, Qt.AlignLeft)
+            col.addWidget(thumb, 0, Qt.AlignmentFlag.AlignLeft)
 
             name = QLabel(display)
             name.setToolTip(filename)
             col.addWidget(name)
 
             self.rows.add_row(
-                entry, "Remove attachment",
+                entry,
+                "Remove attachment",
                 lambda a=att_id, d=display: self._confirm_remove(a, d),
-                align=Qt.AlignBottom)
+                align=Qt.AlignmentFlag.AlignBottom,
+            )
 
     def _open_preview(self, attachment_id: int, path: Path, display: str) -> None:
         dlg = ImagePreviewDialog(path, display, self)
@@ -220,10 +222,14 @@ class AttachmentBar(QWidget):
             self._remove(attachment_id)
 
     def _confirm_remove(self, attachment_id: int, display: str) -> None:
-        if confirm(self, "Remove this attachment?",
-                   f"{display} is dropped from this card and the file moves "
-                   f"to images/_trash, where it can be recovered.",
-                   "Remove", destructive=True):
+        if confirm(
+            self,
+            "Remove this attachment?",
+            f"{display} is dropped from this card and the file moves "
+            f"to images/_trash, where it can be recovered.",
+            "Remove",
+            destructive=True,
+        ):
             self._remove(attachment_id)
 
     def _remove(self, attachment_id: int) -> None:

@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import html
 import sqlite3
+from typing import cast
 
+import finishing  # bristol-local: what done means for the board, one rule
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import (
@@ -43,36 +45,35 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-import finishing  # bristol-local: what done means for the board, one rule
-
+from . import icons
 from .attachments import AttachmentBar
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar, carried_summaries
 from .record_dialog import LOG_FILTERS, STAGES, section_widget
 from .segmented import SegmentedControl
 from .settled_combo import fill_words
-from . import icons
 from .theme import (
     BLOCK_REASON_CHOICES,
     BLOCK_REASON_HINT,
-    C,
+    LAYOUT,
     SIZE_CHOICES,
     SIZE_HINT,
     STAGE_CHOICES,
     STATUS_CHOICES,
     TIER_CHOICES,
     TIER_HINT,
-    fill_agents,
-    fleet_agents,
-    select_agent,
-    LAYOUT,
+    C,
     _fmt_dt,
     _utcnow,
+    fill_agents,
+    fleet_agents,
     log_entries,
     relative_time,
+    select_agent,
     space,
     type_size,
 )
+
 
 def _picker_width(combo: QComboBox) -> int:
     """How wide ``combo`` has to be to show its current value whole, in the
@@ -81,8 +82,9 @@ def _picker_width(combo: QComboBox) -> int:
     combo.initStyleOption(option)
     metrics = combo.fontMetrics()
     text = QSize(metrics.horizontalAdvance(combo.currentText()), metrics.height())
-    return combo.style().sizeFromContents(
-        QStyle.CT_ComboBox, option, text, combo).width()
+    return (
+        combo.style().sizeFromContents(QStyle.ContentsType.CT_ComboBox, option, text, combo).width()
+    )
 
 
 class DetailPane(QWidget):
@@ -91,11 +93,12 @@ class DetailPane(QWidget):
     host can refresh the board; ``on_collapse`` fires when the collapse control
     is used, and the host decides what that does to the splitter."""
 
-    def __init__(self, conn: sqlite3.Connection, parent=None,
-                 on_changed=None, on_collapse=None) -> None:
+    def __init__(
+        self, conn: sqlite3.Connection, parent=None, on_changed=None, on_collapse=None
+    ) -> None:
         super().__init__(parent)
         self.setObjectName("detailPane")
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setMinimumWidth(LAYOUT["detail_min_w"])
 
         self.conn = conn
@@ -116,7 +119,7 @@ class DetailPane(QWidget):
         self.title.setWordWrap(True)
         title_font = QFont()
         title_font.setPointSize(type_size("section"))
-        title_font.setWeight(QFont.DemiBold)
+        title_font.setWeight(QFont.Weight.DemiBold)
         self.title.setFont(title_font)
         self.title.setObjectName("inspectorTitle")
         head.addWidget(self.title, 1)
@@ -125,9 +128,9 @@ class DetailPane(QWidget):
         icons.tint(self.collapse_btn, "chevron-right", size=14)
         self.collapse_btn.setToolTip("Collapse the detail pane")
         self.collapse_btn.setAccessibleName("Collapse the detail pane")
-        self.collapse_btn.setCursor(Qt.PointingHandCursor)
+        self.collapse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.collapse_btn.clicked.connect(self._collapse)
-        head.addWidget(self.collapse_btn, 0, Qt.AlignTop)
+        head.addWidget(self.collapse_btn, 0, Qt.AlignmentFlag.AlignTop)
         root.addLayout(head)
 
         # ----- the live controls: the fields a card is worked with ----------
@@ -142,14 +145,11 @@ class DetailPane(QWidget):
         self.owner_combo = QComboBox()
         fill_agents(self.owner_combo, fleet_agents())
         self.epic_combo = QComboBox()
-        self.size_combo = fill_words(QComboBox(), SIZE_CHOICES,
-                                       hint=SIZE_HINT)
-        self.tier_combo = fill_words(QComboBox(), TIER_CHOICES,
-                                     hint=TIER_HINT)
+        self.size_combo = fill_words(QComboBox(), SIZE_CHOICES, hint=SIZE_HINT)
+        self.tier_combo = fill_words(QComboBox(), TIER_CHOICES, hint=TIER_HINT)
         # Blocked says what kind of thing has stopped the card. Which card is the
         # Links section's job, and the prose is a comment under the Log.
-        self.block_combo = fill_words(QComboBox(), BLOCK_REASON_CHOICES,
-                                      hint=BLOCK_REASON_HINT)
+        self.block_combo = fill_words(QComboBox(), BLOCK_REASON_CHOICES, hint=BLOCK_REASON_HINT)
 
         self._control_grid = grid
         self._control_columns = 0
@@ -166,20 +166,19 @@ class DetailPane(QWidget):
             label = QLabel(caption)
             label.setObjectName("formCaption")
             self._control_rows.append((label, widget))
-            widget.currentIndexChanged.connect(
-                lambda _index: self._reflow_controls())
+            widget.currentIndexChanged.connect(lambda _index: self._reflow_controls())
         self._reflow_controls()
         root.addWidget(self.controls)
 
         self.status_combo.currentIndexChanged.connect(
-            lambda _index: self._write_placement(
-                "status", self.status_combo.currentData()))
+            lambda _index: self._write_placement("status", self.status_combo.currentData())
+        )
         self.stage_combo.currentIndexChanged.connect(
-            lambda _index: self._write_placement(
-                "stage", self.stage_combo.currentData()))
+            lambda _index: self._write_placement("stage", self.stage_combo.currentData())
+        )
         self.owner_combo.currentIndexChanged.connect(
-            lambda _index: self._write_field(
-                "assignee", self.owner_combo.currentData()))
+            lambda _index: self._write_field("assignee", self.owner_combo.currentData())
+        )
         self.epic_combo.currentIndexChanged.connect(self._write_epic)
         self.size_combo.currentIndexChanged.connect(self._write_size)
         self.block_combo.currentIndexChanged.connect(self._write_block_reason)
@@ -189,8 +188,8 @@ class DetailPane(QWidget):
         self._scroll = QScrollArea()
         self._scroll.setObjectName("detailScroll")
         self._scroll.setWidgetResizable(True)
-        self._scroll.setFrameShape(QFrame.NoFrame)
-        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         body = QWidget()
         self._body_layout = QVBoxLayout(body)
         self._body_layout.setContentsMargins(0, 0, 0, 0)
@@ -203,7 +202,7 @@ class DetailPane(QWidget):
         self._body_layout.addWidget(desc_caption)
         self.desc = QTextEdit()
         self.desc.setReadOnly(True)
-        self.desc.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.desc.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._body_layout.addWidget(self.desc)
 
         self._links_header = section_widget("Links")
@@ -229,8 +228,9 @@ class DetailPane(QWidget):
         self._body_layout.addWidget(self.attachments)
         # Controls of equal rank share a width, a height and an edge: the two
         # attach-context buttons take the wider one's size.
-        shared = max(self.links.add_btn.sizeHint().width(),
-                     self.attachments.attach_btn.sizeHint().width())
+        shared = max(
+            self.links.add_btn.sizeHint().width(), self.attachments.attach_btn.sizeHint().width()
+        )
         self.links.add_btn.setFixedWidth(shared)
         self.attachments.attach_btn.setFixedWidth(shared)
 
@@ -244,8 +244,7 @@ class DetailPane(QWidget):
         self._body_layout.addLayout(filter_row)
         self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
-        self.log_view.setMinimumHeight(
-            QFontMetrics(self.log_view.font()).lineSpacing() * 8)
+        self.log_view.setMinimumHeight(QFontMetrics(self.log_view.font()).lineSpacing() * 8)
         self._body_layout.addWidget(self.log_view, 1)
 
         self._body_layout.addWidget(section_widget("Attributes"))
@@ -266,7 +265,7 @@ class DetailPane(QWidget):
         self.post_btn.clicked.connect(self._post_comment)
         # The composer grows upward from its foot, so the button keeps the
         # field's bottom edge rather than floating at its middle.
-        composer.addWidget(self.post_btn, 0, Qt.AlignBottom)
+        composer.addWidget(self.post_btn, 0, Qt.AlignmentFlag.AlignBottom)
         root.addLayout(composer)
 
         self.clear()
@@ -285,13 +284,16 @@ class DetailPane(QWidget):
             key_label = QLabel(key)
             key_label.setObjectName("metaText")
             value_label = QLabel(value)
-            value_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-            self._attr_grid.addWidget(key_label, row, 0, Qt.AlignLeft | Qt.AlignTop)
-            self._attr_grid.addWidget(value_label, row, 1, Qt.AlignLeft | Qt.AlignTop)
+            value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            self._attr_grid.addWidget(
+                key_label, row, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            )
+            self._attr_grid.addWidget(
+                value_label, row, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            )
         self._attr_grid.setColumnStretch(1, 1)
 
-    def _fit(self, view: QTextEdit, low_lines: int,
-             high_lines: int | None) -> None:
+    def _fit(self, view: QTextEdit, low_lines: int, high_lines: int | None) -> None:
         """Size a read-only view to what it contains, within a bound: at least a
         few lines so the section reads as present, and at most ``high_lines``
         where one is given, past which it scrolls inside its own field. With no
@@ -310,7 +312,10 @@ class DetailPane(QWidget):
         high = wanted if high_lines is None else line * high_lines
         view.setFixedHeight(max(low, min(wanted, high)))
         view.setVerticalScrollBarPolicy(
-            Qt.ScrollBarAsNeeded if wanted > high else Qt.ScrollBarAlwaysOff)
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            if wanted > high
+            else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
 
     def _fit_description(self) -> None:
         # Unbounded: the card's own text scrolls with the pane, so the pane
@@ -327,10 +332,8 @@ class DetailPane(QWidget):
         show every current value whole, and one to a row where it is not."""
         grid = self._control_grid
         gap = grid.horizontalSpacing()
-        caption = max(label.sizeHint().width()
-                      for label, _widget in self._control_rows)
-        pair = caption + gap + max(_picker_width(widget)
-                                   for _label, widget in self._control_rows)
+        caption = max(label.sizeHint().width() for label, _widget in self._control_rows)
+        pair = caption + gap + max(_picker_width(widget) for _label, widget in self._control_rows)
         width = self.controls.width() or self.width()
         columns = 2 if 2 * pair + gap <= width else 1
         if columns == self._control_columns:
@@ -344,10 +347,9 @@ class DetailPane(QWidget):
             grid.addWidget(label, row, column * 2)
             grid.addWidget(widget, row, column * 2 + 1)
         for column in range(4):
-            grid.setColumnStretch(column, 1 if column % 2 and column < 2 * columns
-                                  else 0)
+            grid.setColumnStretch(column, 1 if column % 2 and column < 2 * columns else 0)
 
-    def resizeEvent(self, event):  # noqa: N802 (Qt override)
+    def resizeEvent(self, event):
         super().resizeEvent(event)
         self._reflow_controls()
         if self.task_id is not None or self.epic_id is not None:
@@ -400,9 +402,23 @@ class DetailPane(QWidget):
             return
         if row is None:
             return
-        (title, desc, status, tier, epic_name, owner, originator, estimate,
-         joined_epic_id, created_at, updated_at, record_type, stage,
-         epic_id, block_reason) = row
+        (
+            title,
+            desc,
+            status,
+            tier,
+            epic_name,
+            owner,
+            originator,
+            estimate,
+            joined_epic_id,
+            created_at,
+            updated_at,
+            record_type,
+            stage,
+            epic_id,
+            block_reason,
+        ) = row
 
         self._loading = True
         self.task_id = task_id
@@ -411,10 +427,17 @@ class DetailPane(QWidget):
         self.title.setText(f"#{task_id} {title}")
 
         self.controls.setVisible(True)
-        self.status_combo.setCurrentIndex(max(self.status_combo.findData(
-            status if status in ("todo", "doing", "done") else "todo"), 0))
-        self.stage_combo.setCurrentIndex(max(self.stage_combo.findData(
-            stage if stage in STAGES else "backlog"), 0))
+        self.status_combo.setCurrentIndex(
+            max(
+                self.status_combo.findData(
+                    status if status in ("todo", "doing", "done") else "todo"
+                ),
+                0,
+            )
+        )
+        self.stage_combo.setCurrentIndex(
+            max(self.stage_combo.findData(stage if stage in STAGES else "backlog"), 0)
+        )
         self._select_owner(owner)
         self._load_epics(epic_id)
         size_index = self.size_combo.findData((estimate or "").upper())
@@ -439,20 +462,22 @@ class DetailPane(QWidget):
         self._set_composer_enabled(True)
 
         record_kind = "Fix" if (record_type or "build").lower() == "fix" else "Build"
-        self._set_attributes([
-            ("Issue #", str(task_id)),
-            ("Record type", record_kind),
-            ("Originator", originator),
-            ("Created", _fmt_dt(created_at)),
-            ("Modified", _fmt_dt(updated_at)),
-        ])
+        self._set_attributes(
+            [
+                ("Issue #", str(task_id)),
+                ("Record type", record_kind),
+                ("Originator", originator),
+                ("Created", _fmt_dt(created_at)),
+                ("Modified", _fmt_dt(updated_at)),
+            ]
+        )
         self._loading = False
 
     def show_epic(self, epic_id: int) -> None:
         try:
             row = self.conn.execute(
-                "SELECT name, description, type, status FROM epic WHERE id=?",
-                (epic_id,)).fetchone()
+                "SELECT name, description, type, status FROM epic WHERE id=?", (epic_id,)
+            ).fetchone()
         except sqlite3.OperationalError:
             return
         if row is None:
@@ -464,11 +489,13 @@ class DetailPane(QWidget):
         self.title.setText(f"Epic #{epic_id} {name}")
         self.desc.setPlainText(desc or "(No details provided)")
         self._fit_description()
-        self._set_attributes([
-            ("Epic #", str(epic_id)),
-            ("Type", epic_type or "—"),
-            ("Status", epic_status or "—"),
-        ])
+        self._set_attributes(
+            [
+                ("Epic #", str(epic_id)),
+                ("Type", epic_type or "—"),
+                ("Status", epic_status or "—"),
+            ]
+        )
         self._loading = False
 
     def _select_owner(self, value: str | None) -> None:
@@ -484,9 +511,9 @@ class DetailPane(QWidget):
         self.epic_combo.addItem("(no epic)", None)
         try:
             for eid, ename, estatus in self.conn.execute(
-                    "SELECT id, name, status FROM epic ORDER BY id").fetchall():
-                if (estatus or "").lower() in ("completed", "done") \
-                        and eid != current_epic_id:
+                "SELECT id, name, status FROM epic ORDER BY id"
+            ).fetchall():
+                if (estatus or "").lower() in ("completed", "done") and eid != current_epic_id:
                     continue
                 self.epic_combo.addItem(ename, eid)
         except sqlite3.OperationalError:
@@ -509,8 +536,7 @@ class DetailPane(QWidget):
         if self._loading or self.task_id is None:
             return
         try:
-            self.conn.execute(
-                f"UPDATE task SET {field}=? WHERE id=?", (value, self.task_id))
+            self.conn.execute(f"UPDATE task SET {field}=? WHERE id=?", (value, self.task_id))
             self.conn.commit()
         except sqlite3.OperationalError:
             return
@@ -524,8 +550,8 @@ class DetailPane(QWidget):
             return
         try:
             current = self.conn.execute(
-                "SELECT status, COALESCE(stage,'backlog') FROM task WHERE id=?",
-                (self.task_id,)).fetchone()
+                "SELECT status, COALESCE(stage,'backlog') FROM task WHERE id=?", (self.task_id,)
+            ).fetchone()
             if current is None:
                 return
             status, stage = current
@@ -534,11 +560,13 @@ class DetailPane(QWidget):
             if new_stage == "active":
                 base = self.conn.execute(
                     "SELECT COALESCE(MAX(sort_order), -1) FROM task "
-                    "WHERE stage='active' AND status=?", (new_status,)).fetchone()[0]
+                    "WHERE stage='active' AND status=?",
+                    (new_status,),
+                ).fetchone()[0]
             else:
                 base = self.conn.execute(
-                    "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage=?",
-                    (new_stage,)).fetchone()[0]
+                    "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage=?", (new_stage,)
+                ).fetchone()[0]
             closed_at = _utcnow() if new_status == "done" else None
             # A finished card is not blocked; moving out of done leaves whatever
             # reason it had, since nothing here can know it was cleared.
@@ -546,12 +574,13 @@ class DetailPane(QWidget):
                 self.conn.execute(
                     "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=?, "
                     "block_reason=NULL WHERE id=?",
-                    (new_status, new_stage, base + 1, closed_at, self.task_id))
+                    (new_status, new_stage, base + 1, closed_at, self.task_id),
+                )
             else:
                 self.conn.execute(
-                    "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=? "
-                    "WHERE id=?",
-                    (new_status, new_stage, base + 1, closed_at, self.task_id))
+                    "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=? WHERE id=?",
+                    (new_status, new_stage, base + 1, closed_at, self.task_id),
+                )
             # A status move is where done means something for the board: a
             # standing card archives itself, a project card waits in Done for
             # its epic to close, and a card taken out of done comes back. A
@@ -596,7 +625,7 @@ class DetailPane(QWidget):
             if row is not None:
                 item = self._attr_grid.itemAtPosition(4, 1)
                 if item is not None and item.widget() is not None:
-                    item.widget().setText(_fmt_dt(row[0]))
+                    cast(QLabel, item.widget()).setText(_fmt_dt(row[0]))
             self._render_log()
         if callable(self.on_changed):
             self.on_changed()
@@ -630,7 +659,8 @@ class DetailPane(QWidget):
                 f'<span style="color:{C["INK"]}"><b>{head}</b></span><br>'
                 f'<span style="color:{C["INK_SOFT"]}">{author} · {when}</span><br>'
                 f'<span style="color:{C["INK"]}">{body}</span>'
-                f'</td></tr></table>')
+                f"</td></tr></table>"
+            )
         self.handoff_view.setHtml("".join(parts))
         self._fit_handoffs()
 
@@ -641,7 +671,8 @@ class DetailPane(QWidget):
             self.log_view.setPlainText("(Select an issue to see its log.)")
             return
         entries = log_entries(
-            self.conn, self.task_id,
+            self.conn,
+            self.task_id,
             comments=self.log_filter.value() in ("all", "comments"),
             changes=self.log_filter.value() in ("all", "changes"),
         )
@@ -660,17 +691,19 @@ class DetailPane(QWidget):
                     f'style="margin-bottom:{space("sm")}px">'
                     f'<tr><td style="background-color:{C["LIST_BG"]};">'
                     f'<span style="color:{C["INK"]}"><b>{author}</b></span>'
-                    f'&nbsp;&nbsp;'
+                    f"&nbsp;&nbsp;"
                     f'<span style="color:{C["INK_SOFT"]}">{when}</span><br>'
                     f'<span style="color:{C["INK"]}">{body}</span>'
-                    f'</td></tr></table>')
+                    f"</td></tr></table>"
+                )
             else:
                 field = html.escape(entry["field"])
                 value = html.escape(entry["value"])
                 parts.append(
                     f'<div style="color:{C["INK_SOFT"]}; '
                     f'margin-bottom:{space("xs")}px">'
-                    f'{author} · {field}: {value} · {when}</div>')
+                    f"{author} · {field}: {value} · {when}</div>"
+                )
         self.log_view.setHtml("".join(parts))
 
     def refresh_theme(self) -> None:
@@ -688,8 +721,7 @@ class DetailPane(QWidget):
             return
         try:
             self.conn.execute(
-                "INSERT INTO issue_log (task_id, author, body, created_at) "
-                "VALUES (?,?,?,?)",
+                "INSERT INTO issue_log (task_id, author, body, created_at) VALUES (?,?,?,?)",
                 (self.task_id, "user", body, _utcnow()),
             )
             self.conn.commit()

@@ -47,6 +47,7 @@ sys.path.insert(0, str(HERE.parents[0] / "config_tools"))
 sys.path.insert(0, str(HERE.parents[0] / "skill_tools"))
 import data_paths  # noqa: E402
 import notebook  # noqa: E402
+
 notebook_module = notebook
 import dashboards as dashboards_module  # noqa: E402
 import read_config  # noqa: E402
@@ -54,8 +55,16 @@ import write_config  # noqa: E402
 
 # The keys this build gives a control of its own. Any other key an entry contains
 # is carried in `extra` and written back unchanged.
-KNOWN = ("identity", "description", "key_data_paths", "key_context_files",
-         "notebook_access", "dashboard_access", "skills", "env")
+KNOWN = (
+    "identity",
+    "description",
+    "key_data_paths",
+    "key_context_files",
+    "notebook_access",
+    "dashboard_access",
+    "skills",
+    "env",
+)
 IDENTITY_DIR = "src/agent_identities"
 
 
@@ -64,6 +73,7 @@ class EditError(Exception):
 
 
 # ── Reading ──────────────────────────────────────────────────────────────────
+
 
 def charter_path(declared: str) -> Path:
     return data_paths.project_root() / declared
@@ -88,12 +98,12 @@ def read_agent(slug: str) -> dict:
         "charter": charter,
         "charter_error": charter_error,
         "description": entry.get("description", ""),
-        "key_data_paths": data_paths.folder_grants(
-            entry.get("key_data_paths") or []),
+        "key_data_paths": data_paths.folder_grants(entry.get("key_data_paths") or []),
         "key_context_files": list(entry.get("key_context_files") or []),
         "notebook_access": dict(notebook) if isinstance(notebook, dict) else {},
         "dashboard_access": dict(entry["dashboard_access"])
-        if isinstance(entry.get("dashboard_access"), dict) else {},
+        if isinstance(entry.get("dashboard_access"), dict)
+        else {},
         "skills": list(entry.get("skills") or []),
         "env": dict(entry.get("env") or {}),
         "extra": {k: v for k, v in entry.items() if k not in KNOWN},
@@ -117,8 +127,7 @@ def skeleton(slug: str) -> str:
     one; they are dropped here, leaving the headings and the fixed reference
     lines for the author to fill in.
     """
-    template = (data_paths.project_root() / "src" / "templates"
-                / "identity_template.md")
+    template = data_paths.project_root() / "src" / "templates" / "identity_template.md"
     found = FENCE.search(template.read_text(encoding="utf-8"))
     if found is None:
         raise EditError(f"{template.name} carries no skeleton to start from")
@@ -130,14 +139,14 @@ def skeleton(slug: str) -> str:
 
 # ── Writing ──────────────────────────────────────────────────────────────────
 
+
 def _checked_identity(slug: str, declared: str, current: str) -> Path:
     if declared == current:
         return charter_path(declared)
     if not declared.endswith(".md"):
         raise EditError(f"a charter is a Markdown file: '{declared}' is not")
     if Path(declared).is_absolute() or ".." in Path(declared).parts:
-        raise EditError(
-            f"a charter lives inside the repository: '{declared}' does not")
+        raise EditError(f"a charter lives inside the repository: '{declared}' does not")
     destination = charter_path(declared)
     if destination.exists():
         raise EditError(f"{declared} already exists")
@@ -175,10 +184,15 @@ def edit(slug: str, changes: dict) -> dict:
         entry["identity"] = declared
 
     if "key_data_paths" in changes:
-        changes["key_data_paths"] = data_paths.folder_grants(
-            changes["key_data_paths"])
-    for key in ("description", "key_data_paths", "key_context_files",
-                "notebook_access", "dashboard_access", "env"):
+        changes["key_data_paths"] = data_paths.folder_grants(changes["key_data_paths"])
+    for key in (
+        "description",
+        "key_data_paths",
+        "key_context_files",
+        "notebook_access",
+        "dashboard_access",
+        "env",
+    ):
         if key in changes:
             entry[key] = changes[key]
     if "extra" in changes:
@@ -188,10 +202,17 @@ def edit(slug: str, changes: dict) -> dict:
         entry.update(changes["extra"])
 
     touches_config = moving or any(
-        k in changes for k in ("description", "key_data_paths",
-                               "key_context_files", "notebook_access",
-                               "dashboard_access", "env",
-                               "extra"))
+        k in changes
+        for k in (
+            "description",
+            "key_data_paths",
+            "key_context_files",
+            "notebook_access",
+            "dashboard_access",
+            "env",
+            "extra",
+        )
+    )
     if touches_config:
         write_config.set_key(f"agents.{slug}", entry)
         written.append(f"agents.{slug}")
@@ -200,12 +221,14 @@ def edit(slug: str, changes: dict) -> dict:
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
+
 def _render(agent: dict) -> str:
     notebook = agent["notebook_access"]
-    lines = [agent["slug"],
-             f"  {agent['description']}",
-             f"  charter    {agent['identity']} "
-             f"({len(agent['charter'].splitlines())} lines)"]
+    lines = [
+        agent["slug"],
+        f"  {agent['description']}",
+        f"  charter    {agent['identity']} ({len(agent['charter'].splitlines())} lines)",
+    ]
     for grant in agent["key_data_paths"]:
         lines.append(f"  data       {grant['path']}  ({grant['access']})")
     for declared in agent["key_context_files"]:
@@ -270,36 +293,53 @@ def main(argv: list[str]) -> int:
     editing.add_argument("slug")
     editing.add_argument("--identity", help="where the charter file lives")
     editing.add_argument("--description")
-    editing.add_argument("--charter-file",
-                         help="a file containing the whole charter document")
-    editing.add_argument("--data-path", action=_Grant, metavar="PATH",
-                         help="a folder this agent may write in")
-    editing.add_argument("--read-path", action=_Grant, metavar="PATH",
-                         help="a folder this agent may read and not write")
+    editing.add_argument("--charter-file", help="a file containing the whole charter document")
+    editing.add_argument(
+        "--data-path", action=_Grant, metavar="PATH", help="a folder this agent may write in"
+    )
+    editing.add_argument(
+        "--read-path",
+        action=_Grant,
+        metavar="PATH",
+        help="a folder this agent may read and not write",
+    )
     editing.add_argument("--no-data-paths", action="store_true")
     editing.set_defaults(grants=None)
     editing.add_argument("--context-file", action="append")
     editing.add_argument("--no-context-files", action="store_true")
     editing.add_argument("--notebook-mode", choices=notebook.MODES)
-    editing.add_argument("--notebook-folder", action="append",
-                         metavar="FOLDER=ACCESS",
-                         help="read, write or hide for one attached folder; "
-                              "repeatable, and folders not given keep theirs")
+    editing.add_argument(
+        "--notebook-folder",
+        action="append",
+        metavar="FOLDER=ACCESS",
+        help="read, write or hide for one attached folder; "
+        "repeatable, and folders not given keep theirs",
+    )
     dash = editing.add_mutually_exclusive_group()
-    dash.add_argument("--dashboards-all", dest="dashboards_all",
-                      action="store_const", const=True,
-                      help="write to every dashboard")
-    dash.add_argument("--dashboards-chosen", dest="dashboards_all",
-                      action="store_const", const=False,
-                      help="write only to the dashboards given with --dashboard")
-    editing.add_argument("--dashboard", action="append", metavar="NAME",
-                         help="a dashboard this agent may write; repeatable")
-    editing.add_argument("--no-dashboards", action="store_true",
-                         help="choose no dashboard")
+    dash.add_argument(
+        "--dashboards-all",
+        dest="dashboards_all",
+        action="store_const",
+        const=True,
+        help="write to every dashboard",
+    )
+    dash.add_argument(
+        "--dashboards-chosen",
+        dest="dashboards_all",
+        action="store_const",
+        const=False,
+        help="write only to the dashboards given with --dashboard",
+    )
+    editing.add_argument(
+        "--dashboard",
+        action="append",
+        metavar="NAME",
+        help="a dashboard this agent may write; repeatable",
+    )
+    editing.add_argument("--no-dashboards", action="store_true", help="choose no dashboard")
     editing.add_argument("--env", action="append", metavar="NAME=VALUE")
     editing.add_argument("--no-env", action="store_true")
-    editing.add_argument("--extra-file",
-                         help="a JSON object replacing every other key")
+    editing.add_argument("--extra-file", help="a JSON object replacing every other key")
     args = parser.parse_args(argv)
 
     if args.command == "list":
@@ -321,8 +361,10 @@ def main(argv: list[str]) -> int:
     try:
         agent = read_agent(args.slug)
     except KeyError:
-        print(f"'{args.slug}' is not a configured agent. `agents.py list` "
-              f"names the ones that are.", file=sys.stderr)
+        print(
+            f"'{args.slug}' is not a configured agent. `agents.py list` names the ones that are.",
+            file=sys.stderr,
+        )
         return 1
 
     if args.command == "read":
@@ -336,8 +378,7 @@ def main(argv: list[str]) -> int:
         if args.description is not None:
             changes["description"] = args.description.strip()
         if args.charter_file is not None:
-            changes["charter"] = Path(args.charter_file).read_text(
-                encoding="utf-8")
+            changes["charter"] = Path(args.charter_file).read_text(encoding="utf-8")
         if args.grants:
             changes["key_data_paths"] = args.grants
         elif args.no_data_paths:
@@ -358,21 +399,24 @@ def main(argv: list[str]) -> int:
 
         if args.notebook_mode is not None or args.notebook_folder:
             before = agent["notebook_access"]
-            chosen = dict(before.get("folders") or {}) \
-                if isinstance(before, dict) and "mode" in before else {}
+            chosen = (
+                dict(before.get("folders") or {})
+                if isinstance(before, dict) and "mode" in before
+                else {}
+            )
             for item in args.notebook_folder or []:
                 folder, _, access = item.rpartition("=")
                 if access not in notebook_module.ACCESS or not folder:
-                    raise EditError(
-                        f"--notebook-folder takes FOLDER=read|write|hide: {item}")
+                    raise EditError(f"--notebook-folder takes FOLDER=read|write|hide: {item}")
                 chosen[folder] = access
-            mode = args.notebook_mode or (before.get("mode")
-                                          if isinstance(before, dict) else None) \
+            mode = (
+                args.notebook_mode
+                or (before.get("mode") if isinstance(before, dict) else None)
                 or notebook_module.DEFAULT_MODE
+            )
             changes["notebook_access"] = {"mode": mode, "folders": chosen}
 
-        if (args.dashboards_all is not None or args.dashboard
-                or args.no_dashboards):
+        if args.dashboards_all is not None or args.dashboard or args.no_dashboards:
             before = agent["dashboard_access"]
             known = dashboards_module.names()
             chosen = list(before.get("dashboards") or [])
@@ -381,10 +425,12 @@ def main(argv: list[str]) -> int:
                 if unknown:
                     raise EditError(f"not a known dashboard: {', '.join(unknown)}")
                 chosen = list(dict.fromkeys(args.dashboard or []))
-            write_all = args.dashboards_all if args.dashboards_all is not None \
+            write_all = (
+                args.dashboards_all
+                if args.dashboards_all is not None
                 else before.get("write_all") is not False
-            changes["dashboard_access"] = {"write_all": write_all,
-                                           "dashboards": chosen}
+            )
+            changes["dashboard_access"] = {"write_all": write_all, "dashboards": chosen}
 
         if not changes:
             print("nothing to change; name at least one field.", file=sys.stderr)

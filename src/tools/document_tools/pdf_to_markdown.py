@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
 import os
-import subprocess
 import shutil
+import subprocess
+
 
 def run_cmd(cmd):
     """Run a shell command and return (success, output)."""
     try:
-        result = subprocess.run(
-            cmd,
-            shell=True,
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         if result.returncode == 0:
             return True, result.stdout
         else:
             return False, result.stderr
     except Exception as e:
         return False, str(e)
+
 
 def process_pdf(pdf_path, output_dir):
     """Run OCR + pdftotext on a single PDF."""
@@ -38,6 +35,7 @@ def process_pdf(pdf_path, output_dir):
         return False, f"pdftotext failed: {txt_msg}"
 
     return True, "Success"
+
 
 def main():
     print("Enter the directory containing your PDFs:")
@@ -73,6 +71,7 @@ def main():
     print("\nDone.")
     print(f"Successful PDFs moved to: {processed_dir}")
     print("Markdown files are in the same directory you provided.")
+
 
 if __name__ == "__main__":
     main()

@@ -118,9 +118,7 @@ def _default_data_root(root: Path) -> Path:
     rather than through ``read_config``, which imports this module.
     """
     try:
-        config = json.loads(
-            (root / "config" / "config.local.json").read_text(encoding="utf-8")
-        )
+        config = json.loads((root / "config" / "config.local.json").read_text(encoding="utf-8"))
         declared = config["important_paths"]["tickets_db"]
     except (OSError, json.JSONDecodeError, KeyError, TypeError):
         return root / "data"

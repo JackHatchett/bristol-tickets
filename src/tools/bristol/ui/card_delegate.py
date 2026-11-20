@@ -40,17 +40,17 @@ selects the card (inspector) nor starts a drag (reorder).
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QSize, QRectF, QRect, QEvent
+from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
 from PySide6.QtWidgets import QStyle, QStyledItemDelegate
 
 from .theme import (
-    C,
     CARD_ROLE,
-    agent_caption,
+    C,
     _is_checked,
-    size_label,
+    agent_caption,
     radius,
+    size_label,
     space,
     type_size,
 )
@@ -124,7 +124,7 @@ class CardDelegate(QStyledItemDelegate):
     def _title_font(self) -> QFont:
         f = QFont()
         f.setPointSize(type_size("title"))
-        f.setWeight(QFont.DemiBold)
+        f.setWeight(QFont.Weight.DemiBold)
         return f
 
     def _desc_font(self) -> QFont:
@@ -172,8 +172,8 @@ class CardDelegate(QStyledItemDelegate):
                 break
         if current:
             lines.append(current)
-        lines = lines[:self.TITLE_LINES]
-        return [fm.elidedText(line, Qt.ElideRight, width) for line in lines]
+        lines = lines[: self.TITLE_LINES]
+        return [fm.elidedText(line, Qt.TextElideMode.ElideRight, width) for line in lines]
 
     def _title_height(self, title: str, content_w: int) -> int:
         lines = max(1, len(self._title_lines(title, content_w)))
@@ -200,8 +200,7 @@ class CardDelegate(QStyledItemDelegate):
             total_w = widget.viewport().width()
         else:
             total_w = option.rect.width() or 260
-        key = (total_w, self.show_checkbox, self._title_font().key(),
-               repr(sorted(data.items())))
+        key = (total_w, self.show_checkbox, self._title_font().key(), repr(sorted(data.items())))
         cache = self.__dict__.setdefault("_heights", {})
         height = cache.get(key)
         if height is None:
@@ -215,8 +214,7 @@ class CardDelegate(QStyledItemDelegate):
         content_w = self._content_width(total_w)
 
         h = self.PAD
-        h += self._title_height(data.get("title", ""),
-                                self._title_width(content_w, data))
+        h += self._title_height(data.get("title", ""), self._title_width(content_w, data))
         if self._shows_description(data):
             h += space("sm") + self.DESC_H
         h += self._footer_height(data, content_w) + self.PAD
@@ -237,7 +235,7 @@ class CardDelegate(QStyledItemDelegate):
         h = self.PILL_H
         rect = QRectF(x, y, w, h)
         corner = radius("sm")
-        painter.setPen(Qt.NoPen)
+        painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(bg))
         painter.drawRoundedRect(rect, corner, corner)
         painter.setPen(QColor(fg))
@@ -246,9 +244,11 @@ class CardDelegate(QStyledItemDelegate):
         # the drawn width differ by a fraction of a pixel, and a pill sized to
         # its text would otherwise cut that text.
         inner = int(w - space("lg"))
-        painter.drawText(rect, Qt.AlignCenter,
-                         QFontMetrics(font).elidedText(
-                             text, Qt.ElideRight, inner))
+        painter.drawText(
+            rect,
+            Qt.AlignmentFlag.AlignCenter,
+            QFontMetrics(font).elidedText(text, Qt.TextElideMode.ElideRight, inner),
+        )
         return w
 
     # ----- the board card's lower half --------------------------------------
@@ -271,9 +271,13 @@ class CardDelegate(QStyledItemDelegate):
         due = (data.get("due_date") or "").strip()
         if due:
             overdue = bool(data.get("overdue"))
-            pills.append((f"Overdue {due}" if overdue else f"Due {due}",
-                          C["FIX_BG"] if overdue else C["NEUTRAL_BG"],
-                          C["FIX_TX"] if overdue else C["NEUTRAL_TX"]))
+            pills.append(
+                (
+                    f"Overdue {due}" if overdue else f"Due {due}",
+                    C["FIX_BG"] if overdue else C["NEUTRAL_BG"],
+                    C["FIX_TX"] if overdue else C["NEUTRAL_TX"],
+                )
+            )
         epic_name = (data.get("epic_name") or "").strip()
         if epic_name:
             pills.append((epic_name, C["NEUTRAL_BG"], C["NEUTRAL_TX"]))
@@ -295,8 +299,13 @@ class CardDelegate(QStyledItemDelegate):
 
         owner = agent_caption(data.get("owner", "") or "user")
         line_h = ofm.height()
-        ops.append(("owner", QRectF(0, 0, cw, line_h),
-                    ofm.elidedText(owner, Qt.ElideRight, int(cw))))
+        ops.append(
+            (
+                "owner",
+                QRectF(0, 0, cw, line_h),
+                ofm.elidedText(owner, Qt.TextElideMode.ElideRight, int(cw)),
+            )
+        )
         y = line_h + self.GAP
 
         issue_id = data.get("issue_id")
@@ -313,7 +322,7 @@ class CardDelegate(QStyledItemDelegate):
             widths[-1] = max(least, widths[-1] + spare)
 
         x, row_h = 0, self.PILL_H
-        for (text, bg, fg), w in zip(pills, widths):
+        for (text, bg, fg), w in zip(pills, widths, strict=False):
             if x and x + w > cw:
                 y += row_h + gap
                 x = 0
@@ -329,30 +338,34 @@ class CardDelegate(QStyledItemDelegate):
         """Toggle the bulk-select checkbox on a click inside its square, and
         consume that click so it doesn't also select the card or begin a drag.
         All other events fall through to the default handling."""
-        if (self.show_checkbox
-                and event.type() in (QEvent.MouseButtonRelease, QEvent.MouseButtonDblClick)
-                and self._checkbox_rect(option).contains(event.position().toPoint())):
-            if event.type() == QEvent.MouseButtonRelease:
-                checked = _is_checked(index.data(Qt.CheckStateRole))
-                model.setData(index, Qt.Unchecked if checked else Qt.Checked,
-                              Qt.CheckStateRole)
+        if (
+            self.show_checkbox
+            and event.type() in (QEvent.Type.MouseButtonRelease, QEvent.Type.MouseButtonDblClick)
+            and self._checkbox_rect(option).contains(event.position().toPoint())
+        ):
+            if event.type() == QEvent.Type.MouseButtonRelease:
+                checked = _is_checked(index.data(Qt.ItemDataRole.CheckStateRole))
+                model.setData(
+                    index,
+                    Qt.CheckState.Unchecked if checked else Qt.CheckState.Checked,
+                    Qt.ItemDataRole.CheckStateRole,
+                )
             return True
         return super().editorEvent(event, model, option, index)
 
     def paint(self, painter, option, index):
         data = index.data(CARD_ROLE) or {}
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
-        selected = bool(option.state & QStyle.State_Selected)
-        hovered = bool(option.state & QStyle.State_MouseOver)
+        selected = bool(option.state & QStyle.StateFlag.State_Selected)
+        hovered = bool(option.state & QStyle.StateFlag.State_MouseOver)
 
         if self.show_checkbox:
             self._paint_checkbox(painter, option, index)
 
         left_gap = self._left_gap()
-        card = QRectF(option.rect).adjusted(
-            left_gap, self.MARGIN, -self.MARGIN, -self.MARGIN)
+        card = QRectF(option.rect).adjusted(left_gap, self.MARGIN, -self.MARGIN, -self.MARGIN)
 
         # A card is flat: its edge is the 1 px every clickable thing has, and
         # selection turns that edge to the accent over the selected fill.
@@ -364,8 +377,7 @@ class CardDelegate(QStyledItemDelegate):
             fill, edge = QColor(C["SURFACE"]), QColor(C["BTN_BORDER"])
         painter.setPen(QPen(edge, 1))
         painter.setBrush(fill)
-        painter.drawRoundedRect(card.adjusted(0.5, 0.5, -0.5, -0.5),
-                                radius("lg"), radius("lg"))
+        painter.drawRoundedRect(card.adjusted(0.5, 0.5, -0.5, -0.5), radius("lg"), radius("lg"))
 
         cx = card.left() + self.PAD
         cw = card.right() - self.PAD - cx
@@ -377,23 +389,28 @@ class CardDelegate(QStyledItemDelegate):
         # workstream has an epic, so it carries nothing.
         title_w = self._title_width(int(cw), data)
         if data.get("untriaged"):
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(C["ACCENT"]))
             painter.drawEllipse(
-                QRectF(cx + cw - self.MARK_D,
-                       card.top() + self.PAD + (self.MARK_D / 2),
-                       self.MARK_D, self.MARK_D))
+                QRectF(
+                    cx + cw - self.MARK_D,
+                    card.top() + self.PAD + (self.MARK_D / 2),
+                    self.MARK_D,
+                    self.MARK_D,
+                )
+            )
 
         # Title — the first thing read, at most TITLE_LINES lines.
         tfont = self._title_font()
         tfm = QFontMetrics(tfont)
         painter.setFont(tfont)
         painter.setPen(QColor(C["INK"]))
-        for i, line in enumerate(self._title_lines(data.get("title", "") or "",
-                                                   title_w)):
-            painter.drawText(QRectF(cx, y + i * tfm.lineSpacing(), title_w,
-                                    tfm.height()),
-                             int(Qt.AlignLeft | Qt.AlignTop), line)
+        for i, line in enumerate(self._title_lines(data.get("title", "") or "", title_w)):
+            painter.drawText(
+                QRectF(cx, y + i * tfm.lineSpacing(), title_w, tfm.height()),
+                int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop),
+                line,
+            )
         y += self._title_height(data.get("title", "") or "", title_w)
 
         # One muted line of the description, where this card carries one.
@@ -405,8 +422,9 @@ class CardDelegate(QStyledItemDelegate):
             painter.setPen(QColor(C["INK_SOFT"]))
             painter.drawText(
                 QRectF(cx, y, cw, self.DESC_H),
-                int(Qt.AlignLeft | Qt.AlignVCenter),
-                QFontMetrics(dfont).elidedText(desc, Qt.ElideRight, int(cw)))
+                int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+                QFontMetrics(dfont).elidedText(desc, Qt.TextElideMode.ElideRight, int(cw)),
+            )
             y += self.DESC_H
 
         y += self.GAP
@@ -421,36 +439,47 @@ class CardDelegate(QStyledItemDelegate):
             rect = rect.translated(cx, y)
             if kind == "pill":
                 text, bg, fg = payload
-                self._draw_pill(painter, rect.x(), rect.y(), text, bg, fg,
-                                sfont, width=rect.width())
+                self._draw_pill(
+                    painter, rect.x(), rect.y(), text, bg, fg, sfont, width=rect.width()
+                )
             elif kind == "owner":
                 painter.setFont(self._owner_font())
                 painter.setPen(QColor(C["INK_SOFT"]))
-                painter.drawText(rect, int(Qt.AlignLeft | Qt.AlignVCenter),
-                                 payload)
+                painter.drawText(
+                    rect, int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter), payload
+                )
             else:
                 painter.setFont(sfont)
                 painter.setPen(QColor(C["INK_SOFT"]))
-                painter.drawText(rect, int(Qt.AlignRight | Qt.AlignVCenter),
-                                 payload)
+                painter.drawText(
+                    rect, int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter), payload
+                )
 
     def _paint_checkbox(self, painter, option, index) -> None:
         """Draw the bulk-select checkbox in the left gutter: a rounded square,
         filled with the accent and bearing a check mark when checked."""
         box = QRectF(self._checkbox_rect(option))
-        checked = _is_checked(index.data(Qt.CheckStateRole))
+        checked = _is_checked(index.data(Qt.ItemDataRole.CheckStateRole))
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         if checked:
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(C["ACCENT"]))
             painter.drawRoundedRect(box, radius("sm"), radius("sm"))
             pen = QPen(QColor(C["ON_ACCENT"]), 2)
             painter.setPen(pen)
-            painter.drawLine(int(box.left() + space("sm")), int(box.center().y()),
-                             int(box.center().x() - 1), int(box.bottom() - space("sm")))
-            painter.drawLine(int(box.center().x() - 1), int(box.bottom() - space("sm")),
-                             int(box.right() - space("xs")), int(box.top() + space("sm")))
+            painter.drawLine(
+                int(box.left() + space("sm")),
+                int(box.center().y()),
+                int(box.center().x() - 1),
+                int(box.bottom() - space("sm")),
+            )
+            painter.drawLine(
+                int(box.center().x() - 1),
+                int(box.bottom() - space("sm")),
+                int(box.right() - space("xs")),
+                int(box.top() + space("sm")),
+            )
         else:
             painter.setPen(QPen(QColor(C["ACCENT"]), 1))
             painter.setBrush(QColor(C["SURFACE"]))

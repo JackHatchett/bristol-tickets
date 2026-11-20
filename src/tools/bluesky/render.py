@@ -264,19 +264,28 @@ def render_index(pages, created, related=()):
     pages = sorted(pages)
     lines = ["---", "aliases:"]
     lines += [f"  - {alias}" for alias in INDEX_ALIASES]
-    lines += ["tags:", "  - ai/answer",
-              f"created: {created}", "---", "",
-              f"# {INDEX_TITLE}", "",
-              "Every day I posted on Bluesky, one page per day, newest year first",
-              "", "## Details", ""]
+    lines += [
+        "tags:",
+        "  - ai/answer",
+        f"created: {created}",
+        "---",
+        "",
+        f"# {INDEX_TITLE}",
+        "",
+        "Every day I posted on Bluesky, one page per day, newest year first",
+        "",
+        "## Details",
+        "",
+    ]
     if pages:
-        lines.append(f"- {len(pages)} days, from {pages[0][0]:%Y-%m-%d} "
-                     f"to {pages[-1][0]:%Y-%m-%d}")
+        lines.append(f"- {len(pages)} days, from {pages[0][0]:%Y-%m-%d} to {pages[-1][0]:%Y-%m-%d}")
     else:
         lines.append("- 0 days")
-    lines += ["- Each page is generated from the Bluesky archive by the daily "
-              "sync, so edits to a page are overwritten",
-              "- Posts pruned from the archive appear on no page"]
+    lines += [
+        "- Each page is generated from the Bluesky archive by the daily "
+        "sync, so edits to a page are overwritten",
+        "- Posts pruned from the archive appear on no page",
+    ]
     for year in sorted({day.year for day, _, _ in pages}, reverse=True):
         lines += ["", f"## {year}", ""]
         month = None

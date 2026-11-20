@@ -46,8 +46,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
 
-import data_paths as dp  # noqa: E402  (the shared declared-path resolver)
-import zotero_common as zc  # noqa: E402
+import data_paths as dp
+import zotero_common as zc
 
 TYPE_MAP_PATH = Path(__file__).resolve().parent / "item_types.json"
 
@@ -84,14 +84,10 @@ def collection_name(payload, spec) -> str:
     literal = str(payload.get("collection", "")).strip()
     if literal:
         return literal
-    key = (
-        str(payload.get("collection_key", "")).strip()
-        or spec.get("default_collection_key", "")
-    )
+    key = str(payload.get("collection_key", "")).strip() or spec.get("default_collection_key", "")
     if not key:
         sys.exit(
-            "The payload names no collection. Give it a collection_key from "
-            "zotero.collections."
+            "The payload names no collection. Give it a collection_key from zotero.collections."
         )
     name = collections.get(key)
     if not name:
@@ -258,7 +254,11 @@ def create_item(conn, entry, spec, keys):
         """,
         (
             zc.item_type_id(conn, spec["zotero_type"]),
-            now, now, now, zc.USER_LIBRARY_ID, zc.new_key(conn, keys),
+            now,
+            now,
+            now,
+            zc.USER_LIBRARY_ID,
+            zc.new_key(conn, keys),
         ),
     )
     item_id = cur.lastrowid
@@ -330,14 +330,15 @@ def resolve_type(payload, types, path):
             )
         return named, None
     carried = [
-        name for name, spec in types.items()
+        name
+        for name, spec in types.items()
         if spec.get("payload_key") and spec["payload_key"] in payload
     ]
     if len(carried) == 1:
         return carried[0], None
     return None, (
         f"{path.name}: the payload names no type, and nothing in it identifies "
-        f"one. Give it a \"type\" from: {', '.join(sorted(types))}"
+        f'one. Give it a "type" from: {", ".join(sorted(types))}'
     )
 
 
@@ -362,9 +363,7 @@ def check(type_name, spec, entries, path):
     """Refuse a payload that would write a record nobody could check."""
     problems = []
     if not entries:
-        keys = "'items'" + (
-            f" or '{spec['payload_key']}'" if spec.get("payload_key") else ""
-        )
+        keys = "'items'" + (f" or '{spec['payload_key']}'" if spec.get("payload_key") else "")
         problems.append(f"{path.name}: no entry list under {keys}")
         return problems
     known = (
@@ -394,10 +393,13 @@ def build_one(conn, payload, spec, entries, keys, index, dry_run):
         collection_id, created, start = None, True, 0
     else:
         collection_id, created = get_or_create_collection(conn, name, keys)
-        start = conn.execute(
-            "SELECT COALESCE(MAX(orderIndex), -1) FROM collectionItems WHERE collectionID=?",
-            (collection_id,),
-        ).fetchone()[0] + 1
+        start = (
+            conn.execute(
+                "SELECT COALESCE(MAX(orderIndex), -1) FROM collectionItems WHERE collectionID=?",
+                (collection_id,),
+            ).fetchone()[0]
+            + 1
+        )
 
     reused = made = 0
     for offset, entry in enumerate(entries):
@@ -421,9 +423,7 @@ def build_one(conn, payload, spec, entries, keys, index, dry_run):
 def print_types(types):
     for name in sorted(types):
         spec = types[name]
-        creators = ", ".join(
-            f"{s['key']} → {s['type']}" for s in spec.get("creators", [])
-        )
+        creators = ", ".join(f"{s['key']} → {s['type']}" for s in spec.get("creators", []))
         print(f"{name} → Zotero {spec['zotero_type']}")
         print(f"    required : {', '.join(spec['required'])}")
         print(f"    fields   : {', '.join(sorted(spec['text_fields']))}")
@@ -441,9 +441,7 @@ def main():
         action="store_true",
         help="read-only: report what would be created and reused, safe with Zotero open",
     )
-    ap.add_argument(
-        "--types", action="store_true", help="print the mapped item types and exit"
-    )
+    ap.add_argument("--types", action="store_true", help="print the mapped item types and exit")
     args = ap.parse_args()
 
     types = type_map()
@@ -484,12 +482,8 @@ def main():
         for path, payload, spec, entries in loaded:
             zt = spec["zotero_type"]
             if zt not in indexes:
-                indexes[zt] = load_title_index(
-                    conn, zt, spec.get("date_field") or "date"
-                )
-            result = build_one(
-                conn, payload, spec, entries, keys, indexes[zt], args.dry_run
-            )
+                indexes[zt] = load_title_index(conn, zt, spec.get("date_field") or "date")
+            result = build_one(conn, payload, spec, entries, keys, indexes[zt], args.dry_run)
             verb = "would create" if args.dry_run else "created"
             print(
                 f"{path.name}: {result['collection']} — {verb} {result['made']}, "

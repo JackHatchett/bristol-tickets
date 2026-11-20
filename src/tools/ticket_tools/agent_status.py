@@ -16,14 +16,14 @@ commands rather than one with a flag, because which agent a session is running
 as is an identity rather than an option.
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import status_common as sc  # noqa: E402
+import status_common as sc
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "config_tools"))
-import read_config  # noqa: E402
+import read_config
 
 
 def known_agents() -> set[str]:
@@ -61,11 +61,11 @@ def main() -> None:
     print(f"ACTIVE BOARD (stage=active): {len(board)} task(s)\n")
 
     mine_all = [r for r in board if sc.owned_by(r, me)]
-    mine_q = sc.queue_sort([r for r in board
-                            if sc.owned_by(r, me) and r["status"] in sc.STATUS_RANK])
+    mine_q = sc.queue_sort(
+        [r for r in board if sc.owned_by(r, me) and r["status"] in sc.STATUS_RANK]
+    )
 
-    sc.print_queue(conn, board, mine_q, me,
-                   label="NEXT ACTION", show_owner=False)
+    sc.print_queue(conn, board, mine_q, me, label="NEXT ACTION", show_owner=False)
 
     asked = sc.print_needs_you(mine_all, conn)
     sc.print_body(conn, db_path, me, mine_all, mine_q, asked)

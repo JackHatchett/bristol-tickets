@@ -17,14 +17,14 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 
-SORT_ROLE = Qt.UserRole + 7
-RECORD_ROLE = Qt.UserRole
+SORT_ROLE = Qt.ItemDataRole.UserRole + 7
+RECORD_ROLE = Qt.ItemDataRole.UserRole
 
 
 class _Cell(QTableWidgetItem):
     """A cell that sorts by its key rather than by the text it shows."""
 
-    def __lt__(self, other) -> bool:  # noqa: D105
+    def __lt__(self, other) -> bool:
         mine, theirs = self.data(SORT_ROLE), other.data(SORT_ROLE)
         if mine is None or theirs is None or type(mine) is not type(theirs):
             return str(self.text()).lower() < str(other.text()).lower()
@@ -35,8 +35,8 @@ class ResultsTable(QTableWidget):
     """Rows of (cells, record). A cell is its text, or (text, sort key); the
     record is the (id, kind) a click hands on."""
 
-    picked = Signal(int, str)   # a single click: inspect it
-    opened = Signal(int, str)   # a double click: edit it
+    picked = Signal(int, str)  # a single click: inspect it
+    opened = Signal(int, str)  # a double click: edit it
 
     def __init__(self, headers: list[str], stretch: int, parent=None) -> None:
         super().__init__(0, len(headers), parent)
@@ -45,24 +45,26 @@ class ResultsTable(QTableWidget):
         self.setAlternatingRowColors(True)
         self.setShowGrid(False)
         self.setWordWrap(False)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.verticalHeader().setVisible(False)
         header = self.horizontalHeader()
         header.setHighlightSections(False)
-        header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        header.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         for column in range(len(headers)):
             header.setSectionResizeMode(
-                column, QHeaderView.Stretch if column == stretch
-                else QHeaderView.ResizeToContents)
+                column,
+                QHeaderView.ResizeMode.Stretch
+                if column == stretch
+                else QHeaderView.ResizeMode.ResizeToContents,
+            )
         # No column is sorted until one is clicked, so the rows open in the
         # order the view loads them in: newest-archived first on the Archive.
-        header.setSortIndicator(-1, Qt.AscendingOrder)
+        header.setSortIndicator(-1, Qt.SortOrder.AscendingOrder)
         self.setSortingEnabled(True)
         self.cellClicked.connect(lambda row, _c: self._emit(self.picked, row))
-        self.cellDoubleClicked.connect(
-            lambda row, _c: self._emit(self.opened, row))
+        self.cellDoubleClicked.connect(lambda row, _c: self._emit(self.opened, row))
 
     def set_rows(self, rows) -> None:
         """Replace every row, keeping the column the user last sorted by."""
@@ -89,8 +91,11 @@ class ResultsTable(QTableWidget):
 
     def row_text(self, row: int) -> str:
         """A row's cells read left to right, for a reader that wants the line."""
-        return "   ".join(self.item(row, c).text() for c in range(self.columnCount())
-                          if self.item(row, c) is not None)
+        return "   ".join(
+            self.item(row, c).text()
+            for c in range(self.columnCount())
+            if self.item(row, c) is not None
+        )
 
     def _emit(self, signal, row: int) -> None:
         item = self.item(row, 0)

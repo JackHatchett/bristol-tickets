@@ -31,40 +31,69 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import data_paths  # noqa: E402
-import read_config  # noqa: E402
+import data_paths
+import read_config
 
 PATH_SUFFIXES = ("_dir", "_db", "_path", "_file", "_folder")
 PATH_KEYS = {"root", "path", "identity", "tickets_db", "personal_db"}
 FILE_HINTS = ("_db", "_file", "identity", "key_context_files")
 # Owned by notebook.py, or carrying no path at all.
 SKIPPED = {("markdown_notebook", "notes_dir"), ("markdown_notebook", "folders")}
-SKIPPED_TOP = {"keyword_scan", "governance", "stack", "tiers", "sizing",
-               "appearance", "board", "session", "bluesky_index_related"}
+SKIPPED_TOP = {
+    "keyword_scan",
+    "governance",
+    "stack",
+    "tiers",
+    "sizing",
+    "appearance",
+    "board",
+    "session",
+    "bluesky_index_related",
+}
 
 
 def _looks_like_path(value: str) -> bool:
     v = value.strip()
-    return bool(v) and (v.startswith(("/", "~", "data/", "src/"))
-                        or "/" in v and not v.startswith(("http", "did:"))
-                        and " " not in v.split("/")[0])
+    return bool(v) and (
+        v.startswith(("/", "~", "data/", "src/"))
+        or "/" in v
+        and not v.startswith(("http", "did:"))
+        and " " not in v.split("/")[0]
+    )
 
 
 # What a step of a pointer is called on screen, where its key is not enough.
-_STEP_NAMES = {"key_data_paths": "Folder", "key_context_files": "Context File",
-               "identity": "Charter", "env": None, "path": None,
-               "folders": None, "notebook_projects": "Notebook Project",
-               "local_projects": "Local Project"}
+_STEP_NAMES = {
+    "key_data_paths": "Folder",
+    "key_context_files": "Context File",
+    "identity": "Charter",
+    "env": None,
+    "path": None,
+    "folders": None,
+    "notebook_projects": "Notebook Project",
+    "local_projects": "Local Project",
+}
 
 
 _SMALL = {"a", "an", "the", "and", "or", "of", "for", "to", "in", "on", "by"}
 
 # Words a key spells in lower case that are written otherwise: acronyms, and
 # names whose capitals are their own.
-_SPELLED = {"ai": "AI", "api": "API", "csv": "CSV", "db": "DB", "id": "ID",
-            "pdf": "PDF", "qa": "QA", "ui": "UI", "url": "URL",
-            "icloud": "iCloud", "onedrive": "OneDrive", "gdrive": "Google Drive",
-            "github": "GitHub"}
+_SPELLED = {
+    "ai": "AI",
+    "api": "API",
+    "csv": "CSV",
+    "db": "DB",
+    "id": "ID",
+    "pdf": "PDF",
+    "qa": "QA",
+    "ui": "UI",
+    "url": "URL",
+    "icloud": "iCloud",
+    "onedrive": "OneDrive",
+    "gdrive": "Google Drive",
+    "github": "GitHub",
+}
 
 
 def _words(text: str) -> str:
@@ -74,7 +103,7 @@ def _words(text: str) -> str:
         stem = word.rstrip("0123456789")
         parts.append(stem)
         if stem != word:
-            parts.append(word[len(stem):])
+            parts.append(word[len(stem) :])
     out = []
     for i, word in enumerate(w for w in parts if w):
         low = word.lower()
@@ -119,9 +148,15 @@ def _walk(node, pointer: list, out: list) -> None:
             if isinstance(value, str):
                 if data_paths.is_reference(value):
                     continue
-                named = key in PATH_KEYS or key.endswith(PATH_SUFFIXES) \
-                    or "env" in pointer and _looks_like_path(value) \
-                    or pointer and pointer[-1] == "folders" and isinstance(value, str)
+                named = (
+                    key in PATH_KEYS
+                    or key.endswith(PATH_SUFFIXES)
+                    or "env" in pointer
+                    and _looks_like_path(value)
+                    or pointer
+                    and pointer[-1] == "folders"
+                    and isinstance(value, str)
+                )
                 if named and _looks_like_path(value) or key in PATH_KEYS and value.strip():
                     out.append((here, value))
             else:
@@ -132,9 +167,17 @@ def _walk(node, pointer: list, out: list) -> None:
             if isinstance(value, str):
                 if data_paths.is_reference(value):
                     continue
-                if pointer and pointer[-1] in ("key_context_files", "key_data_paths",
-                                               "notebook_projects", "local_projects") \
-                        and _looks_like_path(value):
+                if (
+                    pointer
+                    and pointer[-1]
+                    in (
+                        "key_context_files",
+                        "key_data_paths",
+                        "notebook_projects",
+                        "local_projects",
+                    )
+                    and _looks_like_path(value)
+                ):
                     out.append((here, value))
             else:
                 _walk(value, here, out)
@@ -150,12 +193,26 @@ def locations(data: dict | None = None) -> list[dict]:
             resolved = data_paths.resolve(value)
         except (ValueError, SystemExit):
             continue
-        kind = "file" if any(str(p).endswith(FILE_HINTS) or p in FILE_HINTS
-                             for p in pointer if isinstance(p, str)) \
-            or resolved.suffix else "dir"
-        rows.append({"pointer": pointer, "label": _label(pointer),
-                     "value": value, "resolved": str(resolved),
-                     "exists": resolved.exists(), "kind": kind})
+        kind = (
+            "file"
+            if any(
+                str(p).endswith(FILE_HINTS) or p in FILE_HINTS
+                for p in pointer
+                if isinstance(p, str)
+            )
+            or resolved.suffix
+            else "dir"
+        )
+        rows.append(
+            {
+                "pointer": pointer,
+                "label": _label(pointer),
+                "value": value,
+                "resolved": str(resolved),
+                "exists": resolved.exists(),
+                "kind": kind,
+            }
+        )
     return rows
 
 
@@ -167,12 +224,10 @@ def set_location(pointer: list, picked: str) -> str:
     for part in pointer[:-1]:
         node = node[part]
     declared = data_paths.declare(picked)
-    if declared.startswith(str(Path.home())) and not \
-            str(node[pointer[-1]]).startswith("/"):
-        declared = "~" + declared[len(str(Path.home())):]
+    if declared.startswith(str(Path.home())) and not str(node[pointer[-1]]).startswith("/"):
+        declared = "~" + declared[len(str(Path.home())) :]
     node[pointer[-1]] = declared
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-                    encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return declared
 
 

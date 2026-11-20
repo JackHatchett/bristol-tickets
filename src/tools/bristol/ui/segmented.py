@@ -10,8 +10,7 @@ corners round.
 from __future__ import annotations
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (QButtonGroup, QHBoxLayout, QPushButton,
-                               QSizePolicy, QWidget)
+from PySide6.QtWidgets import QButtonGroup, QHBoxLayout, QPushButton, QSizePolicy, QWidget
 
 
 class SegmentedControl(QWidget):
@@ -20,8 +19,14 @@ class SegmentedControl(QWidget):
 
     changed = Signal(str)
 
-    def __init__(self, choices: list[tuple[str, str]], value: str | None = None,
-                 parent=None, *, none_chosen: bool = False) -> None:
+    def __init__(
+        self,
+        choices: list[tuple[str, str]],
+        value: str | None = None,
+        parent=None,
+        *,
+        none_chosen: bool = False,
+    ) -> None:
         super().__init__(parent)
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
@@ -35,8 +40,9 @@ class SegmentedControl(QWidget):
             button.setCheckable(True)
             button.setAutoDefault(False)
             last = len(choices) - 1
-            button.setProperty("position", "first" if index == 0
-                               else "last" if index == last else "middle")
+            button.setProperty(
+                "position", "first" if index == 0 else "last" if index == last else "middle"
+            )
             self._group.addButton(button, index)
             self._values.append(choice)
             row.addWidget(button)
@@ -45,7 +51,7 @@ class SegmentedControl(QWidget):
         elif not none_chosen:
             self._group.button(0).setChecked(True)
         self._group.idToggled.connect(self._toggled)
-        self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
 
     def _toggled(self, index: int, checked: bool) -> None:
         if checked:

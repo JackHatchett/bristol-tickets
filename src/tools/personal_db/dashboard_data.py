@@ -68,37 +68,51 @@ def build(today=None):
     try:
         ccols = _cols(conn, "contact")
         contacts = {r["id"]: r for r in conn.execute("SELECT * FROM contact")}
-        asks = [dict(r) for r in conn.execute(
-            "SELECT * FROM contact_ask WHERE status = 'open'")]
-        links = [dict(r) for r in conn.execute(
-            "SELECT * FROM contact_link WHERE target_kind = 'application'")]
-        app_ids = {l["target_id"] for l in links if l["target_id"]}
+        asks = [dict(r) for r in conn.execute("SELECT * FROM contact_ask WHERE status = 'open'")]
+        links = [
+            dict(r)
+            for r in conn.execute("SELECT * FROM contact_link WHERE target_kind = 'application'")
+        ]
         apps = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM applications")}
-        has_view = conn.execute("SELECT 1 FROM sqlite_master WHERE type='view' "
-                                "AND name='v_introduction'").fetchone()
-        intro = ({r["app_id"]: dict(r) for r in conn.execute(
-            "SELECT * FROM v_introduction")} if has_view else {})
-        has_rest = conn.execute("SELECT 1 FROM sqlite_master WHERE type='view' "
-                                "AND name='v_friend_rest'").fetchone()
-        rest = ({r["contact_id"]: r["next_ask_on"] for r in conn.execute(
-            "SELECT contact_id, next_ask_on FROM v_friend_rest")} if has_rest else {})
+        has_view = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='view' AND name='v_introduction'"
+        ).fetchone()
+        intro = (
+            {r["app_id"]: dict(r) for r in conn.execute("SELECT * FROM v_introduction")}
+            if has_view
+            else {}
+        )
+        has_rest = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='view' AND name='v_friend_rest'"
+        ).fetchone()
+        rest = (
+            {
+                r["contact_id"]: r["next_ask_on"]
+                for r in conn.execute("SELECT contact_id, next_ask_on FROM v_friend_rest")
+            }
+            if has_rest
+            else {}
+        )
     finally:
         conn.close()
 
     targets = {}
-    for l in links:
-        if (l["label"] or "") == "intro target":
-            targets.setdefault(l["target_id"], []).append(l["contact_id"])
+    for link in links:
+        if (link["label"] or "") == "intro target":
+            targets.setdefault(link["target_id"], []).append(link["contact_id"])
 
     # A row is drawn for anyone who is not only somebody's intro target. A
     # friend's row is durable; anyone else's is dropped, after it is built,
     # once nothing on it is live.
     has_flag = "is_friend" in ccols
-    only_target = {l["contact_id"] for l in links if l["label"] == "intro target"}
-    friend_ids = [i for i in contacts if i not in only_target
-                  or any(l["contact_id"] == i and l["label"] != "intro target"
-                         for l in links)
-                  or (has_flag and contacts[i]["is_friend"])]
+    only_target = {link["contact_id"] for link in links if link["label"] == "intro target"}
+    friend_ids = [
+        i
+        for i in contacts
+        if i not in only_target
+        or any(link["contact_id"] == i and link["label"] != "intro target" for link in links)
+        or (has_flag and contacts[i]["is_friend"])
+    ]
 
     friends = []
     for fid in sorted(friend_ids, key=lambda i: contacts[i]["name"]):
@@ -106,10 +120,10 @@ def build(today=None):
         f_asks = [a for a in asks if a["contact_id"] == fid]
         used_asks = set()
         intros = []
-        for l in links:
-            if l["contact_id"] != fid or (l["label"] or "") not in LINK_ROLES:
+        for link in links:
+            if link["contact_id"] != fid or (link["label"] or "") not in LINK_ROLES:
                 continue
-            app = apps.get(l["target_id"])
+            app = apps.get(link["target_id"])
             if not app or CLOSED.match(app["status"] or ""):
                 continue
             stage = intro.get(app["id"])
@@ -127,38 +141,58 @@ def build(today=None):
             tids = targets.get(app["id"]) or [fid]
             for tid in tids:
                 t = contacts.get(tid)
-                intros.append({
-                    "app_id": app["id"],
-                    "target": _person(t, ccols),
-                    "target_is_friend": tid == fid,
-                    "company": app["company"],
-                    "role": app["role"],
-                    "jd_link": app["jd_link"],
-                    "status": app["status"],
-                    "stage": stage["stage"] if stage else None,
-                    "move": move,
-                    "days_silent": silent,
-                })
-        loose = [{"subject": a["subject"], "kind": a["kind"], "move": a["direction"],
-                  "opened_on": a["opened_on"]}
-                 for a in f_asks if a["id"] not in used_asks]
+                intros.append(
+                    {
+                        "app_id": app["id"],
+                        "target": _person(t, ccols),
+                        "target_is_friend": tid == fid,
+                        "company": app["company"],
+                        "role": app["role"],
+                        "jd_link": app["jd_link"],
+                        "status": app["status"],
+                        "stage": stage["stage"] if stage else None,
+                        "move": move,
+                        "days_silent": silent,
+                    }
+                )
+        loose = [
+            {
+                "subject": a["subject"],
+                "kind": a["kind"],
+                "move": a["direction"],
+                "opened_on": a["opened_on"],
+            }
+            for a in f_asks
+            if a["id"] not in used_asks
+        ]
         last = _date(c["last_contact_on"])
-        friends.append({
-            **_person(c, ccols),
-            "is_friend": bool(c["is_friend"]) if has_flag else None,
-            "how_known": c["how_known"],
-            "company": c["company"],
-            "last_contact_on": c["last_contact_on"],
-            "days_since_contact": _days(last, today),
-            "reference_status": c["reference_status"] if "reference_status" in ccols else None,
-            "next_ask_on": rest.get(fid),
-            "asks": loose,
-            "intros": intros,
-        })
+        friends.append(
+            {
+                **_person(c, ccols),
+                "is_friend": bool(c["is_friend"]) if has_flag else None,
+                "how_known": c["how_known"],
+                "company": c["company"],
+                "last_contact_on": c["last_contact_on"],
+                "days_since_contact": _days(last, today),
+                "reference_status": c["reference_status"] if "reference_status" in ccols else None,
+                "next_ask_on": rest.get(fid),
+                "asks": loose,
+                "intros": intros,
+            }
+        )
 
-    friends = [f for f in friends if f["is_friend"] or f["intros"] or f["asks"]
-               or (not has_flag and f["days_since_contact"] is not None
-                   and f["days_since_contact"] <= RECENT_CONTACT_DAYS)]
+    friends = [
+        f
+        for f in friends
+        if f["is_friend"]
+        or f["intros"]
+        or f["asks"]
+        or (
+            not has_flag
+            and f["days_since_contact"] is not None
+            and f["days_since_contact"] <= RECENT_CONTACT_DAYS
+        )
+    ]
 
     interviews = []
     for app in apps.values():
@@ -168,24 +202,39 @@ def build(today=None):
         silent = silence.days_silent(app, (), today)
         if silent is not None and silent > WINDOW_DAYS["interview"]:
             continue
-        interviews.append({"app_id": app["id"], "company": app["company"],
-                           "role": app["role"], "status": st,
-                           "jd_link": app["jd_link"], "days_silent": silent})
+        interviews.append(
+            {
+                "app_id": app["id"],
+                "company": app["company"],
+                "role": app["role"],
+                "status": st,
+                "jd_link": app["jd_link"],
+                "days_silent": silent,
+            }
+        )
 
-    return {"generated_at": dt.datetime.now().astimezone().isoformat(timespec="minutes"),
-            "windows_days": WINDOW_DAYS, "friends": friends, "interviews": interviews}
+    return {
+        "generated_at": dt.datetime.now().astimezone().isoformat(timespec="minutes"),
+        "windows_days": WINDOW_DAYS,
+        "friends": friends,
+        "interviews": interviews,
+    }
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--out", default=os.environ.get("CAREER_DASHBOARD_JSON"))
     ap.add_argument("--print", action="store_true")
-    ap.add_argument("--tz", default=os.environ.get("DASHBOARD_TZ"),
-                    help="IANA zone that decides what today is; default the machine's")
+    ap.add_argument(
+        "--tz",
+        default=os.environ.get("DASHBOARD_TZ"),
+        help="IANA zone that decides what today is; default the machine's",
+    )
     args = ap.parse_args(argv)
     today = None
     if args.tz:
         from zoneinfo import ZoneInfo
+
         today = dt.datetime.now(ZoneInfo(args.tz)).date()
     doc = json.dumps(build(today), indent=2)
     if args.print or not args.out:

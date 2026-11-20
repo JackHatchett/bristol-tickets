@@ -36,10 +36,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import data_paths  # noqa: E402
-import notebook  # noqa: E402
-import read_config  # noqa: E402
-import write_config  # noqa: E402
+import data_paths
+import notebook
+import read_config
+import write_config
 
 
 def _under(path: str, folder: str) -> bool:
@@ -62,10 +62,10 @@ def _in_notebook(project: str) -> str | None:
 def projects(slug: str, *, data: dict | None = None) -> list[str]:
     """The agent's projects, in the order config lists them."""
     in_notebook = read_config.get("projects.notebook_projects", [], data=data)
-    listed = [*in_notebook,
-              *read_config.get("projects.local_projects", [], data=data)]
+    listed = [*in_notebook, *read_config.get("projects.local_projects", [], data=data)]
     grants = data_paths.folder_grants(
-        read_config.get(f"agents.{slug}.key_data_paths", [], data=data))
+        read_config.get(f"agents.{slug}.key_data_paths", [], data=data)
+    )
     access = read_config.get(f"agents.{slug}.notebook_access", None, data=data)
     folders = notebook.attached(data)
 
@@ -79,9 +79,7 @@ def projects(slug: str, *, data: dict | None = None) -> list[str]:
             return False
         return notebook.may(access, folders, rel) == "write"
 
-    return [p for p in listed
-            if any(_under(p, grant["path"]) for grant in grants)
-            or writable(p)]
+    return [p for p in listed if any(_under(p, grant["path"]) for grant in grants) or writable(p)]
 
 
 def active(slug: str, *, data: dict | None = None) -> tuple[str | None, str]:
@@ -99,8 +97,7 @@ def active(slug: str, *, data: dict | None = None) -> tuple[str | None, str]:
 
 def main(argv: list[str]) -> int:
     if not argv or argv[0].startswith("-"):
-        print("usage: active_project.py <agent slug> [--list | --set <project>]",
-              file=sys.stderr)
+        print("usage: active_project.py <agent slug> [--list | --set <project>]", file=sys.stderr)
         return 2
     slug, rest = argv[0], argv[1:]
     if rest[:1] == ["--list"]:
@@ -110,8 +107,7 @@ def main(argv: list[str]) -> int:
     if rest[:1] == ["--set"] and len(rest) == 2:
         target = rest[1].strip("/")
         if target not in projects(slug):
-            print(f"active_project: {target} is not one of {slug}'s projects",
-                  file=sys.stderr)
+            print(f"active_project: {target} is not one of {slug}'s projects", file=sys.stderr)
             return 1
         write_config.set_key(f"agents.{slug}.active_project", target)
         print(f"{target}  (chosen)")

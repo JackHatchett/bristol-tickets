@@ -27,9 +27,10 @@ from pathlib import Path
 # a name — CV, CVC and their kin are a phonology note's own shorthand — so a
 # name is required to contain a lowercase letter as well.
 COINED = re.compile(
-    r"\b(?:[a-z]{1,5}-[A-Z][A-Za-z]+(?:-[A-Za-z]+)*"     # so-Varuni
-    r"|[A-Z][a-z]+-[A-Z][A-Za-z]+"                        # Tel-Varuni
-    r"|[A-Z][a-z]*[A-Z][A-Za-z]*)\b")                     # TelVarun
+    r"\b(?:[a-z]{1,5}-[A-Z][A-Za-z]+(?:-[A-Za-z]+)*"  # so-Varuni
+    r"|[A-Z][a-z]+-[A-Z][A-Za-z]+"  # Tel-Varuni
+    r"|[A-Z][a-z]*[A-Z][A-Za-z]*)\b"
+)  # TelVarun
 
 # Markdown furniture a name never hides behind: a link target, a heading mark,
 # a frontmatter key. Stripped before reading, so `[[so-Varuni]]` and the word
@@ -38,8 +39,11 @@ STRIP = re.compile(r"[\[\]#*`>|]")
 
 
 def names_in(text: str) -> list[str]:
-    return [name for name in COINED.findall(STRIP.sub(" ", text))
-            if any(letter.islower() for letter in name.replace("-", ""))]
+    return [
+        name
+        for name in COINED.findall(STRIP.sub(" ", text))
+        if any(letter.islower() for letter in name.replace("-", ""))
+    ]
 
 
 def _variant_of(one: str, other: str) -> bool:
@@ -63,9 +67,9 @@ def _variant_of(one: str, other: str) -> bool:
 def _one_edit_apart(short: str, long: str) -> bool:
     """One insertion, deletion or substitution between two words."""
     if len(short) == len(long):
-        return sum(a != b for a, b in zip(short, long)) == 1
+        return sum(a != b for a, b in zip(short, long, strict=False)) == 1
     for cut in range(len(long)):
-        if long[:cut] + long[cut + 1:] == short:
+        if long[:cut] + long[cut + 1 :] == short:
             return True
     return False
 
@@ -92,6 +96,7 @@ def _archive() -> Path | None:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config_tools"))
         import data_paths
         import read_config
+
         declared = read_config.get("markdown_notebook.archive_dir", None)
         return data_paths.resolve(declared).resolve() if declared else None
     except (Exception, SystemExit):
@@ -120,14 +125,15 @@ def read(folder: Path, min_uses: int = 2) -> list[dict]:
             continue
         # A spelling used once in one note beside a name used often is a typo
         # rather than a second usage, and both are worth the same line.
-        found.append({
-            "name": held[0],
-            "spellings": [
-                {"spelling": name, "uses": counts[name],
-                 "notes": sorted(where[name])}
-                for name in held
-            ],
-        })
+        found.append(
+            {
+                "name": held[0],
+                "spellings": [
+                    {"spelling": name, "uses": counts[name], "notes": sorted(where[name])}
+                    for name in held
+                ],
+            }
+        )
     found.sort(key=lambda item: -sum(s["uses"] for s in item["spellings"]))
     return found
 
@@ -135,10 +141,12 @@ def read(folder: Path, min_uses: int = 2) -> list[dict]:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("folder", help="the folder of notes to read")
-    parser.add_argument("--json", action="store_true",
-                        help="print the findings for a caller rather than a person")
-    parser.add_argument("--min", type=int, default=2,
-                        help="ignore a name used fewer times than this in all")
+    parser.add_argument(
+        "--json", action="store_true", help="print the findings for a caller rather than a person"
+    )
+    parser.add_argument(
+        "--min", type=int, default=2, help="ignore a name used fewer times than this in all"
+    )
     args = parser.parse_args(argv)
 
     folder = Path(args.folder).expanduser()
@@ -156,10 +164,8 @@ def main(argv=None) -> int:
         print(f"  {item['name']}")
         for spelling in item["spellings"]:
             notes = ", ".join(spelling["notes"][:4])
-            more = "" if len(spelling["notes"]) <= 4 else \
-                f" and {len(spelling['notes']) - 4} more"
-            print(f"    {spelling['spelling']:28s} {spelling['uses']:4d} use(s)"
-                  f"  {notes}{more}")
+            more = "" if len(spelling["notes"]) <= 4 else f" and {len(spelling['notes']) - 4} more"
+            print(f"    {spelling['spelling']:28s} {spelling['uses']:4d} use(s)  {notes}{more}")
         print()
     return 0
 

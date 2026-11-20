@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-import os
 import csv
 import json
+import os
 from pathlib import Path
-
 
 
 def _instance_dir() -> Path:
@@ -13,9 +12,7 @@ def _instance_dir() -> Path:
     data_root = _project_root() / "data"
     candidates = sorted(p for p in data_root.glob("*") if p.is_dir())
     if not candidates:
-        raise SystemExit(
-            f"no instance folder under {data_root} — run create_tickets.py first"
-        )
+        raise SystemExit(f"no instance folder under {data_root} — run create_tickets.py first")
     return candidates[0]
 
 
@@ -28,9 +25,7 @@ def _project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 PROJECT_ROOT = _project_root()
@@ -59,6 +54,7 @@ if not SCAN_ROOT.exists():
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_FILE = OUTPUT_DIR / "keyword_scan_results.csv"
 
+
 def excluded(rel):
     for suf in EXCLUDE_SUFFIXES:
         if rel.endswith(suf):
@@ -68,10 +64,11 @@ def excluded(rel):
             return True
     return False
 
+
 def scan_file(path):
     hits = []
     try:
-        with open(path, "r", errors="ignore") as f:
+        with open(path, errors="ignore") as f:
             for lineno, line in enumerate(f, start=1):
                 for kw in KEYWORDS:
                     if kw in line:
@@ -80,9 +77,10 @@ def scan_file(path):
         pass
     return hits
 
+
 def main():
     rows = []
-    for base, dirs, files in os.walk(SCAN_ROOT):
+    for base, _dirs, files in os.walk(SCAN_ROOT):
         for file in files:
             full = os.path.join(base, file)
             rel = os.path.relpath(full, SCAN_ROOT)
@@ -98,6 +96,7 @@ def main():
         writer.writerows(rows)
 
     print("Done. Manifest written to " + str(OUTPUT_FILE))
+
 
 if __name__ == "__main__":
     main()

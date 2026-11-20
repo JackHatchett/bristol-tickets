@@ -28,10 +28,10 @@ class ClosureResult:
     """What the closure did, in a form both front ends can act on."""
 
     def __init__(self, archived=(), reported=(), refused=None, report=None):
-        self.archived = list(archived)   # cards this closure moved to the Archive
-        self.reported = list(reported)   # cards the report covers
-        self.refused = refused           # str, when the epic may not be closed
-        self.report = report             # the reports package's own result
+        self.archived = list(archived)  # cards this closure moved to the Archive
+        self.reported = list(reported)  # cards the report covers
+        self.refused = refused  # str, when the epic may not be closed
+        self.report = report  # the reports package's own result
 
     @property
     def ok(self):
@@ -57,9 +57,11 @@ def refusal(conn: sqlite3.Connection, epic_id: int) -> str | None:
         return f"no epic with id {epic_id}"
     kind, name = (row[0] or ""), (row[1] or f"#{epic_id}")
     if kind.strip().lower() == STANDING_KIND:
-        return (f"{name} is the standing workstream, which never closes — there "
-                "is no effort to end, so it is measured over a date range "
-                "instead")
+        return (
+            f"{name} is the standing workstream, which never closes — there "
+            "is no effort to end, so it is measured over a date range "
+            "instead"
+        )
     return None
 
 
@@ -69,9 +71,12 @@ def _finished_cards(conn: sqlite3.Connection, epic_id: int) -> list[int]:
     A card still open when the effort ends is not work this period delivered, so
     it is left out of the report and left where it is on the board.
     """
-    return [row[0] for row in conn.execute(
-        "SELECT id FROM task WHERE epic_id=? AND status='done' ORDER BY id",
-        (epic_id,))]
+    return [
+        row[0]
+        for row in conn.execute(
+            "SELECT id FROM task WHERE epic_id=? AND status='done' ORDER BY id", (epic_id,)
+        )
+    ]
 
 
 def _archive(conn: sqlite3.Connection, task_ids: list[int]) -> list[int]:
@@ -83,14 +88,14 @@ def _archive(conn: sqlite3.Connection, task_ids: list[int]) -> list[int]:
         base = conn.execute(
             "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage='archive'"
         ).fetchone()[0]
-        conn.execute("UPDATE task SET stage='archive', sort_order=? WHERE id=?",
-                     (base + 1, task_id))
+        conn.execute(
+            "UPDATE task SET stage='archive', sort_order=? WHERE id=?", (base + 1, task_id)
+        )
         moved.append(task_id)
     return moved
 
 
-def close_epic(conn: sqlite3.Connection, epic_id: int, now=None,
-               out_dir=None) -> ClosureResult:
+def close_epic(conn: sqlite3.Connection, epic_id: int, now=None, out_dir=None) -> ClosureResult:
     """Archive the epic's finished cards and write the report for that effort.
 
     The board write commits before the report is attempted, so an unreachable
@@ -104,9 +109,14 @@ def close_epic(conn: sqlite3.Connection, epic_id: int, now=None,
         return ClosureResult(refused=refused)
 
     reported = _finished_cards(conn, epic_id)
-    pending = [task_id for task_id in reported if conn.execute(
-        "SELECT COALESCE(stage,'active') FROM task WHERE id=?",
-        (task_id,)).fetchone()[0] != "archive"]
+    pending = [
+        task_id
+        for task_id in reported
+        if conn.execute(
+            "SELECT COALESCE(stage,'active') FROM task WHERE id=?", (task_id,)
+        ).fetchone()[0]
+        != "archive"
+    ]
     archived = _archive(conn, pending)
     conn.commit()
 

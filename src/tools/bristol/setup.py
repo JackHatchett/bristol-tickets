@@ -73,13 +73,22 @@ VERSION = payload.version(project_root()) or "0.0.0"
 DATA_FILES = [f for f in ("schema.sql", "ACKNOWLEDGEMENTS.md") if (HERE / f).exists()]
 DATA_FILES += stage_payload()
 
-EXCLUDES = ["tkinter", "setuptools", "pip", "pkg_resources", "py2app",
-            "pydoc_data", "test"]
+EXCLUDES = ["tkinter", "setuptools", "pip", "pkg_resources", "py2app", "pydoc_data", "test"]
 
 # Standard-library modules no scanner and no tool of Bristol's reaches for:
 # windows, demos, an editor, and the installer bootstrap.
-STDLIB_LEFT_OUT = {"turtle", "turtledemo", "idlelib", "ensurepip", "venv",
-                   "antigravity", "this", "lib2to3", "distutils", "_tkinter"}
+STDLIB_LEFT_OUT = {
+    "turtle",
+    "turtledemo",
+    "idlelib",
+    "ensurepip",
+    "venv",
+    "antigravity",
+    "this",
+    "lib2to3",
+    "distutils",
+    "_tkinter",
+}
 
 
 def standard_library() -> tuple[list[str], list[str]]:
@@ -119,9 +128,21 @@ def carry_scanners(bundle: Path) -> None:
     target = bundle / SCANNERS_IN_BUNDLE
     if target.exists():
         shutil.rmtree(target)
-    subprocess.run([sys.executable, "-m", "pip", "install", "--quiet",
-                    "--disable-pip-version-check", "--target", str(target),
-                    "-r", str(HERE / "scanners.txt")], check=True)
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--quiet",
+            "--disable-pip-version-check",
+            "--target",
+            str(target),
+            "-r",
+            str(HERE / "scanners.txt"),
+        ],
+        check=True,
+    )
     # The launchers pip writes name this build machine's interpreter, which a
     # downloaded app does not have; skills.py starts each scanner itself.
     launchers = target / "bin"
@@ -138,8 +159,7 @@ OPTIONS = {
     # clear_done from Settings, so nothing in the import graph would carry
     # either in on its own. finishing is
     # imported outright by three ui modules and named here beside it.
-    "includes": ["sqlite3", "epic_closure", "clear_done", "finishing",
-                 *STDLIB_MODULES],
+    "includes": ["sqlite3", "epic_closure", "clear_done", "finishing", *STDLIB_MODULES],
     # A board draws no Tk windows and installs no packages at runtime.
     "excludes": EXCLUDES,
     "plist": {
@@ -169,7 +189,7 @@ setup(
 
 # The bundle is slimmed to what the app imports once the build has written it.
 if "py2app" in sys.argv:
-    import slim  # noqa: E402  (bristol-local; owns what a bundle keeps)
+    import slim
 
     bundle = HERE / "dist" / "BristolTickets.app"
     if bundle.is_dir():

@@ -42,15 +42,13 @@ def _runtime():
     return _objc
 
 
-def _send(receiver, selector: str, *args, restype=ctypes.c_void_p,
-          argtypes=()):
+def _send(receiver, selector: str, *args, restype=ctypes.c_void_p, argtypes=()):
     """One Objective-C message, with its signature spelled out: on Apple
     silicon a message's arguments are passed as the signature says, never as
     varargs."""
     objc = _runtime()
     address = ctypes.cast(objc.objc_msgSend, ctypes.c_void_p).value
-    function = ctypes.CFUNCTYPE(restype, ctypes.c_void_p, ctypes.c_void_p,
-                                *argtypes)(address)
+    function = ctypes.CFUNCTYPE(restype, ctypes.c_void_p, ctypes.c_void_p, *argtypes)(address)
     return function(receiver, objc.sel_registerName(selector.encode()), *args)
 
 
@@ -68,26 +66,41 @@ def tall_title_bar(widget) -> bool:
         window = _send(view, "window")
         if not window:
             return False
-        name = _send(_class("NSString"), "stringWithUTF8String:",
-                     b"BristolTickets", argtypes=(ctypes.c_char_p,))
-        toolbar = _send(_send(_class("NSToolbar"), "alloc"),
-                        "initWithIdentifier:", name,
-                        argtypes=(ctypes.c_void_p,))
-        _send(toolbar, "setShowsBaselineSeparator:", False,
-              restype=None, argtypes=(ctypes.c_bool,))
-        _send(window, "setToolbar:", toolbar,
-              restype=None, argtypes=(ctypes.c_void_p,))
-        _send(window, "setToolbarStyle:", _TOOLBAR_STYLE_UNIFIED,
-              restype=None, argtypes=(ctypes.c_long,))
-        _send(window, "setTitleVisibility:", _TITLE_HIDDEN,
-              restype=None, argtypes=(ctypes.c_long,))
-        _send(window, "setTitlebarAppearsTransparent:", True,
-              restype=None, argtypes=(ctypes.c_bool,))
+        name = _send(
+            _class("NSString"),
+            "stringWithUTF8String:",
+            b"BristolTickets",
+            argtypes=(ctypes.c_char_p,),
+        )
+        toolbar = _send(
+            _send(_class("NSToolbar"), "alloc"),
+            "initWithIdentifier:",
+            name,
+            argtypes=(ctypes.c_void_p,),
+        )
+        _send(toolbar, "setShowsBaselineSeparator:", False, restype=None, argtypes=(ctypes.c_bool,))
+        _send(window, "setToolbar:", toolbar, restype=None, argtypes=(ctypes.c_void_p,))
+        _send(
+            window,
+            "setToolbarStyle:",
+            _TOOLBAR_STYLE_UNIFIED,
+            restype=None,
+            argtypes=(ctypes.c_long,),
+        )
+        _send(window, "setTitleVisibility:", _TITLE_HIDDEN, restype=None, argtypes=(ctypes.c_long,))
+        _send(
+            window, "setTitlebarAppearsTransparent:", True, restype=None, argtypes=(ctypes.c_bool,)
+        )
         mask = _send(window, "styleMask", restype=ctypes.c_ulong)
-        _send(window, "setStyleMask:", mask | _FULL_SIZE_CONTENT,
-              restype=None, argtypes=(ctypes.c_ulong,))
+        _send(
+            window,
+            "setStyleMask:",
+            mask | _FULL_SIZE_CONTENT,
+            restype=None,
+            argtypes=(ctypes.c_ulong,),
+        )
         return True
-    except Exception:  # noqa: BLE001 — a plain title bar is never worth a crash
+    except Exception:
         return False
 
 
@@ -101,13 +114,15 @@ def clear_backing(widget) -> bool:
         window = _send(view, "window")
         if not window:
             return False
-        _send(window, "setOpaque:", False,
-              restype=None, argtypes=(ctypes.c_bool,))
-        _send(window, "setBackgroundColor:",
-              _send(_class("NSColor"), "clearColor"),
-              restype=None, argtypes=(ctypes.c_void_p,))
-        _send(window, "setHasShadow:", False,
-              restype=None, argtypes=(ctypes.c_bool,))
+        _send(window, "setOpaque:", False, restype=None, argtypes=(ctypes.c_bool,))
+        _send(
+            window,
+            "setBackgroundColor:",
+            _send(_class("NSColor"), "clearColor"),
+            restype=None,
+            argtypes=(ctypes.c_void_p,),
+        )
+        _send(window, "setHasShadow:", False, restype=None, argtypes=(ctypes.c_bool,))
         return True
-    except Exception:  # noqa: BLE001 — an opaque scrim is never worth a crash
+    except Exception:
         return False

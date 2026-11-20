@@ -77,8 +77,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import instance_pointer  # noqa: E402  (runs as a script as well as a module)
-import read_config  # noqa: E402
+import instance_pointer
+import read_config
 
 DEFAULT_INSTANCE = "default"
 
@@ -92,9 +92,7 @@ def project_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "src" / "app.md").is_file():
             return parent
-    raise SystemExit(
-        "no project root above this file (no ancestor contains src/app.md)"
-    )
+    raise SystemExit("no project root above this file (no ancestor contains src/app.md)")
 
 
 def data_root() -> Path:
@@ -128,8 +126,7 @@ def instance_slug() -> str:
         return pointed.strip()
     root = data_root()
     if root.is_dir():
-        children = sorted(d for d in root.iterdir()
-                          if d.is_dir() and not d.name.startswith("."))
+        children = sorted(d for d in root.iterdir() if d.is_dir() and not d.name.startswith("."))
         if len(children) == 1:
             return children[0].name
     return DEFAULT_INSTANCE
@@ -170,7 +167,7 @@ def beside_the_project(expanded: Path) -> Path | None:
     for i in range(len(parts) - 1, 0, -1):
         candidate = neighbourhood / parts[i]
         if candidate.is_dir():
-            found = candidate.joinpath(*parts[i + 1:])
+            found = candidate.joinpath(*parts[i + 1 :])
             return found if found != expanded else None
     return None
 
@@ -196,12 +193,13 @@ def dereference(value: str, _depth: int = 0) -> str:
         return text
     if _depth >= _MAX_REFERENCE_DEPTH:
         raise ValueError(f"data_paths: reference loop at {text}")
-    key, _, rest = text[len(REFERENCE):].partition("/")
+    key, _, rest = text[len(REFERENCE) :].partition("/")
     try:
         target = read_config.get(key)
     except KeyError:
-        raise ValueError(f"data_paths: {text} refers to {key}, which config "
-                         f"does not contain") from None
+        raise ValueError(
+            f"data_paths: {text} refers to {key}, which config does not contain"
+        ) from None
     if not isinstance(target, str) or not target.strip():
         raise ValueError(f"data_paths: {text} refers to {key}, which contains no path")
     base = dereference(target, _depth + 1).rstrip("/")
@@ -328,14 +326,20 @@ def agent_folder_grants(slug: str) -> list[dict]:
 
 def agent_data_paths(slug: str, access: str | None = None) -> list[Path]:
     """The resolved folders an agent declares, or only the ones it may `access`."""
-    return [resolve(grant["path"]) for grant in agent_folder_grants(slug)
-            if access is None or grant["access"] == access]
+    return [
+        resolve(grant["path"])
+        for grant in agent_folder_grants(slug)
+        if access is None or grant["access"] == access
+    ]
 
 
 def ensure_agent_data_paths(slug: str, access: str | None = None) -> list[Path]:
     """Create every directory an agent declares, and return them."""
-    return [ensure_dir(grant["path"]) for grant in agent_folder_grants(slug)
-            if access is None or grant["access"] == access]
+    return [
+        ensure_dir(grant["path"])
+        for grant in agent_folder_grants(slug)
+        if access is None or grant["access"] == access
+    ]
 
 
 def env_value(value) -> str:
@@ -396,6 +400,7 @@ def ensure_db(path: str | Path, schema: str | Path) -> Path:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def _main(argv: list[str]) -> int:
     ensure = "--ensure" in argv
 
@@ -405,7 +410,7 @@ def _main(argv: list[str]) -> int:
         try:
             return argv[argv.index(name) + 1]
         except IndexError:
-            raise SystemExit(f"data_paths: {name} needs a value")
+            raise SystemExit(f"data_paths: {name} needs a value") from None
 
     if "--data-root" in argv:
         print(data_root())
@@ -418,11 +423,9 @@ def _main(argv: list[str]) -> int:
     if slug:
         access = flag("--access")
         if access is not None and access not in ACCESS:
-            sys.stderr.write(f"data_paths: --access is read or write, not "
-                             f"'{access}'\n")
+            sys.stderr.write(f"data_paths: --access is read or write, not '{access}'\n")
             return 1
-        paths = (ensure_agent_data_paths(slug, access) if ensure
-                 else agent_data_paths(slug, access))
+        paths = ensure_agent_data_paths(slug, access) if ensure else agent_data_paths(slug, access)
         for p in paths:
             print(p)
         return 0

@@ -37,8 +37,8 @@ JOURNAL_HEADING = "#### Bluesky"
 def setting(key, default=None):
     """One field of the local configuration, or a default where it is unset."""
     result = subprocess.run(
-        [sys.executable, str(CONFIG_READER), f"bluesky.{key}"],
-        capture_output=True, text=True)
+        [sys.executable, str(CONFIG_READER), f"bluesky.{key}"], capture_output=True, text=True
+    )
     value = result.stdout.strip()
     if result.returncode != 0 or not value or value == "None":
         return default
@@ -66,15 +66,15 @@ def account():
     if not did or not pds:
         did, pds = client.resolve_account(handle)
         print(f"resolved {handle}: {did} at {pds}")
-        print("write these into config as bluesky.did and bluesky.pds to skip "
-              "this lookup next time.")
+        print(
+            "write these into config as bluesky.did and bluesky.pds to skip this lookup next time."
+        )
     return did, pds
 
 
 def page_path(day, folder, prefix):
     """Where a day's page lives: by year, then month, the way the journal is."""
-    return (data_paths.resolve(folder) / f"{day:%Y}" / f"{day:%m}"
-            / f"{prefix}{day:%Y-%m-%d}.md")
+    return data_paths.resolve(folder) / f"{day:%Y}" / f"{day:%m}" / f"{prefix}{day:%Y-%m-%d}.md"
 
 
 def journal_path(day, folder):
@@ -106,7 +106,7 @@ def write_index(folder, prefix):
     index_file = root / name
     pages = []
     for page in root.rglob(f"{prefix}*.md"):
-        stamp = page.stem[len(prefix):]
+        stamp = page.stem[len(prefix) :]
         try:
             day = datetime.strptime(stamp, "%Y-%m-%d").date()
         except ValueError:
@@ -146,8 +146,7 @@ def link_into_journal(journal_file, page_file):
     return True
 
 
-def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1,
-              handle=""):
+def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1, handle=""):
     """Every conversation the account took part in on one day, pruned.
 
     A day is a handful of independent conversations and the time is all spent
@@ -171,8 +170,7 @@ def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1,
         fetched = [one(item) for item in work]
     kept_trees = [keep(root, tree) for root, tree in fetched]
     # The store contains every post; the page shows the ones the notebook keeps.
-    shown = [threads.without(tree, dropped) for tree in kept_trees
-             if tree is not None]
+    shown = [threads.without(tree, dropped) for tree in kept_trees if tree is not None]
     shown = [tree for tree in shown if tree is not None]
 
     # A post whose conversation was never kept is on its day in its own right.
@@ -182,8 +180,9 @@ def build_day(day, records, get_thread, tail_cap, keep, dropped, workers=1,
     covered = {node.uri for tree in shown for node in tree.walk()}
     sections = []
     for tree in shown:
-        first = min((place[node.uri] for node in tree.walk()
-                     if node.uri in place), default=len(place))
+        first = min(
+            (place[node.uri] for node in tree.walk() if node.uri in place), default=len(place)
+        )
         sections.append((first, render.render_section(tree)))
     for record in records:
         uri = record.get("uri")
@@ -203,8 +202,12 @@ def keep_images(conn, did, pds):
     daily run from re-reading a picture corpus every morning.
     """
     asked = store.image_asked(conn)
-    wanted = [(uri, blob) for uri, blobs in store.records_with_images(conn)
-              for blob in blobs if blob[0] not in asked]
+    wanted = [
+        (uri, blob)
+        for uri, blobs in store.records_with_images(conn)
+        for blob in blobs
+        if blob[0] not in asked
+    ]
     if not wanted:
         kept, gone, size = store.image_totals(conn)
         print(f"{kept} pictures kept, {gone} gone, {size / 1e6:.1f} MB on disk")
@@ -219,20 +222,23 @@ def keep_images(conn, did, pds):
         store.keep_image(conn, cid, uri, mime, alt, data)
         fetched += 1
     kept, gone, size = store.image_totals(conn)
-    print(f"{fetched} pictures kept this run, {missing} the data server no "
-          f"longer serves")
-    print(f"{kept} pictures kept in all, {gone} gone, "
-          f"{size / 1e6:.1f} MB on disk")
+    print(f"{fetched} pictures kept this run, {missing} the data server no longer serves")
+    print(f"{kept} pictures kept in all, {gone} gone, {size / 1e6:.1f} MB on disk")
 
 
-def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
-        start_from=None, from_store=False):
+def run(
+    window_days=None,
+    dry_run=False,
+    skip_existing=False,
+    budget=None,
+    start_from=None,
+    from_store=False,
+):
     zone = ZoneInfo(setting("timezone", "UTC"))
     folder = required("notes_folder")
     journal_folder = required("journal_folder")
     prefix = setting("filename_prefix", "bluesky_")
     tail_cap = int(setting("thread_tail_cap", threads.DEFAULT_TAIL_CAP))
-    link_window = int(setting("link_window_days", 30))
     do_link = bool(setting("link_into_journal", True))
     workers = int(setting("fetch_workers", 6))
 
@@ -252,9 +258,11 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
         print(f"{len(posts)} post records read")
     if not dry_run:
         added = store.keep_posts(conn, posts)
-        print(f"{added} of them the store had not seen; it contains "
-              f"{store.post_count(conn)} posts and "
-              f"{store.thread_count(conn)} conversations")
+        print(
+            f"{added} of them the store had not seen; it contains "
+            f"{store.post_count(conn)} posts and "
+            f"{store.thread_count(conn)} conversations"
+        )
 
     if not dry_run and not from_store:
         keep_images(conn, did, pds)
@@ -301,8 +309,9 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
     def handle(day):
         """One day, from its posts to its page. Safe to run beside others,
         because every day writes its own file and its own journal page."""
-        sections = build_day(day, by_day[day], get_thread, tail_cap,
-                             keep, dropped, workers=1, handle=account_handle)
+        sections = build_day(
+            day, by_day[day], get_thread, tail_cap, keep, dropped, workers=1, handle=account_handle
+        )
         if not sections:
             return None
         destination = page_path(day, folder, prefix)
@@ -310,16 +319,15 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
         journal_file = journal_path(day, journal_folder)
         link = f"[[{journal_file.stem}|Journal]]" if journal_file.exists() else None
         page = render.render_page(
-            datetime.combine(day, datetime.min.time()), sections,
-            journal_link=link, created=first)
+            datetime.combine(day, datetime.min.time()), sections, journal_link=link, created=first
+        )
         if dry_run:
             print(f"would write {destination}")
             return None
         destination.parent.mkdir(parents=True, exist_ok=True)
         # Written whole and only when it changes, so a re-run leaves the
         # notebook's modification times alone.
-        changed = (not destination.exists()
-                   or destination.read_text(encoding="utf-8") != page)
+        changed = not destination.exists() or destination.read_text(encoding="utf-8") != page
         if changed:
             destination.write_text(page, encoding="utf-8")
         if link and do_link:
@@ -353,8 +361,7 @@ def run(window_days=None, dry_run=False, skip_existing=False, budget=None,
     if stopped_at is not None:
         print(f"stopping at {stopped_at} to stay inside the time budget")
 
-    print(f"{written} pages written or updated"
-          + (f", {skipped} already there" if skipped else ""))
+    print(f"{written} pages written or updated" + (f", {skipped} already there" if skipped else ""))
     if not dry_run and write_index(folder, prefix):
         print("index of day pages rewritten")
     return 0
@@ -365,23 +372,38 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--days", type=int, help="copy this many days back")
     group.add_argument("--all", action="store_true", help="copy the whole history")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="say what would be written and write nothing")
-    parser.add_argument("--skip-existing", action="store_true",
-                        help="leave a day alone where its page is already there")
-    parser.add_argument("--from", dest="start_from",
-                        help="begin at this date (YYYY-MM-DD) rather than the first")
-    parser.add_argument("--budget", type=float,
-                        help="stop after this many seconds and say what is left")
-    parser.add_argument("--from-store", dest="from_store", action="store_true",
-                        help="write the pages from what the store already "
-                             "contains, reaching no account")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="say what would be written and write nothing"
+    )
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="leave a day alone where its page is already there",
+    )
+    parser.add_argument(
+        "--from", dest="start_from", help="begin at this date (YYYY-MM-DD) rather than the first"
+    )
+    parser.add_argument(
+        "--budget", type=float, help="stop after this many seconds and say what is left"
+    )
+    parser.add_argument(
+        "--from-store",
+        dest="from_store",
+        action="store_true",
+        help="write the pages from what the store already contains, reaching no account",
+    )
     args = parser.parse_args()
-    start = (datetime.strptime(args.start_from, "%Y-%m-%d").date()
-             if args.start_from else None)
-    sys.exit(run(window_days=None if args.all else args.days, dry_run=args.dry_run,
-                 skip_existing=args.skip_existing, budget=args.budget,
-                 start_from=start, from_store=args.from_store))
+    start = datetime.strptime(args.start_from, "%Y-%m-%d").date() if args.start_from else None
+    sys.exit(
+        run(
+            window_days=None if args.all else args.days,
+            dry_run=args.dry_run,
+            skip_existing=args.skip_existing,
+            budget=args.budget,
+            start_from=start,
+            from_store=args.from_store,
+        )
+    )
 
 
 if __name__ == "__main__":
