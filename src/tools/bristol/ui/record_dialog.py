@@ -223,7 +223,10 @@ class UnifiedRecordDialog(QDialog):
         outer.addWidget(self._scroll, 1)
 
         self.main_layout = QVBoxLayout(body)
-        self.main_layout.setContentsMargins(space("xl"), space("lg"), space("xl"), space("lg"))
+        # The dialog's pad is SPACE xl all round: the body takes the top and
+        # sides, the pinned button row the sides and foot, and SPACE md, the
+        # block-to-block gap, lies between them.
+        self.main_layout.setContentsMargins(space("xl"), space("xl"), space("xl"), 0)
         self.main_layout.setSpacing(space("md"))
 
         self.type_combo = QComboBox()
@@ -492,7 +495,7 @@ class UnifiedRecordDialog(QDialog):
         self.ok_button.setObjectName("globalCreateBtn")
         # Pinned OUTSIDE the scroll area — the save button stays reachable no
         # matter how tall the body grows.
-        self.button_box.setContentsMargins(space("lg"), space("md"), space("lg"), space("lg"))
+        self.button_box.setContentsMargins(space("xl"), space("md"), space("xl"), space("xl"))
         outer.addLayout(self.button_box)
 
         # Never taller than the screen it opens on. Past that the scroll area
