@@ -49,15 +49,20 @@ literals.
 Run `bash src/tools/test_tools/run_smoke.sh` before opening a pull request. It
 builds each GUI's widgets headlessly and catches what `py_compile` cannot.
 
-Run the three code checks too; `pyproject.toml` configures them and CI runs
-them on every push:
+Run the three code checks and the unit tests too; `pyproject.toml` configures
+them and CI runs them on every push:
 
 ```bash
-pip install ruff==0.16.9 pyright==1.1.414 PySide6
+pip install ruff==0.16.9 pyright==1.1.414 pytest==9.2.0 PySide6
 ruff check src
 ruff format --check src
 pyright
+python3 -m pytest
 ```
+
+The unit tests, in `src/tools/test_tools/unit/`, test the board rules function
+by function, each against a board built from `src/tools/bristol/schema.sql` in a
+temporary folder.
 
 A rule turned off is turned off in `pyproject.toml` with its reason, and a
 `# noqa` on a line carries its reason after the code.

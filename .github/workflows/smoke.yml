@@ -1,6 +1,6 @@
 name: Smoke
 
-# Runs the code checks pyproject.toml configures, then the smoke suite
+# Runs the code checks and unit tests pyproject.toml configures, then the smoke suite
 # (src/tools/test_tools/run_smoke.sh), on Linux for every pull request and every
 # push to main. The suite builds each window without a display, and the run
 # fails when any check fails. It publishes nothing and writes
@@ -33,7 +33,7 @@ jobs:
           sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
 
       - name: Install the board's dependencies and the code checks
-        run: python3 -m pip install --upgrade pip PySide6 ruff==0.16.9 pyright==1.1.414
+        run: python3 -m pip install --upgrade pip PySide6 ruff==0.16.9 pyright==1.1.414 pytest==9.2.0
 
       # The three code checks pyproject.toml configures; a finding fails the run.
       - name: Lint
@@ -44,6 +44,10 @@ jobs:
 
       - name: Check types
         run: pyright
+
+      # The board rules, each against a board built in a temporary folder.
+      - name: Run the unit tests
+        run: python3 -m pytest
 
       # The same configuration release.yml writes: the shipped example, with
       # the home replaced by one nothing in the tree contains, so the identity

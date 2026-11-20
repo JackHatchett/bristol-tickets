@@ -1,5 +1,12 @@
-# Bristol's checks: ruff lints and formats, pyright checks types. CI runs all
-# three (.github/workflows/smoke.yml), and a finding fails the run.
+# Bristol's checks: ruff lints and formats, pyright checks types, pytest runs the
+# unit tests. CI runs all four (.github/workflows/smoke.yml), and a finding or a
+# failing test fails the run.
+
+[tool.pytest.ini_options]
+# The unit tests: the board rules, each against a board built from schema.sql in
+# a temporary folder.
+testpaths = ["src/tools/test_tools/unit"]
+addopts = "-p no:cacheprovider"
 
 [tool.ruff]
 target-version = "py310"

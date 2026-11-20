@@ -3,6 +3,22 @@
 The CLI side of testing, as `ticket_tools` is the CLI side of `bristol`. The
 manual-QA database and its GUI are `test_control/`.
 
+## Unit tests
+
+`unit/` tests the rules that move and close cards, function by function:
+`src/tools/bristol/finishing.py`, `epic_closure.py`, `clear_done.py` and
+`src/tools/ticket_tools/ticket_write.py`. Each test gets a board built from
+`src/tools/bristol/schema.sql` in a temporary folder, so the real `tickets.db`
+is never opened. `pyproject.toml` points pytest here.
+
+```
+python3 -m pytest
+```
+
+- **`unit/conftest.py`** — the fixtures: `db_path` and `conn` for a fresh
+  board, `cli` for running `ticket_write.py`'s commands against it, and
+  `add_epic`, `add_card` and `card` for seeding and reading rows.
+
 ## Runtime smoke checker
 
 Builds each PySide6 GUI's real widgets on Qt's `offscreen` platform, catching
