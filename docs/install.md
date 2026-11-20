@@ -105,7 +105,7 @@ an empty board. Four pages:
    prefilled with your operating system's short user name — and the folder its
    data lives in. The name becomes a directory under `data/`, and everything
    personal to you lives inside it.
-2. **Choose your agents.** The seven shipped agents with a one-line description
+2. **Choose your agents.** The ten shipped agents with a one-line description
    each. Tick the ones you want; the others are never created. `chief_of_staff`
    is always installed, because it is the only agent allowed to change how any
    of them work. Checking a box installs an agent rather than selecting it; the

@@ -9,10 +9,11 @@ in its queue, does the work on your actual files, and writes back what it did.
 Next time you open the board, the card has moved.
 
 Bristol Tickets is the desktop app — a Kanban board over a single SQLite
-database. The agents are Markdown files describing seven roles: a chief of staff
-who maintains the system, a career coach, a librarian, a teaching assistant, a
-fiction writer, a game-design coach, and a client-services agent. You choose
-which ones you want when you install it.
+database. The agents are Markdown files describing ten roles: a chief of staff
+who maintains the system, a librarian, a teaching assistant, a fiction writer,
+a game-design coach, a client-services agent, a business advisor, a QA
+engineer, a care manager and a financial planner. You choose which ones you
+want when you install it, and a career coach is one of the add-ons.
 
 ## What it needs
 
@@ -39,7 +40,7 @@ to the agent in a session.
   links, images, comments, search, closing an epic, reports.
 - **[skills.md](skills.md)** — what a skill is, where skills live, and how to
   install, judge and attach one somebody else wrote.
-- **[agents.md](agents.md)** — the seven shipped agents: what each is for, what
+- **[agents.md](agents.md)** — the ten shipped agents: what each is for, what
   it can do, what it needs configured.
 - **[configuration.md](configuration.md)** — every configuration key, its
   default, and whether you need it.

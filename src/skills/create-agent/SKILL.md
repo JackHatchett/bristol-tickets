@@ -53,12 +53,15 @@ registration. For converting an existing pre-framework bundle, use
      `src/` sibling.
 
 4. **Write a shipped agent into the public documents.** An agent ships when
-   its charter is under `src/agent_identities/`. Give it a section in
+   its charter is under `src/agent_identities/`. Give it an entry in
+   `config/config.example.json`, which the setup wizard offers agents from,
+   with every local value as a placeholder and only native skills; a section in
    `docs/agents.md`, in the shape of the sections there, opening on its
    `description` line; and bring every count of shipped agents in `README.md`
    and `docs/index.md`, and every list of them, to the set on disk. An
-   agent that leaves the shipped set takes its section, its place in those
-   lists and its share of those counts with it, in the same commit.
+   agent that leaves the shipped set takes its entry, its section, its place in
+   those lists and its share of those counts with it, in the same commit. The
+   `public_docs` smoke target fails where any of these disagrees.
 
 5. **Stop there.** The agent's first session loads its charter and its board
    epic and takes direction from the user; no onboarding tasks are seeded beyond

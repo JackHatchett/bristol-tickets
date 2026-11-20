@@ -41,10 +41,10 @@ check is when the thing changed is Bristol Tickets.
 
 ## What runs wherever the session already is
 
-- **Run the ten targets that build no widget** — `python3
+- **Run the eleven targets that build no widget** — `python3
   src/tools/test_tools/smoke.py agent_tools payload config_resolution
   governing_docs skill_declarations published_files ticket_tier
-  ticket_attachment notebook_access dashboard_access`. They read files, copy
+  ticket_attachment notebook_access dashboard_access public_docs`. They read files, copy
   trees and provision databases, so `python3` is the whole requirement.
 - **Any `SMOKE FAIL` line is the result**, whatever passed above it.
 - **A change to a governing document, a skill or a tool is checked here and
@@ -146,7 +146,7 @@ output, from a shell that has Qt.
 
 ## Failure modes
 
-- **The ten headless targets claimed for a widget change** → they build no
+- **The eleven headless targets claimed for a widget change** → they build no
   widget, and the two that do were not run.
 - **A Qt run against an archive older than the last edit** → it reports on code
   that is not the code being closed on.

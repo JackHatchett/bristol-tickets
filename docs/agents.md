@@ -6,7 +6,7 @@ knows how to do is a skill it opens when a task calls for one. Nothing in the
 charter lists those skills, so adding one changes what the agent can do without
 the charter changing at all.
 
-Eight ship with Bristol, and more can be added from `src/addons/` (§Add-on agents). In full, an agent is three things: an entry in your
+Ten ship with Bristol, and more can be added from `src/addons/` (§Add-on agents). In full, an agent is three things: an entry in your
 configuration, giving its paths and settings; a charter, a Markdown file under
 `src/agent_identities/` (or, for an agent you imported, in your data folder) that it reads in full at the start of every session,
 stating who it is, what it is for and what it may not do; and skills, folders of
@@ -173,6 +173,44 @@ testing, and it works there; otherwise it builds the few files a test needs in a
 folder of its own.
 
 **Needs** its own `data/<instance>/qa/` folder, which its entry declares.
+
+---
+
+## care_manager
+
+**For** the care of a member of your family, the way an Aging Life Care Manager
+plans it.
+
+It writes a profile of what the person needs help with, what she lives on and
+from which program, where she lives and who may decide for her; finds the
+housing and services that meet it; works out the public benefits that pay for
+them; and sequences a move so that income, coverage and help never lapse on the
+way. Every eligibility rule, limit and deadline it gives is read from the
+administering agency's own page and cited, with the state it applies in. It
+applies, signs and calls no one: each application is drafted for you or her to
+make, and a question that is a lawyer's, a doctor's or a benefits counselor's
+goes to them as written questions.
+
+**Needs** a folder for the person's notes and documents, declared in its entry.
+
+---
+
+## financial_planner
+
+**For** your own household's money, the way a fee-only financial planner works
+it.
+
+It reads your statements to show where the money goes, builds the budget the
+household runs on, and plans the rest from it: an emergency fund, debt,
+insurance, saving toward dated goals, retirement accounts, the timing of taxes,
+and whether to keep renting or buy. Every tax rule, limit and threshold it gives
+is read from the authority that sets it, dated the day read. It moves no money,
+signs in to no institution and recommends no specific product; a regulated
+recommendation goes to the professional who makes it, with the questions to put
+to them.
+
+**Needs** a folder for the household's statements and plans, declared in its
+entry.
 
 ---
 

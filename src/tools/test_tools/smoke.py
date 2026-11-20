@@ -46,6 +46,7 @@ TARGETS = [
     "ticket_attachment",
     "notebook_access",
     "dashboard_access",
+    "public_docs",
 ]
 
 

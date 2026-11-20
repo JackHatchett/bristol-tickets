@@ -54,5 +54,13 @@ bash run_smoke.sh bristol         # one or more named targets
   git-identity's name and email, the home path declared at `drives.local_home`,
   and any `/Users/<name>` literal are absent from every tracked file except
   `LICENSE`, which exists to name a person. It touches no GUI either.
+- **`public_docs` asserts the public documents describe the tree**: every
+  repository path and `python3` script that `README.md`, `CONTRIBUTING.md`,
+  `src/tools/bristol/BUILD_APP.md` and each page under `docs/` give is on disk,
+  a path an installation makes for itself (`data/`, `config/config.local.json`)
+  aside; every charter under `src/agent_identities/` has a section in
+  `docs/agents.md` and an entry in `config/config.example.json`; and every count
+  of the shipped agents those documents give is the number of charters. It
+  touches no GUI.
 - **`qt_headless.py`** — the GUI-agnostic helpers: `offscreen_app()` and
   `tool_on_path(tool_name)`.

@@ -264,6 +264,119 @@
           }
         ]
       }
+    },
+    "business_advisor": {
+      "identity": "src/agent_identities/business_advisor.md",
+      "description": "Your own small business, from concept to open doors and then day to day: the entity, the licences, the loan package, the filings and the deadlines — drafted and sourced for you to file yourself.",
+      "key_context_files": [],
+      "key_data_paths": [
+        {
+          "path": "data/<your-instance>/business",
+          "access": "write"
+        }
+      ],
+      "notebook_access": {
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
+      },
+      "skills": [
+        "road-to-opening",
+        "researching-the-market",
+        "working-a-licence",
+        "assembling-a-loan-package",
+        "writing-a-plan",
+        "explaining-a-recommendation",
+        "explainer-notes",
+        "notebook-proposal",
+        "note-formatting",
+        "briefing-the-board"
+      ],
+      "env": {
+        "BUSINESS_ADVISOR_DIR": "/path/to/project/data/<your-instance>/business"
+      }
+    },
+    "care_manager": {
+      "identity": "src/agent_identities/care_manager.md",
+      "description": "Care for the people in your family, after an Aging Life Care Manager: what they need, the housing and benefits that meet it, and moves planned so nothing lapses - researched and drafted for you to act on.",
+      "key_context_files": [],
+      "key_data_paths": [
+        {
+          "path": "data/<your-instance>/care",
+          "access": "write"
+        }
+      ],
+      "notebook_access": {
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
+      },
+      "skills": [
+        "assessing-a-care-recipient",
+        "working-a-benefit",
+        "planning-a-care-move",
+        "explaining-a-recommendation",
+        "working-a-contact",
+        "writing-a-plan",
+        "note-formatting",
+        "notebook-proposal"
+      ]
+    },
+    "financial_planner": {
+      "identity": "src/agent_identities/financial_planner.md",
+      "description": "Your own household's money, after a fee-only financial planner: the budget, saving, debt, insurance, taxes and the rent-or-buy question - worked from your own statements, for you to act on.",
+      "key_context_files": [],
+      "key_data_paths": [
+        {
+          "path": "data/<your-instance>/finance",
+          "access": "write"
+        }
+      ],
+      "notebook_access": {
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
+      },
+      "skills": [
+        "building-a-household-budget",
+        "explaining-a-recommendation",
+        "writing-a-plan"
+      ]
+    },
+    "qa_engineer": {
+      "identity": "src/agent_identities/qa_engineer.md",
+      "description": "Tests what the other agents build — skills, Bristol features, finished cards — on test copies, and files every defect as a card for the agent that built it.",
+      "key_context_files": [],
+      "key_data_paths": [
+        {
+          "path": "data/<your-instance>/qa",
+          "access": "write"
+        }
+      ],
+      "notebook_access": {
+        "mode": "per_folder",
+        "folders": {
+          "inbox": "write",
+          "ai_workspace": "write",
+          "archive": "write"
+        }
+      },
+      "skills": [
+        "testing-what-was-built",
+        "reviewing-finished-work",
+        "verifying-a-card",
+        "checking-a-bristol-change",
+        "briefing-the-board"
+      ]
     }
   },
   "tools": {

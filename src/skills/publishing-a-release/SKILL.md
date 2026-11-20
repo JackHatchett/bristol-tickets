@@ -55,7 +55,7 @@ Session steps, run before `src/VERSION` is raised.
 
   ```bash
   python3 src/tools/test_tools/smoke.py published_files governing_docs \
-      skill_declarations payload config_resolution agent_tools
+      skill_declarations payload config_resolution agent_tools public_docs
   ```
 
   `src/skills/checking-a-bristol-change/SKILL.md` owns where the Qt targets run
