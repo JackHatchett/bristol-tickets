@@ -539,7 +539,7 @@ class SettingsTab(QWidget):
         try:
             config_file.update({key: value})
         except OSError as exc:
-            notify(self, f"{caption} Not Saved", str(exc))
+            notify(self, f"{caption} not saved", str(exc))
 
     def _load_agents(self) -> None:
         """Offer the configured agents, opened on the active one.

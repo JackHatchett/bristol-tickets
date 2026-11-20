@@ -83,7 +83,7 @@ def _title(record: dict) -> str:
 
 def _leave_for(parent: QWidget | None, url: str) -> None:
     """Open a web address, once the user has agreed to leave the app for it."""
-    if dialogs.confirm(parent, "Open in Your Browser?", url, "Open"):
+    if dialogs.confirm(parent, "Open in your browser?", url, "Open"):
         open_uri(url)
 
 
@@ -213,7 +213,7 @@ class NewSkillDialog(QDialog):
         """File the request as a card for chief_of_staff."""
         problem = self._file_request(self.title.text().strip(), self.request.toPlainText().strip())
         if problem:
-            dialogs.notify(self, "Not Sent", problem)
+            dialogs.notify(self, "Not sent", problem)
             return
         self.filed = True
         self.accept()
@@ -230,7 +230,7 @@ class NewSkillDialog(QDialog):
         finally:
             self._sync()
         if code != 0:
-            dialogs.notify(self, "Not Imported", err.strip() or "The fetch failed.")
+            dialogs.notify(self, "Not imported", err.strip() or "The fetch failed.")
             return
         self.imported = True
         self.accept()
@@ -369,7 +369,7 @@ class SkillDialog(QDialog):
         )
         if not dialogs.confirm(
             self,
-            "Remove This Skill?",
+            "Remove this skill?",
             f"{_title(record)} will be deleted from disk and no session will "
             f"be able to load it.{held} This cannot be undone.",
             "Remove",
@@ -378,7 +378,7 @@ class SkillDialog(QDialog):
             return
         code, out, err = self._run("remove", record["name"])
         if code != 0:
-            dialogs.notify(self, "Not Removed", (err or out).strip() or "The loader refused.")
+            dialogs.notify(self, "Not removed", (err or out).strip() or "The loader refused.")
             return
         self.removed = True
         self.accept()
@@ -389,7 +389,7 @@ class SkillDialog(QDialog):
         command = "attach" if attached else "detach"
         code, out, err = self._run(command, self._record["name"], "--agent", slug)
         if code != 0:
-            dialogs.notify(self, "Not Changed", (err or out).strip() or "The loader refused.")
+            dialogs.notify(self, "Not changed", (err or out).strip() or "The loader refused.")
             # The write did not land, so the row goes back to what is true.
             self.holders.set_chosen(slug, not attached, quietly=True)
 

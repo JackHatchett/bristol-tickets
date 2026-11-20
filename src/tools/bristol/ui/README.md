@@ -144,8 +144,9 @@ key every scheme has to gain, which is a change to `palettes.py` and to this fil
   state, not help.
 - **A name is Title Case; a sentence is sentence case.** A tab, a section
   heading, a field label, a picker option and a button all name something and are
-  Title Cased. A tooltip, a placeholder, a notice and a switch whose label is a
-  clause all say something and are not. "Hide Closed Items" states a mode; "Open
+  Title Cased. A tooltip, a placeholder, a notice, the title of a notice or a
+  question, and a switch whose label is a clause all say something and are not:
+  "Not saved", "Remove this skill?". "Hide Closed Items" states a mode; "Open
   this installation when Bristol Tickets starts" is a sentence.
 - **A picker keeps the stored value in its item data and shows a caption.** The
   two move independently, so a vocabulary is reworded without a migration and a

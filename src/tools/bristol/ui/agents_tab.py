@@ -441,7 +441,7 @@ class PathList(QWidget):
         try:
             declared = Path(picked).resolve().relative_to(root.resolve()).as_posix()
         except ValueError:
-            notify(self, "Not Added", f"{picked} is outside the project folder, {root}.")
+            notify(self, "Not added", f"{picked} is outside the project folder, {root}.")
             return
         if declared not in self._declared():
             self._row(declared, ACCESS_CHOICES[0][0])
@@ -867,7 +867,7 @@ class AgentDialog(QDialog):
     def _refuse(self, message: str) -> None:
         """A save that did not land is the one thing this window says in
         words, and it says it in a box the user has to dismiss."""
-        notify(self, "Not Saved", message)
+        notify(self, "Not saved", message)
 
     def _save(self) -> None:
         values = self.values()
@@ -1168,7 +1168,7 @@ class AgentsTab(QWidget):
         try:
             slug = json.loads(Path(chosen).read_text(encoding="utf-8"))["slug"]
         except (OSError, ValueError, KeyError, TypeError):
-            notify(self, "Not Imported", f"{chosen} is not an agent file.")
+            notify(self, "Not imported", f"{chosen} is not an agent file.")
             return
         self.import_btn.setEnabled(False)
         self.import_btn.setText("Reading…")
@@ -1183,7 +1183,7 @@ class AgentsTab(QWidget):
         if code != 0:
             notify(
                 self,
-                "Not Imported",
+                "Not imported",
                 err.strip() or out.strip() or "The agent file could not be read.",
             )
             return
@@ -1197,7 +1197,7 @@ class AgentsTab(QWidget):
         if accepted:
             code, out, err = self._run(IMPORT_CLI, chosen, "--accept")
             if code != 0:
-                notify(self, "Not Imported", err.strip() or out.strip())
+                notify(self, "Not imported", err.strip() or out.strip())
                 accepted = False
         self.reload()
         if not accepted:

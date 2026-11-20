@@ -215,12 +215,12 @@ class NotebookDialog(QDialog):
             return
         if self._state.get("folders") and not dialogs.confirm(
             self,
-            "Change Notebook?",
+            "Change notebook?",
             "Every attached folder is detached, and every agent's per-folder choices are cleared.",
             "Change",
         ):
             return
-        if self._say(*run(NOTEBOOK_CLI, "repoint", picked), "Not Changed"):
+        if self._say(*run(NOTEBOOK_CLI, "repoint", picked), "Not changed"):
             self.reload()
 
     def _add(self) -> None:
@@ -229,19 +229,19 @@ class NotebookDialog(QDialog):
         )
         if not picked:
             return
-        if self._say(*run(NOTEBOOK_CLI, "attach", picked), "Not Attached"):
+        if self._say(*run(NOTEBOOK_CLI, "attach", picked), "Not attached"):
             self.reload()
 
     def _remove(self, folder: str) -> None:
         if not dialogs.confirm(
             self,
-            "Detach This Folder?",
+            "Detach this folder?",
             f"{folder} leaves the notebook Bristol knows, and every agent's "
             f"choice for it is dropped. Nothing on disk is touched.",
             "Detach",
         ):
             return
-        if self._say(*run(NOTEBOOK_CLI, "detach", folder), "Not Detached"):
+        if self._say(*run(NOTEBOOK_CLI, "detach", folder), "Not detached"):
             self.reload()
 
 
@@ -308,14 +308,14 @@ class DashboardsDialog(QDialog):
             return
         code, out, err = run(DASHBOARDS_CLI, "add", "--name", name.strip(), "--url", url.strip())
         if code != 0:
-            dialogs.notify(self, "Not Added", (err or out).strip() or "Nothing changed.")
+            dialogs.notify(self, "Not added", (err or out).strip() or "Nothing changed.")
             return
         self.reload()
 
     def _remove(self, name: str) -> None:
         if not dialogs.confirm(
             self,
-            "Remove This Dashboard?",
+            "Remove this dashboard?",
             f"{name} leaves the list, and every agent's choice for it is "
             f"dropped. The dashboard itself is not touched.",
             "Remove",
@@ -323,7 +323,7 @@ class DashboardsDialog(QDialog):
             return
         code, out, err = run(DASHBOARDS_CLI, "remove", name)
         if code != 0:
-            dialogs.notify(self, "Not Removed", (err or out).strip() or "Nothing changed.")
+            dialogs.notify(self, "Not removed", (err or out).strip() or "Nothing changed.")
             return
         self.reload()
 
@@ -418,7 +418,7 @@ class LocationsDialog(QDialog):
             return
         code, out, err = run(LOCATIONS_CLI, "set", json.dumps(row["pointer"]), picked)
         if code != 0:
-            dialogs.notify(self, "Not Changed", (err or out).strip())
+            dialogs.notify(self, "Not changed", (err or out).strip())
             return
         self.reload()
 

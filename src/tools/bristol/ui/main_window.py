@@ -812,7 +812,7 @@ class MainWindow(QMainWindow):
         try:
             config_file.update({"active_agent": slug})
         except OSError as exc:
-            notify(self, "Agent Not Saved", str(exc))
+            notify(self, "Agent not saved", str(exc))
             return
         self.settings_tab.reload_agents()
 

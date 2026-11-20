@@ -29,7 +29,7 @@ def write(
         conn.rollback()
         notify(
             parent,
-            "Change Not Saved",
+            "Change not saved",
             f"{what} was not saved: {exc}. The board shows what is stored.",
         )
         return False
