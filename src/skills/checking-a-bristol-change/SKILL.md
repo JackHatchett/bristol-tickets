@@ -130,6 +130,20 @@ output, from a shell that has Qt.
 - **Put back any of the user's own settings a run changed**, in the session that
   changed them.
 
+## What a change carries into the public documents
+
+- **Edit, in the same commit, every public document the change makes wrong**:
+  `README.md`, every page under `docs/`, `CONTRIBUTING.md`,
+  `src/tools/bristol/BUILD_APP.md`, and the `README.md` of each folder whose
+  tool the change adds, renames, removes or gives a new interface.
+- **Find them by searching those documents for each name the change touches** —
+  a file, a command, a flag, a config key, a module, a count — and read each
+  hit against the tree as the commit leaves it.
+- **Give the documents corrected in the card's closing comment**, or say that
+  none gave anything the change altered.
+- **A document's wording the change leaves true stays as it is.** The edit
+  corrects what is wrong and adds what is now missing.
+
 ## Failure modes
 
 - **The ten headless targets claimed for a widget change** → they build no
@@ -147,6 +161,9 @@ output, from a shell that has Qt.
 - **A card filed for the user to review** → the look is the session's, or it
   is shown to him in chat when he asks.
 - **An archive left at the staging location** → an intermediate outlived its run.
+- **A public document left describing what the change replaced** → the
+  stranger reading it on GitHub installs one app and reads about another;
+  §What a change carries into the public documents.
 - **A visible change drawing a value no page of the design system gives** →
   §What a change is built to; the code and the page disagree.
 
@@ -155,4 +172,5 @@ output, from a shell that has Qt.
 **Whether a visible change draws only values the design system gives**,
 **Whether the two Qt targets ran against the tree as it stands now**,
 **whether a card carrying a visible criterion was closed on the session's own
-captures**, and **whether anything a run created is left anywhere.**
+captures**, and **whether anything a run created is left anywhere**, and **whether every public
+document the change touched was corrected in its commit.**

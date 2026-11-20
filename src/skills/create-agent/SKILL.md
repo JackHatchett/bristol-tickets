@@ -52,7 +52,15 @@ registration. For converting an existing pre-framework bundle, use
      `tools/writing_tools/`, `tools/ticket_tools/`), never a new top-level
      `src/` sibling.
 
-4. **Stop there.** The agent's first session loads its charter and its board
+4. **Write a shipped agent into the public documents.** An agent ships when
+   its charter is under `src/agent_identities/`. Give it a section in
+   `docs/agents.md`, in the shape of the sections there, opening on its
+   `description` line; and bring every count of shipped agents in `README.md`
+   and `docs/index.md`, and every list of them, to the set on disk. An
+   agent that leaves the shipped set takes its section, its place in those
+   lists and its share of those counts with it, in the same commit.
+
+5. **Stop there.** The agent's first session loads its charter and its board
    epic and takes direction from the user; no onboarding tasks are seeded beyond
    the epic.
 
@@ -69,8 +77,12 @@ decided, and any deviation from these steps.
   leave nothing in its place; a pointer is a path, and a charter carries none.
 - **A capability is unclear as a tool or a skill** → the skill is the procedure
   and the tool is the code it calls.
+- **A shipped agent missing from `docs/agents.md`, or a count that no longer
+  matches** → step 4 was skipped, and the stranger reading the docs is told of
+  a fleet that is not the one installed.
 
 ## Audit
 
-**Whether the `agents` block has gone stale**, and **whether each agent's board
-epic still reflects real work.**
+**Whether the `agents` block has gone stale**, **whether each agent's board
+epic still reflects real work**, and **whether `docs/agents.md`, `README.md`
+and `docs/index.md` name exactly the agents under `src/agent_identities/`.**
