@@ -806,6 +806,22 @@ def check_bristol() -> list[str]:
 
         if header.maximumHeight() > _mac_window.TALL_TITLE_BAR:
             raise SmokeFailure("the top bar is taller than a Mac's tall title bar")
+        # The switch, the tall title bar and the check are sized by LAYOUT
+        # tokens, so the design system's page and the code cannot drift.
+        from ui import switch as _switch
+        from ui.style_sheet import check_mark_side as _check_mark_side
+
+        _drawn = {
+            "tall_title_bar_h": _mac_window.TALL_TITLE_BAR,
+            "switch_track_w": _switch.TRACK_W,
+            "switch_track_h": _switch.TRACK_H,
+            "switch_knob_inset": _switch.KNOB_INSET,
+            "check_mark": _check_mark_side(),
+        }
+        _off = {k: v for k, v in _drawn.items() if v != _theme.LAYOUT.get(k)}
+        if _off:
+            raise SmokeFailure(f"sizes drawn off their LAYOUT tokens: {_off}")
+        ok.append("the switch, the tall title bar and the check take their LAYOUT tokens")
         header_buttons = [b.text() or b.accessibleName() for b in header.findChildren(QPushButton)]
         views_named = {b.accessibleName() for b in win._tab_buttons}
         centre = header.findChild(QWidget, "viewTabs")
@@ -937,6 +953,22 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("a set filter is not on the control row as a chip")
         if win.backlog_filter_note.isHidden() or win.archive_filter_note.isHidden():
             raise SmokeFailure("a view leaving cards out does not say so")
+        # A count or a notice of what a view leaves out is Meta Text, never a
+        # Field Caption: the caption role names a field.
+        from PySide6.QtWidgets import QLabel as _QLabel
+
+        _meta = {
+            "the Search count": win.search_count,
+            "the Backlog's filter notice": win.backlog_filter_note,
+            "the Archive's filter notice": win.archive_filter_note,
+        }
+        for _name, _label in _meta.items():
+            if _label.objectName() != "metaText":
+                raise SmokeFailure(f"{_name} is {_label.objectName()!r}, not metaText")
+        _captions = [w.text() for w in win.findChildren(_QLabel) if w.objectName() == "formCaption"]
+        if any(t.startswith("+") for t in _captions):
+            raise SmokeFailure("the chip row's +N count is a Field Caption, not Meta Text")
+        ok.append("a count and a notice of what a view leaves out are Meta Text")
 
         win.filters.toggle(fm.ASSIGNEE, "user")
         win._on_filters_changed()
@@ -1160,6 +1192,18 @@ def check_bristol() -> list[str]:
         # the change-log triggers record it. Collapse must round-trip without
         # touching the configuration (save=False).
         pane = win.detail_pane
+        # A section of the detail pane is named in Title Case.
+        from PySide6.QtWidgets import QLabel as _QLabel
+
+        for _header in pane.findChildren(_QLabel):
+            if _header.objectName() != "sectionHeader":
+                continue
+            _words = _header.text().split()
+            if any(w[:1].islower() for w in _words):
+                raise SmokeFailure(
+                    f"the detail pane's section {_header.text()!r} is not Title Case"
+                )
+        ok.append("every section of the detail pane is named in Title Case")
         pane.show_task(b2)
         pane.status_combo.setCurrentIndex(pane.status_combo.findData("doing"))
         moved_status = mconn.execute("SELECT status FROM task WHERE id=?", (b2,)).fetchone()[0]
@@ -1339,6 +1383,18 @@ def check_bristol() -> list[str]:
         from PySide6.QtWidgets import QDialog
 
         req_dlg = UnifiedRecordDialog(win, mconn, mode="task")
+        # The record dialog's pad is the dialog's, SPACE xl all round, with the
+        # block-to-block gap between the body and the pinned button row.
+        _xl, _md = _theme.space("xl"), _theme.space("md")
+        _body = req_dlg.main_layout.contentsMargins()
+        _row = req_dlg.button_box.contentsMargins()
+        _pad = (_body.left(), _body.top(), _body.right(), _row.left(), _row.right(), _row.bottom())
+        if _pad != (_xl,) * 6 or _body.bottom() + _row.top() != _md:
+            raise SmokeFailure(
+                f"the record dialog is padded {_pad}, {_body.bottom() + _row.top()} above its "
+                f"buttons, not SPACE xl all round and SPACE md above its buttons"
+            )
+        ok.append("the record dialog is padded SPACE xl all round, SPACE md above its buttons")
         if req_dlg.ok_button.text() != "Create":
             raise SmokeFailure(
                 f"a new record's default button reads {req_dlg.ok_button.text()!r}, not 'Create'"

@@ -112,9 +112,8 @@ def chevron_image(colour: str, direction: str = "down") -> str | None:
 
 
 def check_mark_side() -> int:
-    """The side of a checkbox's check, in device-independent pixels: the box,
-    SPACE lg, less a pixel each side."""
-    return space("lg") - 2
+    """The side of a checkbox's check, in device-independent pixels."""
+    return LAYOUT["check_mark"]
 
 
 def check_image(colour: str) -> str | None:
@@ -159,12 +158,11 @@ def build_style_sheet() -> str:
         return f"rgba({r}, {g}, {b}, {alpha})"
 
     ink_06, ink_10, ink_14 = _ink(0.06), _ink(0.10), _ink(0.14)
-    s_xs, s_sm, s_md, s_lg, s_xl, s_2xl = (
+    s_xs, s_sm, s_md, s_lg, s_2xl = (
         space("xs"),
         space("sm"),
         space("md"),
         space("lg"),
-        space("xl"),
         space("2xl"),
     )
     return f"""

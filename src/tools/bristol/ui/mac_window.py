@@ -17,8 +17,10 @@ import ctypes
 import ctypes.util
 import sys
 
+from .tokens import LAYOUT
+
 # The height AppKit gives a compact unified title bar with a toolbar, in points.
-TALL_TITLE_BAR = 40
+TALL_TITLE_BAR = LAYOUT["tall_title_bar_h"]
 # NSWindowToolbarStyleUnifiedCompact, NSWindowTitleHidden and
 # NSWindowStyleMaskFullSizeContentView. The compact style keeps the band a
 # toolbar gives, with the traffic lights at its centre, and the smaller corner

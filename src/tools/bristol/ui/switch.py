@@ -16,11 +16,11 @@ from PySide6.QtCore import QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QAbstractButton, QSizePolicy
 
-from .theme import C, control_height, space
+from .theme import LAYOUT, C, control_height, space
 
-TRACK_W = 30
-TRACK_H = 18
-KNOB_INSET = 3
+TRACK_W = LAYOUT["switch_track_w"]
+TRACK_H = LAYOUT["switch_track_h"]
+KNOB_INSET = LAYOUT["switch_knob_inset"]
 
 
 class Switch(QAbstractButton):

@@ -31,6 +31,11 @@ LAYOUT = {
     "header_mark_h": 20,  # the app's mark beside its name in the top bar
     "traffic_lights_tall_w": 80,  # the traffic lights in the tall title bar, and room past them
     "title_bar_h": 28,  # the Mac's title bar, which the top bar shares
+    "tall_title_bar_h": 40,  # the compact unified title bar with a toolbar: the top bar's height
+    "switch_track_w": 30,  # a switch's rounded track
+    "switch_track_h": 18,
+    "switch_knob_inset": 3,  # the room between the track's edge and its round knob
+    "check_mark": 9,  # a checkbox's check, inside its SPACE lg box
     "traffic_lights_w": 80,  # the close, minimize and zoom buttons, and room past them
     "filter_field_max_w": 420,  # a Filter field, before its pickers
     "window_min_w": 1240,
