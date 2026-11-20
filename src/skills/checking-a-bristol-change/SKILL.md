@@ -127,6 +127,9 @@ output, from a shell that has Qt.
   further.
 - **A change nothing can see — storage, a migration, which card is next — is
   checked by the smoke targets and no further.**
+- **Close a popup, menu or dialog by clicking**: outside it, on its ✕, or on
+  its Cancel. Never press Escape. The Claude desktop app takes Escape during
+  computer use as the user's stop, so the call ends as if he had stopped it.
 - **Put back any of the user's own settings a run changed**, in the session that
   changed them.
 
