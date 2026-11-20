@@ -1,4 +1,4 @@
-"""theme_pages.py — writes the design system's theme pages from theme.py.
+"""theme_pages.py — writes the design system's theme pages from ui/themes.py.
 
 One note per shipped theme, in the `themes` folder of the notebook folder
 `markdown_notebook.design_system_dir` gives: every color role in light and dark,
@@ -14,17 +14,21 @@ give the same values.
 from __future__ import annotations
 
 import argparse
+import importlib
 import subprocess
 import sys
+import types
 from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-# theme.py imports nothing from the rest of ui, so it is loaded on its own
-# rather than through the package, whose __init__ builds the main window.
-sys.path.insert(0, str(HERE / "ui"))
-
-import theme  # noqa: E402
+# The appearance modules import nothing from the rest of ui, so they are loaded
+# through a bare package standing for ui rather than through ui itself, whose
+# __init__ builds the main window.
+_ui = types.ModuleType("bristol_ui")
+_ui.__path__ = [str(HERE / "ui")]
+sys.modules.setdefault("bristol_ui", _ui)
+theme = importlib.import_module("bristol_ui.theme")
 
 READ_CONFIG = HERE.parent / "config_tools" / "read_config.py"
 
@@ -100,7 +104,8 @@ def page(theme_id: str, name: str, frontmatter: str) -> str:
     details = [
         f"- The theme's id is `{theme_id}`; its light scheme is "
         f"`{light_scheme}` and {dark_line}, in `SCHEMES` in "
-        "`src/tools/bristol/ui/theme.py`.",
+        "`src/tools/bristol/ui/themes.py`, from the palettes in "
+        "`src/tools/bristol/ui/palettes.py`.",
         "- What each role colors is [[bristol_color|Bristol Color]], and the "
         "ratios a pair must reach are "
         "[[bristol_contrast_minimums|Bristol Contrast Minimums]].",

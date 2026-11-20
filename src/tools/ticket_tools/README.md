@@ -312,7 +312,7 @@ Phase 3.3 states the rule). Their storage:
   which is where the ungranted tool or the failed call is stated. `decision` and
   `capability` are the two the status scripts list under NEEDS YOU, because no
   agent can clear either by working. The vocabulary is
-  `create_tickets.BLOCK_REASONS`, mirrored in `bristol/ui/theme.py`. A card
+  `create_tickets.BLOCK_REASONS`, mirrored in `bristol/ui/board_terms.py`. A card
   reaching `done` has its reason cleared by every writer.
 - **Tier** is `task.tier`: `max`, `standard`, or NULL for a card nobody has
   rated — the depth of processing the card needs, chosen from the card by

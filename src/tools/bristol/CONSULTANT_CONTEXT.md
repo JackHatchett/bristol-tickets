@@ -36,7 +36,13 @@ that owns the concern.
 | `app.py` | locating the DB, applying `schema.sql`, opening the window | launch behaviour |
 | `config_file.py` | reading and writing `config.local.json`, preserving unknown keys | anything stored as configuration |
 | `instance.py` | the per-machine instance pointer | where an installed copy looks for its data |
-| `ui/theme.py` | palette, stylesheet, `COLUMNS`, `CARD_ROLE`, `log_lines`, small helpers | a colour or a shared constant |
+| `ui/theme.py` | re-exports the six modules below, so `from .theme import …` works everywhere | nothing: change the module that defines the name |
+| `ui/tokens.py` | spacing, radius, type size, `LAYOUT`, `SCRIM` | a gap, a corner, a font size or a window size |
+| `ui/palettes.py` | the shipped palettes, light and dark | a shipped colour |
+| `ui/themes.py` | `SCHEMES`, `THEMES`, the live palette `C`, the collection, contrast pairs | how themes are resolved, stored or checked |
+| `ui/style_sheet.py` | the typeface, `build_style_sheet`, `apply_scheme` | a style sheet rule |
+| `ui/board_terms.py` | `COLUMNS`, `CARD_ROLE`, agent captions, every stored value's caption | a column, an owner, or the word a value is shown as |
+| `ui/ticket_log.py` | `log_lines`, `log_entries`, `relative_time` | how a card's log reads |
 | `ui/schema_guard.py` | `ensure_schema_up_to_date`, the change-log triggers, non-destructive migration | a new column or table the UI needs |
 | `ui/card_delegate.py` | `CardDelegate` — painting one card with QPainter | how a card looks: pills, badges, layout, fonts |
 | `ui/links.py` | `LinkBar` — a ticket's links to tickets and to addresses | link display, creation, removal |
@@ -98,7 +104,7 @@ python3 app.py
 
 ## Worked examples
 
-- **A size pill is the wrong colour** → `ui/theme.py`, and
+- **A size pill is the wrong colour** → `ui/palettes.py`, and
   `ui/card_delegate.py` where the pill is drawn.
 - **Add a field to the task form** → `ui/record_dialog.py`: add the widget, add
   it to `task_rows`, load it in `_load_existing_data`, save it in `save_data`.

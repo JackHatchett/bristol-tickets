@@ -18,12 +18,12 @@ bash run_smoke.sh bristol         # one or more named targets
   with the arguments it was given. A passthrough where PySide6 and a display are
   present; on Linux without them it installs PySide6 and extracts the GL/EGL
   libraries Qt needs into a cache under `TMPDIR`, without root.
-- **`smoke.py`** — the per-target checks, registered in `TARGETS` (`bristol`,
-  `agent_tools`, `payload`, `test_control`, `governing_docs`,
-  `skill_declarations`, `published_files`). Add a target by writing a `check_*`
-  function
-  returning a list of failure strings and registering it. Each target runs in its
-  own subprocess.
+- **`smoke.py`** — the runner. `TARGETS` lists every target by name, and each
+  target runs in its own subprocess.
+- **`smoke_targets/`** — one module per target, `check_<target>.py`, defining
+  `check_<target>()`: it returns the lines a pass prints and raises
+  `SmokeFailure` (`smoke_targets/failure.py`) on a failed check. Add a target by
+  writing its module and listing its name in `TARGETS`.
 - **`governing_docs` asserts what a reader cannot count**: the resident core
   against its word cap, stated in `src/templates/identity_template.md`'s style
   contract. It touches no GUI, so it runs without Qt.

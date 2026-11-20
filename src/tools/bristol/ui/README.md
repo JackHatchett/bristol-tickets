@@ -1,7 +1,8 @@
 # The styling contract
 
-What an agent needs to style a new piece of Bristol Tickets. `theme.py` contains
-every visual constant the app draws with; this file says what each one means and
+What an agent needs to style a new piece of Bristol Tickets. `tokens.py`,
+`palettes.py`, `themes.py` and `style_sheet.py` contain every visual constant
+the app draws with, and `theme.py` re-exports them; this file says what each one means and
 which one to reach for.
 
 - **Take a colour from the live palette `C`, never from a literal.** `C` is a
@@ -14,7 +15,7 @@ which one to reach for.
 
 ## Scheme keys
 
-A scheme is one complete palette under a name in `theme.py`'s `SCHEMES`. Every
+A scheme is one complete palette under a name in `themes.py`'s `SCHEMES`. Every
 scheme carries every key below; `check_schemes()` lists any that does not.
 
 | Key | What it colours |
@@ -124,7 +125,7 @@ answer with a hex value or a pixel count.
 | Raised, in front | `SURFACE` with a 1 px `BTN_BORDER` edge where it can be clicked; no shadow. |
 
 **Where no key or token carries the intent, say so and stop.** A new key is a
-key every scheme has to gain, which is a change to `theme.py` and to this file.
+key every scheme has to gain, which is a change to `palettes.py` and to this file.
 
 ## Words on screen
 
@@ -148,7 +149,7 @@ key every scheme has to gain, which is a change to `theme.py` and to this file.
 - **A picker keeps the stored value in its item data and shows a caption.** The
   two move independently, so a vocabulary is reworded without a migration and a
   column keeps the spelling every writer already uses. `settled_combo.fill_words`
-  loads one from `(value, caption)` pairs; `theme.py` contains the pairs.
+  loads one from `(value, caption)` pairs; `board_terms.py` contains the pairs.
 - **An option is a name, and its explanation is the picker's tooltip.** Effort
   offers Small through Extra Large and hovers the budget anchors; Blocked offers
   four names and hovers what each means. An option carrying its own explanation
@@ -228,8 +229,8 @@ Two surfaces write a card, and each has its own job.
 
 ## Adding a scheme
 
-Copy an existing palette in `theme.py`, change the values, register it in
-`SCHEMES`, and pair it in `THEMES` under the theme it is a half of — `None` for
+Copy an existing palette in `palettes.py`, change the values, register it in
+`themes.py`'s `SCHEMES`, and pair it in `THEMES` under the theme it is a half of — `None` for
 a dark half that does not exist yet. Add the theme's name to `THEME_CHOICES`,
 which is what this build calls each theme it ships. `check_schemes()` reports
 any key the new palette is missing; the smoke check runs it.
@@ -270,7 +271,7 @@ which is hard to attribute to the theme it came from.
 
 ## The collection
 
-Which themes an installation offers is not the build's to decide. `theme.py`
+Which themes an installation offers is not the build's to decide. `themes.py`
 ships the ones in `THEME_CHOICES`; `config/config.local.json` carries the
 difference under `appearance.themes`, and `resolve_collection()` puts the two
 together into records — a name, a light palette, and a dark palette or `None` —
@@ -284,7 +285,7 @@ under ids that never change.
 - **The three differences are `added`, `edited` and `deleted`**, and
   `collection_differences()` is what computes them. Restore Shipped Themes
   drops the last two and keeps the first.
-- **A shipped theme is edited in the configuration, never in `theme.py`.** A
+- **A shipped theme is edited in the configuration, never in `palettes.py`.** A
   personal deletion written into a tracked file would leave every clone
   different and `git status` never clean, and `payload.refresh()` replaces
   `src/` whenever a newer app opens an installation, so it would be undone by

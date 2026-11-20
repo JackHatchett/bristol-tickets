@@ -2,7 +2,9 @@
 
 Import graph (bottom-up, no cycles):
 
-    theme            (constants, stylesheet, helpers)  ← imported by everything
+    tokens, palettes, themes, style_sheet, board_terms, ticket_log
+                     (constants, stylesheet, helpers)
+    theme            (re-exports those six)            ← imported by everything
     schema_guard     (on-launch migration)             ← imported by main_window
     card_delegate    → theme
     record_dialog    → theme

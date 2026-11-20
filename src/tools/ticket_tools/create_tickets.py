@@ -86,7 +86,7 @@ BLOCK_REASONS_NEEDING_USER = frozenset({"decision", "capability"})
 # The depth of processing a card should be worked at, chosen from the card by
 # src/skills/manage-tickets/SKILL.md §Processing tier. NULL is not yet rated.
 # What each one runs on is config's `tiers` key, never this file. Mirrored in
-# bristol/ui/theme.py, which carries its own copy.
+# bristol/ui/board_terms.py, which carries its own copy.
 TIERS = ("max", "standard")
 
 

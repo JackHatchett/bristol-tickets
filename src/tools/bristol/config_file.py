@@ -49,7 +49,7 @@ WORK_WHOLE_QUEUE = "session.work_whole_queue"
 WORK_WHOLE_QUEUE_DEFAULT = True
 
 # Which theme the app draws with, and which half of it. The theme names a pair
-# of palettes in ``ui/theme.py``; the mode is light, dark, or system to follow
+# of palettes in ``ui/themes.py``; the mode is light, dark, or system to follow
 # the OS. They are two keys because they are two choices on the page.
 APPEARANCE_THEME = "appearance.theme"
 APPEARANCE_MODE = "appearance.mode"

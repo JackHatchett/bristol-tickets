@@ -104,7 +104,7 @@ palette in `custom_scheme` joins the collection as an ordinary theme named
 Custom, under the id `custom`.
 
 Adding a theme to the build is a data change in
-`src/tools/bristol/ui/theme.py`; what each key in a palette means is
+`src/tools/bristol/ui/palettes.py` and `src/tools/bristol/ui/themes.py`; what each key in a palette means is
 `src/tools/bristol/ui/README.md`.
 
 ### `sizing`

@@ -10,7 +10,8 @@ The Kanban model puts a task's tab in ``task.stage`` (backlog | active |
 archive) and its manual order in ``task.sort_order``. The
 pieces it composes live in sibling modules:
 
-    theme.py         palette, stylesheet, COLUMNS, CARD_ROLE, small helpers
+    theme.py         re-exports tokens, palettes, themes, style_sheet,
+                     board_terms and ticket_log
     filter_menu.py   FilterState and FilterMenu (what the board is showing)
     schema_guard.py  ensure_schema_up_to_date()
     card_delegate.py CardDelegate (per-card QPainter rendering)
