@@ -1017,11 +1017,7 @@ class MainWindow(QMainWindow):
         system' and a pinned scheme come down the same path.
         """
         app = QApplication.instance()
-        theme, mode = appearance_choice(
-            config_file.get(config_file.APPEARANCE_THEME),
-            config_file.get(config_file.APPEARANCE_MODE),
-            config_file.get(config_file.APPEARANCE_SCHEME),
-        )
+        theme, mode = self._stored_appearance()
         # Applied app-wide so child dialogs and message boxes inherit; fall back
         # to the window itself if there's somehow no application object. The
         # collection goes down with it, so a stored choice naming a theme the
@@ -1036,9 +1032,18 @@ class MainWindow(QMainWindow):
         if app is None:
             self.setStyleSheet(build_style_sheet())
 
+    def _stored_appearance(self) -> tuple[str, str]:
+        """The theme and mode the configuration gives."""
+        return appearance_choice(
+            config_file.get(config_file.APPEARANCE_THEME),
+            config_file.get(config_file.APPEARANCE_MODE),
+            config_file.get(config_file.APPEARANCE_SCHEME),
+        )
+
     def _preview_appearance(self, theme: str, mode: str) -> None:
         """Draw the app in the theme and mode the Settings tab is offering,
         before the configuration says so."""
+        self._previewed = (theme, mode)
         app = QApplication.instance()
         set_scheme(live_scheme(app, theme, mode))
         if app is not None:
@@ -1077,8 +1082,18 @@ class MainWindow(QMainWindow):
 
     def _on_color_scheme_changed(self, *args) -> None:
         """OS switched between light and dark. It reaches the app only while the
-        mode is Follow System; a pinned mode resolves the same either way."""
-        self.refresh_appearance()
+        mode is Follow System; a pinned mode resolves the same either way.
+
+        Settings draws a choice before writing it, and releasing a pinned mode
+        raises this signal inside that drawing. While the choice drawn is not
+        yet the one stored, the redraw is of the choice drawn: the stored one
+        would pin the platform back to the mode being left.
+        """
+        previewed = getattr(self, "_previewed", None)
+        if previewed is not None and previewed != self._stored_appearance():
+            self._preview_appearance(*previewed)
+        else:
+            self.refresh_appearance()
 
     def _move_tasks_to_stage(self, ids: list[int], stage: str) -> None:
         """Set each task's stage, appended to the bottom of the destination list
