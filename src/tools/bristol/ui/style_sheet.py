@@ -657,10 +657,15 @@ QMenu {{
     background-color: {C["SURFACE"]};
     color: {C["INK"]};
     border: 1px solid {C["BTN_BORDER"]};
-    border-radius: {r_md}px;
+    border-radius: {r_lg}px;
     padding: {s_sm}px;
 }}
-QMenu::item {{ padding: {s_md}px {s_xl}px {s_md}px {s_lg}px; border-radius: {r_md}px; }}
+/* A menu is the picker's open list: the same corner, pad and option. */
+QMenu::item {{
+    min-height: {s_2xl}px;
+    padding: {s_xs}px {s_lg}px;
+    border-radius: {r_md}px;
+}}
 QMenu::item:selected {{ background-color: {C["SEL_BG"]}; color: {C["ACCENT_DK"]}; }}
 QMenu::separator {{ height: 1px; background: {C["BORDER"]}; margin: {s_sm}px {s_md}px; }}
 QPushButton {{

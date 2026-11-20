@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import sys
 import tempfile
@@ -476,6 +477,33 @@ def check_bristol() -> list[str]:
     ):
         raise SmokeFailure("an unrecognised theme name does not fall back")
     ok.append("every theme and mode pair resolves, applies and renders a stylesheet")
+
+    # Every popup list is drawn one way: a menu takes the picker's open list's
+    # corner and pad, and its options the picker's options' height, pad and corner.
+    sheet = theme.build_style_sheet()
+
+    def _rule(selector: str) -> dict[str, str]:
+        found = re.search(r"(?m)^" + re.escape(selector) + r" \{\{?\s*([^}]*)\}", sheet)
+        if not found:
+            raise SmokeFailure(f"the style sheet has no {selector} rule")
+        return {
+            k.strip(): v.strip()
+            for k, _, v in (d.partition(":") for d in found.group(1).split(";"))
+            if v.strip()
+        }
+
+    popup_keys = ("border-radius", "padding")
+    option_keys = ("min-height", "padding", "border-radius")
+    combo, menu = _rule("QComboBox QAbstractItemView"), _rule("QMenu")
+    combo_item, menu_item = _rule("QComboBox QAbstractItemView::item"), _rule("QMenu::item")
+    for keys, a, b, what in (
+        (popup_keys, combo, menu, "list"),
+        (option_keys, combo_item, menu_item, "option"),
+    ):
+        differ = [k for k in keys if a.get(k) != b.get(k)]
+        if differ:
+            raise SmokeFailure(f"a menu's {what} departs from a picker's on {', '.join(differ)}")
+    ok.append("a menu is drawn as a picker's open list, its options as the picker's")
 
     # A collection that has lost the default still has a fallback, so deleting
     # Pumpkin is an ordinary deletion rather than the one that breaks the app.
