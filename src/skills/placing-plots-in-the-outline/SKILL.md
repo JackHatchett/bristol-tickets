@@ -245,17 +245,19 @@ rule where the project keeps one — Sanderson's likability, proactivity and
 competence — with its scale, where a lead's sliders are recorded, how much
 each beat must move and which characters are exempt.
 
-- **Read the rule there, and run its check after inventing a plot's beats and
-  when reviewing a run of plotting**, against the sliders each lead's
-  character note records. A whole outline lined up on the plot alignment sheet
-  is reviewed by `src/skills/syncing-the-plot-alignment-sheet/SKILL.md` §The
-  movement review.
-- **Report the check with the beats**: which slider each beat moves, and every
-  stretch where the rule's movement is missing, flagged to the author.
+- **Read the rule there, and run its check once scenes exist**, against the
+  sliders each lead's character note records. A scene ties beats from several
+  plots together by a summary of the action that hits them, and only that
+  summary shows whether a lead acts or waits, is kind or cruel; scenes are made
+  after the plot alignment sheet, and the check is
+  `src/skills/syncing-the-plot-alignment-sheet/SKILL.md` §The movement review.
+- **Report the check with the scenes**: which slider each scene moves, and
+  every stretch where the rule's movement is missing, flagged to the author.
 - **Flag rather than fix.** The sliders say what to avoid, and a beat changes
   only on the author's word.
-- **Record no slider value the author has not set**; a lead with none recorded
-  is reported as unchecked.
+- **Record a slider value in the lead's character note whenever the author
+  gives one**, before scenes exist as well as after, and none he has not set; a
+  lead with none recorded is reported as unchecked.
 
 ## 7. Move what is already written
 
@@ -322,8 +324,8 @@ being taken for a decision.
 - **A setting promise with Seven-Point Highlights** → §5; it contains the
   archetype's six beats alone.
 - **An outline's Setting with a sense left empty, or no spice** → §4.
-- **A run of beats reported without the slider check, where the project
-  keeps a slider rule** → §6.
+- **A slider movement reported for a beat, or the slider check run before
+  scenes exist** → §6; a beat alone cannot show it.
 - **A candidate tie written into a sheet, or an idea dropped at the session's
   end** → §8; it is a developmental idea.
 - **A success on the first try** → §5; two failures come first.

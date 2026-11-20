@@ -1,6 +1,6 @@
 ---
 name: syncing-the-plot-alignment-sheet
-description: Carries changes between a novel's tiered plot notes and the plot alignment sheet - one column per plot, beats down the column - so that the notes contain every word and the sheet keeps the author's arrangement of where each beat sits, and tracks how each character's sliders move down the arranged beats once the arrangement is settled. Use when the author asks for a sync, sends notes or a revised copy of the sheet, comments on the sheet, when the sheet is to be rebuilt or given a new tab, or when the lined-up plotting is reviewed for movement.
+description: Carries changes between a novel's tiered plot notes and the plot alignment sheet - one column per plot, beats down the column - so that the notes contain every word and the sheet keeps the author's arrangement of where each beat sits, and tracks how each character's sliders move down the scenes made from the arranged beats. Use when the author asks for a sync, sends notes or a revised copy of the sheet, comments on the sheet, when the sheet is to be rebuilt or given a new tab, or when the lined-up plotting is reviewed for movement.
 license: MIT
 compatibility: Runs where the Markdown notebook is reachable; needs python3 and a Google Sheets connector.
 metadata:
@@ -125,44 +125,48 @@ author's arrangement, so it is done only on his word.
 
 ## The movement review
 
-Input: an outline's tab, its beats lined up as the author has settled them.
-Operation: each character's sliders read beat by beat down the rows. Output: a
+Input: an outline's scenes, made once its beats are lined up as the author has
+settled them, each the beats it ties from several plots and the summary of the
+action that hits them. Operation: each character's sliders read scene by scene,
+from the summaries. Output: a
 movement tab beside the outline's tab, and a report of every stretch where
 movement is missing. The slider rule, its scale and the characters it exempts
 are the project's content-rules file, by
 `src/skills/placing-plots-in-the-outline/SKILL.md` §6; each character's
 recorded sliders are the Sliders section of the character's note.
 
-- **Review movement after the arrangement is settled**, never during a sync. It
-  is an editorial pass on the plotting, and pacing is outside it.
+- **Review movement once scenes exist**, never during a sync. It is an
+  editorial pass on the plotting, and pacing is outside it.
 - **Track every character the outline sorts under POV and Secondary**, less
   those the rule exempts, one column each, in the outline's order.
-- **Give the movement tab the outline tab's rows**: rows 1 to 3 its headers
-  and from row 4 the same rows and divider bands, so row N of one sits beside
-  row N of the other. Title it `Movement - <outline tab>`.
-- **Write in a character's cell, for each row containing a beat that character
-  acts in or suffers, every slider the row moves and which way** — `L+`, `P-`,
-  `C+`, with a competency's own initial where the note scores competence per
-  competency — and `flat` where the beat moves none. A row containing no beat of
-  theirs stays blank. A cell carries a direction and never a number.
+- **Give the movement tab one row per scene, in story order**: rows 1 to 3
+  its headers and from row 4 one scene each, opening on the scene's summary,
+  with the outline tab's divider bands. Title it `Movement - <outline tab>`.
+- **Write in a character's cell, for each scene that character acts in or
+  suffers, every slider the scene's summary shows moving and which way** —
+  `L+`, `P-`, `C+`, with a competency's own initial where the note scores
+  competence per competency — and `flat` where the scene moves none. A scene
+  without them stays blank. A cell carries a direction and never a number.
 - **Mark a flat stretch on the character's column**: two or more of that
-  character's beats running down the column, blank rows passed over, with no
+  character's scenes running down the column, blank rows passed over, with no
   slider moving.
-- **Keep a `Story` column, last**, giving every row whose beats move no
-  tracked character's slider: the story stands still there.
+- **Keep a `Story` column, last**, giving every scene that moves no tracked
+  character's slider: the story stands still there.
 - **Read each book's run of a column against the start and end its note
   records**; a run whose net direction disagrees with them is flagged beside
   the flat stretches.
-- **Track a character whose note records no sliders from the beats alone**,
+- **Track a character whose note records no sliders from the scenes alone**,
   `unrecorded` after the name in the column's header, and record no value in
   the note.
 - **Report every flat stretch, still row and disagreement to the author**,
-  each with the rows it covers and a beat that could carry the movement. A
-  beat changes in the notes on his word, by
+  each with the scenes it covers and a scene that could carry the movement. A
+  scene's action changes on his word, and the beats it ties change in the notes
+  by
   `src/skills/placing-plots-in-the-outline/SKILL.md`, then reaches the sheet by
   §Sync.
-- **Rebuild the movement tab whole after a sync changes its outline's tab.**
-  Its rows follow the outline's tab and contain nothing the author arranges.
+- **Rebuild the movement tab whole after a sync changes its outline's tab or
+  its scenes change.** Its rows follow the scenes and contain nothing the
+  author arranges.
 
 ## Failure modes
 
@@ -176,5 +180,5 @@ recorded sliders are the Sliders section of the character's note.
 
 **Whether the sync run after the writes prints none, and every beat the author
 had placed sits on the row it sat on before.** For a movement review: whether
-every tracked character's beat on the outline's tab has a cell on the same row
-of the movement tab.
+every scene has its row on the movement tab, in story order, and every tracked
+character in it a cell on that row.
