@@ -7,10 +7,26 @@ import os
 import sqlite3
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 from qt_headless import TOOLS, offscreen_app, tool_on_path
 from smoke_targets.failure import SmokeFailure
+
+# The board size the speed checks run on: the user's own, rounded up.
+SPEED_BOARD_CARDS = 600
+
+# Seconds each timed action may take. Measured on the user's Mac on 2026-11-19
+# after #1440: an agent choice 0.02 s, a theme change 0.6 s, a Settings reload
+# 0.14 s. Each limit leaves room for a slower machine and none lets back the
+# re-theming reload #1440 removed.
+SPEED_LIMITS = {
+    "open": 15.0,
+    "refresh": 5.0,
+    "theme": 6.0,
+    "agent": 0.5,
+    "reload": 1.0,
+}
 
 
 def check_bristol() -> list[str]:
@@ -2160,6 +2176,87 @@ def check_bristol() -> list[str]:
             finally:
                 config_file.path = _orig_path
             ok.append("Settings writes each choice as it is made, and a load is not a choice")
+
+            # Speed: on a board the size of the user's, the five things a
+            # person waits on each answer inside its limit. The limits are the
+            # times measured on 2026-11-19 after #1440, with room for a slower
+            # machine; a reload that re-themes the app, as one did before that
+            # fix, takes several times its limit.
+            from PySide6.QtWidgets import QApplication as _QApp
+
+            sconn = sqlite3.connect(":memory:")
+            sconn.executescript(schema.read_text())
+            for _i in range(SPEED_BOARD_CARDS):
+                sconn.execute(
+                    "INSERT INTO task (title, description, status, stage, sort_order, "
+                    "estimate, tier, record_type, assignee, reporter, created_at, "
+                    "updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,'2026-11-19','2026-11-19')",
+                    (
+                        f"Card {_i} with a title long enough to wrap onto a second line",
+                        "d",
+                        ("todo", "doing", "done")[_i % 3],
+                        "active" if _i % 5 else "backlog",
+                        _i,
+                        ("S", "M", "L", "XL")[_i % 4],
+                        ("max", "standard")[_i % 2],
+                        ("build", "fix")[_i % 2],
+                        ("user", "chief_of_staff", "librarian")[_i % 3],
+                        "user",
+                    ),
+                )
+            sconn.commit()
+
+            def _timed(what, limit, act):
+                started = time.perf_counter()
+                act()
+                _QApp.processEvents()
+                took = time.perf_counter() - started
+                if took > limit:
+                    raise SmokeFailure(
+                        f"{what} took {took:.2f} s on {SPEED_BOARD_CARDS} cards, "
+                        f"over its {limit:g} s limit"
+                    )
+                return f"{what} {took:.2f} s"
+
+            config_file.path = lambda: written_config
+            try:
+                timings = []
+                speed_win = []
+                timings.append(
+                    _timed(
+                        "opening the window",
+                        SPEED_LIMITS["open"],
+                        lambda: speed_win.append(MainWindow(sconn)),
+                    )
+                )
+                swin = speed_win[0]
+                timings.append(_timed("a Refresh", SPEED_LIMITS["refresh"], swin._refresh_board))
+                picker = swin.settings_tab.theme
+                other = next(i for i in range(picker.count()) if i != picker.currentIndex())
+                timings.append(
+                    _timed(
+                        "a theme change in Settings",
+                        SPEED_LIMITS["theme"],
+                        lambda: picker.setCurrentIndex(other),
+                    )
+                )
+                timings.append(
+                    _timed(
+                        "a top-bar agent choice",
+                        SPEED_LIMITS["agent"],
+                        lambda: swin._choose_agent("chief_of_staff"),
+                    )
+                )
+                timings.append(
+                    _timed(
+                        "a full Settings reload",
+                        SPEED_LIMITS["reload"],
+                        swin.settings_tab.reload,
+                    )
+                )
+            finally:
+                config_file.path = _orig_path
+            ok.append("each answers inside its limit: " + "; ".join(timings))
 
             # Skills: the page reads one listing and files the judgment as a
             # card. The loader is stubbed, so what is checked is the page —

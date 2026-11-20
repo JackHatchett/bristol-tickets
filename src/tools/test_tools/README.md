@@ -24,6 +24,11 @@ bash run_smoke.sh bristol         # one or more named targets
   `check_<target>()`: it returns the lines a pass prints and raises
   `SmokeFailure` (`smoke_targets/failure.py`) on a failed check. Add a target by
   writing its module and listing its name in `TARGETS`.
+- **`bristol` also times what a person waits on**, on a seeded board of
+  `SPEED_BOARD_CARDS` cards: opening the window, a Refresh, a theme change in
+  Settings, a top-bar agent choice and a full Settings reload, each against its
+  limit in `SPEED_LIMITS`. A timing over its limit fails the target with the
+  time it took.
 - **`governing_docs` asserts what a reader cannot count**: the resident core
   against its word cap, stated in `src/templates/identity_template.md`'s style
   contract. It touches no GUI, so it runs without Qt.
