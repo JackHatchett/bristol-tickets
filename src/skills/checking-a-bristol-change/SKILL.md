@@ -117,15 +117,29 @@ output, from a shell that has Qt.
 ## What a visible change additionally needs
 
 - **Look at a visible change yourself, on the user's running app**, through
-  computer use: relaunch or refresh it, capture the screens the card names in
-  every shipped theme, light and dark, and close the card on what the captures
-  show. A change to colors is checked in all of them, never a sample: a rule
-  that passes every ratio can still make a color stop reading as itself.
+  computer use: relaunch or refresh it, capture the screens the card names,
+  and close the card on what the captures show.
+- **Check every shipped theme, light and dark, only for a change to a color
+  role, a contrast pair, a palette, the type or a theme.** Those are checked in
+  all of them, never a sample: a rule that passes every ratio can still make a
+  color stop reading as itself. Any other visible change — layout, spacing,
+  icon crowding — is checked in the theme the app is already showing.
+- **Send each check to the cheapest runner that does it well**: a script for
+  anything repeated or extensive, the session for reads, logic, data and a look
+  one capture settles, and the user's eyes for a look that is quick for him and
+  heavy for a session — one that would take many captures, a reinstall or
+  download from GitHub, the first launch macOS asks him to allow, or his
+  credentials.
+- **Ask for that look in one line**: what to open, what to look for, and what
+  would fail it. It is a check handed to the runner it suits, never a sign-off.
 - **Leave the routine look to the session, and never file a card for the user
-  to review.** He is not the tester of a session's changes.
+  to review.** He is not the tester of a session's changes, and the final smoke
+  test before a release is the one look built into the process.
 - **Show the user what he asks to see, in the session he asks**: captures of
   the running app, a mock-up, or the change applied with the way back to it
-  stated. A card whose criteria include his look is worked with him in chat.
+  stated. Ask him to look, too, when what was built departs markedly from what
+  he asked for; an option he picked from a list needs no showing. A card whose
+  criteria include his look is worked with him in chat.
 - **An offscreen render is not the look.** It draws the wrong control set, fonts
   and pixel ratio, so a Qt target passing says the widgets build and nothing
   further.
@@ -167,6 +181,9 @@ output, from a shell that has Qt.
   states was never checked by the session.
 - **A card filed for the user to review** → the look is the session's, or it
   is shown to him in chat when he asks.
+- **Every theme captured for a layout-only change** → the ten-capture sweep is
+  for a color, contrast, palette, type or theme change; the rest is checked in
+  the theme on screen.
 - **An archive left at the staging location** → an intermediate outlived its run.
 - **A public document left describing what the change replaced** → the
   stranger reading it on GitHub installs one app and reads about another;
