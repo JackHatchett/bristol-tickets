@@ -49,11 +49,10 @@ One batch, in the session, before anything is written:
 - **Ask which candidates he has seen, and whether he disliked any.** One he
   has not seen still serves as a source and goes on his lists (§7); one he
   saw and disliked is dropped, from the sources and from the lists.
-- **Ask the clarifying questions the archetype raises**, in the same batch:
-  where its boundary lies, whether it has more than one ending, and which
-  neighbouring archetype it must be told apart from. Each question offers two to
-  four concrete answers with one recommended, by
-  `src/skills/designing-with-the-author/SKILL.md` §Who decides what.
+- **Decide the archetype's boundary, its endings and its nearest neighbour
+  without asking**: where the archetype stops and the next begins, whether it
+  has more than one ending, and which neighbouring archetype it must be told
+  apart from. Each decision and its reason goes in the §8 report.
 
 ## 3. Break each source into beats
 
@@ -157,9 +156,10 @@ One batch, in the session, before anything is written:
 
 ## 8. Report
 
-Give the author the sheet's file and the hub section it went under, any sheet
-built or card filed for a classic met on the way, and any watchlist entry
-added, in the session or in the comment of the card that asked for it.
+Give the author the sheet's file and the hub section it went under; the
+boundary, the endings and the neighbour decided in §2, each with its reason;
+any sheet built or card filed for a classic met on the way; and any watchlist
+entry added, in the session or in the comment of the card that asked for it.
 
 ## Failure modes
 
