@@ -3578,22 +3578,65 @@ def check_bristol() -> list[str]:
         page.report_from.setDate(_QDate.fromString("2026-05-01", "yyyy-MM-dd"))
         page.report_to.setDate(_QDate.fromString("2026-05-31", "yyyy-MM-dd"))
         said = []
+        opened = []
         _real_notify = _settings_tab.notify
+        _real_open = _settings_tab.open_uri
         _settings_tab.notify = lambda parent, title, body, *a, **k: said.append(title)
+        _settings_tab.open_uri = lambda uri: opened.append(uri) or True
         was_env = os.environ.get("BRISTOL_REPORTS_DIR")
         os.environ["BRISTOL_REPORTS_DIR"] = str(window_home)
         try:
             page.report_btn.click()
         finally:
             _settings_tab.notify = _real_notify
+            _settings_tab.open_uri = _real_open
             if was_env is None:
                 os.environ.pop("BRISTOL_REPORTS_DIR", None)
             else:
                 os.environ["BRISTOL_REPORTS_DIR"] = was_env
-        if said != ["Report written"]:
-            raise SmokeFailure(f"the Settings button said {said}")
-        if len(list(window_home.glob("bristol_standing_*.md"))) != 2:
+        if said:
+            raise SmokeFailure(f"the Settings button announced a success: {said}")
+        notes = sorted(window_home.glob("bristol_standing_*.md"))
+        if len(notes) != 2:
             raise SmokeFailure("the Settings button wrote no second note")
+        if len(opened) != 1 or Path(opened[0]).name not in {n.name for n in notes}:
+            raise SmokeFailure(f"the Settings button did not open the report it wrote: {opened}")
+
+        # Clear Done from the same page: the emptied column is the success, and
+        # the report it wrote opens rather than being announced.
+        dconn = sqlite3.connect(":memory:")
+        dconn.executescript(schema.read_text())
+        dconn.execute(
+            "INSERT INTO task (title, status, stage, record_type, created_at, updated_at, "
+            "closed_at) VALUES ('Finished', 'done', 'active', 'build', "
+            "'2026-05-02T00:00:00+00:00', '2026-05-03T00:00:00+00:00', "
+            "'2026-05-03T00:00:00+00:00')"
+        )
+        dconn.commit()
+        clearing = SettingsTab(conn=dconn)
+        said, opened = [], []
+        _real_confirm = _settings_tab.confirm
+        _settings_tab.confirm = lambda *a, **k: True
+        _settings_tab.notify = lambda parent, title, body, *a, **k: said.append(title)
+        _settings_tab.open_uri = lambda uri: opened.append(uri) or True
+        os.environ["BRISTOL_REPORTS_DIR"] = str(window_home)
+        try:
+            clearing._clear_done()
+        finally:
+            _settings_tab.confirm = _real_confirm
+            _settings_tab.notify = _real_notify
+            _settings_tab.open_uri = _real_open
+            if was_env is None:
+                os.environ.pop("BRISTOL_REPORTS_DIR", None)
+            else:
+                os.environ["BRISTOL_REPORTS_DIR"] = was_env
+        if dconn.execute("SELECT stage FROM task").fetchone()[0] != "archive":
+            raise SmokeFailure("Clear Done in Settings left the done card on the board")
+        if said:
+            raise SmokeFailure(f"Clear Done in Settings announced a success: {said}")
+        if len(opened) != 1 or not Path(opened[0]).is_file():
+            raise SmokeFailure(f"Clear Done in Settings did not open its report: {opened}")
+        dconn.close()
         ok.append("Settings asks for the report over a window it opens already filled in")
 
         # ---- an epic's kind is chosen, not typed ----------------------------

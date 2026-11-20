@@ -215,8 +215,9 @@ for that effort.
 
 **Clear Done**, in Settings beside **Write Report**, empties the column whatever
 the epics' state: every card in Done moves to the Archive, and one report covers
-them, from the first of them opened to now. An epic you close afterwards still
-reports every card it finished, including the ones Clear Done archived.
+them, from the first of them opened to now, opening once it is written. An epic
+you close afterwards still reports every card it finished, including the ones
+Clear Done archived.
 
 The report is one Markdown note per period, written into your notebook, plus an
 index that trends each report against the ones before it — cycle time, flow

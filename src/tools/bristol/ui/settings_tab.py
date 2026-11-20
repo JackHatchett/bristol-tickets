@@ -63,6 +63,7 @@ except ImportError:  # pragma: no cover - only a stripped bundle reaches this
 
 from .dialogs import confirm, notify
 from .folders import DashboardsDialog, LocationsDialog, NotebookDialog, any_missing
+from .links import open_uri
 from .settled_combo import SettledComboBox, fill_words
 from .theme import (
     LIGHT_MODE,
@@ -342,7 +343,7 @@ class SettingsTab(QWidget):
             button.style().polish(button)
 
     def _write_standing_report(self) -> None:
-        """Write the report for the window on the page, and say where it went.
+        """Write the report for the window on the page, and open it.
 
         Nothing finished in the window is an answer rather than a failure: no
         file is written and the page says so.
@@ -360,7 +361,7 @@ class SettingsTab(QWidget):
             self.report_to.date().toString("yyyy-MM-dd"),
         )
         if result.ok:
-            notify(self, "Report written", str(result.written))
+            open_uri(str(result.written))
         elif result.skipped:
             notify(self, "Nothing to report", result.skipped)
         else:
@@ -368,7 +369,8 @@ class SettingsTab(QWidget):
 
     def _clear_done(self) -> None:
         """Archive the Done column after a confirmation giving the count, and
-        say where its report went."""
+        open the report covering them where one was written. The emptied column
+        shows the archive happened; only a report that failed is said."""
         if self.conn is None or clear_done is None:
             notify(
                 self,
@@ -391,26 +393,10 @@ class SettingsTab(QWidget):
         if self._on_board_changed is not None:
             self._on_board_changed()
         report = result.report
-        if report is None:
-            notify(
-                self,
-                "Cards archived",
-                f"{len(result.archived)} card(s) moved to the Archive. This "
-                "build carries no reports package, so no report was written.",
-            )
-        elif report.ok:
-            notify(
-                self,
-                "Cards archived",
-                f"{len(result.archived)} card(s) moved to the Archive.\n\n"
-                f"Report written: {report.written}",
-            )
-        elif report.skipped:
-            notify(
-                self,
-                "Cards archived",
-                f"{len(result.archived)} card(s) moved to the Archive. No report: {report.skipped}",
-            )
+        if report is None or report.skipped:
+            return
+        if report.ok:
+            open_uri(str(report.written))
         else:
             notify(
                 self,

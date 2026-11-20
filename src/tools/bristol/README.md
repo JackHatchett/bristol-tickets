@@ -197,9 +197,9 @@ reads the Sessions keys, and this app only writes them.
 **Reports**
 
 - **Standing Work** — a report of what the projects and upkeep cost over the
-  dates given, written into the notebook.
+  dates given, written into the notebook and opened.
 - **Done Column** — Clear Done, which moves every Done card to the Archive and
-  writes one report covering them.
+  writes one report covering them, and opens it.
 
 ## Filtering the board
 
