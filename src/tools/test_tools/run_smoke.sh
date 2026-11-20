@@ -15,8 +15,13 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CACHE="${TMPDIR:-/tmp}/qt_headless_cache"
 LIBDIR="$CACHE/lib/x86_64-linux-gnu"
 
+python3 -c 'import sys; sys.exit(sys.version_info < (3, 12))' || {
+  echo "[run_smoke] needs Python 3.12 or later; python3 here is $(python3 -V 2>&1)." >&2
+  exit 2
+}
+
 python3 -c "import PySide6" 2>/dev/null \
-  || pip install --break-system-packages --quiet PySide6
+  || python3 -m pip install --break-system-packages --quiet PySide6
 
 # Only needed on Linux where libEGL is absent (skipped on macOS / where present).
 if [ "$(uname -s)" = "Linux" ] && ! ldconfig -p 2>/dev/null | grep -q libEGL.so.1 \

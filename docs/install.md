@@ -173,8 +173,12 @@ agent reads `src/app.md` on its own and takes it from there.
 Everything above is the download. The source is the same system with the build
 step in your hands: take it if you want to change Bristol, not to use it.
 
-Requires **macOS or Linux**, and **Python 3.10 or later**. The download above is
-macOS only; on Linux the source is the way in.
+Requires **macOS or Linux**, and **Python 3.12 or later** for the app; the
+command-line tools an agent runs need 3.10 or later. The download above is
+macOS only; on Linux the source is the way in. On Python 3.10 and 3.11, PySide6
+releases the interpreter's `None` once too often in ordinary calls (Qt bug
+PYSIDE-2660), and after enough of them Python aborts; from 3.12 `None` is never
+freed, so the defect is harmless.
 
 ```bash
 git clone https://github.com/JackHatchett/bristol-tickets.git bristol_tickets

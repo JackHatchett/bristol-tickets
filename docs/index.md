@@ -17,7 +17,8 @@ want when you install it, and a career coach is one of the add-ons.
 
 ## What it needs
 
-macOS, Python 3.10 or later, and an **agent host** — an AI application that
+macOS, Python 3.12 or later for the app (3.10 or later for the tools an agent
+runs), and an **agent host** — an AI application that
 loads per-project instructions, reads and writes a folder you choose, and runs
 commands in it. Without a host there is no agent: you get a working Kanban board
 and nothing else. [install.md](install.md) says what a host must do and which

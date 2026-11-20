@@ -34,7 +34,7 @@ Bristol names no vendor in any file it runs on, and ships an entry file for each
 host so it finds its way in on its own. It has been run on Cowork, a mode in the
 Claude desktop app; any host meeting those three requirements should work.
 
-The downloaded app brings its own Python. Running from source wants 3.10 or
+The downloaded app brings its own Python. Running from source wants 3.12 or
 later.
 
 ## Skills other people wrote

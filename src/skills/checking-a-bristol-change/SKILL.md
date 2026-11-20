@@ -55,6 +55,9 @@ check is when the thing changed is Bristol Tickets.
 - **`bristol` and `test_control` build the application's real widgets** on Qt's
   offscreen platform, which catches an import error, a signal/slot mismatch and
   a construction-time exception. Both need PySide6.
+- **Run them on Python 3.12 or later.** Below 3.12 PySide6 drains the
+  interpreter's `None` and the run aborts part-way, whatever the change;
+  `run_smoke.sh` refuses such a shell, and one takes the archive route.
 - **Where the shell already has PySide6, run `bash
   src/tools/test_tools/run_smoke.sh bristol test_control`.** It provisions the
   headless environment, installing PySide6 and the GL libraries Qt needs where
@@ -86,7 +89,8 @@ output, from a shell that has Qt.
    `src/tools/config_tools/data_paths.py`, and what sits there is a declared
    container rather than a file left behind — `src/app.md` §What a file may say.
 
-3. **Carry the archive to a shell that has PySide6 or may install one.** How a
+3. **Carry the archive to a shell with Python 3.12 or later that has PySide6
+   or may install one.** How a
    file crosses between two shells is the host's, and the skill for that host
    says.
 
@@ -94,7 +98,7 @@ output, from a shell that has Qt.
 
    ```
    mkdir -p <scratch>/bristol && tar xzf <archive> -C <scratch>/bristol
-   pip install PySide6 --break-system-packages
+   python3 -m pip install PySide6 --break-system-packages
    cd <scratch>/bristol && QT_QPA_PLATFORM=offscreen \
        python3 src/tools/test_tools/smoke.py bristol test_control
    ```

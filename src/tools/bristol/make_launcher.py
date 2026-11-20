@@ -45,7 +45,7 @@ def app_path() -> Path:
 
 
 def find_python() -> str:
-    """The interpreter that actually has PySide6."""
+    """The interpreter that actually has PySide6, at Python 3.12 or later."""
     candidates = [sys.executable]
     which = shutil.which("python3")
     if which:
@@ -55,13 +55,16 @@ def find_python() -> str:
             continue
         try:
             subprocess.run(
-                [exe, "-c", "import PySide6"], check=True, capture_output=True, timeout=60
+                [exe, "-c", "import sys, PySide6; sys.exit(sys.version_info < (3, 12))"],
+                check=True,
+                capture_output=True,
+                timeout=60,
             )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
             continue
         return exe
     sys.exit(
-        "make_launcher: ERROR — no Python on this machine has PySide6.\n"
+        "make_launcher: ERROR — no Python 3.12 or later on this machine has PySide6.\n"
         "  Install it into the interpreter you want Bristol Tickets to use:\n"
         "      python3 -m pip install PySide6\n"
         "  then run this again with that same python3."
