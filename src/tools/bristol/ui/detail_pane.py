@@ -47,6 +47,7 @@ from PySide6.QtWidgets import (
 
 from . import icons
 from .attachments import AttachmentBar
+from .board_write import write
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar, carried_summaries
 from .record_dialog import LOG_FILTERS, STAGES, section_widget
@@ -535,10 +536,14 @@ class DetailPane(QWidget):
         change log — the same recording a dialog save or a board drag gets."""
         if self._loading or self.task_id is None:
             return
-        try:
-            self.conn.execute(f"UPDATE task SET {field}=? WHERE id=?", (value, self.task_id))
-            self.conn.commit()
-        except sqlite3.OperationalError:
+        task_id = self.task_id
+        if not write(
+            self.conn,
+            self,
+            f"The change to #{task_id}",
+            lambda: self.conn.execute(f"UPDATE task SET {field}=? WHERE id=?", (value, task_id)),
+        ):
+            self.show_task(task_id)
             return
         self._after_write()
 
@@ -548,9 +553,11 @@ class DetailPane(QWidget):
         done stamps closed_at and a move out of done clears it."""
         if self._loading or self.task_id is None:
             return
-        try:
+        task_id = self.task_id
+
+        def move() -> None:
             current = self.conn.execute(
-                "SELECT status, COALESCE(stage,'backlog') FROM task WHERE id=?", (self.task_id,)
+                "SELECT status, COALESCE(stage,'backlog') FROM task WHERE id=?", (task_id,)
             ).fetchone()
             if current is None:
                 return
@@ -574,12 +581,12 @@ class DetailPane(QWidget):
                 self.conn.execute(
                     "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=?, "
                     "block_reason=NULL WHERE id=?",
-                    (new_status, new_stage, base + 1, closed_at, self.task_id),
+                    (new_status, new_stage, base + 1, closed_at, task_id),
                 )
             else:
                 self.conn.execute(
                     "UPDATE task SET status=?, stage=?, sort_order=?, closed_at=? WHERE id=?",
-                    (new_status, new_stage, base + 1, closed_at, self.task_id),
+                    (new_status, new_stage, base + 1, closed_at, task_id),
                 )
             # A status move is where done means something for the board: a
             # standing card archives itself, a project card waits in Done for
@@ -587,11 +594,12 @@ class DetailPane(QWidget):
             # stage move the user made by hand is left as they made it.
             if field == "status" and new_status != status:
                 if new_status == "done":
-                    finishing.finish(self.conn, self.task_id)
+                    finishing.finish(self.conn, task_id)
                 else:
-                    finishing.reopen(self.conn, self.task_id)
-            self.conn.commit()
-        except sqlite3.OperationalError:
+                    finishing.reopen(self.conn, task_id)
+
+        if not write(self.conn, self, f"The move of #{task_id}", move):
+            self.show_task(task_id)
             return
         self._after_write()
 
@@ -719,13 +727,16 @@ class DetailPane(QWidget):
         body = self.comment_input.text().strip()
         if not body:
             return
-        try:
-            self.conn.execute(
+        task_id = self.task_id
+        if not write(
+            self.conn,
+            self,
+            f"The comment on #{task_id}",
+            lambda: self.conn.execute(
                 "INSERT INTO issue_log (task_id, author, body, created_at) VALUES (?,?,?,?)",
-                (self.task_id, "user", body, _utcnow()),
-            )
-            self.conn.commit()
-        except sqlite3.OperationalError:
+                (task_id, "user", body, _utcnow()),
+            ),
+        ):
             return
         self.comment_input.clear()
         self._render_log()

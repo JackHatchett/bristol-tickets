@@ -176,7 +176,10 @@ def main() -> None:
     # Ensure the target directory structure exists before attempting connection
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect(db_path)
+    # The same patience with a locked board that ticket_write.py's connect()
+    # has, so the app waits out an agent's write as long as the CLI waits out its.
+    conn = sqlite3.connect(db_path, timeout=10)
+    conn.execute("PRAGMA busy_timeout=5000")
 
     # Bring the board's schema up to date wherever the schema ships.
     schema = payload.schema_path(Path(__file__))

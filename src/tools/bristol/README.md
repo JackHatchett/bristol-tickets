@@ -43,6 +43,7 @@ bristol/
 │   ├── schema_guard.py  on-launch non-destructive migration
 │   ├── card_delegate.py CardDelegate — per-card QPainter rendering
 │   ├── links.py         LinkBar — a ticket's links to tickets and addresses
+│   ├── board_write.py   write() — a control's write, committed whole or rolled back with a notice
 │   ├── attachments.py   a ticket's attached images
 │   ├── record_dialog.py UnifiedRecordDialog — create/edit modal
 │   ├── kanban_column.py KanbanColumn — a populated column + its queries

@@ -3786,6 +3786,77 @@ def check_bristol() -> list[str]:
             "only the move into done writes a finish: an edit to a "
             "finished card leaves it, and leaving done clears it"
         )
+
+        # ---- a write the board refuses -------------------------------------
+        # What is guarded: when tickets.db is locked by another writer, a
+        # control's write says so in a notice, rolls back so nothing is left
+        # open for a later commit, and the control shows what is stored; and a
+        # write that fails part-way leaves none of its statements behind.
+        import ui.board_write as _board_write
+
+        lock_path = Path(tempfile.mkdtemp()) / "tickets.db"
+        wconn = sqlite3.connect(lock_path, timeout=0.2)
+        wconn.executescript(schema.read_text())
+        wconn.execute(
+            "INSERT INTO task (title, status, stage, sort_order, record_type, estimate, "
+            "created_at, updated_at) VALUES ('held card','todo','active',0,'build','S',"
+            "'2026-01-01','2026-01-01')"
+        )
+        held = wconn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        wconn.commit()
+        _notices: list[str] = []
+        _real_notify = _board_write.notify
+        _board_write.notify = lambda parent, title, body, *a, **k: _notices.append(
+            f"{title}: {body}"
+        )
+        locker = sqlite3.connect(lock_path)
+        try:
+            wpane = DetailPane(wconn)
+            wpane.show_task(held)
+            locker.execute("BEGIN IMMEDIATE")
+            wpane.size_combo.setCurrentIndex(wpane.size_combo.findData("M"))
+            if not _notices or "not saved" not in _notices[-1]:
+                raise SmokeFailure("a field write the board refused said nothing")
+            if wconn.in_transaction:
+                raise SmokeFailure("a refused field write left its transaction open")
+            if wpane.size_combo.currentData() != "S":
+                raise SmokeFailure(
+                    f"the Size picker shows {wpane.size_combo.currentData()!r} "
+                    "after a refused write, not the stored 'S'"
+                )
+            wpane.comment_input.setText("kept for a retry")
+            wpane._post_comment()
+            if len(_notices) != 2:
+                raise SmokeFailure("a comment the board refused said nothing")
+            if wpane.comment_input.text() != "kept for a retry":
+                raise SmokeFailure("a refused comment was cleared from the box")
+            locker.rollback()
+            if wconn.execute("SELECT COUNT(*) FROM issue_log").fetchone()[0]:
+                raise SmokeFailure("a refused comment reached the board")
+            if wconn.execute("SELECT estimate FROM task WHERE id=?", (held,)).fetchone()[0] != "S":
+                raise SmokeFailure("a refused field write reached the board")
+
+            def _half_then_fail() -> None:
+                wconn.execute("UPDATE task SET title='half written' WHERE id=?", (held,))
+                raise sqlite3.OperationalError("database is locked")
+
+            if _board_write.write(wconn, None, "A test write", _half_then_fail):
+                raise SmokeFailure("a write that failed part-way reported success")
+            if wconn.in_transaction:
+                raise SmokeFailure("a write that failed part-way left its transaction open")
+            if (
+                wconn.execute("SELECT title FROM task WHERE id=?", (held,)).fetchone()[0]
+                != "held card"
+            ):
+                raise SmokeFailure("a write that failed part-way left its first statement")
+        finally:
+            _board_write.notify = _real_notify
+            locker.close()
+            wconn.close()
+        ok.append(
+            "a write the board refuses says so, rolls back, and the control "
+            "shows what is stored; a write failing part-way leaves nothing"
+        )
     else:
         ok.append("(skipped MainWindow build — schema.sql not found)")
     return ok

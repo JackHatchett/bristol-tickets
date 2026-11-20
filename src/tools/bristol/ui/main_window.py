@@ -19,6 +19,7 @@ pieces it composes live in sibling modules:
     kanban_column.py KanbanColumn (a populated column of cards)
     detail_pane.py   DetailPane (the selected card, read and edited in place)
     dialogs.py       confirm(), choose(), notify() — every modal question
+    board_write.py   write() — a control's write, committed or rolled back
     setup_wizard.py  first-run setup, also reachable from File → Setup…
     settings_modal.py SettingsModal (Agents, Skills and the Settings
                      sections, over a scrim)
@@ -61,6 +62,7 @@ from PySide6.QtWidgets import (
 
 from . import icons, mac_window
 from .agents_tab import AgentsTab
+from .board_write import write
 from .detail_pane import DetailPane
 from .dialogs import confirm, notify
 from .filter_menu import FilterMenu, FilterState, applied
@@ -1154,13 +1156,16 @@ class MainWindow(QMainWindow):
             destructive=True,
         ):
             return
-        for tid in ids:
-            self.conn.execute("DELETE FROM issue_log WHERE task_id=?", (tid,))
-            self.conn.execute("DELETE FROM task_event WHERE task_id=?", (tid,))
-            self.conn.execute("DELETE FROM attachment WHERE task_id=?", (tid,))
-            remove_links_for_task(self.conn, tid)
-            self.conn.execute("DELETE FROM task WHERE id=?", (tid,))
-        self.conn.commit()
+
+        def delete() -> None:
+            for tid in ids:
+                self.conn.execute("DELETE FROM issue_log WHERE task_id=?", (tid,))
+                self.conn.execute("DELETE FROM task_event WHERE task_id=?", (tid,))
+                self.conn.execute("DELETE FROM attachment WHERE task_id=?", (tid,))
+                remove_links_for_task(self.conn, tid)
+                self.conn.execute("DELETE FROM task WHERE id=?", (tid,))
+
+        write(self.conn, self, f"The deletion of {len(ids)} backlog card(s)", delete)
         self._refresh_board()
 
     # ----- Archive tab (stripped chronological list) -----------

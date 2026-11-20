@@ -299,11 +299,9 @@ def remove_link(conn: sqlite3.Connection, link_id: int) -> None:
 
 def remove_links_for_task(conn: sqlite3.Connection, task_id: int) -> None:
     """Drop every link touching a task — called when the task itself is deleted,
-    so no link is left pointing at a ticket that no longer exists."""
-    try:
-        conn.execute("DELETE FROM task_link WHERE task_id=? OR other_id=?", (task_id, task_id))
-    except sqlite3.OperationalError:
-        pass
+    so no link is left pointing at a ticket that no longer exists. Part of the
+    caller's delete: an error reaches the caller, which rolls the delete back."""
+    conn.execute("DELETE FROM task_link WHERE task_id=? OR other_id=?", (task_id, task_id))
 
 
 def open_uri(uri: str) -> bool:

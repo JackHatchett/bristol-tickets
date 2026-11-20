@@ -44,6 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from .attachments import AttachmentBar
+from .board_write import write
 from .dialogs import ORDINARY, PRIMARY, choose, confirm, notify
 from .growing_edit import GrowingTextEdit
 from .links import LinkBar, remove_links_for_task
@@ -851,13 +852,16 @@ class UnifiedRecordDialog(QDialog):
         body = self.log_post_input.text().strip()
         if not body:
             return
-        try:
-            self.conn.execute(
+        record_id = self.record_id
+        if not write(
+            self.conn,
+            self,
+            f"The comment on #{record_id}",
+            lambda: self.conn.execute(
                 "INSERT INTO issue_log (task_id, author, body, created_at) VALUES (?,?,?,?)",
-                (self.record_id, "user", body, _utcnow()),
-            )
-            self.conn.commit()
-        except sqlite3.OperationalError:
+                (record_id, "user", body, _utcnow()),
+            ),
+        ):
             return
         self.log_post_input.clear()
         self._render_log()
@@ -870,19 +874,24 @@ class UnifiedRecordDialog(QDialog):
             "Delete",
             destructive=True,
         ):
-            if self.mode == "task":
-                self.conn.execute("DELETE FROM issue_log WHERE task_id=?", (self.record_id,))
-                self.conn.execute("DELETE FROM task_event WHERE task_id=?", (self.record_id,))
-                self.conn.execute("DELETE FROM attachment WHERE task_id=?", (self.record_id,))
-                # Both ends of every link, so nothing is left pointing at a
-                # ticket that no longer exists.
-                if self.record_id is not None:
-                    remove_links_for_task(self.conn, self.record_id)
-                self.conn.execute("DELETE FROM task WHERE id=?", (self.record_id,))
-            elif self.mode == "epic":
-                self.conn.execute("UPDATE task SET epic_id=NULL WHERE epic_id=?", (self.record_id,))
-                self.conn.execute("DELETE FROM epic WHERE id=?", (self.record_id,))
-            self.conn.commit()
+            record_id = self.record_id
+
+            def delete() -> None:
+                if self.mode == "task":
+                    self.conn.execute("DELETE FROM issue_log WHERE task_id=?", (record_id,))
+                    self.conn.execute("DELETE FROM task_event WHERE task_id=?", (record_id,))
+                    self.conn.execute("DELETE FROM attachment WHERE task_id=?", (record_id,))
+                    # Both ends of every link, so nothing is left pointing at a
+                    # ticket that no longer exists.
+                    if record_id is not None:
+                        remove_links_for_task(self.conn, record_id)
+                    self.conn.execute("DELETE FROM task WHERE id=?", (record_id,))
+                elif self.mode == "epic":
+                    self.conn.execute("UPDATE task SET epic_id=NULL WHERE epic_id=?", (record_id,))
+                    self.conn.execute("DELETE FROM epic WHERE id=?", (record_id,))
+
+            if not write(self.conn, self, f"The deletion of this {self.mode}", delete):
+                return
             # (behaviour preserved from the pre-split monolith): callers do
             # `if dlg.exec() == Accepted: dlg.save_data()`, so save_data() runs
             # once more after delete. Harmless — its statements target the now-

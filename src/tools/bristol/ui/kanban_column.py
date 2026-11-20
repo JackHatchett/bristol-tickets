@@ -47,6 +47,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .board_write import write
 from .card_delegate import CardDelegate
 from .record_dialog import UnifiedRecordDialog
 from .theme import CARD_ROLE, LAYOUT, _is_checked, _today, _utcnow, space
@@ -353,9 +354,12 @@ class KanbanColumn(QFrame):
             else:
                 insert_at = remaining.index(target)
         new_order = remaining[:insert_at] + dragged_ordered + remaining[insert_at:]
-        for pos, tid in enumerate(new_order):
-            self.conn.execute("UPDATE task SET sort_order=? WHERE id=?", (pos, tid))
-        self.conn.commit()
+
+        def reorder() -> None:
+            for pos, tid in enumerate(new_order):
+                self.conn.execute("UPDATE task SET sort_order=? WHERE id=?", (pos, tid))
+
+        write(self.conn, self, "The new order of this column", reorder)
 
     def _accept_external(self, dragged: list[int]):
         """A cross-column drop onto a BOARD column: set each card's status to
@@ -363,27 +367,30 @@ class KanbanColumn(QFrame):
         does not accept external drops — status_key is None there.)"""
         if not self.status_key:
             return
-        ts = _utcnow()
-        closed = ts if self.status_key == "done" else None
-        base = self.conn.execute(
-            "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage='active' AND status=?",
-            (self.status_key,),
-        ).fetchone()[0]
-        for offset, tid in enumerate(dragged, start=1):
-            # The change log records this drag by itself — the database triggers
-            # installed on this connection append one entry per changed field,
-            # and updated_at is derived from the newest of them.
-            self.conn.execute(
-                "UPDATE task SET status=?, stage='active', sort_order=?, closed_at=? WHERE id=?",
-                (self.status_key, base + offset, closed, tid),
-            )
-            # A cross-column drop is a status transition, so what done means for
-            # the board applies here as it does to every other writer.
-            if self.status_key == "done":
-                finishing.finish(self.conn, tid)
-            else:
-                finishing.reopen(self.conn, tid)
-        self.conn.commit()
+        status_key = self.status_key
+        closed = _utcnow() if status_key == "done" else None
+
+        def move() -> None:
+            base = self.conn.execute(
+                "SELECT COALESCE(MAX(sort_order), -1) FROM task WHERE stage='active' AND status=?",
+                (status_key,),
+            ).fetchone()[0]
+            for offset, tid in enumerate(dragged, start=1):
+                # The change log records this drag by itself — the database
+                # triggers installed on this connection append one entry per
+                # changed field, and updated_at is derived from the newest.
+                self.conn.execute(
+                    "UPDATE task SET status=?, stage='active', sort_order=?, closed_at=? WHERE id=?",
+                    (status_key, base + offset, closed, tid),
+                )
+                # A cross-column drop is a status transition, so what done
+                # means for the board applies here as it does to every writer.
+                if status_key == "done":
+                    finishing.finish(self.conn, tid)
+                else:
+                    finishing.reopen(self.conn, tid)
+
+        write(self.conn, self, "The move of the dragged card(s)", move)
 
     # ----- click / edit ----------------------------------------------------
 
