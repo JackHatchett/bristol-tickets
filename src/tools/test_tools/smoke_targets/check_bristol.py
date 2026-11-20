@@ -658,6 +658,24 @@ def check_bristol() -> list[str]:
             raise SmokeFailure("handoff table survived schema_guard")
         ok.append("MainWindow builds; Handoff tab and table are gone")
 
+        # One Primary button per window: the Backlog bar's is Activate.
+        _primary = [
+            button.text()
+            for button in (
+                win.backlog_edit_btn,
+                win.backlog_selall_btn,
+                win.backlog_clear_btn,
+                win.backlog_activate_btn,
+                win.backlog_delete_btn,
+            )
+            if button.objectName() == "globalCreateBtn"
+        ]
+        if _primary != [win.backlog_activate_btn.text()]:
+            raise SmokeFailure(
+                f"the Backlog bar's Primary buttons are {_primary}, not Activate alone"
+            )
+        ok.append("the Backlog bar carries one Primary button, Activate")
+
         # A launch opens on the active work, and the tab row keeps its order.
         if win.pages.currentIndex() != win._board_tab_index:
             raise SmokeFailure("the window did not open on the Board view")

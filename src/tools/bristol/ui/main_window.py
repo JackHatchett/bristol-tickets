@@ -330,12 +330,13 @@ class MainWindow(QMainWindow):
         backlog_outer.addWidget(self.backlog_column)
 
         backlog_bar = QHBoxLayout()
+        # Activate is the bar's one Primary button, the action it exists for;
+        # Edit, Select All and Clear are Secondary, and Delete is Danger.
         # Edit gates the whole bulk-select apparatus: in read mode
         # the backlog is just a draggable, reorderable list — the checkboxes and
         # action buttons only appear once the user opts into Edit.
         self._backlog_editing = False
         self.backlog_edit_btn = QPushButton("Edit")
-        self.backlog_edit_btn.setObjectName("globalCreateBtn")
         self.backlog_edit_btn.setToolTip(
             "Show the bulk-select checkboxes to activate or delete cards. "
             "Dragging to reorder never needs Edit."
