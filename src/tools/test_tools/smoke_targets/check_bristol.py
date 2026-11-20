@@ -2023,6 +2023,17 @@ def check_bristol() -> list[str]:
             try:
                 config_file.update({"a_key_from_a_newer_build": {"kept": True}})
                 tab = SettingsTab()
+                from PySide6.QtWidgets import QFormLayout as _QFormLayout
+
+                for _form in tab.findChildren(_QFormLayout):
+                    if not _form.labelAlignment() & Qt.AlignmentFlag.AlignRight or (
+                        _form.horizontalSpacing(),
+                        _form.verticalSpacing(),
+                    ) != (_theme.space("lg"), _theme.space("lg")):
+                        raise SmokeFailure(
+                            "a Settings form does not right-align its labels SPACE lg "
+                            "from their controls and SPACE lg row to row"
+                        )
                 if tab.new_ticket.currentData() != "active":
                     raise SmokeFailure("Settings did not load the stored board setting")
                 tab.new_ticket.setCurrentIndex(tab.new_ticket.findData("backlog"))

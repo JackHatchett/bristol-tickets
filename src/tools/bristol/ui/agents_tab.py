@@ -531,7 +531,7 @@ class KeyFields(QWidget):
         self._fields: dict[str, QPlainTextEdit] = {}
         self.form = QFormLayout(self)
         self.form.setContentsMargins(0, 0, 0, 0)
-        self.form.setSpacing(space("md"))
+        self.form.setSpacing(space("lg"))
         self.form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
         self.form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 

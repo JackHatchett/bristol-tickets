@@ -105,7 +105,7 @@ def _label(text: str) -> QLabel:
     height, so the words sit on the control's centre line."""
     label = QLabel(text)
     label.setMinimumHeight(control_height())
-    label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+    label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     return label
 
 
@@ -120,12 +120,13 @@ SECTIONS = ["Appearance", "Folders", "Sessions", "Reports"]
 
 
 def _form() -> QFormLayout:
-    """One section's form: labels at one left edge and controls at another."""
+    """One section's form: labels right-aligned in one column as wide as the
+    longest, and controls starting at one edge SPACE lg from it."""
     form = QFormLayout()
-    form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+    form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     form.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
     form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint)
-    form.setHorizontalSpacing(space("xl"))
+    form.setHorizontalSpacing(space("lg"))
     form.setVerticalSpacing(space("lg"))
     return form
 
