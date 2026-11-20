@@ -35,6 +35,7 @@ TARGETS = [
     "payload",
     "config_resolution",
     "test_control",
+    "board_flows",
     "governing_docs",
     "skill_declarations",
     "bluesky_pruning",

@@ -15,6 +15,18 @@ is never opened. `pyproject.toml` points pytest here.
 python3 -m pytest
 ```
 
+- **CI runs it under coverage** of `src/tools/bristol` and
+  `src/tools/ticket_tools`, and the run ends on one total line:
+
+  ```
+  python3 -m pytest --cov=src/tools/bristol --cov=src/tools/ticket_tools \
+      --cov-report= --cov-fail-under=10.7
+  ```
+
+  The floor, 10.7%, is the share the tests ran when coverage was first
+  measured. A change that leaves a smaller share of that code tested fails the
+  push; raising the floor follows tests that raise the share.
+
 - **`unit/conftest.py`** — the fixtures: `db_path` and `conn` for a fresh
   board, `cli` for running `ticket_write.py`'s commands against it, and
   `add_epic`, `add_card` and `card` for seeding and reading rows.
@@ -45,6 +57,16 @@ bash run_smoke.sh bristol         # one or more named targets
   Settings, a top-bar agent choice and a full Settings reload, each against its
   limit in `SPEED_LIMITS`. A timing over its limit fails the target with the
   time it took.
+- **`board_flows` drives the core board flows through the real window**: a
+  card created, edited, moved between columns and reordered within one, two
+  cards linked and the link seen from both, an image attached, a title
+  searched, a card closed to done, an agent chosen in the top bar and seen in
+  Settings, and a setting read back by a rebuilt window. Each step is checked
+  on the board database and on the widgets, and a failure gives the flow and
+  the step. The board, its images and the configuration are built in a
+  temporary folder with `HOME` and `XDG_CONFIG_HOME` pointed there, and a run
+  that changed the installation's `config/config.local.json` fails. It builds
+  widgets, so it needs PySide6, as `bristol` does.
 - **`governing_docs` asserts what a reader cannot count**: the resident core
   against its word cap, stated in `src/templates/identity_template.md`'s style
   contract. It touches no GUI, so it runs without Qt.
@@ -80,3 +102,30 @@ bash run_smoke.sh bristol         # one or more named targets
   touches no GUI.
 - **`qt_headless.py`** — the GUI-agnostic helpers: `offscreen_app()` and
   `tool_on_path(tool_name)`.
+
+
+## Screen comparison
+
+`screen_compare.py` compares Bristol Tickets' Board and Settings against
+approved captures, pixel by pixel. It builds the real window on the platform it
+runs on, on a seeded board and a configuration of its own, in each theme and
+mode it is given, and grabs each screen with `QWidget.grab`. Run on the Mac the
+app is used on, the captures have that machine's fonts and pixel ratio.
+
+```
+python3 screen_compare.py                          # every theme, light and dark
+python3 screen_compare.py --theme warm --mode dark
+python3 screen_compare.py approve                  # every capture that differed
+```
+
+- **The approved captures live in qa_engineer's QA folder**, under
+  `data/<instance>/qa/screens`, named `<screen>-<theme>-<mode>.png`.
+- **A capture past `THRESHOLD` is reported** with its screen, theme, mode and
+  share of pixels changed; its fresh capture waits beside the approved one as
+  `<name>.new.png`, with `<name>.diff.png` drawing the changed pixels in red.
+  With nothing changed it prints one line saying so.
+- **`approve` makes the fresh captures the approved ones**: all that wait, or
+  those named.
+- **The installation's configuration is never read or written**, so the user's
+  theme and mode stay as he left them; a run that changed
+  `config/config.local.json` reports it and exits 2.
