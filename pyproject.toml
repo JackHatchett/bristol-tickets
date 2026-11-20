@@ -44,17 +44,3 @@ extraPaths = [
     "src/tools/_shared",
     "src/tools/ticket_tools",
 ]
-# Off: each reports a value that may be None, or a wider union, reaching a
-# place that needs the narrower type. The tools were written unannotated and
-# pass values read from JSON configuration and from Qt lookups whose PySide6
-# stubs mark every result Optional; at adoption these rules reported 92 such
-# places, each a guard the code does not write.
-reportOptionalMemberAccess = "none"
-reportOptionalSubscript = "none"
-reportOptionalCall = "none"
-reportArgumentType = "none"
-reportCallIssue = "none"
-reportReturnType = "none"
-reportAssignmentType = "none"
-reportGeneralTypeIssues = "none"
-reportOperatorIssue = "none"

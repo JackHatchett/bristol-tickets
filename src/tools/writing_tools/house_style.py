@@ -76,7 +76,7 @@ def chain(style: str) -> list[Path]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("agent", nargs="?", help="the agent whose house_style is read")
     parser.add_argument("--style", help="a style to resolve in place of the one in force")
     parser.add_argument("--list", action="store_true", help="list every style built")
