@@ -20,8 +20,11 @@ per departure, each giving the rule.
 - **Resolve the house style before reading the passage** — `python3
   src/tools/writing_tools/house_style.py <your slug>`. It prints the style and
   its rules file, from `agents.<agent>.house_style` in config.
-- **Read the rules file whole**: `references/<style>.md`, beside this file.
-  Each rule there carries the ID a flag cites.
+- **Read every rules file the tool prints, whole, in the order printed**:
+  `references/<style>.md` beside this file, after the base style it builds on
+  where its `Builds on:` line gives one. A rule in the later file replaces the
+  base rule it gives; every other base rule applies. Each rule carries the ID a
+  flag cites.
 - **A style that is set but not built stops the pass.** The tool exits 2 and
   gives the style and the styles built; say both to the user, and the pass
   runs once the setting is one that is built or the style is built.

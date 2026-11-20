@@ -12,8 +12,8 @@ Machinery for capturing how a person writes and scaffolding a draft.
   sheet without moving a placed beat. The procedure around it is
   `src/skills/syncing-the-plot-alignment-sheet/SKILL.md`.
 - **`house_style.py`** — the house style a copyediting pass applies, read
-  from `agents.<agent>.house_style`, and its rules file; a style set but not
-  built exits 2 with the styles built. The procedure around it is
+  from `agents.<agent>.house_style`, and its rules files, base style first; a
+  style set but not built exits 2 with the styles built. The procedure around it is
   `src/skills/copyediting-to-a-house-style/SKILL.md`.
 - **`templates/`** — `beat-sheet-chapter.md`, `draft-chapter.md`,
   `draft-scene.md`. Fill-in structure, no content.

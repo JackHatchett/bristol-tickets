@@ -5,11 +5,12 @@ of rules it applies.
 The style in force is config, the `house_style` key of the agent's entry,
 `agents.<agent>.house_style`. A style is built when its rules file is in the
 house-style skill's references folder, `<style>.md`; the styles built are
-exactly those files.
+exactly those files. A rules file whose line `Builds on: <style>` gives a base
+style is read after that base, and its rules replace the base rules they name.
 
 CLI
 ---
-    python3 house_style.py <agent>              the style in force, and its rules file
+    python3 house_style.py <agent>              the style in force, and its rules files, base first
     python3 house_style.py <agent> --style X    the same for style X
     python3 house_style.py --list               every style built
 
@@ -20,6 +21,7 @@ styles that are built.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -53,6 +55,26 @@ def rules_file(style: str) -> Path:
     return path
 
 
+BUILDS_ON = re.compile(r"^Builds on: (\S+)\s*$", re.MULTILINE)
+
+
+def chain(style: str) -> list[Path]:
+    """The rules files a style is applied from, base first. Raises LookupError
+    for a style, or a base, that is not built, and for a base that loops."""
+    files: list[Path] = []
+    seen: set[str] = set()
+    current: str | None = style
+    while current is not None:
+        if current in seen:
+            raise LookupError(f"house style '{style}' builds on itself through '{current}'")
+        seen.add(current)
+        path = rules_file(current)
+        files.insert(0, path)
+        found = BUILDS_ON.search(path.read_text(encoding="utf-8"))
+        current = found.group(1) if found else None
+    return files
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("agent", nargs="?", help="the agent whose house_style is read")
@@ -71,11 +93,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"agents.{args.agent}.house_style is not set", file=sys.stderr)
         return 2
     try:
-        path = rules_file(style)
+        files = chain(style)
     except LookupError as exc:
         print(exc, file=sys.stderr)
         return 2
-    print(f"{style}\t{path.relative_to(ROOT)}")
+    for path in files:
+        print(f"{style}\t{path.relative_to(ROOT)}")
     return 0
 
 
