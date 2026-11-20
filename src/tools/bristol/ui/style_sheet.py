@@ -19,7 +19,7 @@ from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
 from .themes import C, live_scheme, register_collection, set_scheme
-from .tokens import LAYOUT, control_height, radius, space, type_size
+from .tokens import LAYOUT, control_height, edge_width, radius, space, type_size
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QFont
@@ -153,9 +153,11 @@ def build_style_sheet() -> str:
         else ""
     )
     check_rule = f"image: url({check});" if check else ""
-    ctl = control_height() - 2  # inside the 1px border every control draws
-    tb_ctl = LAYOUT["toolbar_control_h"] - 2
-    tb_box = LAYOUT["toolbar_box_w"] - 2
+    e_line, e_missing, e_bar = edge_width("line"), edge_width("missing"), edge_width("bar")
+    # Inside the line every control draws, top and bottom.
+    ctl = control_height() - 2 * e_line
+    tb_ctl = LAYOUT["toolbar_control_h"] - 2 * e_line
+    tb_box = LAYOUT["toolbar_box_w"] - 2 * e_line
 
     def _ink(alpha: float) -> str:
         ink = C["INK"].lstrip("#")[-6:]
@@ -200,7 +202,7 @@ QLabel#regionTitle {{
    hover, and the open one in the accent on a faint fill of its own. */
 QPushButton#viewTab {{
     background: transparent;
-    border: 1px solid transparent;
+    border: {e_line}px solid transparent;
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
@@ -223,7 +225,7 @@ QPushButton#viewTab:focus {{
    faint box; an open view's box takes the accent's edge. */
 QPushButton#toolbarButton, QPushButton#toolbarToggle {{
     background-color: {ink_06};
-    border: 1px solid {ink_14};
+    border: {e_line}px solid {ink_14};
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
@@ -246,7 +248,7 @@ QPushButton#toolbarButton:focus, QPushButton#toolbarToggle:focus {{
    every picker carries. */
 QComboBox#toolbarPicker {{
     background-color: {ink_06};
-    border: 1px solid {ink_14};
+    border: {e_line}px solid {ink_14};
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
@@ -264,7 +266,7 @@ QComboBox#toolbarPicker:focus {{ border-color: {C["ACCENT"]}; }}
 QPushButton#toolbarCreate, QPushButton#toolbarCreate:disabled {{
     background-color: {C["ACCENT"]};
     color: {C["ON_ACCENT"]};
-    border: 1px solid {C["ACCENT"]};
+    border: {e_line}px solid {C["ACCENT"]};
     border-radius: {r_md}px;
     min-height: {tb_ctl}px;
     max-height: {tb_ctl}px;
@@ -282,7 +284,7 @@ QPushButton#toolbarCreate:hover {{
 QListWidget, QFrame#rowList {{
     background-color: {C["LIST_BG"]};
     color: {C["INK"]};
-    border: 1px solid {C["BTN_BORDER"]};
+    border: {e_line}px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
     padding: {s_sm}px;
     outline: 0;
@@ -314,7 +316,7 @@ QLabel#columnCount {{
    splitter, separated from the board canvas by a hairline. */
 QWidget#detailPane {{
     background-color: {C["SURFACE"]};
-    border-left: 1px solid {C["BORDER"]};
+    border-left: {e_line}px solid {C["BORDER"]};
     border-top-right-radius: {radius("xl")}px;
     border-bottom-right-radius: {radius("xl")}px;
 }}
@@ -325,13 +327,13 @@ QScrollArea#detailScroll, QScrollArea#detailScroll > QWidget > QWidget {{
 /* The hairline under a section header in the detail pane. */
 QFrame#sectionRule {{ background-color: {C["BORDER"]}; border: none; }}
 QPushButton#paneReveal {{
-    border-left: 1px solid {C["BORDER"]};
+    border-left: {e_line}px solid {C["BORDER"]};
     border-radius: 0px;
 }}
 /* A path the user may need to find on disk reads as a path. */
 QLabel#pathRow {{
     background-color: {C["LIST_BG"]};
-    border: 1px solid transparent;
+    border: {e_line}px solid transparent;
     border-radius: {r_md}px;
     padding: {s_md}px {s_lg}px;
     color: {C["INK"]};
@@ -348,7 +350,7 @@ QLabel#formCaption {{ color: {C["INK_SOFT"]}; }}
    it takes the pointer fill a card does. */
 QFrame#filterMenu {{
     background-color: {C["SURFACE"]};
-    border: 1px solid {C["BTN_BORDER"]};
+    border: {e_line}px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
 }}
 QLabel#facetHeading {{
@@ -379,14 +381,14 @@ QPushButton#filterBtn {{
    narrowed board never reads as an empty one. */
 QPushButton#filterBtn[active="true"] {{
     background-color: {C["SEL_BG"]};
-    border: 1px solid {C["ACCENT"]};
+    border: {e_line}px solid {C["ACCENT"]};
     color: {C["ACCENT_DK"]};
 }}
 /* One applied filter, removable where it is read. */
 QPushButton#filterChip {{
     background-color: {C["NEUTRAL_BG"]};
     color: {C["NEUTRAL_TX"]};
-    border: 1px solid transparent;
+    border: {e_line}px solid transparent;
     border-radius: {r_sm}px;
     padding: {s_sm}px {s_lg}px;
     font-weight: 400;
@@ -453,7 +455,7 @@ QListWidget::item:selected {{ background: transparent; }}
 QListWidget#textList::item {{
     padding: {s_md}px {s_lg}px;
     border-radius: {r_md}px;
-    border-left: 3px solid transparent;
+    border-left: {e_bar}px solid transparent;
 }}
 /* The selected row also carries an accent bar, because a scheme's hover and
    selection fills sit close enough that a hovered row would otherwise read as
@@ -461,7 +463,7 @@ QListWidget#textList::item {{
 QListWidget#textList::item:selected {{
     background: {C["SEL_BG"]};
     color: {C["ACCENT_DK"]};
-    border-left: 3px solid {C["ACCENT"]};
+    border-left: {e_bar}px solid {C["ACCENT"]};
 }}
 QListWidget#textList::item:hover:!selected {{
     background: {C["HOVER_BG"]};
@@ -472,7 +474,7 @@ QTableWidget#resultsTable {{
     background-color: {C["LIST_BG"]};
     alternate-background-color: {C["SURFACE"]};
     color: {C["INK"]};
-    border: 1px solid {C["BTN_BORDER"]};
+    border: {e_line}px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
     outline: 0;
 }}
@@ -485,13 +487,13 @@ QHeaderView::section {{
     background-color: {C["CANVAS"]};
     color: {C["INK_SOFT"]};
     border: none;
-    border-bottom: 1px solid {C["BORDER"]};
+    border-bottom: {e_line}px solid {C["BORDER"]};
     padding: {s_sm}px {s_md}px;
     font-weight: 600;
 }}
 QComboBox, QLineEdit, QAbstractSpinBox, QTextEdit {{
     background-color: {C["SURFACE"]};
-    border: 1px solid {C["BTN_BORDER"]};
+    border: {e_line}px solid {C["BTN_BORDER"]};
     border-radius: {r_md}px;
     padding: {s_md}px {s_md}px;
     color: {C["INK"]};
@@ -501,12 +503,12 @@ QComboBox, QLineEdit, QAbstractSpinBox, QTextEdit {{
 /* A picker is a button that opens a list, so it takes the control face. */
 QComboBox, QDateEdit {{
     background-color: {C["BTN_BG"]};
-    border: 1px solid {C["BTN_BORDER"]};
+    border: {e_line}px solid {C["BTN_BORDER"]};
 }}
 QComboBox:hover, QDateEdit:hover {{ background-color: {C["BTN_HOVER"]}; }}
 QComboBox:on {{ background-color: {C["BTN_PRESSED"]}; }}
 QComboBox:focus, QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus {{
-    border: 1px solid {C["ACCENT"]};
+    border: {e_line}px solid {C["ACCENT"]};
 }}
 /* A required field that is currently empty. Set via the dynamic property
    fieldMissing=true (see record_dialog._refresh_required_state), and repeated
@@ -514,7 +516,7 @@ QComboBox:focus, QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus {{
    user is typing in — or deleting out of — the very field that is missing. */
 QLineEdit[fieldMissing="true"], QTextEdit[fieldMissing="true"],
 QLineEdit[fieldMissing="true"]:focus, QTextEdit[fieldMissing="true"]:focus {{
-    border: 2px solid {C["MISSING"]};
+    border: {e_missing}px solid {C["MISSING"]};
 }}
 QLabel[fieldMissing="true"] {{ color: {C["MISSING"]}; }}
 /* A formCaption carries its own missing state. */
@@ -527,7 +529,7 @@ QComboBox {{ combobox-popup: 0; }}
 QComboBox QAbstractItemView {{
     background-color: {C["SURFACE"]};
     color: {C["INK"]};
-    border: 1px solid {C["BTN_BORDER"]};
+    border: {e_line}px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
     padding: {s_sm}px;
     outline: 0;
@@ -588,7 +590,7 @@ QFrame#settingsModal {{
    pointer, and the open tab chosen as a picker's item is. */
 QPushButton#settingsNav {{
     background: transparent;
-    border: 1px solid transparent;
+    border: {e_line}px solid transparent;
     border-radius: {r_md}px;
     min-height: {ctl}px;
     max-height: {ctl}px;
@@ -621,7 +623,7 @@ QPushButton#link:hover, QPushButton#link:focus {{ text-decoration: underline; }}
    control and the strip that brings it back are the same button. */
 QPushButton#quietIcon, QPushButton#paneToggle, QPushButton#paneReveal {{
     background: transparent;
-    border: 1px solid transparent;
+    border: {e_line}px solid transparent;
     border-radius: {r_md}px;
     padding: {s_xs}px;
     color: {C["INK_SOFT"]};
@@ -646,7 +648,7 @@ QCheckBox {{
 QCheckBox::indicator {{
     width: {s_lg}px;
     height: {s_lg}px;
-    border: 1px solid {C["ACCENT"]};
+    border: {e_line}px solid {C["ACCENT"]};
     border-radius: {r_sm}px;
     background-color: {C["SURFACE"]};
 }}
@@ -659,7 +661,7 @@ QCheckBox::indicator:checked {{
 QMenu {{
     background-color: {C["SURFACE"]};
     color: {C["INK"]};
-    border: 1px solid {C["BTN_BORDER"]};
+    border: {e_line}px solid {C["BTN_BORDER"]};
     border-radius: {r_lg}px;
     padding: {s_sm}px;
 }}
@@ -670,10 +672,10 @@ QMenu::item {{
     border-radius: {r_md}px;
 }}
 QMenu::item:selected {{ background-color: {C["SEL_BG"]}; color: {C["ACCENT_DK"]}; }}
-QMenu::separator {{ height: 1px; background: {C["BORDER"]}; margin: {s_sm}px {s_md}px; }}
+QMenu::separator {{ height: {e_line}px; background: {C["BORDER"]}; margin: {s_sm}px {s_md}px; }}
 QPushButton {{
     background-color: {C["BTN_BG"]};
-    border: 1px solid {C["BTN_BORDER"]};
+    border: {e_line}px solid {C["BTN_BORDER"]};
     border-radius: {r_md}px;
     padding: {s_md}px {s_lg}px;
     font-weight: 400;
@@ -687,14 +689,14 @@ QPushButton:focus {{ border-color: {C["ACCENT"]}; }}
    stylesheet, which would read as "the button is broken". */
 QPushButton:disabled {{
     background-color: {C["DISABLED_BG"]};
-    border: 1px solid {C["BORDER"]};
+    border: {e_line}px solid {C["BORDER"]};
     color: {C["DISABLED_TX"]};
 }}
 QPushButton::menu-indicator {{ width: 0px; image: none; }}
 QPushButton#globalCreateBtn {{
     background-color: {C["ACCENT"]};
     color: {C["ON_ACCENT"]};
-    border: 1px solid {C["ACCENT"]};
+    border: {e_line}px solid {C["ACCENT"]};
 }}
 QPushButton#globalCreateBtn:hover {{
     background-color: {C["CREATE_HOVER"]};
@@ -707,7 +709,7 @@ QPushButton#globalCreateBtn:focus, QPushButton#toolbarCreate:focus {{
    needs its own unclickable look or it would stay accent-filled while dead. */
 QPushButton#globalCreateBtn:disabled {{
     background-color: {C["DISABLED_BG"]};
-    border: 1px solid {C["BORDER"]};
+    border: {e_line}px solid {C["BORDER"]};
     color: {C["DISABLED_TX"]};
 }}
 /* A segmented control: its segments share the control face and join into one
@@ -733,7 +735,7 @@ QPushButton#segment:checked {{
 }}
 /* A button whose window contains something that is not on disk. */
 QPushButton[missing="true"] {{
-    border: 1px solid {C["MISSING"]};
+    border: {e_line}px solid {C["MISSING"]};
     color: {C["MISSING"]};
 }}
 /* A destructive action is an ordinary button whose words are red, as the Mac

@@ -1,5 +1,5 @@
-"""ui/tokens.py — the design tokens: spacing, corner radius, type size, window
-geometry and the scrim.
+"""ui/tokens.py — the design tokens: spacing, corner radius, edge width, type
+size, window geometry and the scrim.
 
 Spacing, corner radius and font size are named steps rather than literals, so a
 change to a scale reaches every painter and the stylesheet at once. Tokens are
@@ -10,15 +10,20 @@ apart two things sit.
 from __future__ import annotations
 
 # ---------------------------------------------------------------------------
-# Design tokens — spacing, corner radius, type size
+# Design tokens — spacing, corner radius, edge width, type size
 # ---------------------------------------------------------------------------
-# Three fixed scales. A module needing a gap, a pad, a corner or a font size
+# Four fixed scales. A module needing a gap, a pad, a corner, an edge or a font size
 # names a step instead of writing a number, so re-tuning the app's density is an
 # edit here. Steps are in device-independent pixels, except TYPE, which is in
 # points.
 SPACE = {"xs": 2, "sm": 4, "md": 7, "lg": 11, "xl": 16, "2xl": 24}
 RADIUS = {"sm": 4, "md": 7, "lg": 10, "xl": 12, "pill": 999}
 TYPE = {"caption": 10, "body": 13, "title": 13, "section": 15, "display": 17}
+
+# The widths of an edge, each with one meaning (Bristol Borders and Hairlines):
+# line, every border and divider; missing, a required field left empty; bar, the
+# left bar of a selected row in a text list.
+EDGE = {"line": 1, "missing": 2, "bar": 3}
 
 # Window geometry, in device-independent pixels, and the splitter's opening
 # split. Not a spacing scale — these size the window itself, and a module that
@@ -95,6 +100,11 @@ def control_height() -> int:
 def radius(step: str) -> int:
     """A corner radius, by name."""
     return RADIUS[step]
+
+
+def edge_width(step: str) -> int:
+    """An edge's width, by what it means."""
+    return EDGE[step]
 
 
 def type_size(step: str) -> int:

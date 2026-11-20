@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 )
 
 from . import icons
-from .theme import C, radius, space
+from .theme import C, edge_width, radius, space
 
 CHECK_SIZE = 14
 
@@ -92,7 +92,7 @@ class _ToggleRowDelegate(QStyledItemDelegate):
         rect = QRectF(option.rect).adjusted(0.5, 1.5, -0.5, -1.5)
         corner = radius("md")
         if chosen:
-            painter.setPen(QPen(QColor(C["ACCENT"]), 1))
+            painter.setPen(QPen(QColor(C["ACCENT"]), edge_width("line")))
             painter.setBrush(QColor(C["SEL_BG"]))
             painter.drawRoundedRect(rect, corner, corner)
         elif turnable and option.state & QStyle.StateFlag.State_MouseOver:

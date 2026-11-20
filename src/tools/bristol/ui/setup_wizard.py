@@ -302,7 +302,7 @@ class InstancePage(HeadedPage):
         layout.addWidget(QLabel("Installation Name"))
         layout.addWidget(self.slug_edit)
         layout.addWidget(self.rejected_hint)
-        layout.addSpacing(10)
+        layout.addSpacing(space("lg"))
         layout.addWidget(QLabel("Data Folder"))
         layout.addWidget(self.folder)
         layout.addWidget(self.disagreement)
@@ -408,7 +408,7 @@ class AgentsPage(HeadedPage):
 
         layout = page_layout(self)
         layout.addWidget(installed_only)
-        layout.addSpacing(8)
+        layout.addSpacing(space("md"))
         layout.addWidget(self.agents, 1)
 
     def isComplete(self) -> bool:
@@ -438,7 +438,7 @@ class IntegrationsPage(HeadedPage):
         layout = page_layout(self)
         layout.addWidget(QLabel("Markdown notebook — a folder of notes you edit yourself"))
         layout.addWidget(self.notebook)
-        layout.addSpacing(10)
+        layout.addSpacing(space("lg"))
         layout.addWidget(zotero_label)
         layout.addWidget(self.zotero)
         layout.addStretch(1)
@@ -464,7 +464,7 @@ class SummaryPage(HeadedPage):
 
         layout = page_layout(self)
         layout.addWidget(self.body)
-        layout.addSpacing(12)
+        layout.addSpacing(space("lg"))
         layout.addWidget(self.take_over)
         layout.addWidget(self.pointer_note)
         layout.addStretch(1)

@@ -50,13 +50,14 @@ either says, and `theme_has_dark()` is what a control asks before offering Dark.
 
 ## Tokens
 
-Three fixed scales, scheme-independent: a scheme changes what a thing is
+Four fixed scales, scheme-independent: a scheme changes what a thing is
 coloured, never how far apart two things sit.
 
 | Scale | Steps | Governs |
 | --- | --- | --- |
 | `SPACE` | `xs` `sm` `md` `lg` `xl` `2xl` | Every gap, pad, margin, stripe width and inset. |
 | `RADIUS` | `sm` `md` `lg` `xl` `pill` | Corners. `sm` a checkbox or a tag, `md` a control, `lg` a card or panel, `xl` a modal, `pill` a full round. |
+| `EDGE` | `line` `missing` `bar` | An edge's width. `line` every border and divider, `missing` a required field left empty, `bar` the left bar of a selected row in a text list. |
 | `TYPE` | `caption` `body` `title` `section` `display` | Font point size. `caption` a badge or metadata line, `body` running text, `title` a card title, `section` a section heading, `display` the largest thing on screen. |
 
 `LAYOUT` sits beside the scales and contains what sizes the window rather than the

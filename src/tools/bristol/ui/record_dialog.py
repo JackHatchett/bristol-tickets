@@ -67,6 +67,7 @@ from .theme import (
     TIER_HINT,
     _mono_font,
     _utcnow,
+    edge_width,
     fill_agents,
     fleet_agents,
     log_lines,
@@ -125,7 +126,7 @@ def section_widget(name: str) -> QWidget:
     rule = QFrame()
     rule.setObjectName("sectionRule")
     rule.setFrameShape(QFrame.Shape.HLine)
-    rule.setFixedHeight(1)
+    rule.setFixedHeight(edge_width("line"))
     column.addWidget(label)
     column.addWidget(rule)
     return box
@@ -146,6 +147,11 @@ def _epic_kind(stored: str | None) -> str:
 # The date a due-date field sits on when the card has none. A date field has to
 # contain some date, so the earliest one it offers is the word "no date" instead.
 NO_DUE_DATE = QDate(1970, 1, 1)
+
+# The description box's height, in lines of the monospace face: room for the
+# mad-lib skeleton it opens with, and the most it grows before it scrolls.
+DESC_MIN_LINES = 8
+DESC_MAX_LINES = 11
 
 
 def _captioned(caption: QLabel, widget: QWidget, stretch: bool = False) -> QWidget:
@@ -255,8 +261,8 @@ class UnifiedRecordDialog(QDialog):
         # skeleton, and switches to the body face once prose replaces it.
         self.desc_edit = QTextEdit()
         mono_line = QFontMetrics(_mono_font()).lineSpacing()
-        self.desc_edit.setMinimumHeight(mono_line * 8)
-        self.desc_edit.setMaximumHeight(mono_line * 11)
+        self.desc_edit.setMinimumHeight(mono_line * DESC_MIN_LINES)
+        self.desc_edit.setMaximumHeight(mono_line * DESC_MAX_LINES)
         self._desc_is_mono = True
         self.desc_edit.setFont(_mono_font())
         self.desc_edit.textChanged.connect(self._sync_desc_font)

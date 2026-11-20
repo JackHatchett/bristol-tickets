@@ -6,8 +6,8 @@ working for every module that imports them:
 
 - ``ui/board_terms.py`` — the board's columns and card role, the fleet's agents
   and their captions, and the caption of every stored value.
-- ``ui/tokens.py`` — spacing, corner radius, type size, window geometry and the
-  scrim.
+- ``ui/tokens.py`` — spacing, corner radius, edge width, type size, window
+  geometry and the scrim.
 - ``ui/palettes.py`` — the palettes this build ships.
 - ``ui/themes.py`` — schemes, themes and modes, the collection, contrast, and
   the live palette ``C``.
@@ -137,12 +137,14 @@ from .ticket_log import (
     relative_time,
 )
 from .tokens import (
+    EDGE,
     LAYOUT,
     RADIUS,
     SCRIM,
     SPACE,
     TYPE,
     control_height,
+    edge_width,
     radius,
     space,
     type_size,
@@ -160,6 +162,7 @@ __all__ = [
     "DARK_MODE",
     "DEFAULT_MODE",
     "DEFAULT_THEME",
+    "EDGE",
     "EPIC_KIND_CHOICES",
     "EPIC_STATUS_CHOICES",
     "FLEET_AGENTS",
@@ -232,6 +235,7 @@ __all__ = [
     "control_height",
     "current_scheme",
     "default_theme",
+    "edge_width",
     "fill_agents",
     "fleet_agents",
     "install_collection",

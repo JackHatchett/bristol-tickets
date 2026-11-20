@@ -16,7 +16,7 @@ from PySide6.QtCore import QEvent, QPoint, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QEnterEvent, QPainter, QPaintEvent, QPen
 from PySide6.QtWidgets import QAbstractButton, QSizePolicy, QWidget
 
-from .theme import LAYOUT, C, control_height, space
+from .theme import LAYOUT, C, control_height, edge_width, space
 
 TRACK_W = LAYOUT["switch_track_w"]
 TRACK_H = LAYOUT["switch_track_h"]
@@ -63,7 +63,7 @@ class Switch(QAbstractButton):
             fill, edge, knob = C["BTN_BG"], C["BTN_BORDER"], C["INK_SOFT"]
         if enabled and not on and self.underMouse():
             fill = C["BTN_HOVER"]
-        painter.setPen(QPen(QColor(edge), 1))
+        painter.setPen(QPen(QColor(edge), edge_width("line")))
         painter.setBrush(QColor(fill))
         painter.drawRoundedRect(track, corner, corner)
 
@@ -74,7 +74,7 @@ class Switch(QAbstractButton):
         painter.drawEllipse(QRectF(x, top + KNOB_INSET, size, size))
 
         if self.hasFocus():
-            painter.setPen(QPen(QColor(C["ACCENT"]), 1))
+            painter.setPen(QPen(QColor(C["ACCENT"]), edge_width("line")))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             ring = track.adjusted(-2, -2, 2, 2)
             painter.drawRoundedRect(ring, ring.height() / 2, ring.height() / 2)

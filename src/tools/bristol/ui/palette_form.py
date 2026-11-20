@@ -35,6 +35,7 @@ from .theme import (
     REFERENCE_PALETTE,
     C,
     contrast_complaints,
+    edge_width,
     key_caption,
     palette_rows,
     radius,
@@ -133,7 +134,7 @@ class ColourRow:
     def _paint_swatch(self, value: str) -> None:
         self.swatch.setStyleSheet(
             f"background-color: {value};"
-            f"border: 1px solid {C['BORDER']};"
+            f"border: {edge_width('line')}px solid {C['BORDER']};"
             f"border-radius: {radius('md')}px;"
             f"min-height: {space('xl')}px;"
         )

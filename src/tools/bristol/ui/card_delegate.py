@@ -66,6 +66,7 @@ from .theme import (
     agent_caption,
     check_image,
     check_mark_side,
+    edge_width,
     radius,
     size_label,
     space,
@@ -417,7 +418,7 @@ class CardDelegate(QStyledItemDelegate):
             fill, edge = QColor(C["HOVER_BG"]), QColor(C["BTN_BORDER"])
         else:
             fill, edge = QColor(C["SURFACE"]), QColor(C["BTN_BORDER"])
-        painter.setPen(QPen(edge, 1))
+        painter.setPen(QPen(edge, edge_width("line")))
         painter.setBrush(fill)
         painter.drawRoundedRect(card.adjusted(0.5, 0.5, -0.5, -0.5), radius("lg"), radius("lg"))
 
@@ -511,7 +512,7 @@ class CardDelegate(QStyledItemDelegate):
         checked = _is_checked(index.data(Qt.ItemDataRole.CheckStateRole))
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        painter.setPen(QPen(QColor(C["ACCENT"]), 1))
+        painter.setPen(QPen(QColor(C["ACCENT"]), edge_width("line")))
         painter.setBrush(QColor(C["ACCENT"] if checked else C["SURFACE"]))
         painter.drawRoundedRect(box, radius("sm"), radius("sm"))
         if checked:

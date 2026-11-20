@@ -33,7 +33,7 @@ bristol/
 ├── ui/                  the PySide6 widgets (split into small modules)
 │   ├── README.md        the styling contract: scheme keys, tokens, intent
 │   ├── theme.py         re-exports the six appearance modules below
-│   ├── tokens.py        spacing, radius, type size, window geometry, scrim
+│   ├── tokens.py        spacing, radius, edge width, type size, window geometry, scrim
 │   ├── palettes.py      the shipped palettes, light and dark
 │   ├── themes.py        schemes, themes, modes, the collection, the live palette C
 │   ├── style_sheet.py   the typeface, the global stylesheet, apply_scheme
@@ -69,7 +69,7 @@ consultant to ingest in one pass.
 ## How it looks (`ui/tokens.py`, `ui/palettes.py`, `ui/themes.py`, `ui/style_sheet.py`)
 
 Every colour is a key in the live palette `C`, which a named scheme fills, and
-every gap, corner and font size is a step on one of three token scales. Nothing
+every gap, corner, edge and font size is a step on one of four token scales. Nothing
 in the UI contains a hex value or a pixel count of its own, so a new palette is a
 data change and a density change is one edit. `ui/README.md` is the contract an
 agent styles from: what each key means, which token governs which element, and
