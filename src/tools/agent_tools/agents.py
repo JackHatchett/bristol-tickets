@@ -60,6 +60,7 @@ KNOWN = (
     "description",
     "key_data_paths",
     "key_context_files",
+    "repo_write",
     "notebook_access",
     "dashboard_access",
     "skills",
@@ -100,6 +101,7 @@ def read_agent(slug: str) -> dict:
         "description": entry.get("description", ""),
         "key_data_paths": data_paths.folder_grants(entry.get("key_data_paths") or []),
         "key_context_files": list(entry.get("key_context_files") or []),
+        "repo_write": list(entry.get("repo_write") or []),
         "notebook_access": dict(notebook) if isinstance(notebook, dict) else {},
         "dashboard_access": dict(entry["dashboard_access"])
         if isinstance(entry.get("dashboard_access"), dict)
@@ -185,10 +187,15 @@ def edit(slug: str, changes: dict) -> dict:
 
     if "key_data_paths" in changes:
         changes["key_data_paths"] = data_paths.folder_grants(changes["key_data_paths"])
+    root = data_paths.project_root()
+    for declared in changes.get("repo_write") or []:
+        if Path(declared).is_absolute() or not (root / declared).exists():
+            raise EditError(f"repo_write gives '{declared}', which is not a path in the repository")
     for key in (
         "description",
         "key_data_paths",
         "key_context_files",
+        "repo_write",
         "notebook_access",
         "dashboard_access",
         "env",
@@ -207,6 +214,7 @@ def edit(slug: str, changes: dict) -> dict:
             "description",
             "key_data_paths",
             "key_context_files",
+            "repo_write",
             "notebook_access",
             "dashboard_access",
             "env",
@@ -233,6 +241,8 @@ def _render(agent: dict) -> str:
         lines.append(f"  data       {grant['path']}  ({grant['access']})")
     for declared in agent["key_context_files"]:
         lines.append(f"  context    {declared}")
+    for declared in agent["repo_write"]:
+        lines.append(f"  repo       {declared}")
     access = notebook_module.normalised(notebook, notebook_module.attached())
     chosen = ",".join(f"{f}={a}" for f, a in access["folders"].items()) or "-"
     lines.append(f"  notebook   mode={access['mode']} folders={chosen}")
@@ -307,6 +317,8 @@ def main(argv: list[str]) -> int:
     editing.set_defaults(grants=None)
     editing.add_argument("--context-file", action="append")
     editing.add_argument("--no-context-files", action="store_true")
+    editing.add_argument("--repo-write", action="append")
+    editing.add_argument("--no-repo-write", action="store_true")
     editing.add_argument("--notebook-mode", choices=notebook.MODES)
     editing.add_argument(
         "--notebook-folder",
@@ -387,6 +399,10 @@ def main(argv: list[str]) -> int:
             changes["key_context_files"] = args.context_file
         elif args.no_context_files:
             changes["key_context_files"] = []
+        if args.repo_write:
+            changes["repo_write"] = args.repo_write
+        elif args.no_repo_write:
+            changes["repo_write"] = []
         if args.env:
             changes["env"] = _pairs(args.env)
         elif args.no_env:

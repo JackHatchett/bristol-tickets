@@ -68,6 +68,7 @@ def check_agent_tools() -> list[str]:
                 "description",
                 "key_data_paths",
                 "key_context_files",
+                "repo_write",
                 "notebook_access",
                 "dashboard_access",
                 "skills",
@@ -78,6 +79,16 @@ def check_agent_tools() -> list[str]:
         if read["notebook_access"] != (entry.get("notebook_access") or {}):
             raise SmokeFailure(f"{slug}'s notebook access was not read verbatim")
     ok.append("every key every entry contains reaches a field of its own or extra")
+
+    # A write grant is a path in the repository: one that is not there grants
+    # nothing and says something false about the agent.
+    for slug, entry in config_reader.get("agents", {}).items():
+        if slug == "_notes":
+            continue
+        for declared in entry.get("repo_write") or []:
+            if Path(declared).is_absolute() or not (root / declared).exists():
+                raise SmokeFailure(f"{slug}'s repo_write gives '{declared}', not in the repository")
+    ok.append("every repo_write path is in the repository")
 
     with tempfile.TemporaryDirectory() as tmp:
         scratch = Path(tmp) / "clone"

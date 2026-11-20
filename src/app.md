@@ -166,7 +166,8 @@ In chat, and in a comment the user acts on:
 ## Content is yours; behavior is chief_of_staff's
 
 Only chief_of_staff changes an agent (its charter, skills, tools or `agents.*`
-config entry) or any git-tracked file of Bristol Tickets. Every other agent adds
+config entry). A git-tracked file is changed by chief_of_staff, or by an
+agent whose `repo_write` covers it. Every other agent adds
 content as ordinary execution: a fact into the section that owns it, a
 deliverable, a correction in place, a dashboard edit its `dashboard_access`
 allows, and restructuring or moving notes within its `notebook_access`, with

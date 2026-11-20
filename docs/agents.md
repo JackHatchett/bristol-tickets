@@ -32,6 +32,12 @@ Every agent shares the same shape: reusable machinery under `src/`, and your
 personal content under `data/<instance>/`, which is never published. That split
 is what lets you fork the repository without leaking anything.
 
+Only chief_of_staff changes an agent or Bristol's own files, unless an agent's
+entry carries `repo_write`: a list of repository paths, each folder covering
+everything under it, whose files that agent may change too. qa_engineer ships
+with the test suite's paths, so the agent that tests Bristol also writes its
+automated tests. You set the list in the agent's window on the Agents page.
+
 You pick which agents exist when you install. An agent you did not enable has no
 folders and no presence on the board.
 
@@ -170,7 +176,8 @@ actually happened at each step. Every defect becomes a card for the agent that
 built the thing; it fixes nothing itself, so nothing is judged finished by the
 agent that wrote it. Give it a folder to test in, such as a notebook made for
 testing, and it works there; otherwise it builds the few files a test needs in a
-folder of its own.
+folder of its own. It writes and keeps Bristol's automated tests, the smoke
+suite and the unit tests, which its `repo_write` covers.
 
 **Needs** its own `data/<instance>/qa/` folder, which its entry declares.
 

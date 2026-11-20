@@ -57,7 +57,17 @@ from PySide6.QtWidgets import (
 )
 
 from . import icons
-from .dialogs import RowList, add_button, as_sheet, confirm, notify, removable_item
+from .dialogs import (
+    ORDINARY,
+    PRIMARY,
+    Modal,
+    RowList,
+    add_button,
+    as_sheet,
+    confirm,
+    notify,
+    removable_item,
+)
 from .growing_edit import GrowingTextEdit
 from .row_card import card_list
 from .segmented import SegmentedControl
@@ -296,6 +306,10 @@ class PathList(QWidget):
     A folder row carries the access it is granted beside it, because a grant is
     a folder and what may be done in it rather than a folder alone. A file row
     carries none: a context file is read.
+
+    A repository row, kind ``repo``, is a folder or a file inside the cloned
+    project, stored relative to its root: a path whose git-tracked files the
+    agent may change.
     """
 
     def __init__(
@@ -364,7 +378,7 @@ class PathList(QWidget):
         item = QListWidgetItem()
         item.setSizeHint(QSize(0, LAYOUT["path_row_min_h"]))
         self.list.addItem(item)
-        subject = "folder" if self._kind == "dir" else "file"
+        subject = {"dir": "folder", "repo": "path"}.get(self._kind, "file")
         removable_item(
             self.list, item, f"Remove this {subject}", lambda i=item: self._drop(i), content=holder
         )
@@ -372,7 +386,7 @@ class PathList(QWidget):
 
     def _drop(self, item: QListWidgetItem) -> None:
         declared = next((d for i, d, _ in self._rows if i is item), "")
-        subject = "folder" if self._kind == "dir" else "file"
+        subject = {"dir": "folder", "repo": "path"}.get(self._kind, "file")
         if not confirm(
             self,
             f"Remove this {subject}?",
@@ -391,7 +405,41 @@ class PathList(QWidget):
     def _declared(self) -> list[str]:
         return [declared for _, declared, _ in self._rows]
 
+    def _add_repo_path(self) -> None:
+        """A folder or a file inside the project, kept relative to its root."""
+        root = config_file.project_root()
+        if root is None:
+            return
+        question = Modal(
+            self,
+            "Add a Path",
+            "Grant a folder, which covers everything under it, or a single file.",
+            [("Cancel", ORDINARY, None), ("Folder", ORDINARY, "dir"), ("File", PRIMARY, "file")],
+            default_index=2,
+            escape_index=0,
+        )
+        question.exec()
+        kind = question.choice()
+        if kind == "dir":
+            picked = QFileDialog.getExistingDirectory(self, "Choose a folder", str(root))
+        elif kind == "file":
+            picked, _ = QFileDialog.getOpenFileName(self, "Choose a file", str(root))
+        else:
+            return
+        if not picked:
+            return
+        try:
+            declared = Path(picked).resolve().relative_to(root.resolve()).as_posix()
+        except ValueError:
+            notify(self, "Not Added", f"{picked} is outside the project folder, {root}.")
+            return
+        if declared not in self._declared():
+            self._row(declared, ACCESS_CHOICES[0][0])
+
     def _add(self) -> None:
+        if self._kind == "repo":
+            self._add_repo_path()
+            return
         if self._kind == "dir":
             picked = QFileDialog.getExistingDirectory(self, "Choose a folder", self._start_in())
         else:
@@ -606,6 +654,11 @@ class AgentDialog(QDialog):
         self.data_paths.set_values(record["key_data_paths"] if record else [])
         self.context_files = PathList(run, "file", "Add File…")
         self.context_files.set_values(record["key_context_files"] if record else [])
+        self.repo_write = PathList(run, "repo", "Add Path…")
+        self.repo_write.setToolTip(
+            "The folders and files of this project the agent may change, beside chief_of_staff."
+        )
+        self.repo_write.set_values(record.get("repo_write", []) if record else [])
 
         self.notebook = NotebookAccess(
             record["notebook_access"] if record else {}, self._attached(run)
@@ -639,6 +692,7 @@ class AgentDialog(QDialog):
         form.addRow("Charter File", identity_row)
         form.addRow("Folders", self.data_paths)
         form.addRow("Context Files", self.context_files)
+        form.addRow("Repository Write", self.repo_write)
         form.addRow("Notebook", self.notebook)
         form.addRow("Dashboards", self.dashboards)
         form.addRow("Environment Variables", self.env)
@@ -778,6 +832,7 @@ class AgentDialog(QDialog):
             "charter": self.charter.toPlainText(),
             "key_data_paths": self.data_paths.values(),
             "key_context_files": self.context_files.values(),
+            "repo_write": self.repo_write.values(),
             "notebook_access": self.notebook.values(),
             "dashboard_access": self.dashboards.values(),
             "env": self.env.values(),
@@ -870,6 +925,8 @@ class AgentDialog(QDialog):
             args += [_grant_option(grant), grant["path"]]
         for declared in values["key_context_files"]:
             args += ["--context-file", declared]
+        for declared in values["repo_write"]:
+            args += ["--repo-write", declared]
         for name, value in values["env"].items():
             args += ["--env", f"{name}={value}"]
         return args
@@ -896,6 +953,11 @@ class AgentDialog(QDialog):
                 args += ["--context-file", declared]
             if not values["key_context_files"]:
                 args += ["--no-context-files"]
+        if values["repo_write"] != was.get("repo_write", []):
+            for declared in values["repo_write"]:
+                args += ["--repo-write", declared]
+            if not values["repo_write"]:
+                args += ["--no-repo-write"]
         if self.notebook.changed_from(was["notebook_access"]):
             args += self.notebook.args()
         if self.dashboards.changed_from(was.get("dashboard_access", {})):

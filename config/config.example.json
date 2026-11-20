@@ -370,6 +370,10 @@
           "archive": "write"
         }
       },
+      "repo_write": [
+        "src/tools/test_tools",
+        ".github/workflows/smoke.yml"
+      ],
       "skills": [
         "testing-what-was-built",
         "reviewing-finished-work",

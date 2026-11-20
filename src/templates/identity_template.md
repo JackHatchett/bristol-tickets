@@ -43,6 +43,7 @@ value no other agent has declares its own key beside them:
 | `key_data_paths` | The folders it reaches, each with the access it carries. |
 | `env` | The environment variables its tools expect. |
 | `notebook_access` | What it may do in the Markdown notebook: per folder, or read or write all of it — `src/tools/config_tools/notebook.py`. |
+| `repo_write` | Optional: the repository paths whose git-tracked files it may change, a folder covering everything under it. Absent, it changes none. |
 | `skills` | The skills attached to this agent, in the order they are matched. |
 | `active_project` | Optional: the project a session opens on, where the agent has more than one. |
 
@@ -312,9 +313,11 @@ folder grant is what carries the authority to act on it.
   through a file or the user. The live registry of every agent and its data
   paths is the `agents` block of `config/config.local.json`.
 - **Content is yours; behavior is chief_of_staff's** — `src/app.md`, the section
-  of that name. A change to an agent or to a git-tracked file of Bristol Tickets
-  is a card assigned to chief_of_staff, and you stop there. Restructuring,
-  splitting or moving notes within your `notebook_access` is content.
+  of that name. A change to an agent, or to a git-tracked file your `repo_write`
+  does not cover, is a card assigned to chief_of_staff, and you stop there. A
+  change inside your `repo_write` is your own work, committed per
+  `session.suggested_commit`. Restructuring, splitting or moving notes within
+  your `notebook_access` is content.
 - **Update any config key that only lists where content sits when you move
   that content**, such as `sound_check`.
 - **Keep the data entries of your own `agents.*` key that your skills tell you

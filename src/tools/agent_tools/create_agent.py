@@ -20,6 +20,7 @@ CLI
         [--data-path data/<instance>/<domain>]... \\
         [--read-path <a folder it may read and not write>]... \\
         [--context-file <path>]... \\
+        [--repo-write <repository path>]... \\
         [--skill <name>]... \\
         [--notebook read|write|none] \\
         [--owns tools/<slug>/]...
@@ -175,6 +176,12 @@ def main(argv: list[str]) -> int:
         help="a file this agent reads on sight; repeatable",
     )
     parser.add_argument(
+        "--repo-write",
+        action="append",
+        default=[],
+        help="a repository path whose git-tracked files this agent may change; repeatable",
+    )
+    parser.add_argument(
         "--skill", action="append", default=[], help="a skill to attach; repeatable"
     )
     parser.add_argument(
@@ -264,6 +271,12 @@ def main(argv: list[str]) -> int:
             return 1
         env[name.strip()] = value
 
+    root = data_paths.project_root()
+    for declared in args.repo_write:
+        if Path(declared).is_absolute() or not (root / declared).exists():
+            print(f"--repo-write '{declared}' is not a path in the repository.", file=sys.stderr)
+            return 1
+
     charter.parent.mkdir(parents=True, exist_ok=True)
     charter.write_text(body, encoding="utf-8")
 
@@ -284,6 +297,8 @@ def main(argv: list[str]) -> int:
             print(f"--notebook-folder takes FOLDER=read|write|hide: {item}", file=sys.stderr)
             return 1
         entry["notebook_access"]["folders"][folder] = access
+    if args.repo_write:
+        entry["repo_write"] = args.repo_write
     if env:
         entry["env"] = env
     write_config.set_key(f"agents.{slug}", entry)
