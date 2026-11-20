@@ -41,7 +41,7 @@ selects the card (inspector) nor starts a drag (reorder).
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPen
 from PySide6.QtWidgets import QStyle, QStyledItemDelegate
 
 from .theme import (
@@ -49,6 +49,8 @@ from .theme import (
     C,
     _is_checked,
     agent_caption,
+    check_image,
+    check_mark_side,
     radius,
     size_label,
     space,
@@ -92,8 +94,8 @@ class CardDelegate(QStyledItemDelegate):
 
     @property
     def CHECK_BOX(self) -> int:
-        """Checkbox square size."""
-        return space("xl")
+        """Checkbox square size: the Bristol Checkbox's box."""
+        return space("lg")
 
     @property
     def PILL_H(self) -> int:
@@ -456,32 +458,22 @@ class CardDelegate(QStyledItemDelegate):
                 )
 
     def _paint_checkbox(self, painter, option, index) -> None:
-        """Draw the bulk-select checkbox in the left gutter: a rounded square,
-        filled with the accent and bearing a check mark when checked."""
-        box = QRectF(self._checkbox_rect(option))
+        """Draw the bulk-select checkbox in the left gutter as the Bristol
+        Checkbox: a SPACE lg square at RADIUS sm with a 1 px ACCENT edge,
+        SURFACE inside, or ACCENT bearing Lucide's check in ON_ACCENT when
+        ticked."""
+        box = QRectF(self._checkbox_rect(option)).adjusted(0.5, 0.5, -0.5, -0.5)
         checked = _is_checked(index.data(Qt.ItemDataRole.CheckStateRole))
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setPen(QPen(QColor(C["ACCENT"]), 1))
+        painter.setBrush(QColor(C["ACCENT"] if checked else C["SURFACE"]))
+        painter.drawRoundedRect(box, radius("sm"), radius("sm"))
         if checked:
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(C["ACCENT"]))
-            painter.drawRoundedRect(box, radius("sm"), radius("sm"))
-            pen = QPen(QColor(C["ON_ACCENT"]), 2)
-            painter.setPen(pen)
-            painter.drawLine(
-                int(box.left() + space("sm")),
-                int(box.center().y()),
-                int(box.center().x() - 1),
-                int(box.bottom() - space("sm")),
-            )
-            painter.drawLine(
-                int(box.center().x() - 1),
-                int(box.bottom() - space("sm")),
-                int(box.right() - space("xs")),
-                int(box.top() + space("sm")),
-            )
-        else:
-            painter.setPen(QPen(QColor(C["ACCENT"]), 1))
-            painter.setBrush(QColor(C["SURFACE"]))
-            painter.drawRoundedRect(box, radius("sm"), radius("sm"))
+            image = check_image(C["ON_ACCENT"])
+            if image:
+                side = check_mark_side()
+                mark = QRect(0, 0, side, side)
+                mark.moveCenter(self._checkbox_rect(option).center())
+                QIcon(image).paint(painter, mark)
         painter.restore()

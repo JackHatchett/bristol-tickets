@@ -111,13 +111,19 @@ def chevron_image(colour: str, direction: str = "down") -> str | None:
     return image_file(f"chevron-{direction}", colour, space("lg"), space("md"), (4, 7, 16, 10))
 
 
+def check_mark_side() -> int:
+    """The side of a checkbox's check, in device-independent pixels: the box,
+    SPACE lg, less a pixel each side."""
+    return space("lg") - 2
+
+
 def check_image(colour: str) -> str | None:
     """Lucide's check in the given colour, as an image file the stylesheet
     points a checked checkbox indicator at. Returns None when nothing can be
     written, in which case the checked state is a plain accent fill."""
     from .icons import image_file
 
-    side = space("md") + 2
+    side = check_mark_side()
     return image_file("check", colour, side, side, (3, 3, 18, 18))
 
 

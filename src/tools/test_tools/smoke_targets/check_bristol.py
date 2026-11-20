@@ -618,6 +618,9 @@ def check_bristol() -> list[str]:
             painter.end()
     theme.set_scheme(theme.resolve_scheme(theme.DEFAULT_THEME, theme.DEFAULT_MODE, False))
     ok.append("a card paints under every scheme")
+    if CardDelegate(show_checkbox=True).CHECK_BOX != _theme.space("lg"):
+        raise SmokeFailure("the Backlog's bulk-select box is not the Bristol Checkbox's SPACE lg")
+    ok.append("the bulk-select box is the Bristol Checkbox's size")
 
     schema = TOOLS / "bristol" / "schema.sql"
     if schema.exists():
