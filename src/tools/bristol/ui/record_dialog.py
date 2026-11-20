@@ -876,7 +876,8 @@ class UnifiedRecordDialog(QDialog):
                 self.conn.execute("DELETE FROM attachment WHERE task_id=?", (self.record_id,))
                 # Both ends of every link, so nothing is left pointing at a
                 # ticket that no longer exists.
-                remove_links_for_task(self.conn, self.record_id)
+                if self.record_id is not None:
+                    remove_links_for_task(self.conn, self.record_id)
                 self.conn.execute("DELETE FROM task WHERE id=?", (self.record_id,))
             elif self.mode == "epic":
                 self.conn.execute("UPDATE task SET epic_id=NULL WHERE epic_id=?", (self.record_id,))
@@ -1081,7 +1082,7 @@ class UnifiedRecordDialog(QDialog):
                 finished = closure.FINISHED_STATUSES if closure else frozenset()
                 was = (prior[0] if prior else "") or ""
                 closing = (estatus or "").lower() in finished and was.lower() not in finished
-                if closing:
+                if closing and closure is not None:
                     refused = closure.refusal(self.conn, self.record_id)
                     if refused:
                         notify(self, "This epic does not close", refused)
@@ -1098,7 +1099,7 @@ class UnifiedRecordDialog(QDialog):
 
         self.conn.commit()
 
-        if closing:
+        if closing and closure is not None and self.record_id is not None:
             result = closure.close_epic(self.conn, self.record_id)
             if result.report is not None and not (result.report.ok or result.report.skipped):
                 notify(

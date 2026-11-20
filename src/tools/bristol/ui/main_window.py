@@ -461,10 +461,10 @@ class MainWindow(QMainWindow):
         main_splitter.setStretchFactor(0, 1)
         main_splitter.setStretchFactor(1, 1)
         self._pane_collapsed = False
-        self._detail_width = int(
-            config_file.get(config_file.DETAIL_WIDTH, LAYOUT["split_detail"])
-            or LAYOUT["split_detail"]
-        )
+        stored_width = config_file.get(config_file.DETAIL_WIDTH, LAYOUT["split_detail"])
+        self._detail_width = (
+            int(stored_width) if isinstance(stored_width, (int, str)) else LAYOUT["split_detail"]
+        ) or LAYOUT["split_detail"]
         main_splitter.setSizes([LAYOUT["window_w"] - self._detail_width, self._detail_width])
         self._main_splitter = main_splitter
 
@@ -656,7 +656,8 @@ class MainWindow(QMainWindow):
             label.setVisible(bool(count))
 
         while self.chip_row.count():
-            stale = self.chip_row.takeAt(0).widget()
+            taken = self.chip_row.takeAt(0)
+            stale = taken.widget() if taken is not None else None
             if stale is not None:
                 stale.deleteLater()
         chips = applied(self.conn, self.filters)
@@ -909,7 +910,7 @@ class MainWindow(QMainWindow):
         self._action(
             file_menu,
             "Quit Bristol Tickets",
-            QApplication.instance().quit if QApplication.instance() else self.close,
+            self._quit,
             QKeySequence.StandardKey.Quit,
             QAction.MenuRole.QuitRole,
         )
@@ -924,7 +925,7 @@ class MainWindow(QMainWindow):
             ("Paste", "paste", QKeySequence.StandardKey.Paste),
             ("Select All", "selectAll", QKeySequence.StandardKey.SelectAll),
         ):
-            if text is None:
+            if text is None or method is None:
                 edit_menu.addSeparator()
                 continue
             self._action(edit_menu, text, lambda m=method: self._edit_focused(m), key)
@@ -955,6 +956,14 @@ class MainWindow(QMainWindow):
 
         help_menu = bar.addMenu("Help")
         self._action(help_menu, "Bristol Tickets Help", self._open_help)
+
+    def _quit(self) -> None:
+        """Quit the application, or close this window where there is none."""
+        app = QApplication.instance()
+        if app is not None:
+            app.quit()
+        else:
+            self.close()
 
     def _edit_focused(self, method: str) -> None:
         """Send an Edit menu command to the field that has the keyboard."""

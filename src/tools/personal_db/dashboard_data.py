@@ -222,7 +222,7 @@ def build(today=None):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     ap.add_argument("--out", default=os.environ.get("CAREER_DASHBOARD_JSON"))
     ap.add_argument("--print", action="store_true")
     ap.add_argument(

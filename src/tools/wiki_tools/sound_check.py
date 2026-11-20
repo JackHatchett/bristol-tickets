@@ -903,7 +903,7 @@ def _print(result: dict) -> None:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("name")
     n.add_argument("name")

@@ -366,8 +366,9 @@ class LocationsDialog(QDialog):
     def reload(self) -> None:
         while self.rows.count():
             child = self.rows.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
+            widget = child.widget() if child is not None else None
+            if widget is not None:
+                widget.deleteLater()
         rows = locations()
         # Missing ones first, then by where they are set.
         rows.sort(key=lambda r: (r["exists"], r["label"].lower()))

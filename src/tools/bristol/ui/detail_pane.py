@@ -277,7 +277,7 @@ class DetailPane(QWidget):
         in the other."""
         while self._attr_grid.count():
             item = self._attr_grid.takeAt(0)
-            widget = item.widget()
+            widget = item.widget() if item is not None else None
             if widget is not None:
                 widget.deleteLater()
         for row, (key, value) in enumerate(pairs):

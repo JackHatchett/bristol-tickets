@@ -116,7 +116,7 @@ def check_bluesky_archive() -> list[str]:
         kept = bs.keep_thread(conn, root, richer)
         if kept is None or len(bt.mine_uris(kept)) != 3:
             failures.append("a conversation holding more was not taken")
-        authors = sorted(n.author for n in kept.walk())
+        authors = sorted(n.author for n in kept.walk()) if kept is not None else []
         if authors != ["me", "me", "me", "op"]:
             failures.append(f"a conversation read back out of the store said {authors}")
         conn.close()

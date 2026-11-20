@@ -35,8 +35,8 @@ _objc = None
 def _runtime():
     global _objc
     if _objc is None:
-        _objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("objc"))
-        ctypes.cdll.LoadLibrary(ctypes.util.find_library("AppKit"))
+        _objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("objc") or "objc")
+        ctypes.cdll.LoadLibrary(ctypes.util.find_library("AppKit") or "AppKit")
         _objc.objc_getClass.restype = ctypes.c_void_p
         _objc.objc_getClass.argtypes = [ctypes.c_char_p]
         _objc.sel_registerName.restype = ctypes.c_void_p
@@ -50,7 +50,10 @@ def _send(receiver, selector: str, *args, restype=ctypes.c_void_p, argtypes=()):
     varargs."""
     objc = _runtime()
     address = ctypes.cast(objc.objc_msgSend, ctypes.c_void_p).value
-    function = ctypes.CFUNCTYPE(restype, ctypes.c_void_p, ctypes.c_void_p, *argtypes)(address)
+    if address is None:
+        raise OSError("objc_msgSend has no address")
+    prototype = ctypes.CFUNCTYPE(restype, ctypes.c_void_p, ctypes.c_void_p, *argtypes)
+    function = prototype(address)  # pyright: ignore[reportCallIssue, reportArgumentType]  an address is a valid prototype argument
     return function(receiver, objc.sel_registerName(selector.encode()), *args)
 
 

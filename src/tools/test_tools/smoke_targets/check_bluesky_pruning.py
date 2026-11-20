@@ -59,6 +59,11 @@ def check_bluesky_pruning() -> list[str]:
 
     failures: list[str] = []
 
+    def _kept(tree):
+        if tree is None:
+            raise SmokeFailure("pruning dropped a whole conversation it should keep")
+        return tree
+
     # A branch with none of my posts goes; the one containing them stays, with
     # every post above it.
     mine_leaf = node("me", "my reply", mine=True)
@@ -70,7 +75,7 @@ def check_bluesky_pruning() -> list[str]:
             node("friend", "a branch I answered", children=[mine_leaf]),
         ],
     )
-    kept = bt.prune(bt.build_tree(tree, set(uris_of(tree))))
+    kept = _kept(bt.prune(bt.build_tree(tree, set(uris_of(tree)))))
     authors = sorted(n.author for n in kept.walk())
     if authors != ["friend", "me", "op"]:
         failures.append(f"branch pruning kept {authors}")
@@ -87,18 +92,18 @@ def check_bluesky_pruning() -> list[str]:
             node("stranger", "three"),
         ],
     )
-    kept = bt.prune(bt.build_tree(tree, set(uris_of(tree))))
+    kept = _kept(bt.prune(bt.build_tree(tree, set(uris_of(tree)))))
     if len(kept.children) != 2 or sum(1 for n in kept.walk() if n.mine) != 2:
         failures.append("two answered branches did not come back as one tree")
 
     # What came after my last word is capped, and the cap is the whole section.
     tail = [node("fan", f"reply {i}") for i in range(25)]
     mine = node("me", "my post", mine=True, children=tail)
-    kept = bt.prune(bt.build_tree(mine, set(uris_of(mine))), tail_cap=10)
+    kept = _kept(bt.prune(bt.build_tree(mine, set(uris_of(mine))), tail_cap=10))
     after = sum(1 for n in kept.walk() if not n.mine)
     if after != 10:
         failures.append(f"tail cap of 10 kept {after}")
-    kept = bt.prune(bt.build_tree(mine, set(uris_of(mine))), tail_cap=3)
+    kept = _kept(bt.prune(bt.build_tree(mine, set(uris_of(mine))), tail_cap=3))
     after = sum(1 for n in kept.walk() if not n.mine)
     if after != 3:
         failures.append(f"tail cap of 3 kept {after}")
@@ -107,7 +112,7 @@ def check_bluesky_pruning() -> list[str]:
     # that were never adjacent are not joined.
     mine = node("me", "my reply under a deleted post", mine=True)
     mine["parent"] = {"$type": "app.bsky.feed.defs#notFoundPost", "uri": "at://x/gone/0"}
-    kept = bt.prune(bt.build_tree(mine, {mine["uri"]}))
+    kept = _kept(bt.prune(bt.build_tree(mine, {mine["uri"]})))
     kinds = [n.kind for n in kept.walk()]
     if bt.UNAVAILABLE not in kinds:
         failures.append("a deleted post on a kept path was dropped rather than marked")

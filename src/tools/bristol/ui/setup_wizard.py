@@ -37,6 +37,7 @@ import re
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
+from typing import cast
 
 import config_file  # bristol-local; see module docstring
 import instance
@@ -713,7 +714,7 @@ def build_config(
     if zotero:
         mapping.append((ZOTERO_TOKEN, zotero))
 
-    config: dict = _substitute(example, mapping)
+    config = cast(dict, _substitute(example, mapping))
 
     config["active_agent"] = "chief_of_staff" if "chief_of_staff" in agents else agents[0]
     config["agents"] = {

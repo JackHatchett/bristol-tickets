@@ -164,8 +164,9 @@ SIZE_HINT = (
 # it depends on no package outside itself. What each tier runs on is config's
 # `tiers` key, never this file.
 TIER_WORDS = {"max": "Max", "standard": "Standard"}
-TIER_CHOICES: list[tuple[str | None, str]] = [(None, "No Tier")] + [
-    (code, word) for code, word in TIER_WORDS.items()
+TIER_CHOICES: list[tuple[str | None, str]] = [
+    (None, "No Tier"),
+    *((code, word) for code, word in TIER_WORDS.items()),
 ]
 TIER_HINT = (
     "How much thinking this card needs, whatever its size.\n"

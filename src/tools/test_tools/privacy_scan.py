@@ -35,7 +35,7 @@ def names() -> list[str]:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     parser.add_argument("--rev", action="append")
     revs = parser.parse_args(argv).rev or ["HEAD"]
     needles = names()

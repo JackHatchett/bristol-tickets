@@ -433,7 +433,7 @@ def print_types(types):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[1])
     ap.add_argument("payloads", nargs="*", type=Path)
     ap.add_argument("--all", action="store_true", help="every payload in the data dir")
     ap.add_argument(

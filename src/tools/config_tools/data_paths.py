@@ -380,9 +380,10 @@ def ensure_db(path: str | Path, schema: str | Path) -> Path:
     """
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    sql = schema
-    if isinstance(schema, Path) or (isinstance(schema, str) and schema.endswith(".sql")):
+    if isinstance(schema, Path) or schema.endswith(".sql"):
         sql = Path(schema).read_text(encoding="utf-8")
+    else:
+        sql = schema
     conn = sqlite3.connect(str(target), timeout=10)
     try:
         conn.execute("PRAGMA busy_timeout=5000")
@@ -456,7 +457,7 @@ def _main(argv: list[str]) -> int:
         print(declare(picked))
         return 0
 
-    sys.stderr.write(__doc__.split("CLI\n---\n", 1)[1].split("\nImport")[0])
+    sys.stderr.write((__doc__ or "").split("CLI\n---\n", 1)[1].split("\nImport")[0])
     return 1
 
 

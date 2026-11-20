@@ -183,7 +183,7 @@ def main() -> None:
     live = opt("--archive")
     if not d and not live:
         sys.exit(__doc__)
-    snapshot_dir = Path(d) if d else Path(live).parent
+    snapshot_dir = Path(d) if d else Path(str(live)).parent
     stem = opt("--stem") or (Path(live).stem if live else None)
     if not stem:
         sys.exit("snapshot_archive: --stem is required with --dir")

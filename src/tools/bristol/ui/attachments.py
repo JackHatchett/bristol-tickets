@@ -199,9 +199,10 @@ class AttachmentBar(QWidget):
                     )
                 )
                 thumb.setToolTip("Click to view full size")
-                thumb.clicked.connect(
-                    lambda a=att_id, p=path, d=display: self._open_preview(a, p, d)
-                )
+                if path is not None:
+                    thumb.clicked.connect(
+                        lambda a=att_id, p=path, d=display: self._open_preview(a, p, d)
+                    )
             col.addWidget(thumb, 0, Qt.AlignmentFlag.AlignLeft)
 
             name = QLabel(display)

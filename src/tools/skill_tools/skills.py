@@ -1364,7 +1364,7 @@ def cmd_remove(args) -> int:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_list = sub.add_parser("list", help="every loadable skill: name and description only")

@@ -164,7 +164,7 @@ def value_id(conn: sqlite3.Connection, value: str) -> int:
     if row:
         return row[0]
     cur = conn.execute("INSERT INTO itemDataValues (value) VALUES (?)", (value,))
-    return cur.lastrowid
+    return int(cur.lastrowid or 0)
 
 
 def creator_id(conn: sqlite3.Connection, first: str, last: str, field_mode: int) -> int:
@@ -179,7 +179,7 @@ def creator_id(conn: sqlite3.Connection, first: str, last: str, field_mode: int)
         "INSERT INTO creators (firstName, lastName, fieldMode) VALUES (?,?,?)",
         (first, last, field_mode),
     )
-    return cur.lastrowid
+    return int(cur.lastrowid or 0)
 
 
 def backup_to_scratch(scratch: Path) -> Path:

@@ -76,7 +76,8 @@ def page(theme_id: str, name: str, frontmatter: str) -> str:
         roles.append("| --- | --- | --- | --- |")
         for key in keys:
             dark_value = f"`{dark[key]}`" if dark else "—"
-            roles.append(f"| `{key}` | {theme.key_caption(key)} | `{light[key]}` | {dark_value} |")
+            light_value = f"`{light[key]}`" if light else "—"
+            roles.append(f"| `{key}` | {theme.key_caption(key)} | {light_value} | {dark_value} |")
         roles.append("")
 
     under = 0
@@ -148,7 +149,7 @@ def existing_frontmatter(path: Path, name: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("--out", type=Path, help="the design system folder; config's by default")
     args = parser.parse_args()
     folder = (args.out or design_system_dir()) / "themes"

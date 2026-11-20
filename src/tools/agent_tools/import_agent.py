@@ -261,7 +261,7 @@ def accept(document: dict) -> int:
 
 
 def main(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[1])
     ap.add_argument("file", type=Path, help="the .agent.json file")
     ap.add_argument("--accept", action="store_true", help="write the charter and the config entry")
     args = ap.parse_args(argv)

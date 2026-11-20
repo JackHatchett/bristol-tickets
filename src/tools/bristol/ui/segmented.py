@@ -9,6 +9,8 @@ corners round.
 
 from __future__ import annotations
 
+from typing import cast
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QButtonGroup, QHBoxLayout, QPushButton, QSizePolicy, QWidget
 
@@ -69,4 +71,4 @@ class SegmentedControl(QWidget):
 
     def button(self, value: str) -> QPushButton:
         """The segment that chooses ``value``."""
-        return self._group.button(self._values.index(value))
+        return cast(QPushButton, self._group.button(self._values.index(value)))

@@ -391,9 +391,9 @@ def cmd_index(args):
 
     archive = store.connect()
     conn = connect(args.verdicts)
-    zone = ZoneInfo(_setting("timezone", "UTC"))
+    zone = ZoneInfo(str(_setting("timezone", "UTC")))
     prefix = _setting("filename_prefix", "bluesky_")
-    pages = data_paths.resolve(_setting("notes_folder"))
+    pages = data_paths.resolve(str(_setting("notes_folder") or ""))
     from config_tools import read_config
 
     target = data_paths.ensure_dir(read_config.get("markdown_notebook.workspace_dir")) / NOTE_NAME

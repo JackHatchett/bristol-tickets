@@ -80,7 +80,8 @@ def names(data: dict | None = None) -> list[str]:
 def normalised(entry, dashboards: list[str]) -> dict:
     """An agent's access, ignoring names that are not known dashboards."""
     entry = entry if isinstance(entry, dict) else {}
-    chosen = entry.get("dashboards") if isinstance(entry.get("dashboards"), list) else []
+    listed = entry.get("dashboards")
+    chosen = listed if isinstance(listed, list) else []
     return {
         "write_all": entry.get("write_all") is not False,
         "dashboards": [n for n in dashboards if n in chosen],
@@ -145,7 +146,7 @@ def set_access(
 
 
 def main(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("show")
     s.add_argument("--json", action="store_true")

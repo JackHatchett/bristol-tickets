@@ -346,7 +346,7 @@ class FilterMenu(QWidget):
         self._rows.clear()
         while self._sections.count():
             item = self._sections.takeAt(0)
-            widget = item.widget()
+            widget = item.widget() if item is not None else None
             if widget is not None:
                 widget.deleteLater()
         for kind, heading, options in (

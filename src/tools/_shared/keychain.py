@@ -81,7 +81,7 @@ def require(service: str, key: str, hint: str) -> str:
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 3:
-        print(__doc__.strip().splitlines()[-3], file=sys.stderr)
+        print((__doc__ or "").strip().splitlines()[-3], file=sys.stderr)
         return 2
     action, service, key = argv
     if action == "get":

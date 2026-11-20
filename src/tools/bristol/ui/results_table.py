@@ -91,11 +91,8 @@ class ResultsTable(QTableWidget):
 
     def row_text(self, row: int) -> str:
         """A row's cells read left to right, for a reader that wants the line."""
-        return "   ".join(
-            self.item(row, c).text()
-            for c in range(self.columnCount())
-            if self.item(row, c) is not None
-        )
+        cells = (self.item(row, c) for c in range(self.columnCount()))
+        return "   ".join(cell.text() for cell in cells if cell is not None)
 
     def _emit(self, signal, row: int) -> None:
         item = self.item(row, 0)

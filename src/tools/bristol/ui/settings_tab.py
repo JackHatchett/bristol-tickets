@@ -357,7 +357,7 @@ class SettingsTab(QWidget):
         elif result.skipped:
             notify(self, "Nothing to report", result.skipped)
         else:
-            notify(self, "Report not written", result.error)
+            notify(self, "Report not written", result.error or "")
 
     def _clear_done(self) -> None:
         """Archive the Done column after a confirmation giving the count, and

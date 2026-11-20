@@ -79,7 +79,7 @@ def archive_path():
 # The store file this process last opened, which is what the pictures sit
 # beside. A store opened at another path — a test's own — takes its pictures
 # with it rather than writing them into the account's folder.
-_OPENED = [None]
+_OPENED: list[Path | None] = [None]
 
 
 def connect(path=None):

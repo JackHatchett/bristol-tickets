@@ -47,7 +47,7 @@ BAD_NAME_PATTERNS = [
 ]
 
 
-def human(n: int) -> str:
+def human(n: float) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if n < 1024:
             return f"{n:.1f}{unit}"

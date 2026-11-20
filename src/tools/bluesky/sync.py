@@ -296,13 +296,13 @@ def run(
     started = time.monotonic()
     days = [d for d in sorted(by_day) if start_from is None or d >= start_from]
     if skip_existing:
-        keep = []
+        unwritten = []
         for day in days:
             if page_path(day, folder, prefix).exists():
                 skipped += 1
             else:
-                keep.append(day)
-        days = keep
+                unwritten.append(day)
+        days = unwritten
 
     stopped_at = None
 

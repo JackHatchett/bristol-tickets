@@ -227,6 +227,8 @@ def render_domain(domain: str, conn, out_path: Path) -> int:
 
     wb = openpyxl.Workbook()
     ws = wb.active
+    if ws is None:
+        raise RuntimeError("a new workbook has no sheet")
     ws.title = spec["sheet"]
 
     headers = [c[0] for c in spec["columns"]]

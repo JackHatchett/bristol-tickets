@@ -135,7 +135,7 @@ class _Grant(argparse.Action):
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     parser.add_argument("slug", help="the agent's name, in snake_case")
     parser.add_argument(
         "--description", required=True, help="the one line the agent picker and docs show"

@@ -30,6 +30,8 @@ The parent (MainWindow) is expected to expose ``_refresh_board`` and
 
 from __future__ import annotations
 
+from typing import cast
+
 import finishing  # bristol-local: what done means for the board, one rule
 from PySide6.QtCore import QEvent, Qt, QTimer
 from PySide6.QtWidgets import (
@@ -312,9 +314,10 @@ class KanbanColumn(QFrame):
         dragged = []
         sel = getattr(source, "selectedItems", None)
         if callable(sel):
+            picked = cast(list, sel())
             dragged = [
                 it.data(Qt.ItemDataRole.UserRole)
-                for it in sel()
+                for it in picked
                 if it.data(Qt.ItemDataRole.UserRole) is not None
             ]
         if not dragged:

@@ -79,7 +79,7 @@ def ticket(*args: str) -> subprocess.CompletedProcess:
 
 
 def main(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[1])
     ap.add_argument("--skill", required=True, help="the skill this proposes to add or patch")
     ap.add_argument("--reporter", required=True, help="the agent whose session produced the lesson")
     ap.add_argument("--change", required=True, help="what changes, in a few words, for the title")

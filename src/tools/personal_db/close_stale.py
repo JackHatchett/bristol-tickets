@@ -64,7 +64,7 @@ def _run(argv):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--today", help="YYYY-MM-DD to measure from; default today")
     args = ap.parse_args(argv)

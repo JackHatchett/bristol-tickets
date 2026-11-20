@@ -182,7 +182,7 @@ if (HERE / "icon.icns").exists():
 
 setup(
     app=APP,
-    data_files=DATA_FILES,
+    data_files=DATA_FILES,  # pyright: ignore[reportArgumentType]  py2app takes a bare file name beside the (folder, files) pairs setuptools types
     options={"py2app": OPTIONS},
     setup_requires=["py2app"],
 )

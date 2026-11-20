@@ -276,7 +276,7 @@ class _Grant(argparse.Action):
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     subs = parser.add_subparsers(dest="command", required=True)
 
     listing = subs.add_parser("list", help="every configured agent")

@@ -156,7 +156,7 @@ class RowList(QFrame):
     def clear(self) -> None:
         while self._rows.count():
             item = self._rows.takeAt(0)
-            widget = item.widget()
+            widget = item.widget() if item is not None else None
             if widget is not None:
                 widget.deleteLater()
         self.setVisible(False)

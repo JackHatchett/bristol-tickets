@@ -362,7 +362,8 @@ def sync_tab(built: dict, grid: list[list[str]]) -> tuple[list[dict], list[str]]
     by_title = {col["title"]: col for col in wanted}
     matched, used = {}, set()
     for c in sheet_cols:
-        col = by_link.get(link_of(c)) or by_title.get(_cell(grid, 1, c))
+        link = link_of(c)
+        col = (by_link.get(link) if link else None) or by_title.get(_cell(grid, 1, c))
         if col and id(col) not in used:
             matched[c] = col
             used.add(id(col))
@@ -504,7 +505,7 @@ def sync(sheet_values: dict) -> dict:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build")
     b.add_argument("--tab")

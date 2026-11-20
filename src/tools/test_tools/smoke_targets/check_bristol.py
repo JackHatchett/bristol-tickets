@@ -1302,6 +1302,8 @@ def check_bristol() -> list[str]:
         import importlib.util as _ilu
 
         _spec = _ilu.spec_from_file_location("_ct", TOOLS / "ticket_tools" / "create_tickets.py")
+        if _spec is None or _spec.loader is None:
+            raise SmokeFailure("a module the check loads by path is not there")
         _ct = _ilu.module_from_spec(_spec)
         _spec.loader.exec_module(_ct)
         from ui.theme import BLOCK_REASON_CHOICES
@@ -1636,7 +1638,7 @@ def check_bristol() -> list[str]:
         follow.title_edit.setText("Follow from, renamed")
         asked = []
         _real_choose = _rd.choose
-        _rd.choose = lambda *a, **k: (asked.append(True), "save")[1]
+        _rd.choose = lambda *a, **k: (asked.append("asked"), "save")[1]
         try:
             follow._open_linked_card(target)
         finally:
@@ -1778,6 +1780,8 @@ def check_bristol() -> list[str]:
         # copy both front ends call, so the two readers are compared rather than
         # trusted to stay in step.
         _spec_cs = _ilu.spec_from_file_location("_cs", TOOLS / "ticket_tools" / "status_common.py")
+        if _spec_cs is None or _spec_cs.loader is None:
+            raise SmokeFailure("a module the check loads by path is not there")
         _cs = _ilu.module_from_spec(_spec_cs)
         _spec_cs.loader.exec_module(_cs)
         cli = [(row[0], row[4]) for row in _cs.carried_summaries(lc, hb)]
@@ -2387,6 +2391,8 @@ def check_bristol() -> list[str]:
             _spec = _ilu.spec_from_file_location(
                 "smoke_skills", TOOLS / "skill_tools" / "skills.py"
             )
+            if _spec is None or _spec.loader is None:
+                raise SmokeFailure("a module the check loads by path is not there")
             _loader = _ilu.module_from_spec(_spec)
             _spec.loader.exec_module(_loader)
 

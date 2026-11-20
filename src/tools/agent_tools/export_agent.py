@@ -117,7 +117,7 @@ def build(slug: str) -> dict:
 
 
 def main(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[1])
     ap.add_argument("slug", help="the agent to export")
     ap.add_argument("--out", type=Path, help="where to write it (default: <slug>.agent.json here)")
     args = ap.parse_args(argv)

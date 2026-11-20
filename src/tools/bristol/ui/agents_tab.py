@@ -333,7 +333,7 @@ class PathList(QWidget):
     def values(self) -> list:
         out = []
         for _, declared, combo in self._rows:
-            if self._access:
+            if self._access and combo is not None:
                 out.append({"path": declared, "access": combo.currentData()})
             else:
                 out.append(declared)

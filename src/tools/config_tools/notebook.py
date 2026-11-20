@@ -91,7 +91,8 @@ def normalised(entry, folders: list[str]) -> dict:
     chosen; `migrate` is what carries its zones across."""
     entry = entry if isinstance(entry, dict) else {}
     mode = entry.get("mode") if entry.get("mode") in MODES else DEFAULT_MODE
-    chosen = entry.get("folders") if isinstance(entry.get("folders"), dict) else {}
+    listed = entry.get("folders")
+    chosen = listed if isinstance(listed, dict) else {}
     kept = {f: chosen[f] for f in folders if chosen.get(f) in ACCESS}
     return {"mode": mode, "folders": kept}
 
@@ -292,7 +293,7 @@ def _show(data: dict) -> dict:
 
 
 def main(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("show")
     s.add_argument("--json", action="store_true")

@@ -46,6 +46,7 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Callable
 from datetime import datetime, timezone
+from functools import partial
 from pathlib import Path
 
 import config_file  # bristol-local: the one config.local.json reader/writer
@@ -633,11 +634,10 @@ class LinkBar(QWidget):
                 other = link["other_id"]
                 prefix = _ROW_PREFIX.get(link["relation"], "")
                 text = f"{prefix}#{other} — {link['other_title']}"
-                click = None
-                if callable(self.on_open_issue):
-
-                    def click(o=other):
-                        return self.on_open_issue(o)
+                click: Callable[[], object] | None = None
+                opener = self.on_open_issue
+                if callable(opener):
+                    click = partial(opener, other)
 
                 self._row(
                     text,
