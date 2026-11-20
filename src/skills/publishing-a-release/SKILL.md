@@ -22,6 +22,11 @@ committing.
   `HEAD` and nothing else.
 - **The user is at the machine.** Pushing, dispatching the build and writing the
   notes need their credentials, and a session cannot type into their terminal.
+- **The user has asked for the release.** A release is prepared on his ask,
+  and a card waiting on one is unnecessary.
+- **Every card that changes Bristol, or whose outcome may, is done** — whichever
+  agent owns it. Before anything else, list any still open and ask the user
+  whether to cut past them.
 
 ## Who does what
 
@@ -102,6 +107,13 @@ Session steps, run before `src/VERSION` is raised.
 
 ## The notes
 
+- **Recap everything since the last published tag**: the board's cards on
+  Bristol work closed since that tag's date, and `git log v<last>..HEAD`.
+  Whichever agent prepares the release drafts them, and gives the draft to the
+  user in the session before the build is dispatched.
+- **Credit every commit author other than the user** by name and GitHub
+  handle, for what they contributed, from `git log v<last>..HEAD
+  --format='%an <%ae>'`.
 - **Lead with what the release gives someone who runs Bristol**, in the order
   that matters to them, and name the surface each thing appears on.
 - **Claim only what is supported.** A claim about another tool says which of its
